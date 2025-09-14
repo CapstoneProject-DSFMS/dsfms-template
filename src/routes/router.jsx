@@ -25,4 +25,8 @@ export const router = createBrowserRouter([
     path: "/",
     element: <Dashboard /> 
   },
-])
+  
+],
+  {
+    basename: "/dsfms-template", 
+  })
