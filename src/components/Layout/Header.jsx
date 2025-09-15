@@ -1,14 +1,27 @@
 import React from 'react';
+import { useLocation } from 'react-router-dom';
 import { Navbar, Nav, Dropdown, Button } from 'react-bootstrap';
 import { 
-  Bell, 
   PersonCircle, 
-  Gear, 
   BoxArrowRight,
   List
 } from 'react-bootstrap-icons';
 
 const Header = ({ onToggleSidebar }) => {
+  const location = useLocation();
+  
+  // Map routes to titles
+  const getTitleFromPath = (path) => {
+    const routes = {
+      '/dashboard': 'Dashboard',
+      '/users': 'User Management',
+      '/roles': 'Role Management',
+      '/departments': 'Department Management',
+      '/forms': 'Form Templates'
+    };
+    return routes[path] || 'Dashboard';
+  };
+
   const handleLogout = () => {
     // Handle logout logic
     console.log('Logout clicked');
@@ -22,7 +35,6 @@ const Header = ({ onToggleSidebar }) => {
       style={{ minHeight: '60px' }}
     >
       <div className="container-fluid">
-        {/* Sidebar Toggle */}
         <Button
           variant="link"
           className="text-primary-custom p-2 me-3"
@@ -32,43 +44,13 @@ const Header = ({ onToggleSidebar }) => {
           <List size={20} />
         </Button>
 
-        {/* Brand/Title */}
         <Navbar.Brand className="text-primary-custom fw-bold">
-          Admin Dashboard
+          {getTitleFromPath(location.pathname)}
         </Navbar.Brand>
 
         <Navbar.Toggle aria-controls="basic-navbar-nav" />
         <Navbar.Collapse id="basic-navbar-nav">
           <Nav className="ms-auto align-items-center">
-            {/* Notifications */}
-            <Nav.Item className="me-3">
-              <Button
-                variant="link"
-                className="text-primary-custom p-2 position-relative"
-                style={{ border: 'none', background: 'transparent' }}
-              >
-                <Bell size={20} />
-                <span 
-                  className="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger"
-                  style={{ fontSize: '0.6rem' }}
-                >
-                  3
-                </span>
-              </Button>
-            </Nav.Item>
-
-            {/* Settings */}
-            <Nav.Item className="me-3">
-              <Button
-                variant="link"
-                className="text-primary-custom p-2"
-                style={{ border: 'none', background: 'transparent' }}
-              >
-                <Gear size={20} />
-              </Button>
-            </Nav.Item>
-
-            {/* User Dropdown */}
             <Dropdown align="end">
               <Dropdown.Toggle
                 variant="link"
@@ -88,10 +70,6 @@ const Header = ({ onToggleSidebar }) => {
                 <Dropdown.Item href="#profile" className="text-primary-custom">
                   <PersonCircle className="me-2" />
                   Profile
-                </Dropdown.Item>
-                <Dropdown.Item href="#settings" className="text-primary-custom">
-                  <Gear className="me-2" />
-                  Settings
                 </Dropdown.Item>
                 <Dropdown.Divider />
                 <Dropdown.Item 

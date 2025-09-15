@@ -1,6 +1,6 @@
 import React from 'react';
-import { Card, Row, Col, Button } from 'react-bootstrap';
-import { Plus, Upload } from 'react-bootstrap-icons';
+import { Card, Row, Col, Button, Dropdown } from 'react-bootstrap';
+import { Plus, Upload, Funnel } from 'react-bootstrap-icons';
 import { UserTable, UserModal, BulkImport } from './User';
 import { SearchBar, FilterDropdown, PermissionWrapper } from '../Common';
 import { useAuth } from '../../hooks/useAuth';
@@ -29,8 +29,6 @@ const UserManagement = ({
   onModalClose
 }) => {
   const { hasPermission } = useAuth();
-  const roleOptions = uniqueRoles.map(role => ({ value: role, label: role }));
-  const departmentOptions = uniqueDepartments.map(dept => ({ value: dept, label: dept }));
 
   return (
     <Card className="border-neutral-200 shadow-sm">
@@ -80,28 +78,66 @@ const UserManagement = ({
       <Card.Body>
         {/* Search and Filters */}
         <Row className="mb-3">
-          <Col md={4}>
+          <Col md={8}>
             <SearchBar
               placeholder="Search users by name, EID, or email..."
               value={searchTerm}
               onChange={onSearch}
             />
           </Col>
-          <Col md={3}>
-            <FilterDropdown
-              title="Role"
-              options={roleOptions}
-              selectedValue={roleFilter}
-              onSelect={onRoleFilter}
-            />
-          </Col>
-          <Col md={3}>
-            <FilterDropdown
-              title="Department"
-              options={departmentOptions}
-              selectedValue={departmentFilter}
-              onSelect={onDepartmentFilter}
-            />
+          <Col md={2}>
+            <Dropdown>
+              <Dropdown.Toggle 
+                variant="outline-secondary" 
+                className="w-100 d-flex align-items-center justify-content-between"
+              >
+                <Funnel size={14} className="me-2" />
+                Filters
+              </Dropdown.Toggle>
+              <Dropdown.Menu className="p-3" style={{ width: '250px' }}>
+                <div className="mb-3">
+                  <label className="form-label small">Role</label>
+                  <select 
+                    className="form-select form-select-sm"
+                    value={roleFilter}
+                    onChange={(e) => onRoleFilter(e.target.value)}
+                  >
+                    <option value="">All Roles</option>
+                    {uniqueRoles.map(role => (
+                      <option key={role} value={role}>{role}</option>
+                    ))}
+                  </select>
+                </div>
+                <div className="mb-2">
+                  <label className="form-label small">Department</label>
+                  <select 
+                    className="form-select form-select-sm"
+                    value={departmentFilter}
+                    onChange={(e) => onDepartmentFilter(e.target.value)}
+                  >
+                    <option value="">All Departments</option>
+                    {uniqueDepartments.map(dept => (
+                      <option key={dept} value={dept}>{dept}</option>
+                    ))}
+                  </select>
+                </div>
+                {(roleFilter || departmentFilter) && (
+                  <div className="mt-3 border-top pt-2">
+                    <Button
+                      variant="link"
+                      size="sm"
+                      className="text-danger p-0"
+                      onClick={() => {
+                        onRoleFilter('');
+                        onDepartmentFilter('');
+                      }}
+                    >
+                      Clear Filters
+                    </Button>
+                  </div>
+                )}
+              </Dropdown.Menu>
+            </Dropdown>
           </Col>
           <Col md={2}>
             <div className="text-end">

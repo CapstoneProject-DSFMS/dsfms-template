@@ -1,12 +1,13 @@
 import React from 'react';
 import { Nav } from 'react-bootstrap';
+import { Link } from 'react-router-dom';
 import { 
   House, 
   People, 
   Shield, 
   Building, 
-  FileText, 
-  FileEarmarkText,
+  FileText,
+  Airplane, // Add this import
   ChevronLeft,
   ChevronRight
 } from 'react-bootstrap-icons';
@@ -14,11 +15,11 @@ import {
 const Sidebar = ({ collapsed }) => {
   const navItems = [
     { id: 'dashboard', label: 'Dashboard', icon: House, path: '/dashboard' },
-    { id: 'users', label: 'User Management', icon: People, path: '/dashboard/users' },
-    { id: 'roles', label: 'Role Management', icon: Shield, path: '/dashboard/roles' },
-    { id: 'departments', label: 'Departments', icon: Building, path: '/dashboard/departments' },
-    { id: 'forms', label: 'Forms', icon: FileText, path: '/dashboard/forms' },
-    { id: 'templates', label: 'Templates', icon: FileEarmarkText, path: '/dashboard/templates' }
+    { id: 'users', label: 'User Management', icon: People, path: '/users' },
+    { id: 'roles', label: 'Role Management', icon: Shield, path: '/roles' },
+    { id: 'departments', label: 'Departments', icon: Building, path: '/departments' },
+    { id: 'forms', label: 'Form Templates', icon: FileText, path: '/forms' },
+
   ];
 
   return (
@@ -27,38 +28,44 @@ const Sidebar = ({ collapsed }) => {
       style={{ 
         width: collapsed ? '60px' : '250px',
         minHeight: '100vh',
-        transition: 'width 0.3s ease'
+        transition: 'width 0.3s ease',
+        position: 'sticky',
+        top: 0,
+        height: '100vh',
+        overflowY: 'auto',
+        overflowX: 'hidden'
       }}
     >
       {/* Logo/Brand */}
       <div className="p-3 border-bottom border-secondary">
-        <div className="d-flex align-items-center">
+        <div className="d-flex align-items-center justify-content-center">
           {!collapsed && (
-            <h5 className="mb-0 text-white">DSFMS</h5>
+            <h5 className="mb-0 text-white text-nowrap">DSFMS</h5>
           )}
           {collapsed && (
-            <div className="mx-auto">
-              <House size={24} />
+            <div>
+              <Airplane size={24} />
             </div>
           )}
         </div>
       </div>
 
       {/* Navigation */}
-      <Nav className="flex-column flex-grow-1 p-2">
+      <Nav className="flex-column flex-grow-1 p-3">
         {navItems.map((item) => {
           const IconComponent = item.icon;
           return (
-            <Nav.Item key={item.id} className="mb-1">
-              <Nav.Link
-                href={item.path}
-                className={`text-white d-flex align-items-center py-2 px-3 rounded transition-all ${
+            <Nav.Item key={item.id} className="mb-3">
+              <Link
+                to={item.path}
+                className={`text-white d-flex align-items-center py-3 px-3 rounded transition-all nav-link text-nowrap ${
                   collapsed ? 'justify-content-center' : ''
                 }`}
                 style={{
                   transition: 'all 0.2s ease',
                   border: 'none',
-                  background: 'transparent'
+                  background: 'transparent',
+                  textDecoration: 'none'
                 }}
                 onMouseEnter={(e) => {
                   e.target.style.backgroundColor = 'rgba(255, 255, 255, 0.1)';
@@ -69,25 +76,11 @@ const Sidebar = ({ collapsed }) => {
               >
                 <IconComponent size={20} className={collapsed ? '' : 'me-3'} />
                 {!collapsed && <span>{item.label}</span>}
-              </Nav.Link>
+              </Link>
             </Nav.Item>
           );
         })}
       </Nav>
-
-      {/* Collapse Toggle */}
-      <div className="p-2 border-top border-secondary">
-        <button
-          className="btn btn-link text-white p-2 w-100 border-0"
-          style={{ background: 'transparent' }}
-          onClick={() => {/* Toggle handled by parent */}}
-        >
-          <div className="d-flex align-items-center justify-content-center">
-            {collapsed ? <ChevronRight size={16} /> : <ChevronLeft size={16} />}
-            {!collapsed && <span className="ms-2">Collapse</span>}
-          </div>
-        </button>
-      </div>
     </div>
   );
 };

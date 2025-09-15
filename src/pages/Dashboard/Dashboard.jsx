@@ -1,14 +1,14 @@
 import React, { useState, useEffect } from 'react';
-import { Container, Row, Col, Alert } from 'react-bootstrap';
+import { Container, Row, Col, Card, Alert } from 'react-bootstrap';
 import { MainLayout } from '../../components/Layout';
-import { 
-  UserManagement, 
-  RoleManagement, 
-  CourseManagement, 
-  AssessmentManagement, 
-  SQAAuditManagement, 
-  ReportsManagement 
-} from '../../components/Dashboard';
+import {
+  AreaChart, Area,
+  BarChart, Bar,
+  PieChart, Pie,
+  LineChart, Line,
+  XAxis, YAxis, CartesianGrid, Tooltip, Legend,
+  ResponsiveContainer
+} from 'recharts';
 import { useAuth } from '../../hooks/useAuth';
 import { PERMISSIONS } from '../../constants/permissions';
 import { PermissionWrapper, RoleSwitcher } from '../../components/Common';
@@ -318,135 +318,124 @@ const Dashboard = () => {
   const uniqueRoles = [...new Set(users.map(user => user.role))];
   const uniqueDepartments = [...new Set(users.map(user => user.department))];
 
+  // Mock data for charts
+  const userStats = [
+    { month: 'Jan', active: 40, inactive: 24 },
+    { month: 'Feb', active: 30, inactive: 13 },
+    { month: 'Mar', active: 20, inactive: 18 },
+    { month: 'Apr', active: 27, inactive: 15 },
+    { month: 'May', active: 18, inactive: 12 },
+    { month: 'Jun', active: 23, inactive: 19 },
+  ];
+
+  const roleDistribution = [
+    { name: 'Admin', value: 5 },
+    { name: 'Trainer', value: 15 },
+    { name: 'Trainee', value: 40 },
+    { name: 'Manager', value: 10 },
+  ];
+
+  const departmentStats = [
+    { name: 'IT', users: 25, courses: 15 },
+    { name: 'HR', users: 15, courses: 8 },
+    { name: 'Finance', users: 20, courses: 12 },
+    { name: 'Operations', users: 30, courses: 20 },
+  ];
+
   return (
     <MainLayout>
       <Container fluid className="py-4">
-        <Row>
+        <Row className="mb-4">
           <Col>
-            <div className="d-flex justify-content-between align-items-center mb-4">
+            <div className="d-flex justify-content-between align-items-center">
               <h1 className="text-primary-custom mb-0">Aviation Training Management System</h1>
               <RoleSwitcher />
             </div>
-            
-            {userError && (
-              <Alert variant="danger" dismissible onClose={() => setUserError(null)}>
-                {userError}
-              </Alert>
-            )}
-            
-            {roleError && (
-              <Alert variant="danger" dismissible onClose={() => setRoleError(null)}>
-                {roleError}
-              </Alert>
-            )}
           </Col>
         </Row>
 
-        <PermissionWrapper 
-          permission={PERMISSIONS.MANAGE_USERS}
-          message="You do not have permission to manage users."
-        >
-          <Row className="mb-4">
-            <Col>
-              <UserManagement
-                users={filteredUsers}
-                loading={userLoading}
-                searchTerm={userSearchTerm}
-                roleFilter={userRoleFilter}
-                departmentFilter={userDepartmentFilter}
-                uniqueRoles={uniqueRoles}
-                uniqueDepartments={uniqueDepartments}
-                modalShow={userModalShow}
-                selectedUser={selectedUser}
-                modalMode={userModalMode}
-                onSearch={handleUserSearch}
-                onRoleFilter={handleUserRoleFilter}
-                onDepartmentFilter={handleUserDepartmentFilter}
-                onView={handleUserView}
-                onEdit={handleUserEdit}
-                onAdd={handleUserAdd}
-                onDelete={handleUserDelete}
-                onSave={handleUserSave}
-                onBulkImport={handleBulkImport}
-                onModalClose={() => setUserModalShow(false)}
-              />
-            </Col>
-          </Row>
-        </PermissionWrapper>
+        <Row className="mb-4">
+          <Col md={8}>
+            <Card>
+              <Card.Header>User Activity Trends</Card.Header>
+              <Card.Body>
+                <ResponsiveContainer width="100%" height={300}>
+                  <AreaChart data={userStats}>
+                    <CartesianGrid strokeDasharray="3 3" />
+                    <XAxis dataKey="month" />
+                    <YAxis />
+                    <Tooltip />
+                    <Legend />
+                    <Area type="monotone" dataKey="active" stroke="#8884d8" fill="#8884d8" name="Active Users" />
+                    <Area type="monotone" dataKey="inactive" stroke="#82ca9d" fill="#82ca9d" name="Inactive Users" />
+                  </AreaChart>
+                </ResponsiveContainer>
+              </Card.Body>
+            </Card>
+          </Col>
+          <Col md={4}>
+            <Card>
+              <Card.Header>Role Distribution</Card.Header>
+              <Card.Body>
+                <ResponsiveContainer width="100%" height={300}>
+                  <PieChart>
+                    <Pie
+                      data={roleDistribution}
+                      dataKey="value"
+                      nameKey="name"
+                      cx="50%"
+                      cy="50%"
+                      fill="#8884d8"
+                    />
+                    <Tooltip />
+                    <Legend />
+                  </PieChart>
+                </ResponsiveContainer>
+              </Card.Body>
+            </Card>
+          </Col>
+        </Row>
 
-        <PermissionWrapper 
-          permission={PERMISSIONS.MANAGE_ROLES}
-          message="You do not have permission to manage roles."
-        >
-          <Row className="mb-4">
-            <Col>
-              <RoleManagement
-                roles={filteredRoles}
-                loading={roleLoading}
-                searchTerm={roleSearchTerm}
-                modalShow={roleModalShow}
-                selectedRole={selectedRole}
-                modalMode={roleModalMode}
-                onSearch={handleRoleSearch}
-                onView={handleRoleView}
-                onEdit={handleRoleEdit}
-                onAdd={handleRoleAdd}
-                onDelete={handleRoleDelete}
-                onSave={handleRoleSave}
-                onDisable={handleDisableRole}
-                onModalClose={() => setRoleModalShow(false)}
-              />
-            </Col>
-          </Row>
-        </PermissionWrapper>
+        <Row>
+          <Col>
+            <Card>
+              <Card.Header>Department Statistics</Card.Header>
+              <Card.Body>
+                <ResponsiveContainer width="100%" height={300}>
+                  <BarChart data={departmentStats}>
+                    <CartesianGrid strokeDasharray="3 3" />
+                    <XAxis dataKey="name" />
+                    <YAxis />
+                    <Tooltip />
+                    <Legend />
+                    <Bar dataKey="users" fill="#8884d8" name="Users" />
+                    <Bar dataKey="courses" fill="#82ca9d" name="Courses" />
+                  </BarChart>
+                </ResponsiveContainer>
+              </Card.Body>
+            </Card>
+          </Col>
+        </Row>
 
-        {/* Course Management */}
-        <PermissionWrapper 
-          permissions={[PERMISSIONS.CREATE_COURSE, PERMISSIONS.CREATE_SUBJECT, PERMISSIONS.ENROLL_TRAINEE]}
-          message="You do not have permission to manage courses."
-        >
-          <Row className="mb-4">
+        {userError && (
+          <Row className="mt-4">
             <Col>
-              <CourseManagement />
+              <Alert variant="danger" dismissible onClose={() => setUserError(null)}>
+                {userError}
+              </Alert>
             </Col>
           </Row>
-        </PermissionWrapper>
-
-        {/* Assessment Management */}
-        <PermissionWrapper 
-          permissions={[PERMISSIONS.FILL_ASSESSMENT, PERMISSIONS.APPROVE_ASSESSMENT, PERMISSIONS.EXPORT_PDF]}
-          message="You do not have permission to manage assessments."
-        >
-          <Row className="mb-4">
+        )}
+        
+        {roleError && (
+          <Row className="mt-4">
             <Col>
-              <AssessmentManagement />
+              <Alert variant="danger" dismissible onClose={() => setRoleError(null)}>
+                {roleError}
+              </Alert>
             </Col>
           </Row>
-        </PermissionWrapper>
-
-        {/* SQA Audit Management */}
-        <PermissionWrapper 
-          permissions={[PERMISSIONS.FILL_AUDIT, PERMISSIONS.CREATE_FINDING, PERMISSIONS.CREATE_CAR, PERMISSIONS.TRACK_CAR]}
-          message="You do not have permission to manage SQA audits."
-        >
-          <Row className="mb-4">
-            <Col>
-              <SQAAuditManagement />
-            </Col>
-          </Row>
-        </PermissionWrapper>
-
-        {/* Reports Management */}
-        <PermissionWrapper 
-          permissions={[PERMISSIONS.SUBMIT_REPORT, PERMISSIONS.MANAGE_REPORT]}
-          message="You do not have permission to manage reports."
-        >
-          <Row>
-            <Col>
-              <ReportsManagement />
-            </Col>
-          </Row>
-        </PermissionWrapper>
+        )}
       </Container>
     </MainLayout>
   );

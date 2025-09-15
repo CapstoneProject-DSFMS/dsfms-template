@@ -1,9 +1,16 @@
 import React from 'react';
-import { Table } from 'react-bootstrap';
+import { Table, Badge } from 'react-bootstrap';
 import RoleRow from './RoleRow';
 import { LoadingSkeleton } from '../../../components/Common';
 
-const RoleTable = ({ roles, loading, onView, onEdit, onDelete, onDisable }) => {
+const RoleTable = ({
+  roles,
+  loading,
+  actionsComponent: ActionsComponent,
+  onView,
+  onEdit,
+  onDisable,
+}) => {
   if (loading) {
     return <LoadingSkeleton rows={4} columns={4} />;
   }
@@ -28,10 +35,13 @@ const RoleTable = ({ roles, loading, onView, onEdit, onDelete, onDisable }) => {
               Role Name
             </th>
             <th className="border-neutral-200 text-primary-custom fw-semibold">
+              Status
+            </th>
+            <th className="border-neutral-200 text-primary-custom fw-semibold">
               Assigned Users
             </th>
             <th className="border-neutral-200 text-primary-custom fw-semibold">
-              Status
+              Last Modified
             </th>
             <th className="border-neutral-200 text-primary-custom fw-semibold text-center">
               Actions
@@ -40,15 +50,19 @@ const RoleTable = ({ roles, loading, onView, onEdit, onDelete, onDisable }) => {
         </thead>
         <tbody>
           {roles.map((role, index) => (
-            <RoleRow
-              key={role.id}
-              role={role}
-              index={index}
-              onView={onView}
-              onEdit={onEdit}
-              onDelete={onDelete}
-              onDisable={onDisable}
-            />
+            <tr key={role.id}>
+              <td>{role.name}</td>
+              <td>
+                <Badge bg={role.status === 'Active' ? 'success' : 'secondary'}>
+                  {role.status}
+                </Badge>
+              </td>
+              <td>{role.assignedUsers}</td>
+              <td>{role.lastModified}</td>
+              <td className="text-end">
+                <ActionsComponent role={role} />
+              </td>
+            </tr>
           ))}
         </tbody>
       </Table>
