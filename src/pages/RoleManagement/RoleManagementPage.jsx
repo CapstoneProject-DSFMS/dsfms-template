@@ -1,30 +1,62 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Container, Card, Row, Col, Button, Dropdown, Alert } from 'react-bootstrap';
 import { Plus, ThreeDotsVertical } from 'react-bootstrap-icons';
-import { RoleTable, RoleModal } from '../../components/Dashboard/Role';
+import { RoleTable, RoleModal, RoleFilterPanel, DisableRoleModal } from '../../components/Dashboard/Role';
 import { SearchBar, PermissionWrapper } from '../../components/Common';
 import { useRoleManagement } from '../../hooks/useRoleManagement';
 import { PERMISSIONS } from '../../constants/permissions';
 
 const RoleManagementPage = () => {
+  const [disableModalShow, setDisableModalShow] = useState(false);
+  const [roleToDisable, setRoleToDisable] = useState(null);
+  const [disableLoading, setDisableLoading] = useState(false);
+
   const {
     roles: filteredRoles,
     loading,
     error,
     searchTerm,
+    selectedStatuses,
+    uniqueStatuses,
     modalShow,
     selectedRole,
     modalMode,
     handleSearch,
+    handleStatusToggle,
+    handleClearFilters,
     handleView,
     handleEdit,
     handleAdd,
-    handleDelete,
     handleSave,
     handleDisable,
     handleModalClose,
     setError
   } = useRoleManagement();
+
+  const handleDisableClick = (role) => {
+    setRoleToDisable(role);
+    setDisableModalShow(true);
+  };
+
+  const handleDisableConfirm = async () => {
+    if (!roleToDisable) return;
+
+    setDisableLoading(true);
+    try {
+      await handleDisable(roleToDisable.id);
+      setDisableModalShow(false);
+      setRoleToDisable(null);
+    } catch (err) {
+      console.error('Error disabling role:', err);
+    } finally {
+      setDisableLoading(false);
+    }
+  };
+
+  const handleDisableCancel = () => {
+    setDisableModalShow(false);
+    setRoleToDisable(null);
+  };
 
   const RoleActions = ({ role }) => (
     <Dropdown align="end">
@@ -73,7 +105,7 @@ const RoleManagementPage = () => {
         </Dropdown.Item>
         <Dropdown.Divider />
         <Dropdown.Item 
-          onClick={() => handleDisable(role.id)}
+          onClick={() => handleDisableClick(role)}
           className={`d-flex align-items-center transition-all ${
             role.status === 'Active' ? 'text-warning' : 'text-success'
           }`}
@@ -109,10 +141,9 @@ const RoleManagementPage = () => {
         <Card.Header className="bg-light-custom border-neutral-200">
           <Row className="align-items-center">
             <Col>
-              <h5 className="text-primary-custom mb-0">Role Management</h5>
-              <small className="text-muted">
+              <h5 className="text-muted">
                 Manage user roles and permissions
-              </small>
+              </h5>
             </Col>
             <Col xs="auto">
               <PermissionWrapper 
@@ -134,16 +165,24 @@ const RoleManagementPage = () => {
         </Card.Header>
 
         <Card.Body>
-          {/* Search */}
+          {/* Search and Filters */}
           <Row className="mb-3">
-            <Col md={6}>
+            <Col lg={6} md={5}>
               <SearchBar
                 placeholder="Search roles by name..."
                 value={searchTerm}
                 onChange={handleSearch}
               />
             </Col>
-            <Col md={6}>
+            <Col lg={3} md={4}>
+              <RoleFilterPanel
+                uniqueStatuses={uniqueStatuses}
+                selectedStatuses={selectedStatuses}
+                onStatusToggle={handleStatusToggle}
+                onClearFilters={handleClearFilters}
+              />
+            </Col>
+            <Col lg={3} md={3}>
               <div className="text-end">
                 <small className="text-muted">
                   {filteredRoles.length} role{filteredRoles.length !== 1 ? 's' : ''}
@@ -169,6 +208,15 @@ const RoleManagementPage = () => {
             mode={modalMode}
             onSave={handleSave}
             onClose={handleModalClose}
+          />
+
+          {/* Disable Role Modal */}
+          <DisableRoleModal
+            show={disableModalShow}
+            role={roleToDisable}
+            onConfirm={handleDisableConfirm}
+            onCancel={handleDisableCancel}
+            loading={disableLoading}
           />
         </Card.Body>
       </Card>

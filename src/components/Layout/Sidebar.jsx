@@ -9,7 +9,8 @@ import {
   FileText,
   Airplane, // Add this import
   ChevronLeft,
-  ChevronRight
+  ChevronRight,
+  Gear
 } from 'react-bootstrap-icons';
 
 const Sidebar = ({ collapsed }) => {
@@ -19,12 +20,12 @@ const Sidebar = ({ collapsed }) => {
     { id: 'roles', label: 'Role Management', icon: Shield, path: '/admin/roles' },
     { id: 'departments', label: 'Departments', icon: Building, path: '/admin/departments' },
     { id: 'forms', label: 'Form Templates', icon: FileText, path: '/admin/forms' },
-
+    { id: 'system-config', label: 'System Configuration', icon: Gear, path: '/admin/system-config' },
   ];
 
   return (
     <div 
-      className={`bg-primary-custom text-white d-flex flex-column transition-all`}
+      className={`bg-primary-custom text-white d-flex flex-column transition-all ${collapsed ? 'sidebar-collapsed' : ''}`}
       style={{ 
         width: collapsed ? '60px' : '250px',
         minHeight: '100vh',
@@ -65,7 +66,8 @@ const Sidebar = ({ collapsed }) => {
                   transition: 'all 0.2s ease',
                   border: 'none',
                   background: 'transparent',
-                  textDecoration: 'none'
+                  textDecoration: 'none',
+                  minHeight: collapsed ? '48px' : 'auto'
                 }}
                 onMouseEnter={(e) => {
                   e.target.style.backgroundColor = 'rgba(255, 255, 255, 0.1)';
@@ -74,7 +76,14 @@ const Sidebar = ({ collapsed }) => {
                   e.target.style.backgroundColor = 'transparent';
                 }}
               >
-                <IconComponent size={20} className={collapsed ? '' : 'me-3'} />
+                <IconComponent 
+                  size={20} 
+                  className={collapsed ? '' : 'me-3'} 
+                  style={{
+                    display: 'inline-block',
+                    flexShrink: 0
+                  }}
+                />
                 {!collapsed && <span>{item.label}</span>}
               </Link>
             </Nav.Item>

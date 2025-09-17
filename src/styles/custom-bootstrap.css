@@ -111,6 +111,355 @@
   border-color: #2e4a5c !important;
 }
 
+/* Success Button Overrides - Using your palette */
+.btn-success {
+  background-color: #28a745 !important;
+  border-color: #28a745 !important;
+  color: #fff !important;
+}
+
+.btn-success:hover {
+  background-color: #218838 !important;
+  border-color: #1e7e34 !important;
+}
+
+.btn-success:focus,
+.btn-success.focus {
+  background-color: #218838 !important;
+  border-color: #1e7e34 !important;
+  box-shadow: 0 0 0 0.25rem rgba(40, 167, 69, 0.25) !important;
+}
+
+.btn-success:active,
+.btn-success.active {
+  background-color: #1e7e34 !important;
+  border-color: #1c7430 !important;
+}
+
+/* Danger Button Overrides */
+.btn-danger {
+  background-color: #dc3545 !important;
+  border-color: #dc3545 !important;
+  color: #fff !important;
+}
+
+.btn-danger:hover {
+  background-color: #c82333 !important;
+  border-color: #bd2130 !important;
+}
+
+.btn-danger:focus,
+.btn-danger.focus {
+  background-color: #c82333 !important;
+  border-color: #bd2130 !important;
+  box-shadow: 0 0 0 0.25rem rgba(220, 53, 69, 0.25) !important;
+}
+
+.btn-danger:active,
+.btn-danger.active {
+  background-color: #bd2130 !important;
+  border-color: #b21f2d !important;
+}
+
+/* Warning Button Overrides */
+.btn-warning {
+  background-color: #ffc107 !important;
+  border-color: #ffc107 !important;
+  color: #212529 !important;
+}
+
+.btn-warning:hover {
+  background-color: #e0a800 !important;
+  border-color: #d39e00 !important;
+}
+
+.btn-warning:focus,
+.btn-warning.focus {
+  background-color: #e0a800 !important;
+  border-color: #d39e00 !important;
+  box-shadow: 0 0 0 0.25rem rgba(255, 193, 7, 0.25) !important;
+}
+
+.btn-warning:active,
+.btn-warning.active {
+  background-color: #d39e00 !important;
+  border-color: #c69500 !important;
+}
+
+/* Info Button Overrides */
+.btn-info {
+  background-color: #17a2b8 !important;
+  border-color: #17a2b8 !important;
+  color: #fff !important;
+}
+
+.btn-info:hover {
+  background-color: #138496 !important;
+  border-color: #117a8b !important;
+}
+
+.btn-info:focus,
+.btn-info.focus {
+  background-color: #138496 !important;
+  border-color: #117a8b !important;
+  box-shadow: 0 0 0 0.25rem rgba(23, 162, 184, 0.25) !important;
+}
+
+.btn-info:active,
+.btn-info.active {
+  background-color: #117a8b !important;
+  border-color: #10707f !important;
+}
+
+/* Light Button Overrides */
+.btn-light {
+  background-color: var(--bs-light) !important;
+  border-color: var(--bs-neutral-200) !important;
+  color: var(--bs-dark) !important;
+}
+
+.btn-light:hover {
+  background-color: var(--bs-neutral-100) !important;
+  border-color: var(--bs-neutral-300) !important;
+}
+
+.btn-light:focus,
+.btn-light.focus {
+  background-color: var(--bs-neutral-100) !important;
+  border-color: var(--bs-neutral-300) !important;
+  box-shadow: 0 0 0 0.25rem rgba(212, 193, 164, 0.25) !important;
+}
+
+.btn-light:active,
+.btn-light.active {
+  background-color: var(--bs-neutral-200) !important;
+  border-color: var(--bs-neutral-400) !important;
+}
+
+/* Dark Button Overrides */
+.btn-dark {
+  background-color: var(--bs-dark) !important;
+  border-color: var(--bs-dark) !important;
+  color: #fff !important;
+}
+
+.btn-dark:hover {
+  background-color: #0a1420 !important;
+  border-color: #071018 !important;
+}
+
+.btn-dark:focus,
+.btn-dark.focus {
+  background-color: #0a1420 !important;
+  border-color: #071018 !important;
+  box-shadow: 0 0 0 0.25rem rgba(13, 27, 42, 0.25) !important;
+}
+
+.btn-dark:active,
+.btn-dark.active {
+  background-color: #071018 !important;
+  border-color: #040a0f !important;
+}
+
+/* Outline Button Variants */
+.btn-outline-primary {
+  color: var(--bs-primary) !important;
+  border-color: var(--bs-primary) !important;
+}
+
+.btn-outline-primary:hover {
+  background-color: var(--bs-primary) !important;
+  border-color: var(--bs-primary) !important;
+  color: #fff !important;
+}
+
+.btn-outline-secondary {
+  color: var(--bs-secondary) !important;
+  border-color: var(--bs-secondary) !important;
+}
+
+.btn-outline-secondary:hover {
+  background-color: var(--bs-secondary) !important;
+  border-color: var(--bs-secondary) !important;
+  color: #fff !important;
+}
+
+.btn-outline-success {
+  color: #28a745 !important;
+  border-color: #28a745 !important;
+}
+
+.btn-outline-success:hover {
+  background-color: #28a745 !important;
+  border-color: #28a745 !important;
+  color: #fff !important;
+}
+
+.btn-outline-danger {
+  color: #dc3545 !important;
+  border-color: #dc3545 !important;
+}
+
+.btn-outline-danger:hover {
+  background-color: #dc3545 !important;
+  border-color: #dc3545 !important;
+  color: #fff !important;
+}
+
+.btn-outline-warning {
+  color: #ffc107 !important;
+  border-color: #ffc107 !important;
+}
+
+.btn-outline-warning:hover {
+  background-color: #ffc107 !important;
+  border-color: #ffc107 !important;
+  color: #212529 !important;
+}
+
+.btn-outline-info {
+  color: #17a2b8 !important;
+  border-color: #17a2b8 !important;
+}
+
+.btn-outline-info:hover {
+  background-color: #17a2b8 !important;
+  border-color: #17a2b8 !important;
+  color: #fff !important;
+}
+
+.btn-outline-light {
+  color: var(--bs-light) !important;
+  border-color: var(--bs-neutral-200) !important;
+}
+
+.btn-outline-light:hover {
+  background-color: var(--bs-light) !important;
+  border-color: var(--bs-neutral-200) !important;
+  color: var(--bs-dark) !important;
+}
+
+.btn-outline-dark {
+  color: var(--bs-dark) !important;
+  border-color: var(--bs-dark) !important;
+}
+
+.btn-outline-dark:hover {
+  background-color: var(--bs-dark) !important;
+  border-color: var(--bs-dark) !important;
+  color: #fff !important;
+}
+
+/* Custom Button Variants using your color palette */
+.btn-neutral {
+  background-color: var(--bs-neutral) !important;
+  border-color: var(--bs-neutral) !important;
+  color: var(--bs-dark) !important;
+}
+
+.btn-neutral:hover {
+  background-color: var(--bs-neutral-600) !important;
+  border-color: var(--bs-neutral-600) !important;
+}
+
+.btn-neutral:focus,
+.btn-neutral.focus {
+  background-color: var(--bs-neutral-600) !important;
+  border-color: var(--bs-neutral-600) !important;
+  box-shadow: 0 0 0 0.25rem rgba(196, 168, 150, 0.25) !important;
+}
+
+.btn-neutral:active,
+.btn-neutral.active {
+  background-color: var(--bs-neutral-700) !important;
+  border-color: var(--bs-neutral-700) !important;
+}
+
+.btn-outline-neutral {
+  color: var(--bs-neutral) !important;
+  border-color: var(--bs-neutral) !important;
+}
+
+.btn-outline-neutral:hover {
+  background-color: var(--bs-neutral) !important;
+  border-color: var(--bs-neutral) !important;
+  color: var(--bs-dark) !important;
+}
+
+/* Link Button Variants */
+.btn-link {
+  color: var(--bs-primary) !important;
+  text-decoration: none !important;
+}
+
+.btn-link:hover {
+  color: #153a4a !important;
+  text-decoration: underline !important;
+}
+
+.btn-link:focus,
+.btn-link.focus {
+  color: #153a4a !important;
+  text-decoration: underline !important;
+  box-shadow: none !important;
+}
+
+/* Custom Button Variants using your specific colors */
+.btn-primary-custom {
+  background-color: var(--bs-primary) !important;
+  border-color: var(--bs-primary) !important;
+  color: #fff !important;
+}
+
+.btn-primary-custom:hover {
+  background-color: #153a4a !important;
+  border-color: #153a4a !important;
+}
+
+.btn-secondary-custom {
+  background-color: var(--bs-secondary) !important;
+  border-color: var(--bs-secondary) !important;
+  color: #fff !important;
+}
+
+.btn-secondary-custom:hover {
+  background-color: #3a5a6f !important;
+  border-color: #3a5a6f !important;
+}
+
+.btn-neutral-custom {
+  background-color: var(--bs-neutral) !important;
+  border-color: var(--bs-neutral) !important;
+  color: var(--bs-dark) !important;
+}
+
+.btn-neutral-custom:hover {
+  background-color: var(--bs-neutral-600) !important;
+  border-color: var(--bs-neutral-600) !important;
+}
+
+.btn-light-custom {
+  background-color: var(--bs-light) !important;
+  border-color: var(--bs-neutral-200) !important;
+  color: var(--bs-dark) !important;
+}
+
+.btn-light-custom:hover {
+  background-color: var(--bs-neutral-100) !important;
+  border-color: var(--bs-neutral-300) !important;
+}
+
+.btn-dark-custom {
+  background-color: var(--bs-dark) !important;
+  border-color: var(--bs-dark) !important;
+  color: #fff !important;
+}
+
+.btn-dark-custom:hover {
+  background-color: #0a1420 !important;
+  border-color: #071018 !important;
+}
+
 /* Custom Utility Classes */
 .bg-neutral {
   background-color: var(--bs-neutral) !important;
@@ -419,4 +768,16 @@
 
 .table-responsive::-webkit-scrollbar-thumb:hover {
   background: var(--bs-neutral-400);
+}
+
+/* Sidebar collapsed icon centering - Simplified */
+.sidebar-collapsed .nav-link {
+  justify-content: center !important;
+  width: 100% !important;
+}
+
+.sidebar-collapsed .nav-item {
+  display: flex !important;
+  justify-content: center !important;
+  width: 100% !important;
 }

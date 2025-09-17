@@ -1,0 +1,289 @@
+/* Scrollable Table Styles */
+.scrollable-table-container {
+  max-height: 600px;
+  overflow-y: auto;
+  border: 1px solid #dee2e6;
+  border-radius: 0.375rem;
+  position: relative;
+}
+
+.scrollable-table-container::-webkit-scrollbar {
+  width: 8px;
+}
+
+.scrollable-table-container::-webkit-scrollbar-track {
+  background: #f1f1f1;
+  border-radius: 4px;
+}
+
+.scrollable-table-container::-webkit-scrollbar-thumb {
+  background: #c1c1c1;
+  border-radius: 4px;
+}
+
+.scrollable-table-container::-webkit-scrollbar-thumb:hover {
+  background: #a8a8a8;
+}
+
+/* Sticky header styles */
+.sticky-header {
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  background-color: #f8f9fa !important;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.sticky-header th {
+  position: sticky;
+  top: 0;
+  background-color: #f8f9fa !important;
+  z-index: 11;
+  border-bottom: 2px solid #dee2e6;
+}
+
+/* Scroll indicator */
+.scroll-indicator {
+  position: absolute;
+  bottom: -25px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: rgba(0, 0, 0, 0.7);
+  color: white;
+  padding: 4px 12px;
+  border-radius: 12px;
+  font-size: 0.75rem;
+  animation: fadeInOut 2s ease-in-out infinite;
+}
+
+@keyframes fadeInOut {
+  0%, 100% { opacity: 0.6; }
+  50% { opacity: 1; }
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+  .scrollable-table-container {
+    max-height: 400px;
+  }
+  
+  .scrollable-table-container::-webkit-scrollbar {
+    width: 6px;
+  }
+}
+
+/* Table row hover effect */
+.scrollable-table-container tbody tr:hover {
+  background-color: rgba(0, 123, 255, 0.05);
+  transition: background-color 0.2s ease;
+}
+
+/* Loading state */
+.table-loading {
+  position: relative;
+  min-height: 200px;
+}
+
+.table-loading::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(255, 255, 255, 0.8);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 5;
+}
+
+/* Filter Panel Styles */
+.max-height-150 {
+  max-height: 150px;
+  overflow-y: auto;
+}
+
+.max-height-150::-webkit-scrollbar {
+  width: 4px;
+}
+
+.max-height-150::-webkit-scrollbar-track {
+  background: #f1f1f1;
+  border-radius: 2px;
+}
+
+.max-height-150::-webkit-scrollbar-thumb {
+  background: #c1c1c1;
+  border-radius: 2px;
+}
+
+.max-height-150::-webkit-scrollbar-thumb:hover {
+  background: #a8a8a8;
+}
+
+/* Filter Panel Dropdown - Specific styling only for FilterPanel */
+.filter-panel-dropdown .dropdown-menu {
+  border: 1px solid #dee2e6;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  border-radius: 0.5rem;
+  z-index: 1050 !important;
+  max-height: 70vh !important;
+  overflow-y: auto !important;
+}
+
+/* Responsive adjustments for FilterPanel only */
+@media (max-width: 768px) {
+  .filter-panel-dropdown .dropdown-menu {
+    width: 320px !important;
+    max-width: calc(100vw - 2rem) !important;
+    max-height: 60vh !important;
+  }
+}
+
+@media (max-width: 576px) {
+  .filter-panel-dropdown .dropdown-menu {
+    width: calc(100vw - 2rem) !important;
+    max-width: calc(100vw - 2rem) !important;
+    max-height: 50vh !important;
+  }
+}
+
+.filter-panel-dropdown .dropdown-toggle {
+  border: 1px solid #dee2e6;
+  transition: all 0.2s ease;
+  background-color: #fff !important;
+}
+
+.filter-panel-dropdown .dropdown-toggle:hover {
+  border-color: #007bff !important;
+  background-color: #f8f9fa !important;
+}
+
+.filter-panel-dropdown .dropdown-toggle:focus {
+  border-color: #007bff !important;
+  background-color: #f8f9fa !important;
+  box-shadow: 0 0 0 0.2rem rgba(0, 123, 255, 0.25) !important;
+}
+
+.filter-panel-dropdown .dropdown-toggle:active {
+  border-color: #007bff !important;
+  background-color: #e9ecef !important;
+}
+
+.filter-panel-dropdown .dropdown-toggle.show {
+  border-color: #007bff !important;
+  background-color: #e9ecef !important;
+}
+
+/* Fix for when dropdown is open but not focused */
+.filter-panel-dropdown .dropdown-toggle:not(:focus):not(:hover):not(.show) {
+  background-color: #fff !important;
+  border-color: #dee2e6 !important;
+}
+
+/* Ensure consistent styling for all filter dropdowns */
+.filter-panel-dropdown .dropdown-toggle,
+.role-filter-panel .dropdown-toggle {
+  background-color: #fff !important;
+  color: #495057 !important;
+}
+
+.filter-panel-dropdown .dropdown-toggle:hover,
+.role-filter-panel .dropdown-toggle:hover {
+  background-color: #f8f9fa !important;
+  color: #495057 !important;
+}
+
+.filter-panel-dropdown .dropdown-toggle:focus,
+.role-filter-panel .dropdown-toggle:focus {
+  background-color: #f8f9fa !important;
+  color: #495057 !important;
+}
+
+.filter-panel-dropdown .dropdown-toggle.show,
+.role-filter-panel .dropdown-toggle.show {
+  background-color: #e9ecef !important;
+  color: #495057 !important;
+}
+
+/* Filter Badge */
+.filter-badge {
+  font-size: 0.75rem;
+  padding: 0.25rem 0.5rem;
+  border-radius: 0.375rem;
+}
+
+/* Filter Summary */
+.filter-summary {
+  background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+  border: 1px solid #dee2e6;
+  border-radius: 0.375rem;
+  padding: 0.75rem;
+}
+
+.filter-summary .badge {
+  font-size: 0.7rem;
+  padding: 0.25rem 0.5rem;
+}
+
+/* Checkbox Styling */
+.form-check-input:checked {
+  background-color: #007bff;
+  border-color: #007bff;
+}
+
+.form-check-input:focus {
+  border-color: #007bff;
+  box-shadow: 0 0 0 0.2rem rgba(0, 123, 255, 0.25);
+}
+
+.form-check-label {
+  font-size: 0.875rem;
+  color: #495057;
+  cursor: pointer;
+  transition: color 0.2s ease;
+}
+
+.form-check-label:hover {
+  color: #007bff;
+}
+
+/* Clear Button */
+.btn-link.text-danger {
+  text-decoration: none;
+  transition: all 0.2s ease;
+}
+
+.btn-link.text-danger:hover {
+  color: #dc3545 !important;
+  transform: scale(1.1);
+}
+
+/* Role Modal Group Styling */
+.cursor-pointer {
+  cursor: pointer !important;
+}
+
+.cursor-pointer:hover {
+  background-color: rgba(0, 0, 0, 0.05) !important;
+}
+
+/* Permission Group Header */
+.permission-group-header {
+  transition: background-color 0.2s ease;
+}
+
+.permission-group-header:hover {
+  background-color: rgba(0, 0, 0, 0.05) !important;
+}
+
+/* Permission Item */
+.permission-item {
+  transition: background-color 0.2s ease;
+}
+
+.permission-item:hover {
+  background-color: rgba(0, 0, 0, 0.02) !important;
+}
+

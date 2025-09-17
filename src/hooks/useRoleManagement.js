@@ -4,6 +4,7 @@ import { ROLES } from '../constants/permissions';
 export const useRoleManagement = () => {
   const [roles, setRoles] = useState([]);
   const [searchTerm, setSearchTerm] = useState('');
+  const [selectedStatuses, setSelectedStatuses] = useState([]);
   const [modalShow, setModalShow] = useState(false);
   const [selectedRole, setSelectedRole] = useState(null);
   const [modalMode, setModalMode] = useState('view');
@@ -23,7 +24,7 @@ export const useRoleManagement = () => {
           name,
           permissions,
           assignedUsers: Math.floor(Math.random() * 50), // Random number for demo
-          status: 'Active',
+          status: Math.random() > 0.3 ? 'Active' : 'Inactive', // Random status for demo
           description: `${name} role with ${permissions.length} permissions`,
           createdAt: '2023-01-01',
           lastModified: '2023-12-01'
@@ -43,6 +44,22 @@ export const useRoleManagement = () => {
   }, []);
 
   const handleSearch = (term) => setSearchTerm(term);
+
+  const handleStatusToggle = (status) => {
+    if (status === 'clear') {
+      setSelectedStatuses([]);
+    } else {
+      setSelectedStatuses(prev =>
+        prev.includes(status)
+          ? prev.filter(s => s !== status)
+          : [...prev, status]
+      );
+    }
+  };
+
+  const handleClearFilters = () => {
+    setSelectedStatuses([]);
+  };
 
   const handleView = (role) => {
     setSelectedRole(role);
@@ -144,10 +161,15 @@ export const useRoleManagement = () => {
     }
   };
 
-  // Filter roles based on search
-  const filteredRoles = roles.filter(role => 
-    role.name.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  // Get unique statuses for filter
+  const uniqueStatuses = [...new Set(roles.map(role => role.status))];
+
+  // Filter roles based on search and status
+  const filteredRoles = roles.filter(role => {
+    const matchesSearch = role.name.toLowerCase().includes(searchTerm.toLowerCase());
+    const matchesStatus = selectedStatuses.length === 0 || selectedStatuses.includes(role.status);
+    return matchesSearch && matchesStatus;
+  });
 
   return {
     // State
@@ -155,12 +177,16 @@ export const useRoleManagement = () => {
     loading,
     error,
     searchTerm,
+    selectedStatuses,
+    uniqueStatuses,
     modalShow,
     selectedRole,
     modalMode,
     
     // Handlers
     handleSearch,
+    handleStatusToggle,
+    handleClearFilters,
     handleView,
     handleEdit,
     handleAdd,

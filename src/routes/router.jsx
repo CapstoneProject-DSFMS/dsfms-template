@@ -8,17 +8,12 @@ import RoleManagementPage from '../pages/RoleManagement/RoleManagementPage'
 
 // Determine basename based on environment
 const getBasename = () => {
-  // Check if we're in development
-  if (import.meta.env.DEV) {
+  // For GitHub Pages deployment, always use the repository name as basename
+  if (import.meta.env.PROD) {
     return "/dsfms-template";
   }
-  // For production, check if the app is deployed in a subdirectory
-  const pathname = window.location.pathname;
-  if (pathname.includes('/dsfms-template')) {
-    return "/dsfms-template";
-  }
-  // If deployed at root, no basename needed
-  return "/";
+  // For development, use the repository name as well
+  return "/dsfms-template";
 };
 
 export const router = createBrowserRouter([
@@ -59,6 +54,10 @@ export const router = createBrowserRouter([
       {
         path: "forms",
         element: <div>Forms Page</div>
+      },
+      {
+        path: "system-config",
+        element: <div>System Configuration Page</div>
       }
     ]
   }

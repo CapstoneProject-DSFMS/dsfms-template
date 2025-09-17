@@ -18,7 +18,8 @@ const Header = ({ onToggleSidebar }) => {
       '/admin/users': 'User Management',
       '/admin/roles': 'Role Management',
       '/admin/departments': 'Department Management',
-      '/admin/forms': 'Form Templates'
+      '/admin/forms': 'Form Templates',
+      '/admin/system-config': 'System Configuration'
     };
     return routes[path] || 'Dashboard';
   };

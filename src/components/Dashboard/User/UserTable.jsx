@@ -2,8 +2,9 @@ import React from 'react';
 import { Table } from 'react-bootstrap';
 import UserRow from './UserRow';
 import { LoadingSkeleton } from '../../../components/Common';
+import '../../../styles/scrollable-table.css';
 
-const UserTable = ({ users, loading, onView, onEdit, onDelete }) => {
+const UserTable = ({ users, loading, onView, onEdit, onDisable }) => {
   if (loading) {
     return <LoadingSkeleton rows={5} columns={6} />;
   }
@@ -20,9 +21,9 @@ const UserTable = ({ users, loading, onView, onEdit, onDelete }) => {
   }
 
   return (
-    <div className="table-responsive">
+    <div className="scrollable-table-container">
       <Table hover className="mb-0">
-        <thead className="bg-neutral-50">
+        <thead className="sticky-header">
           <tr>
             <th className="border-neutral-200 text-primary-custom fw-semibold">
               EID
@@ -52,7 +53,7 @@ const UserTable = ({ users, loading, onView, onEdit, onDelete }) => {
               index={index}
               onView={onView}
               onEdit={onEdit}
-              onDelete={onDelete}
+              onDisable={onDisable}
             />
           ))}
         </tbody>

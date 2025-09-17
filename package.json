@@ -8,7 +8,8 @@
     "build": "vite build",
     "deploy": "vite build && gh-pages -d dist",
     "lint": "eslint .",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "preview:build": "vite preview --base=/dsfms-template/"
   },
   "dependencies": {
     "@tiptap/pm": "^3.4.2",

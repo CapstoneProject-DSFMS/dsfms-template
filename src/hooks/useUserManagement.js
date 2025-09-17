@@ -3,8 +3,8 @@ import { useState, useEffect } from 'react';
 export const useUserManagement = () => {
   const [users, setUsers] = useState([]);
   const [searchTerm, setSearchTerm] = useState('');
-  const [roleFilter, setRoleFilter] = useState('');
-  const [departmentFilter, setDepartmentFilter] = useState('');
+  const [selectedRoles, setSelectedRoles] = useState([]);
+  const [selectedDepartments, setSelectedDepartments] = useState([]);
   const [modalShow, setModalShow] = useState(false);
   const [selectedUser, setSelectedUser] = useState(null);
   const [modalMode, setModalMode] = useState('view');
@@ -92,6 +92,102 @@ export const useUserManagement = () => {
             phone: '+84 123 456 794',
             createdAt: '2023-06-15',
             lastLogin: '2023-12-01T10:20:00'
+          },
+          {
+            id: 7,
+            eid: 'EMP007',
+            fullName: 'Olivia Wilson',
+            role: 'SQA_AUDITOR',
+            department: 'Quality Assurance',
+            status: 'Active',
+            email: 'olivia@example.com',
+            phone: '+84 123 456 794',
+            createdAt: '2023-06-15',
+            lastLogin: '2023-12-01T10:20:00'
+          },
+          {
+            id: 8,
+            eid: 'EMP008',
+            fullName: 'Robert Taylor',
+            role: 'TRAINER',
+            department: 'Flight Operations',
+            status: 'Active',
+            email: 'robert@example.com',
+            phone: '+84 123 456 795',
+            createdAt: '2023-07-01',
+            lastLogin: '2023-11-30T15:45:00'
+          },
+          {
+            id: 9,
+            eid: 'EMP009',
+            fullName: 'Lisa Anderson',
+            role: 'TRAINEE',
+            department: 'Cabin Crew',
+            status: 'Active',
+            email: 'lisa@example.com',
+            phone: '+84 123 456 796',
+            createdAt: '2023-07-15',
+            lastLogin: '2023-11-29T09:30:00'
+          },
+          {
+            id: 10,
+            eid: 'EMP010',
+            fullName: 'Michael Brown',
+            role: 'DEPT_HEAD',
+            department: 'Engineering',
+            status: 'Active',
+            email: 'michael@example.com',
+            phone: '+84 123 456 797',
+            createdAt: '2023-08-01',
+            lastLogin: '2023-12-01T11:15:00'
+          },
+          {
+            id: 11,
+            eid: 'EMP011',
+            fullName: 'Jennifer Davis',
+            role: 'ACADEMIC_DEPT',
+            department: 'Training',
+            status: 'Active',
+            email: 'jennifer@example.com',
+            phone: '+84 123 456 798',
+            createdAt: '2023-08-15',
+            lastLogin: '2023-11-30T13:20:00'
+          },
+          {
+            id: 12,
+            eid: 'EMP012',
+            fullName: 'Christopher Wilson',
+            role: 'SQA_AUDITOR',
+            department: 'Quality Assurance',
+            status: 'Active',
+            email: 'christopher@example.com',
+            phone: '+84 123 456 799',
+            createdAt: '2023-09-01',
+            lastLogin: '2023-12-01T14:30:00'
+          },
+          {
+            id: 13,
+            eid: 'EMP013',
+            fullName: 'Alex Thompson',
+            role: 'TRAINER',
+            department: 'Flight Operations',
+            status: 'Disabled',
+            email: 'alex@example.com',
+            phone: '+84 123 456 800',
+            createdAt: '2023-09-15',
+            lastLogin: '2023-11-15T10:30:00'
+          },
+          {
+            id: 14,
+            eid: 'EMP014',
+            fullName: 'Maria Garcia',
+            role: 'TRAINEE',
+            department: 'Cabin Crew',
+            status: 'Disabled',
+            email: 'maria@example.com',
+            phone: '+84 123 456 801',
+            createdAt: '2023-10-01',
+            lastLogin: '2023-11-10T14:20:00'
           }
         ];
 
@@ -110,8 +206,35 @@ export const useUserManagement = () => {
 
   // Handlers
   const handleSearch = (term) => setSearchTerm(term);
-  const handleRoleFilter = (role) => setRoleFilter(role);
-  const handleDepartmentFilter = (dept) => setDepartmentFilter(dept);
+  
+  const handleRoleToggle = (role) => {
+    if (role === 'clear') {
+      setSelectedRoles([]);
+    } else {
+      setSelectedRoles(prev => 
+        prev.includes(role) 
+          ? prev.filter(r => r !== role)
+          : [...prev, role]
+      );
+    }
+  };
+
+  const handleDepartmentToggle = (dept) => {
+    if (dept === 'clear') {
+      setSelectedDepartments([]);
+    } else {
+      setSelectedDepartments(prev => 
+        prev.includes(dept) 
+          ? prev.filter(d => d !== dept)
+          : [...prev, dept]
+      );
+    }
+  };
+
+  const handleClearFilters = () => {
+    setSelectedRoles([]);
+    setSelectedDepartments([]);
+  };
   
   const handleView = (user) => {
     setSelectedUser(user);
@@ -142,19 +265,24 @@ export const useUserManagement = () => {
     setModalShow(true);
   };
 
-  const handleDelete = async (userId) => {
-    if (!window.confirm('Are you sure you want to delete this user?')) return;
-
+  const handleDisable = async (user) => {
     setLoading(true);
     try {
       // Simulating API call
       await new Promise(resolve => setTimeout(resolve, 1000));
       
-      setUsers(prevUsers => prevUsers.filter(user => user.id !== userId));
+      const newStatus = user.status === 'Active' ? 'Disabled' : 'Active';
+      setUsers(prevUsers => 
+        prevUsers.map(u => 
+          u.id === user.id 
+            ? { ...u, status: newStatus }
+            : u
+        )
+      );
       setError(null);
     } catch (err) {
-      setError('Failed to delete user.');
-      console.error('Error deleting user:', err);
+      setError(`Failed to ${user.status === 'Active' ? 'disable' : 'enable'} user.`);
+      console.error('Error updating user status:', err);
     } finally {
       setLoading(false);
     }
@@ -196,7 +324,7 @@ export const useUserManagement = () => {
     }
   };
 
-  const handleBulkImport = async (file) => {
+  const handleBulkImport = async () => {
     setLoading(true);
     try {
       // Simulating file processing and API call
@@ -249,8 +377,10 @@ export const useUserManagement = () => {
       user.eid.toLowerCase().includes(searchTerm.toLowerCase()) ||
       user.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
       user.phone.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesRole = !roleFilter || user.role === roleFilter;
-    const matchesDepartment = !departmentFilter || user.department === departmentFilter;
+    
+    const matchesRole = selectedRoles.length === 0 || selectedRoles.includes(user.role);
+    const matchesDepartment = selectedDepartments.length === 0 || selectedDepartments.includes(user.department);
+    
     return matchesSearch && matchesRole && matchesDepartment;
   });
 
@@ -260,8 +390,8 @@ export const useUserManagement = () => {
     loading,
     error,
     searchTerm,
-    roleFilter,
-    departmentFilter,
+    selectedRoles,
+    selectedDepartments,
     uniqueRoles,
     uniqueDepartments,
     modalShow,
@@ -270,12 +400,13 @@ export const useUserManagement = () => {
     
     // Handlers
     handleSearch,
-    handleRoleFilter,
-    handleDepartmentFilter,
+    handleRoleToggle,
+    handleDepartmentToggle,
+    handleClearFilters,
     handleView,
     handleEdit,
     handleAdd,
-    handleDelete,
+    handleDisable,
     handleSave,
     handleBulkImport,
     handleModalClose: () => setModalShow(false),

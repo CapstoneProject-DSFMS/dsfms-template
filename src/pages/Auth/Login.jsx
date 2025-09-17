@@ -71,7 +71,7 @@ function Login() {
       <div 
         className="position-absolute w-100 h-100"
         style={{
-          backgroundImage: 'url("login-background.png")',
+          backgroundImage: 'url("./login-background.png")',
           backgroundSize: 'cover',
           backgroundPosition: 'center',
           filter: 'blur(1px)',

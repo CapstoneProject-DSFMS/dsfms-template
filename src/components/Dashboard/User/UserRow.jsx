@@ -1,11 +1,11 @@
 import React from 'react';
 import { Badge, Dropdown } from 'react-bootstrap';
-import { Eye, Pencil, Trash, ThreeDots } from 'react-bootstrap-icons';
+import { Eye, Pencil, PersonX, CheckCircle, ThreeDots } from 'react-bootstrap-icons';
 import { useAuth } from '../../../hooks/useAuth';
 import { PERMISSIONS } from '../../../constants/permissions';
 import PermissionWrapper from '../../Common/PermissionWrapper';
 
-const UserRow = ({ user, index, onView, onEdit, onDelete }) => {
+const UserRow = ({ user, index, onView, onEdit, onDisable }) => {
   const { hasPermission } = useAuth();
   
   const getStatusVariant = (status) => {
@@ -121,11 +121,22 @@ const UserRow = ({ user, index, onView, onEdit, onDelete }) => {
             >
               <Dropdown.Divider />
               <Dropdown.Item
-                onClick={() => onDelete(user.id)}
-                className="text-danger d-flex align-items-center"
+                onClick={() => onDisable(user)}
+                className={`d-flex align-items-center ${
+                  user.status === 'Active' ? 'text-warning' : 'text-success'
+                }`}
               >
-                <Trash className="me-2" size={16} />
-                Delete User
+                {user.status === 'Active' ? (
+                  <>
+                    <PersonX className="me-2" size={16} />
+                    Disable User
+                  </>
+                ) : (
+                  <>
+                    <CheckCircle className="me-2" size={16} />
+                    Enable User
+                  </>
+                )}
               </Dropdown.Item>
             </PermissionWrapper>
           </Dropdown.Menu>
