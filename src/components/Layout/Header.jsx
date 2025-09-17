@@ -28,8 +28,20 @@ const Header = ({ onToggleSidebar }) => {
     localStorage.removeItem('authToken');
     localStorage.removeItem('user');
     
+    // Get basename dynamically
+    const getBasename = () => {
+      if (import.meta.env.DEV) {
+        return "/dsfms-template";
+      }
+      const pathname = window.location.pathname;
+      if (pathname.includes('/dsfms-template')) {
+        return "/dsfms-template";
+      }
+      return "/";
+    };
+    
     // Redirect to login
-    window.location.href = '/dsfms-template/';
+    window.location.href = getBasename() + '/';
   };
 
   return (

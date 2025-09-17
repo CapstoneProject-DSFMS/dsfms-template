@@ -1,15 +1,31 @@
 import { createBrowserRouter } from 'react-router-dom'
 import { LayoutWrapper } from '../components/Layout'
-import { ProtectedRoute } from '../components/Common'
+import { ProtectedRoute, ErrorBoundary } from '../components/Common'
 import Login from '../pages/Auth/Login'
 import Dashboard from '../pages/Dashboard/Dashboard'
 import UserManagementPage from '../pages/UserManagement/UserManagementPage'
 import RoleManagementPage from '../pages/RoleManagement/RoleManagementPage'
 
+// Determine basename based on environment
+const getBasename = () => {
+  // Check if we're in development
+  if (import.meta.env.DEV) {
+    return "/dsfms-template";
+  }
+  // For production, check if the app is deployed in a subdirectory
+  const pathname = window.location.pathname;
+  if (pathname.includes('/dsfms-template')) {
+    return "/dsfms-template";
+  }
+  // If deployed at root, no basename needed
+  return "/";
+};
+
 export const router = createBrowserRouter([
   {
     path: "/",
-    element: <Login />
+    element: <Login />,
+    errorElement: <ErrorBoundary />
   },
   {
     path: "/admin",
@@ -18,6 +34,7 @@ export const router = createBrowserRouter([
         <LayoutWrapper />
       </ProtectedRoute>
     ),
+    errorElement: <ErrorBoundary />,
     children: [
       {
         path: "",
@@ -47,5 +64,5 @@ export const router = createBrowserRouter([
   }
 ],
   {
-    basename: "/dsfms-template", 
+    basename: getBasename(),
   })
