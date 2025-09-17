@@ -269,7 +269,7 @@ const RoleModal = ({ show, role, mode, onSave, onClose }) => {
                   isInvalid={!!errors.name}
                   readOnly={isReadOnly}
                   style={{
-                    borderColor: errors.name ? '#dc3545' : 'var(--bs-neutral)'
+                    borderColor: errors.name ? '#dc3545' : 'var(--bs-primary)'
                   }}
                 />
                 <Form.Control.Feedback type="invalid">
@@ -288,7 +288,7 @@ const RoleModal = ({ show, role, mode, onSave, onClose }) => {
                   onChange={(e) => handleInputChange('status', e.target.value)}
                   disabled={isReadOnly}
                   style={{
-                    borderColor: 'var(--bs-neutral)'
+                    borderColor: 'var(--bs-primary)'
                   }}
                 >
                   <option value="Active">Active</option>
@@ -358,7 +358,7 @@ const RoleModal = ({ show, role, mode, onSave, onClose }) => {
                                 style={{ pointerEvents: 'auto' }}
                               />
                             )}
-                            <Badge bg={allSelected ? 'success' : someSelected ? 'warning' : 'secondary'} className="ms-2">
+                            <Badge className={`ms-2 ${allSelected ? 'full' : someSelected ? 'half-full' : 'not-filled'}`}>
                               {selectedInGroup.length}/{groupPermissionIds.length}
                             </Badge>
                           </div>
@@ -384,7 +384,7 @@ const RoleModal = ({ show, role, mode, onSave, onClose }) => {
                                       style={{ pointerEvents: isReadOnly ? 'none' : 'auto' }}
                                     />
                                     <div className="flex-grow-1">
-                                      <div className="fw-medium text-dark">
+                                      <div RclassName="fw-medium text-dark">
                                         {permission.label}
                                       </div>
                                       <small className="text-muted">
