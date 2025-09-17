@@ -1,6 +1,4 @@
 // Dashboard main components
-export { default as UserManagement } from './UserManagement';
-export { default as RoleManagement } from './RoleManagement';
 export { default as CourseManagement } from './CourseManagement';
 export { default as AssessmentManagement } from './AssessmentManagement';
 export { default as SQAAuditManagement } from './SQAAuditManagement';

@@ -1,5 +1,7 @@
 import { useState } from 'react'
 import { Container, Row, Col, Form, Button, Alert, Spinner } from 'react-bootstrap'
+import { useNavigate } from 'react-router-dom'
+import { useAuth } from '../../hooks/useAuth'
 
 function Login() {
   const [email, setEmail] = useState('')
@@ -7,19 +9,56 @@ function Login() {
   const [showPassword, setShowPassword] = useState(false)
   const [submitting, setSubmitting] = useState(false)
   const [error, setError] = useState('')
+  
+  const navigate = useNavigate()
+  const { setUser, setIsAuthenticated } = useAuth()
+
+  // Hardcoded credentials for demo
+  const validCredentials = {
+    'admin@dsfms.com': 'admin123',
+    'trainer@dsfms.com': 'trainer123',
+    'trainee@dsfms.com': 'trainee123'
+  }
 
   const handleSubmit = async (e) => {
     e.preventDefault()
     setError('')
     setSubmitting(true)
+    
     try {
-      // TODO: Integrate real API call here (e.g., src/api/auth.js)
+      // Simulate API delay
       await new Promise((resolve) => setTimeout(resolve, 800))
-      // On success, navigate to dashboard or set auth state
-      // For now, just clear the form
-      setEmail('')
-      setPassword('')
-    } catch {
+      
+      // Check credentials
+      if (validCredentials[email] && validCredentials[email] === password) {
+        // Set user data based on email
+        const userRole = email.includes('admin') ? 'ADMIN' : 
+                        email.includes('trainer') ? 'TRAINER' : 'TRAINEE'
+        
+        const userData = {
+          id: 1,
+          email: email,
+          fullName: email.includes('admin') ? 'Admin User' : 
+                   email.includes('trainer') ? 'Trainer User' : 'Trainee User',
+          role: userRole,
+          department: 'IT',
+          lastLogin: new Date().toISOString()
+        }
+        
+        // Set auth state
+        setUser(userData)
+        setIsAuthenticated(true)
+        
+        // Store in localStorage for persistence
+        localStorage.setItem('authToken', 'mock-token-' + Date.now())
+        localStorage.setItem('user', JSON.stringify(userData))
+        
+        // Navigate to admin dashboard
+        navigate('/admin')
+      } else {
+        setError('Email hoặc mật khẩu không đúng. Vui lòng thử lại.')
+      }
+    } catch (err) {
       setError('Đăng nhập thất bại. Vui lòng thử lại.')
     } finally {
       setSubmitting(false)
@@ -202,7 +241,15 @@ function Login() {
                   </div>
                 </div>
 
-              
+                {/* Demo credentials info */}
+                <div className="text-center">
+                  <small className="text-white-50 d-block mb-2">Demo Accounts:</small>
+                  <div className="text-white-50 small">
+                    <div>Admin: admin@dsfms.com / admin123</div>
+                    <div>Trainer: trainer@dsfms.com / trainer123</div>
+                    <div>Trainee: trainee@dsfms.com / trainee123</div>
+                  </div>
+                </div>
         
                 </Form>
               </div>

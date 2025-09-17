@@ -13,18 +13,23 @@ const Header = ({ onToggleSidebar }) => {
   // Map routes to titles
   const getTitleFromPath = (path) => {
     const routes = {
-      '/dashboard': 'Dashboard',
-      '/users': 'User Management',
-      '/roles': 'Role Management',
-      '/departments': 'Department Management',
-      '/forms': 'Form Templates'
+      '/admin': 'Dashboard',
+      '/admin/dashboard': 'Dashboard',
+      '/admin/users': 'User Management',
+      '/admin/roles': 'Role Management',
+      '/admin/departments': 'Department Management',
+      '/admin/forms': 'Form Templates'
     };
     return routes[path] || 'Dashboard';
   };
 
   const handleLogout = () => {
-    // Handle logout logic
-    console.log('Logout clicked');
+    // Clear auth data
+    localStorage.removeItem('authToken');
+    localStorage.removeItem('user');
+    
+    // Redirect to login
+    window.location.href = '/dsfms-template/';
   };
 
   return (

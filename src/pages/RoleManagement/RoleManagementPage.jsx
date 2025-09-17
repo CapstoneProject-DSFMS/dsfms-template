@@ -1,181 +1,178 @@
-import React, { useState, useEffect } from 'react';
-import { MainLayout } from '../../components/Layout';
-import RoleManagement from '../../components/Dashboard/RoleManagement';
-import { Alert } from 'react-bootstrap';
-import { ROLES, PERMISSIONS } from '../../constants/permissions';
+import React from 'react';
+import { Container, Card, Row, Col, Button, Dropdown, Alert } from 'react-bootstrap';
+import { Plus, ThreeDotsVertical } from 'react-bootstrap-icons';
+import { RoleTable, RoleModal } from '../../components/Dashboard/Role';
+import { SearchBar, PermissionWrapper } from '../../components/Common';
+import { useRoleManagement } from '../../hooks/useRoleManagement';
+import { PERMISSIONS } from '../../constants/permissions';
 
 const RoleManagementPage = () => {
-  const [roles, setRoles] = useState([]);
-  const [searchTerm, setSearchTerm] = useState('');
-  const [modalShow, setModalShow] = useState(false);
-  const [selectedRole, setSelectedRole] = useState(null);
-  const [modalMode, setModalMode] = useState('view');
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState(null);
+  const {
+    roles: filteredRoles,
+    loading,
+    error,
+    searchTerm,
+    modalShow,
+    selectedRole,
+    modalMode,
+    handleSearch,
+    handleView,
+    handleEdit,
+    handleAdd,
+    handleDelete,
+    handleSave,
+    handleDisable,
+    handleModalClose,
+    setError
+  } = useRoleManagement();
 
-  useEffect(() => {
-    const fetchRoles = async () => {
-      setLoading(true);
-      try {
-        // Simulate API call
-        await new Promise(resolve => setTimeout(resolve, 1000));
-
-        // Convert ROLES object to array of role objects
-        const mockRoles = Object.entries(ROLES).map(([name, permissions], index) => ({
-          id: index + 1,
-          name,
-          permissions,
-          assignedUsers: Math.floor(Math.random() * 50), // Random number for demo
-          status: 'Active',
-          description: `${name} role with ${permissions.length} permissions`,
-          createdAt: '2023-01-01',
-          lastModified: '2023-12-01'
-        }));
-
-        setRoles(mockRoles);
-        setError(null);
-      } catch (err) {
-        setError('Failed to fetch roles');
-        console.error('Error fetching roles:', err);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchRoles();
-  }, []);
-
-  const handleSearch = (term) => setSearchTerm(term);
-
-  const handleView = (role) => {
-    setSelectedRole(role);
-    setModalMode('view');
-    setModalShow(true);
-  };
-
-  const handleEdit = async (role) => {
-    try {
-      setLoading(true);
-      await new Promise(resolve => setTimeout(resolve, 500));
-      setSelectedRole(role);
-      setModalMode('edit');
-      setModalShow(true);
-      setError(null);
-    } catch (err) {
-      setError('Failed to load role details');
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handleAdd = () => {
-    setSelectedRole(null);
-    setModalMode('add');
-    setModalShow(true);
-  };
-
-  const handleDelete = async (roleId) => {
-    if (!window.confirm('Are you sure you want to delete this role?')) return;
-
-    setLoading(true);
-    try {
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      setRoles(prevRoles => prevRoles.filter(role => role.id !== roleId));
-      setError(null);
-    } catch (err) {
-      setError('Failed to delete role');
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handleSave = async (roleData) => {
-    setLoading(true);
-    try {
-      await new Promise(resolve => setTimeout(resolve, 1000));
-
-      if (modalMode === 'add') {
-        const newRole = {
-          ...roleData,
-          id: Math.max(...roles.map(r => r.id)) + 1,
-          assignedUsers: 0,
-          status: 'Active',
-          createdAt: new Date().toISOString().split('T')[0],
-          lastModified: new Date().toISOString().split('T')[0]
-        };
-        setRoles(prevRoles => [...prevRoles, newRole]);
-      } else {
-        setRoles(prevRoles => 
-          prevRoles.map(role => 
-            role.id === selectedRole.id ? { 
-              ...role, 
-              ...roleData,
-              lastModified: new Date().toISOString().split('T')[0]
-            } : role
-          )
-        );
-      }
-
-      setModalShow(false);
-      setSelectedRole(null);
-      setError(null);
-    } catch (err) {
-      setError('Failed to save role');
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handleDisable = async (roleId) => {
-    setLoading(true);
-    try {
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      setRoles(prevRoles => 
-        prevRoles.map(role => 
-          role.id === roleId ? { 
-            ...role, 
-            status: role.status === 'Active' ? 'Inactive' : 'Active',
-            lastModified: new Date().toISOString().split('T')[0]
-          } : role
-        )
-      );
-      setError(null);
-    } catch (err) {
-      setError('Failed to update role status');
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  // Filter roles based on search
-  const filteredRoles = roles.filter(role => 
-    role.name.toLowerCase().includes(searchTerm.toLowerCase())
+  const RoleActions = ({ role }) => (
+    <Dropdown align="end">
+      <Dropdown.Toggle 
+        variant="light" 
+        size="sm" 
+        id={`role-actions-${role.id}`} 
+        className="border-0"
+      >
+        <ThreeDotsVertical size={16} />
+      </Dropdown.Toggle>
+      <Dropdown.Menu className="shadow-sm">
+        <Dropdown.Item 
+          onClick={() => handleView(role)}
+          className="d-flex align-items-center transition-all"
+          style={{
+            transition: 'all 0.2s ease'
+          }}
+          onMouseEnter={(e) => {
+            e.target.style.backgroundColor = 'rgba(0, 0, 0, 0.05)';
+            e.target.style.paddingLeft = '1.5rem';
+          }}
+          onMouseLeave={(e) => {
+            e.target.style.backgroundColor = 'transparent';
+            e.target.style.paddingLeft = '1rem';
+          }}
+        >
+          View Details
+        </Dropdown.Item>
+        <Dropdown.Item 
+          onClick={() => handleEdit(role)}
+          className="d-flex align-items-center transition-all"
+          style={{
+            transition: 'all 0.2s ease'
+          }}
+          onMouseEnter={(e) => {
+            e.target.style.backgroundColor = 'rgba(0, 0, 0, 0.05)';
+            e.target.style.paddingLeft = '1.5rem';
+          }}
+          onMouseLeave={(e) => {
+            e.target.style.backgroundColor = 'transparent';
+            e.target.style.paddingLeft = '1rem';
+          }}
+        >
+          Edit Role
+        </Dropdown.Item>
+        <Dropdown.Divider />
+        <Dropdown.Item 
+          onClick={() => handleDisable(role.id)}
+          className={`d-flex align-items-center transition-all ${
+            role.status === 'Active' ? 'text-warning' : 'text-success'
+          }`}
+          style={{
+            transition: 'all 0.2s ease'
+          }}
+          onMouseEnter={(e) => {
+            e.target.style.backgroundColor = role.status === 'Active' 
+              ? 'rgba(255, 193, 7, 0.1)' 
+              : 'rgba(40, 167, 69, 0.1)';
+            e.target.style.paddingLeft = '1.5rem';
+          }}
+          onMouseLeave={(e) => {
+            e.target.style.backgroundColor = 'transparent';
+            e.target.style.paddingLeft = '1rem';
+          }}
+        >
+          {role.status === 'Active' ? 'Disable Role' : 'Enable Role'}
+        </Dropdown.Item>
+      </Dropdown.Menu>
+    </Dropdown>
   );
 
   return (
-    <MainLayout>
+    <Container fluid className="py-4">
       {error && (
         <Alert variant="danger" dismissible onClose={() => setError(null)}>
           {error}
         </Alert>
       )}
 
-      <RoleManagement
-        roles={filteredRoles}
-        loading={loading}
-        searchTerm={searchTerm}
-        modalShow={modalShow}
-        selectedRole={selectedRole}
-        modalMode={modalMode}
-        onSearch={handleSearch}
-        onView={handleView}
-        onEdit={handleEdit}
-        onAdd={handleAdd}
-        onSave={handleSave}
-        onDisable={handleDisable}
-        onModalClose={() => setModalShow(false)}
-      />
-    </MainLayout>
+      <Card className="border-neutral-200 shadow-sm">
+        <Card.Header className="bg-light-custom border-neutral-200">
+          <Row className="align-items-center">
+            <Col>
+              <h5 className="text-primary-custom mb-0">Role Management</h5>
+              <small className="text-muted">
+                Manage user roles and permissions
+              </small>
+            </Col>
+            <Col xs="auto">
+              <PermissionWrapper 
+                permission={PERMISSIONS.MANAGE_ROLES}
+                fallback={null}
+              >
+                <Button
+                  variant="primary"
+                  size="sm"
+                  onClick={handleAdd}
+                  className="d-flex align-items-center"
+                >
+                  <Plus className="me-1" size={16} />
+                  Add Role
+                </Button>
+              </PermissionWrapper>
+            </Col>
+          </Row>
+        </Card.Header>
+
+        <Card.Body>
+          {/* Search */}
+          <Row className="mb-3">
+            <Col md={6}>
+              <SearchBar
+                placeholder="Search roles by name..."
+                value={searchTerm}
+                onChange={handleSearch}
+              />
+            </Col>
+            <Col md={6}>
+              <div className="text-end">
+                <small className="text-muted">
+                  {filteredRoles.length} role{filteredRoles.length !== 1 ? 's' : ''}
+                </small>
+              </div>
+            </Col>
+          </Row>
+
+          {/* Role Table with updated actions */}
+          <RoleTable
+            roles={filteredRoles}
+            loading={loading}
+            actionsComponent={RoleActions}
+            onView={handleView}
+            onEdit={handleEdit}
+            onDisable={handleDisable}
+          />
+
+          {/* Role Modal */}
+          <RoleModal
+            show={modalShow}
+            role={selectedRole}
+            mode={modalMode}
+            onSave={handleSave}
+            onClose={handleModalClose}
+          />
+        </Card.Body>
+      </Card>
+    </Container>
   );
 };
 

@@ -14,11 +14,11 @@ import {
 
 const Sidebar = ({ collapsed }) => {
   const navItems = [
-    { id: 'dashboard', label: 'Dashboard', icon: House, path: '/dashboard' },
-    { id: 'users', label: 'User Management', icon: People, path: '/users' },
-    { id: 'roles', label: 'Role Management', icon: Shield, path: '/roles' },
-    { id: 'departments', label: 'Departments', icon: Building, path: '/departments' },
-    { id: 'forms', label: 'Form Templates', icon: FileText, path: '/forms' },
+    { id: 'dashboard', label: 'Dashboard', icon: House, path: '/admin/dashboard' },
+    { id: 'users', label: 'User Management', icon: People, path: '/admin/users' },
+    { id: 'roles', label: 'Role Management', icon: Shield, path: '/admin/roles' },
+    { id: 'departments', label: 'Departments', icon: Building, path: '/admin/departments' },
+    { id: 'forms', label: 'Form Templates', icon: FileText, path: '/admin/forms' },
 
   ];
 
