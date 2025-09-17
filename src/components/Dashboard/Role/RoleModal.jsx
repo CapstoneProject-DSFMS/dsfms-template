@@ -6,8 +6,7 @@ import { PERMISSIONS } from '../../../constants/permissions';
 const RoleModal = ({ show, role, mode, onSave, onClose }) => {
   const [formData, setFormData] = useState({
     name: '',
-    permissions: [],
-    status: 'Active'
+    permissions: []
   });
   const [errors, setErrors] = useState({});
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -104,14 +103,12 @@ const RoleModal = ({ show, role, mode, onSave, onClose }) => {
     if (role && mode !== 'add') {
       setFormData({
         name: role.name || '',
-        permissions: role.permissions || [], // This should already be an array of permission IDs
-        status: role.status || 'Active'
+        permissions: role.permissions || [] // This should already be an array of permission IDs
       });
     } else if (mode === 'add') {
       setFormData({
         name: '',
-        permissions: [],
-        status: 'Active'
+        permissions: []
       });
     }
     setErrors({});
@@ -257,9 +254,9 @@ const RoleModal = ({ show, role, mode, onSave, onClose }) => {
           )}
 
           <Row>
-            <Col md={6}>
-              <Form.Group className="mb-3">
-                <Form.Label className="text-primary-custom fw-semibold">
+            <Col md={8} className="mx-auto">
+              <Form.Group className="mb-4">
+                <Form.Label className="text-primary-custom fw-semibold fs-5">
                   Role Name *
                 </Form.Label>
                 <Form.Control
@@ -268,8 +265,12 @@ const RoleModal = ({ show, role, mode, onSave, onClose }) => {
                   onChange={(e) => handleInputChange('name', e.target.value)}
                   isInvalid={!!errors.name}
                   readOnly={isReadOnly}
+                  size="lg"
+                  className="text-center"
                   style={{
-                    borderColor: errors.name ? '#dc3545' : 'var(--bs-primary)'
+                    borderColor: errors.name ? '#dc3545' : 'var(--bs-primary)',
+                    fontSize: '1.1rem',
+                    fontWeight: '500'
                   }}
                 />
                 <Form.Control.Feedback type="invalid">
@@ -277,38 +278,24 @@ const RoleModal = ({ show, role, mode, onSave, onClose }) => {
                 </Form.Control.Feedback>
               </Form.Group>
             </Col>
-
-            <Col md={6}>
-              <Form.Group className="mb-3">
-                <Form.Label className="text-primary-custom fw-semibold">
-                  Status
-                </Form.Label>
-                <Form.Select
-                  value={formData.status}
-                  onChange={(e) => handleInputChange('status', e.target.value)}
-                  disabled={isReadOnly}
-                  style={{
-                    borderColor: 'var(--bs-primary)'
-                  }}
-                >
-                  <option value="Active">Active</option>
-                  <option value="Inactive">Inactive</option>
-                </Form.Select>
-              </Form.Group>
-            </Col>
           </Row>
 
           <Row>
             <Col>
               <Form.Group className="mb-3">
-                <Form.Label className="text-primary-custom fw-semibold">
+                <Form.Label className="text-primary-custom fw-semibold fs-5 mb-3">
                   Permissions *
                 </Form.Label>
                 {errors.permissions && (
                   <div className="text-danger small mb-2">{errors.permissions}</div>
                 )}
                 
-                <div className="border rounded p-3" style={{ maxHeight: '400px', overflowY: 'auto' }}>
+                <div className="border rounded p-4 bg-light" style={{ 
+                  maxHeight: '450px', 
+                  overflowY: 'auto',
+                  borderColor: 'var(--bs-primary)',
+                  borderWidth: '2px'
+                }}>
                   {/* Debug info */}
                   {mode === 'edit' && (
                     <div className="mb-2 p-2 bg-light rounded">
