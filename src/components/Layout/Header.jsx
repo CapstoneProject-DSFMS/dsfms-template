@@ -62,7 +62,7 @@ const Header = ({ onToggleSidebar }) => {
           <List size={20} />
         </Button>
 
-        <Navbar.Brand className="text-primary-custom fw-bold">
+        <Navbar.Brand className="text-primary-custom fw-bold custom-title">
           {getTitleFromPath(location.pathname)}
         </Navbar.Brand>
 

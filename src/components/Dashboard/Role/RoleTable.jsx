@@ -27,23 +27,23 @@ const RoleTable = ({
   }
 
   return (
-    <div className="table-responsive">
+    <div className="scrollable-table-container">
       <Table hover className="mb-0">
-        <thead className="bg-neutral-50">
+        <thead className="sticky-header bg-gradient-primary-custom">
           <tr>
-            <th className="border-neutral-200 text-primary-custom fw-semibold">
+            <th className="border-neutral-200 text-primary-custom fw-bold  letter-spacing px-3 py-3">
               Role Name
             </th>
-            <th className="border-neutral-200 text-primary-custom fw-semibold">
+            <th className="border-neutral-200 text-primary-custom fw-bold  letter-spacing px-3 py-3">
               Status
             </th>
-            <th className="border-neutral-200 text-primary-custom fw-semibold">
+            <th className="border-neutral-200 text-primary-custom fw-bold  letter-spacing px-3 py-3">
               Assigned Users
             </th>
-            <th className="border-neutral-200 text-primary-custom fw-semibold">
+            <th className="border-neutral-200 text-primary-custom fw-bold  letter-spacing px-3 py-3">
               Last Modified
             </th>
-            <th className="border-neutral-200 text-primary-custom fw-semibold text-center">
+            <th className="border-neutral-200 text-primary-custom fw-bold  letter-spacing px-3 py-3 text-center">
               Actions
             </th>
           </tr>
@@ -59,7 +59,7 @@ const RoleTable = ({
               </td>
               <td>{role.assignedUsers}</td>
               <td>{role.lastModified}</td>
-              <td className="text-end">
+              <td className="text-center">
                 <ActionsComponent role={role} />
               </td>
             </tr>

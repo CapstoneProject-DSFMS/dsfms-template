@@ -115,7 +115,7 @@ const UserModal = ({ show, user, mode, onSave, onClose }) => {
   return (
     <Modal show={show} onHide={onClose} size="lg" centered>
       <Modal.Header 
-        className="bg-primary-custom text-white border-0"
+        className="bg-gradient-primary-custom text-white border-0"
         closeButton
         closeVariant="white"
       >
@@ -151,7 +151,7 @@ const UserModal = ({ show, user, mode, onSave, onClose }) => {
                   isInvalid={!!errors.fullName}
                   readOnly={isReadOnly}
                   style={{
-                    borderColor: errors.fullName ? '#dc3545' : 'var(--bs-neutral)'
+                    borderColor: errors.fullName ? '#dc3545' : 'var(--bs-primary)'
                   }}
                 />
                 <Form.Control.Feedback type="invalid">
@@ -172,7 +172,7 @@ const UserModal = ({ show, user, mode, onSave, onClose }) => {
                   isInvalid={!!errors.email}
                   readOnly={isReadOnly}
                   style={{
-                    borderColor: errors.email ? '#dc3545' : 'var(--bs-neutral)'
+                    borderColor: errors.email ? '#dc3545' : 'var(--bs-primary)'
                   }}
                 />
                 <Form.Control.Feedback type="invalid">
@@ -194,7 +194,7 @@ const UserModal = ({ show, user, mode, onSave, onClose }) => {
                   onChange={(e) => handleInputChange('phone', e.target.value)}
                   readOnly={isReadOnly}
                   style={{
-                    borderColor: 'var(--bs-neutral)'
+                    borderColor: 'var(--bs-primary)'
                   }}
                 />
               </Form.Group>
@@ -210,7 +210,7 @@ const UserModal = ({ show, user, mode, onSave, onClose }) => {
                   onChange={(e) => handleInputChange('status', e.target.value)}
                   disabled={isReadOnly}
                   style={{
-                    borderColor: 'var(--bs-neutral)'
+                    borderColor: 'var(--bs-primary)'
                   }}
                 >
                   <option value="Active">Active</option>
@@ -232,7 +232,7 @@ const UserModal = ({ show, user, mode, onSave, onClose }) => {
                   isInvalid={!!errors.role}
                   disabled={isReadOnly}
                   style={{
-                    borderColor: errors.role ? '#dc3545' : 'var(--bs-neutral)'
+                    borderColor: errors.role ? '#dc3545' : 'var(--bs-primary)'
                   }}
                 >
                   <option value="">Select a role</option>
@@ -257,7 +257,7 @@ const UserModal = ({ show, user, mode, onSave, onClose }) => {
                   isInvalid={!!errors.department}
                   disabled={isReadOnly}
                   style={{
-                    borderColor: errors.department ? '#dc3545' : 'var(--bs-neutral)'
+                    borderColor: errors.department ? '#dc3545' : 'var(--bs-primary)'
                   }}
                 >
                   <option value="">Select a department</option>

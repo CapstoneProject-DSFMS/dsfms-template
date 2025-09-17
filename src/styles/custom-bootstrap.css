@@ -2,24 +2,24 @@
 /* Color Palette Variables */
 :root {
   /* Custom Color Palette */
-  --bs-primary: #1B3C53;
+  --bs-primary: #1b3c53;
   --bs-secondary: #456882;
-  --bs-neutral: #D2C1B6;
-  --bs-light: #F9F3EF;
+  --bs-neutral: #d2c1b6;
+  --bs-light: #f9f3ef;
   --bs-dark: #0d1b2a;
-  
+
   /* Bootstrap Theme Color Overrides */
   --bs-primary-rgb: 27, 60, 83;
   --bs-secondary-rgb: 69, 104, 130;
   --bs-light-rgb: 249, 243, 239;
   --bs-dark-rgb: 13, 27, 42;
-  
+
   /* Additional Bootstrap color variations */
   --bs-primary-text: #ffffff;
   --bs-secondary-text: #ffffff;
   --bs-light-text: #0d1b2a;
   --bs-dark-text: #ffffff;
-  
+
   /* Bootstrap component specific overrides */
   --bs-btn-primary-bg: var(--bs-primary);
   --bs-btn-primary-border-color: var(--bs-primary);
@@ -27,35 +27,90 @@
   --bs-btn-primary-hover-border-color: #153a4a;
   --bs-btn-primary-active-bg: #0f2d3a;
   --bs-btn-primary-active-border-color: #0f2d3a;
-  
+
   --bs-btn-secondary-bg: var(--bs-secondary);
   --bs-btn-secondary-border-color: var(--bs-secondary);
   --bs-btn-secondary-hover-bg: #3a5a6f;
   --bs-btn-secondary-hover-border-color: #3a5a6f;
   --bs-btn-secondary-active-bg: #2e4a5c;
   --bs-btn-secondary-active-border-color: #2e4a5c;
-  
+
   /* Navbar overrides */
-  --bs-navbar-brand-color: var(--bs-primary);
-  --bs-navbar-brand-hover-color: var(--bs-primary);
-  --bs-navbar-toggler-border-color: var(--bs-primary);
+  --bs-navbar-brand-color: var(--bs-primary) !important;
+  --bs-navbar-brand-hover-color: var(--bs-primary) !important;
+  --bs-navbar-toggler-border-color: var(--bs-primary) !important;
   --bs-navbar-toggler-icon-bg: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 30 30'%3e%3cpath stroke='rgba%2827, 60, 83, 0.75%29' stroke-linecap='round' stroke-miterlimit='10' stroke-width='2' d='M4 7h22M4 15h22M4 23h22'/%3e%3c/svg%3e");
-  
+
   /* Card overrides */
   --bs-card-border-color: var(--bs-neutral);
   --bs-card-bg: var(--bs-light);
-  
+
   /* Form control overrides */
   --bs-form-control-border-color: var(--bs-neutral);
   --bs-form-control-focus-border-color: var(--bs-primary);
   --bs-form-control-focus-box-shadow: 0 0 0 0.25rem rgba(27, 60, 83, 0.25);
-  
+
   /* Link overrides */
   --bs-link-color: var(--bs-primary);
   --bs-link-hover-color: #153a4a;
 }
 
+/* Custom Font Faces */
+@font-face {
+  font-family: "Anton";
+  src: url("../fonts/Anton/Anton-Regular.ttf") format("truetype");
+  font-weight: normal;
+  font-style: normal;
+}
+
+@font-face {
+  font-family: "Capriola";
+  src: url("../fonts/Capriola/Capriola-Regular.ttf") format("truetype");
+  font-weight: normal;
+  font-style: normal;
+}
+
+@font-face {
+  font-family: "Fredoka";
+  src: url("../fonts/Fredoka/Fredoka-VariableFont_wdth,wght.ttf")
+    format("truetype");
+  font-weight: normal;
+  font-style: normal;
+}
+
+@font-face {
+  font-family: "Google Sans Code";
+  src: url("../fonts/Google_Sans_Code/GoogleSansCode-VariableFont_wght.ttf")
+    format("truetype");
+  font-weight: normal;
+  font-style: normal;
+}
+
+@font-face {
+  font-family: "Limelight";
+  src: url("../fonts/Limelight/Limelight-Regular.ttf") format("truetype");
+  font-weight: normal;
+  font-style: normal;
+}
+
+body {
+  font-family: "Fredoka";
+}
+.custom-title {
+  font-family: "Anton";
+}
+
 /* Bootstrap Button Overrides */
+button,
+.btn {
+  border-radius: 0.375rem !important; /* Rounded corners */
+  font-weight: 500 !important; /* Medium font weight */
+  padding: 0.4rem 1rem !important; /* Increased padding */
+  transition: background-color 0.3s ease, border-color 0.3s ease,
+    box-shadow 0.3s ease !important; /* Smooth transitions */
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.12); /* Subtle shadow */
+}
+
 .btn-primary {
   background-color: var(--bs-primary) !important;
   border-color: var(--bs-primary) !important;
@@ -598,7 +653,15 @@
   background-color: var(--bs-primary) !important;
 }
 
-.text-primary-custom {
+.bg-gradient-primary-custom {
+  background: linear-gradient(90deg, #143c59 0%, #456882 100%) !important;
+}
+
+.bg-gradient-secondary-custom {
+  background: linear-gradient(90deg, #dddbc1 0%, #bdcdda 100%) !important;
+}
+
+.bg-gradient-trans .text-primary-custom {
   color: var(--bs-primary) !important;
 }
 
@@ -780,4 +843,89 @@
   display: flex !important;
   justify-content: center !important;
   width: 100% !important;
+}
+
+/* Colors For Role Selections */
+.full {
+  background-color: #124772 !important;
+  border-color: #03192b !important;
+  color: #fff !important;
+}
+
+.half-full {
+  background: linear-gradient(90deg, #345678 50%, #7e96a8 50%) !important;
+  border-color: #03192b !important;
+  color: #fff !important;
+}
+
+.not-filled {
+  background-color: #d6bda4 !important;
+  border-color: #03192b !important;
+  color: #fff !important;
+}
+
+/* Modal Enhancement */
+.modal-dialog .modal-content {
+  box-shadow: 0 10px 32px rgba(27, 60, 83, 0.18), 0 1.5px 6px rgba(0, 0, 0, 0.1) !important;
+  border-radius: 0.75rem !important;
+}
+
+.modal-header .btn-close {
+  filter: invert(1) brightness(2); /* Makes icon white for dark backgrounds */
+  opacity: 0.85;
+  box-shadow: none;
+  transition: opacity 0.2s;
+  padding: 0.6rem 1rem !important; /* Larger vertical and horizontal padding */
+}
+
+.modal-header .btn-close:hover {
+  opacity: 1;
+  filter: invert(1) brightness(2) drop-shadow(0 2px 6px rgba(27, 60, 83, 0.25));
+}
+
+
+/* Sidebar Navigation Link Enhancements */
+.sidebar-nav-link {
+  background: transparent;
+  transition: background 0.4s cubic-bezier(0.68, -0.55, 0.27, 1.55), color 0.3s;
+  position: relative;
+  overflow: hidden;
+}
+
+.sidebar-nav-link:hover,
+.sidebar-nav-link:focus {
+  background: linear-gradient(
+    90deg,
+    rgba(255, 255, 255, 0.18) 0%,
+    rgba(255, 255, 255, 0.08) 100%
+  );
+  color: #fff;
+}
+
+.sidebar-nav-link:hover .sidebar-nav-label {
+  font-weight: 600;
+  color: #e0eaff;
+  transition: letter-spacing 0.3s, color 0.3s, font-weight 0.3s;
+}
+
+.sidebar-nav-link:hover svg {
+  transform: scale(1.2) rotate(-8deg);
+  filter: drop-shadow(0 2px 8px rgba(255, 255, 255, 0.18));
+}
+
+.sidebar-nav-link::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 4px;
+  background: linear-gradient(180deg, #fff 0%, #c1d6ff 100%);
+  opacity: 0;
+  transition: opacity 0.3s;
+  border-radius: 2px;
+}
+
+.sidebar-nav-link:hover::before {
+  opacity: 1;
 }
