@@ -1,6 +1,6 @@
 /* Scrollable Table Styles */
 .scrollable-table-container {
-  max-height: 600px;
+  max-height: 450px;
   overflow-y: auto;
   border: 1px solid #dee2e6;
   border-radius: 0.375rem;
@@ -285,5 +285,52 @@
 
 .permission-item:hover {
   background-color: rgba(0, 0, 0, 0.02) !important;
+}
+
+/* Sort Animation */
+@keyframes slideIn {
+  from {
+    transform: scaleX(0);
+    opacity: 0;
+  }
+  to {
+    transform: scaleX(1);
+    opacity: 1;
+  }
+}
+
+/* Sort Header Enhancements */
+.sortable-header {
+  position: relative;
+  overflow: hidden;
+}
+
+.sortable-header::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+  transition: left 0.5s;
+}
+
+.sortable-header:hover::before {
+  left: 100%;
+}
+
+/* Sort Icon Animations */
+.sort-icon {
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.sort-icon:hover {
+  transform: scale(1.1);
+}
+
+/* Table Header Glow Effect */
+.table-header-glow {
+  box-shadow: 0 0 20px rgba(0, 123, 255, 0.1);
 }
 

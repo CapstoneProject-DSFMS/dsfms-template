@@ -8,8 +8,7 @@ const UserModal = ({ show, user, mode, onSave, onClose }) => {
     email: '',
     phone: '',
     role: '',
-    department: '',
-    status: 'Active'
+    department: ''
   });
   const [errors, setErrors] = useState({});
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -24,8 +23,7 @@ const UserModal = ({ show, user, mode, onSave, onClose }) => {
         email: user.email || '',
         phone: user.phone || '',
         role: user.role || '',
-        department: user.department || '',
-        status: user.status || 'Active'
+        department: user.department || ''
       });
     } else if (mode === 'add') {
       setFormData({
@@ -33,8 +31,7 @@ const UserModal = ({ show, user, mode, onSave, onClose }) => {
         email: '',
         phone: '',
         role: '',
-        department: '',
-        status: 'Active'
+        department: ''
       });
     }
     setErrors({});
@@ -140,7 +137,7 @@ const UserModal = ({ show, user, mode, onSave, onClose }) => {
 
           <Row>
             <Col md={6}>
-              <Form.Group className="mb-3">
+              <Form.Group className="mb-4">
                 <Form.Label className="text-primary-custom fw-semibold">
                   Full Name *
                 </Form.Label>
@@ -151,7 +148,8 @@ const UserModal = ({ show, user, mode, onSave, onClose }) => {
                   isInvalid={!!errors.fullName}
                   readOnly={isReadOnly}
                   style={{
-                    borderColor: errors.fullName ? '#dc3545' : 'var(--bs-primary)'
+                    borderColor: errors.fullName ? '#dc3545' : 'var(--bs-primary)',
+                    borderWidth: '2px'
                   }}
                 />
                 <Form.Control.Feedback type="invalid">
@@ -161,7 +159,7 @@ const UserModal = ({ show, user, mode, onSave, onClose }) => {
             </Col>
 
             <Col md={6}>
-              <Form.Group className="mb-3">
+              <Form.Group className="mb-4">
                 <Form.Label className="text-primary-custom fw-semibold">
                   Email *
                 </Form.Label>
@@ -172,7 +170,8 @@ const UserModal = ({ show, user, mode, onSave, onClose }) => {
                   isInvalid={!!errors.email}
                   readOnly={isReadOnly}
                   style={{
-                    borderColor: errors.email ? '#dc3545' : 'var(--bs-primary)'
+                    borderColor: errors.email ? '#dc3545' : 'var(--bs-primary)',
+                    borderWidth: '2px'
                   }}
                 />
                 <Form.Control.Feedback type="invalid">
@@ -184,7 +183,7 @@ const UserModal = ({ show, user, mode, onSave, onClose }) => {
 
           <Row>
             <Col md={6}>
-              <Form.Group className="mb-3">
+              <Form.Group className="mb-4">
                 <Form.Label className="text-primary-custom fw-semibold">
                   Phone
                 </Form.Label>
@@ -194,35 +193,15 @@ const UserModal = ({ show, user, mode, onSave, onClose }) => {
                   onChange={(e) => handleInputChange('phone', e.target.value)}
                   readOnly={isReadOnly}
                   style={{
-                    borderColor: 'var(--bs-primary)'
+                    borderColor: 'var(--bs-primary)',
+                    borderWidth: '2px'
                   }}
                 />
               </Form.Group>
             </Col>
 
             <Col md={6}>
-              <Form.Group className="mb-3">
-                <Form.Label className="text-primary-custom fw-semibold">
-                  Status
-                </Form.Label>
-                <Form.Select
-                  value={formData.status}
-                  onChange={(e) => handleInputChange('status', e.target.value)}
-                  disabled={isReadOnly}
-                  style={{
-                    borderColor: 'var(--bs-primary)'
-                  }}
-                >
-                  <option value="Active">Active</option>
-                  <option value="Inactive">Inactive</option>
-                </Form.Select>
-              </Form.Group>
-            </Col>
-          </Row>
-
-          <Row>
-            <Col md={6}>
-              <Form.Group className="mb-3">
+              <Form.Group className="mb-4">
                 <Form.Label className="text-primary-custom fw-semibold">
                   Role *
                 </Form.Label>
@@ -232,7 +211,8 @@ const UserModal = ({ show, user, mode, onSave, onClose }) => {
                   isInvalid={!!errors.role}
                   disabled={isReadOnly}
                   style={{
-                    borderColor: errors.role ? '#dc3545' : 'var(--bs-primary)'
+                    borderColor: errors.role ? '#dc3545' : 'var(--bs-primary)',
+                    borderWidth: '2px'
                   }}
                 >
                   <option value="">Select a role</option>
@@ -245,9 +225,11 @@ const UserModal = ({ show, user, mode, onSave, onClose }) => {
                 </Form.Control.Feedback>
               </Form.Group>
             </Col>
+          </Row>
 
+          <Row>
             <Col md={6}>
-              <Form.Group className="mb-3">
+              <Form.Group className="mb-4">
                 <Form.Label className="text-primary-custom fw-semibold">
                   Department *
                 </Form.Label>
@@ -257,7 +239,8 @@ const UserModal = ({ show, user, mode, onSave, onClose }) => {
                   isInvalid={!!errors.department}
                   disabled={isReadOnly}
                   style={{
-                    borderColor: errors.department ? '#dc3545' : 'var(--bs-primary)'
+                    borderColor: errors.department ? '#dc3545' : 'var(--bs-primary)',
+                    borderWidth: '2px'
                   }}
                 >
                   <option value="">Select a department</option>
