@@ -12,7 +12,7 @@ import {
   ChevronRight,
   Gear,
 } from "react-bootstrap-icons";
-import logo from "../../assets/logo.png";
+import logo from "../../assets/logo-light.png";
 
 const Sidebar = ({ collapsed }) => {
   const navItems = [
@@ -78,9 +78,8 @@ const Sidebar = ({ collapsed }) => {
               <img
                 src={logo}
                 alt="Logo"
-                style={{ width: "150%", marginRight: "0px" }}
+                style={{ width: "30%", marginRight: "0px" }}
               />
-              <h5 className="mb-0 text-white text-nowrap">DSFMS</h5>
             </>
           )}
           {collapsed && (
@@ -106,7 +105,7 @@ const Sidebar = ({ collapsed }) => {
   >
     <IconComponent
       size={20}
-      className={collapsed ? "" : "me-3"}
+      className={collapsed ? "me-2" : "me-3"}
       style={{
         display: "inline-block",
         flexShrink: 0,
