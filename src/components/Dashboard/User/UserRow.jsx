@@ -36,14 +36,27 @@ const UserRow = ({ user, index, onView, onEdit, onDisable }) => {
       </td>
       
       <td className="border-neutral-200 align-middle">
-        <div>
-          <div className="fw-medium text-dark">
-            {user.fullName}
-          </div>
-          <small className="text-muted">
-            {user.email}
-          </small>
+        <div className="fw-medium text-dark">
+          {user.fullName}
         </div>
+      </td>
+      
+      <td className="border-neutral-200 align-middle">
+        <span className="text-dark">
+          {user.email}
+        </span>
+      </td>
+      
+      <td className="border-neutral-200 align-middle">
+        <span className="text-dark">
+          {user.phone || '-'}
+        </span>
+      </td>
+      
+      <td className="border-neutral-200 align-middle">
+        <span className="text-dark">
+          {user.gender || '-'}
+        </span>
       </td>
       
       <td className="border-neutral-200 align-middle">

@@ -8,11 +8,11 @@ import RoleManagementPage from '../pages/RoleManagement/RoleManagementPage'
 
 // Determine basename based on environment
 const getBasename = () => {
-  // For GitHub Pages deployment, always use the repository name as basename
-  if (import.meta.env.PROD) {
-    return "/dsfms-template";
+  // For development, don't use basename to avoid routing issues
+  if (import.meta.env.DEV) {
+    return "/";
   }
-  // For development, use the repository name as well
+  // For production (GitHub Pages), use the repository name as basename
   return "/dsfms-template";
 };
 
