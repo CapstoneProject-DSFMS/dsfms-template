@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Container, Card, Row, Col, Button, Dropdown, Alert } from 'react-bootstrap';
 import { Plus, Upload, Funnel, ChevronDown } from 'react-bootstrap-icons';
-import { UserTable, UserModal, BulkImport, DisableUserModal, FilterPanel } from '../../components/Dashboard/User';
+import { UserTable, UserModal, BulkImportModal, DisableUserModal, FilterPanel } from '../../components/Dashboard/User';
 import { SearchBar, PermissionWrapper } from '../../components/Common';
 import { useUserManagement } from '../../hooks/useUserManagement';
 import { PERMISSIONS } from '../../constants/permissions';
@@ -11,6 +11,7 @@ const UserManagementPage = () => {
   const [disableModalShow, setDisableModalShow] = useState(false);
   const [userToDisable, setUserToDisable] = useState(null);
   const [disableLoading, setDisableLoading] = useState(false);
+  const [bulkImportShow, setBulkImportShow] = useState(false);
 
   const {
     users: filteredUsers,
@@ -88,7 +89,7 @@ const UserManagementPage = () => {
                   <Button
                     variant="outline-primary"
                     size="sm"
-                    onClick={() => document.getElementById('bulk-import-trigger').click()}
+                    onClick={() => setBulkImportShow(true)}
                     className="d-flex align-items-center"
                   >
                     <Upload className="me-1" size={16} />
@@ -174,7 +175,9 @@ const UserManagementPage = () => {
           />
 
           {/* Bulk Import Modal */}
-          <BulkImport
+          <BulkImportModal
+            show={bulkImportShow}
+            onClose={() => setBulkImportShow(false)}
             onImport={handleBulkImport}
             loading={loading}
           />

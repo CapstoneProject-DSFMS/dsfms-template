@@ -25,11 +25,22 @@ export const useUserManagement = () => {
             id: 1,
             eid: 'EMP001',
             fullName: 'John Doe',
+            firstName: 'John',
+            middleName: '',
+            lastName: 'Doe',
             role: 'ADMIN',
             department: 'IT',
             status: 'Active',
             email: 'john@example.com',
-            phone: '+84 123 456 789',
+            phoneNumber: '+84 123 456 789',
+            address: '123 Main Street, Ho Chi Minh City',
+            certificationNumber: 'CERT001',
+            specialization: 'Software Development',
+            yearsOfExperience: '5',
+            dateOfBirth: '1990-01-15',
+            trainingBatch: 'BATCH2023-01',
+            passportNo: 'P123456789',
+            nation: 'Vietnam',
             createdAt: '2023-01-01',
             lastLogin: '2023-12-01T08:30:00'
           },
@@ -37,11 +48,22 @@ export const useUserManagement = () => {
             id: 2,
             eid: 'EMP002',
             fullName: 'Jane Smith',
-            role: 'ACADEMIC_DEPT',
-            department: 'Training',
+            firstName: 'Jane',
+            middleName: '',
+            lastName: 'Smith',
+            role: 'DEPT_HEAD',
+            department: 'HR',
             status: 'Active',
             email: 'jane@example.com',
-            phone: '+84 123 456 790',
+            phoneNumber: '+84 123 456 790',
+            address: '456 Oak Avenue, Hanoi',
+            certificationNumber: 'CERT002',
+            specialization: 'Human Resources',
+            yearsOfExperience: '8',
+            dateOfBirth: '1985-05-20',
+            trainingBatch: 'BATCH2023-02',
+            passportNo: 'P987654321',
+            nation: 'Vietnam',
             createdAt: '2023-02-15',
             lastLogin: '2023-12-01T09:15:00'
           },
@@ -49,11 +71,22 @@ export const useUserManagement = () => {
             id: 3,
             eid: 'EMP003',
             fullName: 'Mike Johnson',
+            firstName: 'Mike',
+            middleName: 'David',
+            lastName: 'Johnson',
             role: 'TRAINER',
             department: 'Flight Operations',
             status: 'Active',
             email: 'mike@example.com',
-            phone: '+84 123 456 791',
+            phoneNumber: '+84 123 456 791',
+            address: '789 Pine Road, Da Nang',
+            certificationNumber: 'CERT003',
+            specialization: 'Flight Training',
+            yearsOfExperience: '12',
+            dateOfBirth: '1980-08-10',
+            trainingBatch: 'BATCH2023-03',
+            passportNo: 'P456789123',
+            nation: 'United States',
             createdAt: '2023-03-20',
             lastLogin: '2023-11-30T14:20:00'
           },
@@ -61,11 +94,13 @@ export const useUserManagement = () => {
             id: 4,
             eid: 'EMP004',
             fullName: 'Sarah Wilson',
-            role: 'TRAINEE',
-            department: 'Cabin Crew',
+            role: 'Employee',
+            department: 'Marketing',
             status: 'Active',
             email: 'sarah@example.com',
             phone: '+84 123 456 792',
+            address: '321 Elm Street, Can Tho',
+            gender: 'Female',
             createdAt: '2023-04-10',
             lastLogin: '2023-11-29T11:45:00'
           },
@@ -73,11 +108,13 @@ export const useUserManagement = () => {
             id: 5,
             eid: 'EMP005',
             fullName: 'David Brown',
-            role: 'DEPT_HEAD',
-            department: 'Engineering',
+            role: 'Manager',
+            department: 'Operations',
             status: 'Active',
             email: 'david@example.com',
             phone: '+84 123 456 793',
+            address: '654 Maple Lane, Hai Phong',
+            gender: 'Male',
             createdAt: '2023-05-05',
             lastLogin: '2023-11-30T16:30:00'
           },
@@ -85,11 +122,13 @@ export const useUserManagement = () => {
             id: 6,
             eid: 'EMP006',
             fullName: 'Emma Davis',
-            role: 'SQA_AUDITOR',
-            department: 'Quality Assurance',
+            role: 'Employee',
+            department: 'Sales',
             status: 'Active',
             email: 'emma@example.com',
             phone: '+84 123 456 794',
+            address: '987 Cedar Court, Nha Trang',
+            gender: 'Female',
             createdAt: '2023-06-15',
             lastLogin: '2023-12-01T10:20:00'
           },
@@ -300,7 +339,8 @@ export const useUserManagement = () => {
           id: Math.max(...users.map(u => u.id)) + 1,
           eid: `EMP${String(Math.max(...users.map(u => parseInt(u.eid.replace('EMP', '')))) + 1).padStart(3, '0')}`,
           createdAt: new Date().toISOString().split('T')[0],
-          status: 'Active'
+          status: 'Active',
+          lastLogin: null
         };
         setUsers(prevUsers => [...prevUsers, newUser]);
       } else {
@@ -324,43 +364,46 @@ export const useUserManagement = () => {
     }
   };
 
-  const handleBulkImport = async () => {
+  const handleBulkImport = async (usersToImport) => {
     setLoading(true);
     try {
-      // Simulating file processing and API call
+      // Simulating API call to backend
       await new Promise(resolve => setTimeout(resolve, 2000));
       
-      // In production, this would parse the file and send to API
-      const mockImportedUsers = [
-        {
-          id: users.length + 1,
-          eid: `EMP${String(users.length + 1).padStart(3, '0')}`,
-          fullName: 'Imported User 1',
-          role: 'TRAINEE',
-          department: 'Flight Operations',
+      // Transform imported users to match our data structure
+      const newUsers = usersToImport.map((userData, index) => {
+        const newId = Math.max(...users.map(u => u.id)) + index + 1;
+        return {
+          id: newId,
+          eid: `EMP${String(newId).padStart(3, '0')}`,
+          fullName: `${userData.firstName} ${userData.middleName ? userData.middleName + ' ' : ''}${userData.lastName}`.trim(),
+          firstName: userData.firstName,
+          middleName: userData.middleName,
+          lastName: userData.lastName,
+          address: userData.address,
+          email: userData.email,
+          phoneNumber: userData.phoneNumber,
+          role: userData.role,
+          certificationNumber: userData.certificationNumber,
+          specialization: userData.specialization,
+          yearsOfExperience: userData.yearsOfExperience,
+          dateOfBirth: userData.dateOfBirth,
+          trainingBatch: userData.trainingBatch,
+          passportNo: userData.passportNo,
+          nation: userData.nation,
+          department: userData.department,
           status: 'Active',
-          email: 'imported1@example.com',
-          phone: '+84 123 456 795',
-          createdAt: new Date().toISOString().split('T')[0]
-        },
-        {
-          id: users.length + 2,
-          eid: `EMP${String(users.length + 2).padStart(3, '0')}`,
-          fullName: 'Imported User 2',
-          role: 'TRAINER',
-          department: 'Cabin Crew',
-          status: 'Active',
-          email: 'imported2@example.com',
-          phone: '+84 123 456 796',
-          createdAt: new Date().toISOString().split('T')[0]
-        }
-      ];
+          createdAt: new Date().toISOString().split('T')[0],
+          lastLogin: null
+        };
+      });
       
-      setUsers(prevUsers => [...prevUsers, ...mockImportedUsers]);
+      setUsers(prevUsers => [...prevUsers, ...newUsers]);
       setError(null);
     } catch (err) {
       setError('Failed to import users.');
       console.error('Error importing users:', err);
+      throw err; // Re-throw to let the modal handle the error
     } finally {
       setLoading(false);
     }
@@ -376,7 +419,10 @@ export const useUserManagement = () => {
       user.fullName.toLowerCase().includes(searchTerm.toLowerCase()) ||
       user.eid.toLowerCase().includes(searchTerm.toLowerCase()) ||
       user.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      user.phone.toLowerCase().includes(searchTerm.toLowerCase());
+      (user.phoneNumber && user.phoneNumber.toLowerCase().includes(searchTerm.toLowerCase())) ||
+      (user.address && user.address.toLowerCase().includes(searchTerm.toLowerCase())) ||
+      (user.firstName && user.firstName.toLowerCase().includes(searchTerm.toLowerCase())) ||
+      (user.lastName && user.lastName.toLowerCase().includes(searchTerm.toLowerCase()));
     
     const matchesRole = selectedRoles.length === 0 || selectedRoles.includes(user.role);
     const matchesDepartment = selectedDepartments.length === 0 || selectedDepartments.includes(user.department);

@@ -6,7 +6,7 @@ import useTableSort from '../../../hooks/useTableSort';
 import '../../../styles/scrollable-table.css';
 
 const UserTable = ({ users, loading, onView, onEdit, onDisable }) => {
-  const { sortedData, sortConfig, handleSort, getSortIcon, getSortClass } = useTableSort(users);
+  const { sortedData, sortConfig, handleSort } = useTableSort(users);
 
   if (loading) {
     return <LoadingSkeleton rows={5} columns={6} />;
@@ -96,6 +96,15 @@ const UserTable = ({ users, loading, onView, onEdit, onDisable }) => {
             </SortableHeader>
             <SortableHeader columnKey="fullName">
               Full Name
+            </SortableHeader>
+            <SortableHeader columnKey="email">
+              Email
+            </SortableHeader>
+            <SortableHeader columnKey="phone">
+              Phone
+            </SortableHeader>
+            <SortableHeader columnKey="gender">
+              Gender
             </SortableHeader>
             <SortableHeader columnKey="role">
               Role

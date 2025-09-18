@@ -7,14 +7,16 @@ const AddUserForm = ({ onSave, onCancel, loading = false }) => {
     fullName: '',
     email: '',
     phone: '',
+    address: '',
+    gender: '',
     role: '',
-    department: '',
-    status: 'Active'
+    department: ''
   });
   const [errors, setErrors] = useState({});
 
   const departments = ['IT', 'HR', 'Finance', 'Marketing', 'Operations', 'Sales'];
   const roles = ['Admin', 'Manager', 'Employee', 'Guest'];
+  const genders = ['Male', 'Female', 'Other'];
 
   const validateForm = () => {
     const newErrors = {};
@@ -27,6 +29,14 @@ const AddUserForm = ({ onSave, onCancel, loading = false }) => {
       newErrors.email = 'Email is required';
     } else if (!/\S+@\S+\.\S+/.test(formData.email)) {
       newErrors.email = 'Email is invalid';
+    }
+
+    if (!formData.phone.trim()) {
+      newErrors.phone = 'Phone is required';
+    }
+
+    if (!formData.gender) {
+      newErrors.gender = 'Gender is required';
     }
 
     if (!formData.role) {
@@ -55,9 +65,10 @@ const AddUserForm = ({ onSave, onCancel, loading = false }) => {
         fullName: '',
         email: '',
         phone: '',
+        address: '',
+        gender: '',
         role: '',
-        department: '',
-        status: 'Active'
+        department: ''
       });
       setErrors({});
     } catch (error) {
@@ -81,7 +92,7 @@ const AddUserForm = ({ onSave, onCancel, loading = false }) => {
   };
 
   return (
-    <div className="p-4">
+    <div className="p-4" style={{ maxHeight: '70vh', overflowY: 'auto' }}>
       <h5 className="text-primary-custom mb-4">Add New User</h5>
       
       <Form onSubmit={handleSubmit}>
@@ -142,34 +153,62 @@ const AddUserForm = ({ onSave, onCancel, loading = false }) => {
           <Col md={6}>
             <Form.Group className="mb-3">
               <Form.Label className="text-primary-custom fw-semibold">
-                Phone
+                Phone *
               </Form.Label>
               <Form.Control
                 type="tel"
                 value={formData.phone}
                 onChange={(e) => handleInputChange('phone', e.target.value)}
+                isInvalid={!!errors.phone}
                 style={{
-                  borderColor: 'var(--bs-neutral)'
+                  borderColor: errors.phone ? '#dc3545' : 'var(--bs-neutral)'
                 }}
               />
+              <Form.Control.Feedback type="invalid">
+                {errors.phone}
+              </Form.Control.Feedback>
             </Form.Group>
           </Col>
 
           <Col md={6}>
             <Form.Group className="mb-3">
               <Form.Label className="text-primary-custom fw-semibold">
-                Status
+                Gender *
               </Form.Label>
               <Form.Select
-                value={formData.status}
-                onChange={(e) => handleInputChange('status', e.target.value)}
+                value={formData.gender}
+                onChange={(e) => handleInputChange('gender', e.target.value)}
+                isInvalid={!!errors.gender}
+                style={{
+                  borderColor: errors.gender ? '#dc3545' : 'var(--bs-neutral)'
+                }}
+              >
+                <option value="">Select gender</option>
+                {genders.map(gender => (
+                  <option key={gender} value={gender}>{gender}</option>
+                ))}
+              </Form.Select>
+              <Form.Control.Feedback type="invalid">
+                {errors.gender}
+              </Form.Control.Feedback>
+            </Form.Group>
+          </Col>
+        </Row>
+
+        <Row>
+          <Col>
+            <Form.Group className="mb-3">
+              <Form.Label className="text-primary-custom fw-semibold">
+                Address (Optional)
+              </Form.Label>
+              <Form.Control
+                type="text"
+                value={formData.address}
+                onChange={(e) => handleInputChange('address', e.target.value)}
                 style={{
                   borderColor: 'var(--bs-neutral)'
                 }}
-              >
-                <option value="Active">Active</option>
-                <option value="Inactive">Inactive</option>
-              </Form.Select>
+              />
             </Form.Group>
           </Col>
         </Row>

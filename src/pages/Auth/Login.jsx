@@ -8,7 +8,7 @@ import {
   Alert,
   Spinner,
 } from "react-bootstrap";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 import { useAuth } from "../../hooks/useAuth";
 
 function Login() {
@@ -19,7 +19,27 @@ function Login() {
   const [error, setError] = useState("");
 
   const navigate = useNavigate();
-  const { setUser, setIsAuthenticated } = useAuth();
+  const location = useLocation();
+  const { setUser, setIsAuthenticated, isAuthenticated, isLoading } = useAuth();
+
+  // Show loading while checking authentication
+  if (isLoading) {
+    return (
+      <div className="d-flex justify-content-center align-items-center min-vh-100">
+        <div className="text-center">
+          <Spinner animation="border" variant="primary" />
+          <div className="mt-3">Loading...</div>
+        </div>
+      </div>
+    );
+  }
+
+  // Redirect if already authenticated
+  if (isAuthenticated) {
+    const from = location.state?.from?.pathname || "/admin";
+    navigate(from, { replace: true });
+    return null;
+  }
 
   // Hardcoded credentials for demo
   const validCredentials = {
@@ -67,8 +87,9 @@ function Login() {
         localStorage.setItem("authToken", "mock-token-" + Date.now());
         localStorage.setItem("user", JSON.stringify(userData));
 
-        // Navigate to admin dashboard
-        navigate("/admin");
+        // Navigate to intended destination or admin dashboard
+        const from = location.state?.from?.pathname || "/admin";
+        navigate(from, { replace: true });
       } else {
         setError("Email or password is incorrect. Please try again.");
       }
