@@ -254,28 +254,31 @@ const RoleModal = ({ show, role, mode, onSave, onClose }) => {
           )}
 
           <Row>
-            <Col md={8} className="mx-auto">
+            <Col md={12}>
               <Form.Group className="mb-4">
-                <Form.Label className="text-primary-custom fw-semibold fs-5">
-                  Role Name *
-                </Form.Label>
-                <Form.Control
-                  type="text"
-                  value={formData.name}
-                  onChange={(e) => handleInputChange('name', e.target.value)}
-                  isInvalid={!!errors.name}
-                  readOnly={isReadOnly}
-                  size="lg"
-                  className="text-center"
-                  style={{
-                    borderColor: errors.name ? '#dc3545' : 'var(--bs-primary)',
-                    fontSize: '1.1rem',
-                    fontWeight: '500'
-                  }}
-                />
-                <Form.Control.Feedback type="invalid">
-                  {errors.name}
-                </Form.Control.Feedback>
+                <Row className="align-items-center">
+                  <Col md={3}>
+                    <Form.Label className="text-primary-custom fw-semibold mb-0">
+                      Role Name *
+                    </Form.Label>
+                  </Col>
+                  <Col md={6}>
+                    <Form.Control
+                      type="text"
+                      value={formData.name}
+                      onChange={(e) => handleInputChange('name', e.target.value)}
+                      isInvalid={!!errors.name}
+                      readOnly={isReadOnly}
+                      style={{
+                        borderColor: errors.name ? '#dc3545' : 'var(--bs-primary)',
+                        borderWidth: '2px'
+                      }}
+                    />
+                    <Form.Control.Feedback type="invalid">
+                      {errors.name}
+                    </Form.Control.Feedback>
+                  </Col>
+                </Row>
               </Form.Group>
             </Col>
           </Row>
@@ -291,7 +294,7 @@ const RoleModal = ({ show, role, mode, onSave, onClose }) => {
                 )}
                 
                 <div className="border rounded p-4 bg-light" style={{ 
-                  maxHeight: '450px', 
+                  maxHeight: '250px', 
                   overflowY: 'auto',
                   borderColor: 'var(--bs-primary)',
                   borderWidth: '2px'
