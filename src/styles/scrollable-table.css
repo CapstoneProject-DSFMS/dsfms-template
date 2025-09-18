@@ -272,6 +272,8 @@
 /* Permission Group Header */
 .permission-group-header {
   transition: background-color 0.2s ease;
+  margin: 0 0.5rem;
+  padding: 0.75rem 1.5rem !important;
 }
 
 .permission-group-header:hover {
@@ -281,6 +283,8 @@
 /* Permission Item */
 .permission-item {
   transition: background-color 0.2s ease;
+  padding: 0.75rem 1.5rem !important;
+  margin: 0 0.5rem;
 }
 
 .permission-item:hover {
@@ -332,5 +336,56 @@
 /* Table Header Glow Effect */
 .table-header-glow {
   box-shadow: 0 0 20px rgba(0, 123, 255, 0.1);
+}
+
+/* Bulk Import Preview Table Styling */
+.bulk-import-preview {
+  border: 1px solid #dee2e6;
+  border-radius: 0.375rem;
+}
+
+.bulk-import-preview .table {
+  margin-bottom: 0;
+}
+
+.bulk-import-preview .table thead th {
+  background-color: #f8f9fa;
+  border-bottom: 2px solid #dee2e6;
+  font-weight: 600;
+  white-space: nowrap;
+  position: sticky;
+  top: 0;
+  z-index: 10;
+}
+
+.bulk-import-preview .table tbody td {
+  white-space: nowrap;
+  vertical-align: middle;
+}
+
+/* Custom scrollbar for preview table */
+.bulk-import-preview::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+.bulk-import-preview::-webkit-scrollbar-track {
+  background: #f1f1f1;
+  border-radius: 4px;
+}
+
+.bulk-import-preview::-webkit-scrollbar-thumb {
+  background: #c1c1c1;
+  border-radius: 4px;
+}
+
+.bulk-import-preview::-webkit-scrollbar-thumb:hover {
+  background: #a8a8a8;
+}
+
+/* Sticky header for horizontal scroll */
+.bulk-import-preview .table thead th {
+  background-color: #f8f9fa !important;
+  border-bottom: 2px solid #dee2e6 !important;
 }
 
