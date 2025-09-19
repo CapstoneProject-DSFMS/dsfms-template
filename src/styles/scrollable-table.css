@@ -64,7 +64,7 @@
 /* Responsive adjustments */
 @media (max-width: 768px) {
   .scrollable-table-container {
-    max-height: 400px;
+    max-height: 300px;
     border-radius: 0.25rem;
     margin: 0 -0.75rem;
     border-left: none;
@@ -77,7 +77,7 @@
   
   /* Mobile table adjustments */
   .scrollable-table-container .table {
-    font-size: 0.8rem;
+    font-size: 0.75rem;
   }
   
   .scrollable-table-container .table th,
@@ -100,7 +100,7 @@
 
 @media (max-width: 576px) {
   .scrollable-table-container {
-    max-height: 350px;
+    max-height: 250px;
     margin: 0 -0.5rem;
   }
   

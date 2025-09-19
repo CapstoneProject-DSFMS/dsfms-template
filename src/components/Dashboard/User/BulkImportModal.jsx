@@ -1,5 +1,5 @@
 import React, { useState, useRef } from 'react';
-import { Modal, Button, Table, Alert, Row, Col, Card } from 'react-bootstrap';
+import { Modal, Button, Table, Alert, Row, Col, Card, OverlayTrigger, Tooltip } from 'react-bootstrap';
 import { X, Upload, FileEarmarkExcel, CheckCircle, XCircle, Pencil, Trash, Download } from 'react-bootstrap-icons';
 import * as XLSX from 'xlsx';
 
@@ -212,25 +212,25 @@ const BulkImportModal = ({ show, onClose, onImport, loading = false }) => {
             // Validate required fields
             if (requiredColumns.includes(header) && !value) {
               hasError = true;
-              rowErrors.push(`${header} is required`);
+              rowErrors.push('Required field missing');
             }
 
             // Validate email format
             if (header === 'email' && value && !/\S+@\S+\.\S+/.test(value)) {
               hasError = true;
-              rowErrors.push('Invalid email format');
+              rowErrors.push('Invalid email');
             }
 
             // Validate role
             if (header === 'role' && value && !validRoles.includes(value.toUpperCase())) {
               hasError = true;
-              rowErrors.push(`Invalid role. Must be one of: ${validRoles.join(', ')}`);
+              rowErrors.push('Invalid role');
             }
 
             // Validate years of experience
             if (header === 'years_of_experience' && value && isNaN(value)) {
               hasError = true;
-              rowErrors.push('Years of experience must be a number');
+              rowErrors.push('Invalid experience value');
             }
           });
 
@@ -454,7 +454,7 @@ const BulkImportModal = ({ show, onClose, onImport, loading = false }) => {
                         <td>
                           {user.errors.length > 0 && (
                             <small className="text-danger">
-                              {user.errors.join(', ')}
+                              {user.errors.length > 1 ? `${user.errors[0]} (+${user.errors.length - 1} more)` : user.errors[0]}
                             </small>
                           )}
                         </td>
@@ -484,23 +484,32 @@ const BulkImportModal = ({ show, onClose, onImport, loading = false }) => {
         </Button>
         
         {previewData.length > 0 && (
-          <Button
-            variant="primary"
-            onClick={handleImportAll}
-            disabled={loading || previewData.filter(u => !u.hasError).length === 0}
+          <OverlayTrigger
+            placement="top"
+            overlay={
+              <Tooltip id="import-tooltip">
+                Only {previewData.filter(u => !u.hasError).length}/{previewData.length} users will be imported into DSFMS
+              </Tooltip>
+            }
           >
-            {loading ? (
-              <>
-                <span className="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
-                Importing...
-              </>
-            ) : (
-              <>
-                <Upload className="me-2" size={16} />
-                Import All ({previewData.filter(u => !u.hasError).length} users)
-              </>
-            )}
-          </Button>
+            <Button
+              variant="primary"
+              onClick={handleImportAll}
+              disabled={loading || previewData.filter(u => !u.hasError).length === 0}
+            >
+              {loading ? (
+                <>
+                  <span className="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
+                  Importing...
+                </>
+              ) : (
+                <>
+                  <Upload className="me-2" size={16} />
+                  Import All ({previewData.filter(u => !u.hasError).length} users)
+                </>
+              )}
+            </Button>
+          </OverlayTrigger>
         )}
       </Modal.Footer>
     </Modal>

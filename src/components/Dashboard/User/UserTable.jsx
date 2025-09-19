@@ -88,7 +88,7 @@ const UserTable = ({ users, loading, onView, onEdit, onDisable }) => {
 
   return (
     <div className="scrollable-table-container">
-      <Table hover className="mb-0 table-mobile-responsive">
+      <Table hover className="mb-0 table-mobile-responsive" style={{ fontSize: '0.875rem' }}>
         <thead className="sticky-header">
           <tr>
             <SortableHeader columnKey="eid" className="show-mobile">
@@ -97,14 +97,8 @@ const UserTable = ({ users, loading, onView, onEdit, onDisable }) => {
             <SortableHeader columnKey="fullName" className="show-mobile">
               Full Name
             </SortableHeader>
-            <SortableHeader columnKey="email" className="hide-mobile">
+            <SortableHeader columnKey="email" className="show-mobile">
               Email
-            </SortableHeader>
-            <SortableHeader columnKey="phone" className="hide-mobile">
-              Phone
-            </SortableHeader>
-            <SortableHeader columnKey="gender" className="hide-mobile-sm">
-              Gender
             </SortableHeader>
             <SortableHeader columnKey="role" className="show-mobile">
               Role
