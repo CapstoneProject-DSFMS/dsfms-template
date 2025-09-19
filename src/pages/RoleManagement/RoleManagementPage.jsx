@@ -103,28 +103,33 @@ const RoleManagementPage = () => {
         >
           Edit Role
         </Dropdown.Item>
-        <Dropdown.Divider />
-        <Dropdown.Item 
-          onClick={() => handleDisableClick(role)}
-          className={`d-flex align-items-center transition-all ${
-            role.status === 'Active' ? 'text-warning' : 'text-success'
-          }`}
-          style={{
-            transition: 'all 0.2s ease'
-          }}
-          onMouseEnter={(e) => {
-            e.target.style.backgroundColor = role.status === 'Active' 
-              ? 'rgba(255, 193, 7, 0.1)' 
-              : 'rgba(40, 167, 69, 0.1)';
-            e.target.style.paddingLeft = '1.5rem';
-          }}
-          onMouseLeave={(e) => {
-            e.target.style.backgroundColor = 'transparent';
-            e.target.style.paddingLeft = '1rem';
-          }}
-        >
-          {role.status === 'Active' ? 'Disable Role' : 'Enable Role'}
-        </Dropdown.Item>
+        {/* Only show disable/enable option if role is not admin */}
+        {role.name.toLowerCase() !== 'admin' && (
+          <>
+            <Dropdown.Divider />
+            <Dropdown.Item 
+              onClick={() => handleDisableClick(role)}
+              className={`d-flex align-items-center transition-all ${
+                role.status === 'Active' ? 'text-warning' : 'text-success'
+              }`}
+              style={{
+                transition: 'all 0.2s ease'
+              }}
+              onMouseEnter={(e) => {
+                e.target.style.backgroundColor = role.status === 'Active' 
+                  ? 'rgba(255, 193, 7, 0.1)' 
+                  : 'rgba(40, 167, 69, 0.1)';
+                e.target.style.paddingLeft = '1.5rem';
+              }}
+              onMouseLeave={(e) => {
+                e.target.style.backgroundColor = 'transparent';
+                e.target.style.paddingLeft = '1rem';
+              }}
+            >
+              {role.status === 'Active' ? 'Disable Role' : 'Enable Role'}
+            </Dropdown.Item>
+          </>
+        )}
       </Dropdown.Menu>
     </Dropdown>
   );
