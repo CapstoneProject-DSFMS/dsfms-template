@@ -88,34 +88,34 @@ const UserTable = ({ users, loading, onView, onEdit, onDisable }) => {
 
   return (
     <div className="scrollable-table-container">
-      <Table hover className="mb-0">
+      <Table hover className="mb-0 table-mobile-responsive">
         <thead className="sticky-header">
           <tr>
-            <SortableHeader columnKey="eid">
+            <SortableHeader columnKey="eid" className="show-mobile">
               EID
             </SortableHeader>
-            <SortableHeader columnKey="fullName">
+            <SortableHeader columnKey="fullName" className="show-mobile">
               Full Name
             </SortableHeader>
-            <SortableHeader columnKey="email">
+            <SortableHeader columnKey="email" className="hide-mobile">
               Email
             </SortableHeader>
-            <SortableHeader columnKey="phone">
+            <SortableHeader columnKey="phone" className="hide-mobile">
               Phone
             </SortableHeader>
-            <SortableHeader columnKey="gender">
+            <SortableHeader columnKey="gender" className="hide-mobile-sm">
               Gender
             </SortableHeader>
-            <SortableHeader columnKey="role">
+            <SortableHeader columnKey="role" className="show-mobile">
               Role
             </SortableHeader>
-            <SortableHeader columnKey="department">
+            <SortableHeader columnKey="department" className="hide-mobile">
               Department
             </SortableHeader>
-            <SortableHeader columnKey="status">
+            <SortableHeader columnKey="status" className="show-mobile">
               Status
             </SortableHeader>
-            <th className="border-neutral-200 text-primary-custom fw-semibold text-center">
+            <th className="border-neutral-200 text-primary-custom fw-semibold text-center show-mobile">
               Actions
             </th>
           </tr>

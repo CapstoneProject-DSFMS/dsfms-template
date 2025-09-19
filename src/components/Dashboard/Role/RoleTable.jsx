@@ -94,22 +94,22 @@ const RoleTable = ({
 
   return (
     <div className="scrollable-table-container">
-      <Table hover className="mb-0">
+      <Table hover className="mb-0 table-mobile-responsive">
         <thead className="sticky-header bg-gradient-primary-custom">
           <tr>
-            <SortableHeader columnKey="name">
+            <SortableHeader columnKey="name" className="show-mobile">
               Role Name
             </SortableHeader>
-            <SortableHeader columnKey="status">
+            <SortableHeader columnKey="status" className="show-mobile">
               Status
             </SortableHeader>
-            <SortableHeader columnKey="assignedUsers">
+            <SortableHeader columnKey="assignedUsers" className="hide-mobile">
               Assigned Users
             </SortableHeader>
-            <SortableHeader columnKey="lastModified">
+            <SortableHeader columnKey="lastModified" className="hide-mobile-sm">
               Last Modified
             </SortableHeader>
-            <th className="border-neutral-200 text-primary-custom fw-bold letter-spacing px-3 py-3 text-center">
+            <th className="border-neutral-200 text-primary-custom fw-bold letter-spacing px-3 py-3 text-center show-mobile">
               Actions
             </th>
           </tr>
