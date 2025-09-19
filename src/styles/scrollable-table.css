@@ -65,10 +65,62 @@
 @media (max-width: 768px) {
   .scrollable-table-container {
     max-height: 400px;
+    border-radius: 0.25rem;
+    margin: 0 -0.75rem;
+    border-left: none;
+    border-right: none;
   }
   
   .scrollable-table-container::-webkit-scrollbar {
     width: 6px;
+  }
+  
+  /* Mobile table adjustments */
+  .scrollable-table-container .table {
+    font-size: 0.8rem;
+  }
+  
+  .scrollable-table-container .table th,
+  .scrollable-table-container .table td {
+    padding: 0.5rem 0.25rem;
+    white-space: nowrap;
+  }
+  
+  /* Hide less important columns on mobile */
+  .scrollable-table-container .table .hide-mobile {
+    display: none !important;
+  }
+  
+  /* Sticky header adjustments for mobile */
+  .sticky-header th {
+    font-size: 0.75rem;
+    padding: 0.5rem 0.25rem;
+  }
+}
+
+@media (max-width: 576px) {
+  .scrollable-table-container {
+    max-height: 350px;
+    margin: 0 -0.5rem;
+  }
+  
+  .scrollable-table-container .table {
+    font-size: 0.75rem;
+  }
+  
+  .scrollable-table-container .table th,
+  .scrollable-table-container .table td {
+    padding: 0.375rem 0.125rem;
+  }
+  
+  .sticky-header th {
+    font-size: 0.7rem;
+    padding: 0.375rem 0.125rem;
+  }
+  
+  /* Hide more columns on very small screens */
+  .scrollable-table-container .table .hide-mobile-sm {
+    display: none !important;
   }
 }
 

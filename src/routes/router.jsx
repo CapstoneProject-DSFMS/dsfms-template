@@ -13,7 +13,11 @@ const getBasename = () => {
     return "/";
   }
   // For production (GitHub Pages), use the repository name as basename
-  return "/dsfms-template";
+  const pathname = window.location.pathname;
+  if (pathname.includes('/dsfms-template')) {
+    return "/dsfms-template";
+  }
+  return "/";
 };
 
 export const router = createBrowserRouter([
@@ -60,6 +64,11 @@ export const router = createBrowserRouter([
         element: <div>System Configuration Page</div>
       }
     ]
+  },
+  {
+    path: "*",
+    element: <Login />,
+    errorElement: <ErrorBoundary />
   }
 ],
   {
