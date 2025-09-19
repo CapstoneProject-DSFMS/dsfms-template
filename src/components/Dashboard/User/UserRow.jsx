@@ -48,18 +48,6 @@ const UserRow = ({ user, index, onView, onEdit, onDisable }) => {
       </td>
       
       <td className="border-neutral-200 align-middle">
-        <span className="text-dark">
-          {user.phone || '-'}
-        </span>
-      </td>
-      
-      <td className="border-neutral-200 align-middle">
-        <span className="text-dark">
-          {user.gender || '-'}
-        </span>
-      </td>
-      
-      <td className="border-neutral-200 align-middle">
         <Badge 
           bg="secondary" 
           className="px-2 py-1"

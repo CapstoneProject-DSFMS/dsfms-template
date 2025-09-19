@@ -1155,8 +1155,14 @@ button,
 @media (max-width: 768px) {
   /* Make tables more mobile-friendly */
   .table-mobile-responsive {
-    font-size: 0.8rem !important;
+    font-size: 0.75rem !important;
   }
+}
+
+/* Desktop table font size */
+.table-mobile-responsive {
+  font-size: 0.875rem !important;
+}
   
   .table-mobile-responsive th,
   .table-mobile-responsive td {
@@ -1182,7 +1188,6 @@ button,
   .show-mobile {
     display: table-cell !important;
   }
-}
 
 /* Form responsive adjustments */
 @media (max-width: 768px) {
