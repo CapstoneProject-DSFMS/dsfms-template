@@ -1,5 +1,5 @@
 import React from "react";
-import { Nav } from "react-bootstrap";
+import { Nav, Button } from "react-bootstrap";
 import { Link } from "react-router-dom";
 import {
   House,
@@ -11,10 +11,11 @@ import {
   ChevronLeft,
   ChevronRight,
   Gear,
+  X,
 } from "react-bootstrap-icons";
 import logo from "../../assets/logo-light.png";
 
-const Sidebar = ({ collapsed }) => {
+const Sidebar = ({ collapsed, onClose }) => {
   const navItems = [
     {
       id: "dashboard",
@@ -71,7 +72,7 @@ const Sidebar = ({ collapsed }) => {
       }}
     >
       {/* Logo/Brand */}
-      <div className="p-3 border-bottom border-secondary bg-gradient-primary-custom">
+      <div className="p-3 border-bottom border-secondary bg-gradient-primary-custom position-relative">
         <div className="d-flex align-items-center justify-content-center">
           {!collapsed && (
             <>
@@ -88,6 +89,18 @@ const Sidebar = ({ collapsed }) => {
             </div>
           )}
         </div>
+        
+        {/* Mobile close button */}
+        {onClose && (
+          <Button
+            variant="link"
+            className="position-absolute top-0 end-0 text-white p-2 d-md-none"
+            onClick={onClose}
+            style={{ border: 'none', background: 'transparent' }}
+          >
+            <X size={20} />
+          </Button>
+        )}
       </div>
 
       {/* Navigation */}
@@ -96,25 +109,26 @@ const Sidebar = ({ collapsed }) => {
           const IconComponent = item.icon;
           return (
             <Nav.Item key={item.id} className="mb-3">
-  <Link
-    to={item.path}
-    className={`sidebar-nav-link text-white d-flex align-items-center py-3 pe-1 rounded nav-link text-nowrap ${collapsed ? "justify-content-center" : ""}`}
-    style={{
-      minHeight: collapsed ? "48px" : "auto",
-    }}
-  >
-    <IconComponent
-      size={20}
-      className={collapsed ? "me-2" : "me-3"}
-      style={{
-        display: "inline-block",
-        flexShrink: 0,
-        transition: "transform 0.3s cubic-bezier(.68,-0.55,.27,1.55)",
-      }}
-    />
-    {!collapsed && <span className="sidebar-nav-label">{item.label}</span>}
-  </Link>
-</Nav.Item>
+              <Link
+                to={item.path}
+                className={`sidebar-nav-link text-white d-flex align-items-center py-3 pe-1 rounded nav-link text-nowrap ${collapsed ? "justify-content-center" : ""}`}
+                style={{
+                  minHeight: collapsed ? "48px" : "auto",
+                }}
+                onClick={onClose} // Close sidebar on mobile when link is clicked
+              >
+                <IconComponent
+                  size={20}
+                  className={collapsed ? "me-2" : "me-3"}
+                  style={{
+                    display: "inline-block",
+                    flexShrink: 0,
+                    transition: "transform 0.3s cubic-bezier(.68,-0.55,.27,1.55)",
+                  }}
+                />
+                {!collapsed && <span className="sidebar-nav-label">{item.label}</span>}
+              </Link>
+            </Nav.Item>
           );
         })}
       </Nav>

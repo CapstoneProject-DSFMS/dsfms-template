@@ -32,7 +32,7 @@ const Header = ({ onToggleSidebar }) => {
     // Get basename dynamically
     const getBasename = () => {
       if (import.meta.env.DEV) {
-        return "/dsfms-template";
+        return "/";
       }
       const pathname = window.location.pathname;
       if (pathname.includes('/dsfms-template')) {
@@ -41,8 +41,8 @@ const Header = ({ onToggleSidebar }) => {
       return "/";
     };
     
-    // Redirect to login
-    window.location.href = getBasename() + '/';
+    // Redirect to login - use basename only, don't add extra '/'
+    window.location.href = getBasename();
   };
 
   return (

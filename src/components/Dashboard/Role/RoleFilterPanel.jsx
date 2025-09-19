@@ -6,12 +6,13 @@ const RoleFilterPanel = ({
   uniqueStatuses, 
   selectedStatuses, 
   onStatusToggle, 
-  onClearFilters 
+  onClearFilters,
+  className = ""
 }) => {
   const hasActiveFilters = selectedStatuses.length > 0;
 
   return (
-    <Dropdown className="role-filter-panel">
+    <Dropdown className={`role-filter-panel ${className}`}>
       <Dropdown.Toggle 
         variant="outline-secondary" 
         className="w-100 d-flex align-items-center justify-content-between position-relative"
@@ -30,9 +31,9 @@ const RoleFilterPanel = ({
       <Dropdown.Menu 
         className="p-3" 
         style={{ 
-          width: '280px',
+          width: window.innerWidth <= 768 ? 'calc(100vw - 2rem)' : '280px',
           maxWidth: '90vw',
-          maxHeight: '70vh',
+          maxHeight: window.innerWidth <= 768 ? '50vh' : '70vh',
           overflowY: 'auto'
         }}
         align="end"

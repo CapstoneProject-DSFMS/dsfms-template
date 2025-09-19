@@ -129,7 +129,7 @@ function Login() {
           {/* Left Side - Promotional Content */}
           <Col
             lg={6}
-            className="d-flex align-items-center justify-content-center p-5"
+            className="d-flex align-items-center justify-content-center p-5 d-none d-lg-flex"
           >
             <div
               className="text-white text-start"
@@ -173,7 +173,8 @@ function Login() {
           {/* Right Side - Login Form */}
           <Col
             lg={6}
-            className="d-flex align-items-center justify-content-center p-5"
+            xs={12}
+            className="d-flex align-items-center justify-content-center p-3 p-lg-5"
           >
             <div
               className="w-100"
@@ -185,7 +186,7 @@ function Login() {
                 border: "1px solid rgba(255, 255, 255, 0.2)",
                 boxShadow:
                   "0 8px 32px rgba(0, 0, 0, 0.1), inset 0 1px 0 rgba(255, 255, 255, 0.2)",
-                padding: "2.5rem",
+                padding: window.innerWidth <= 768 ? "1.5rem" : "2.5rem",
                 position: "relative",
                 overflow: "hidden",
               }}
