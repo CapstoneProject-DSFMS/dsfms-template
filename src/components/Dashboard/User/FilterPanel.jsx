@@ -9,12 +9,13 @@ const FilterPanel = ({
   selectedDepartments, 
   onRoleToggle, 
   onDepartmentToggle, 
-  onClearFilters 
+  onClearFilters,
+  className = ""
 }) => {
   const hasActiveFilters = selectedRoles.length > 0 || selectedDepartments.length > 0;
 
   return (
-    <Dropdown className="filter-panel-dropdown">
+    <Dropdown className={`filter-panel-dropdown ${className}`}>
       <Dropdown.Toggle 
         variant="outline-secondary" 
         className="w-100 d-flex align-items-center justify-content-between position-relative"
@@ -33,9 +34,9 @@ const FilterPanel = ({
       <Dropdown.Menu 
         className="p-3" 
         style={{ 
-          width: '320px',
+          width: window.innerWidth <= 768 ? 'calc(100vw - 2rem)' : '320px',
           maxWidth: '90vw',
-          maxHeight: '70vh',
+          maxHeight: window.innerWidth <= 768 ? '50vh' : '70vh',
           overflowY: 'auto'
         }}
         align="end"

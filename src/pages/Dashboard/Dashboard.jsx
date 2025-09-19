@@ -29,16 +29,16 @@ const Dashboard = () => {
     <Container fluid className="py-4">
         <Row className="mb-4">
           <Col>
-            <h1 className="text-primary-custom mb-0">Aviation Training Management System</h1>
+            <h1 className="text-primary-custom mb-0 text-mobile-center">Aviation Training Management System</h1>
           </Col>
         </Row>
 
         <Row className="mb-4">
-          <Col md={8}>
-            <Card>
+          <Col lg={8} md={12} className="mb-3 mb-lg-0">
+            <Card className="dashboard-chart-mobile">
               <Card.Header>User Activity Trends</Card.Header>
               <Card.Body>
-                <ResponsiveContainer width="100%" height={300}>
+                <ResponsiveContainer width="100%" height={300} className="chart-mobile-height">
                   <AreaChart data={userStats}>
                     <CartesianGrid strokeDasharray="3 3" />
                     <XAxis dataKey="month" />
@@ -52,11 +52,11 @@ const Dashboard = () => {
               </Card.Body>
             </Card>
           </Col>
-          <Col md={4}>
-            <Card>
+          <Col lg={4} md={12}>
+            <Card className="dashboard-chart-mobile">
               <Card.Header>Role Distribution</Card.Header>
               <Card.Body>
-                <ResponsiveContainer width="100%" height={300}>
+                <ResponsiveContainer width="100%" height={300} className="chart-mobile-height">
                   <PieChart>
                     <Pie
                       data={roleDistribution}
@@ -77,10 +77,10 @@ const Dashboard = () => {
 
         <Row>
           <Col>
-            <Card>
+            <Card className="dashboard-chart-mobile">
               <Card.Header>Department Statistics</Card.Header>
               <Card.Body>
-                <ResponsiveContainer width="100%" height={300}>
+                <ResponsiveContainer width="100%" height={300} className="chart-mobile-height">
                   <BarChart data={departmentStats}>
                     <CartesianGrid strokeDasharray="3 3" />
                     <XAxis dataKey="name" />

@@ -75,13 +75,13 @@ const UserManagementPage = () => {
       <Card className="border-neutral-200 shadow-sm">
         <Card.Header className="bg-light-custom border-neutral-200">
           <Row className="align-items-center">
-            <Col>
-              <h5 className="text-muted">
+            <Col xs={12} md={8}>
+              <h5 className="text-muted text-mobile-center">
                 Manage system users, roles, and permissions
               </h5>
             </Col>
-            <Col xs="auto">
-              <div className="d-flex gap-2">
+            <Col xs={12} md={4} className="mt-2 mt-md-0">
+              <div className="d-flex gap-2 action-buttons-mobile">
                 <PermissionWrapper 
                   permission={PERMISSIONS.MANAGE_USERS}
                   fallback={null}
@@ -90,10 +90,11 @@ const UserManagementPage = () => {
                     variant="outline-primary"
                     size="sm"
                     onClick={() => setBulkImportShow(true)}
-                    className="d-flex align-items-center"
+                    className="d-flex align-items-center btn-mobile-full"
                   >
                     <Upload className="me-1" size={16} />
-                    Bulk Import
+                    <span className="d-none d-sm-inline">Bulk Import</span>
+                    <span className="d-sm-none">Import</span>
                   </Button>
                 </PermissionWrapper>
                 <PermissionWrapper 
@@ -104,7 +105,7 @@ const UserManagementPage = () => {
                     variant="primary"
                     size="sm"
                     onClick={handleAdd}
-                    className="d-flex align-items-center"
+                    className="d-flex align-items-center btn-mobile-full"
                   >
                     <Plus className="me-1" size={16} />
                     Add User
@@ -117,15 +118,16 @@ const UserManagementPage = () => {
 
         <Card.Body>
           {/* Search and Filters */}
-          <Row className="mb-3">
-            <Col lg={6} md={5}>
+          <Row className="mb-3 form-mobile-stack">
+            <Col xs={12} lg={6} md={5} className="mb-2 mb-lg-0">
               <SearchBar
                 placeholder="Search users by name, EID, or email..."
                 value={searchTerm}
                 onChange={handleSearch}
+                className="search-bar-mobile"
               />
             </Col>
-            <Col lg={3} md={4}>
+            <Col xs={12} lg={3} md={4} className="mb-2 mb-lg-0">
               <FilterPanel
                 uniqueRoles={uniqueRoles}
                 uniqueDepartments={uniqueDepartments}
@@ -134,10 +136,11 @@ const UserManagementPage = () => {
                 onRoleToggle={handleRoleToggle}
                 onDepartmentToggle={handleDepartmentToggle}
                 onClearFilters={handleClearFilters}
+                className="filter-panel-mobile"
               />
             </Col>
-            <Col lg={3} md={3}>
-              <div className="text-end">
+            <Col xs={12} lg={3} md={3}>
+              <div className="text-end text-mobile-center">
                 <small className="text-muted">
                   {filteredUsers.length} user{filteredUsers.length !== 1 ? 's' : ''}
                 </small>
