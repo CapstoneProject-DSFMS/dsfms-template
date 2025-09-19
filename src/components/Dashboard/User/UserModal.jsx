@@ -97,8 +97,13 @@ const UserModal = ({ show, user, mode, onSave, onClose }) => {
       newErrors.department = 'Department is required';
     }
 
-    if (formData.yearsOfExperience && isNaN(formData.yearsOfExperience)) {
-      newErrors.yearsOfExperience = 'Years of experience must be a number';
+    // Role-specific validation
+    if (formData.role === 'TRAINER') {
+      // Trainer-specific validations can be added here if needed
+    }
+    
+    if (formData.role === 'TRAINEE') {
+      // Trainee-specific validations can be added here if needed
     }
 
     setErrors(newErrors);
@@ -370,153 +375,113 @@ const UserModal = ({ show, user, mode, onSave, onClose }) => {
             </Col>
           </Row>
 
-          {/* Certification and Specialization */}
-          <Row>
-            <Col md={6}>
-              <Form.Group className="mb-4">
-                <Form.Label className="text-primary-custom fw-semibold">
-                  Certification Number
-                </Form.Label>
-                <Form.Control
-                  type="text"
-                  value={formData.certificationNumber}
-                  onChange={(e) => handleInputChange('certificationNumber', e.target.value)}
-                  readOnly={isReadOnly}
-                  placeholder="Enter certification number"
-                  style={{
-                    borderColor: 'var(--bs-primary)',
-                    borderWidth: '2px'
-                  }}
-                />
-              </Form.Group>
-            </Col>
-            <Col md={6}>
-              <Form.Group className="mb-4">
-                <Form.Label className="text-primary-custom fw-semibold">
-                  Specialization
-                </Form.Label>
-                <Form.Control
-                  type="text"
-                  value={formData.specialization}
-                  onChange={(e) => handleInputChange('specialization', e.target.value)}
-                  readOnly={isReadOnly}
-                  placeholder="Enter specialization"
-                  style={{
-                    borderColor: 'var(--bs-primary)',
-                    borderWidth: '2px'
-                  }}
-                />
-              </Form.Group>
-            </Col>
-          </Row>
+          {/* Role-specific fields */}
+          {formData.role === 'TRAINER' && (
+            <>
+              {/* Trainer-specific fields */}
+              <Row>
+                <Col md={6}>
+                  <Form.Group className="mb-4">
+                    <Form.Label className="text-primary-custom fw-semibold">
+                      Specialization
+                    </Form.Label>
+                    <Form.Control
+                      type="text"
+                      value={formData.specialization}
+                      onChange={(e) => handleInputChange('specialization', e.target.value)}
+                      readOnly={isReadOnly}
+                      placeholder="Enter specialization"
+                      style={{
+                        borderColor: 'var(--bs-primary)',
+                        borderWidth: '2px'
+                      }}
+                    />
+                  </Form.Group>
+                </Col>
+                <Col md={6}>
+                  <Form.Group className="mb-4">
+                    <Form.Label className="text-primary-custom fw-semibold">
+                      Certification Number
+                    </Form.Label>
+                    <Form.Control
+                      type="text"
+                      value={formData.certificationNumber}
+                      onChange={(e) => handleInputChange('certificationNumber', e.target.value)}
+                      readOnly={isReadOnly}
+                      placeholder="Enter certification number"
+                      style={{
+                        borderColor: 'var(--bs-primary)',
+                        borderWidth: '2px'
+                      }}
+                    />
+                  </Form.Group>
+                </Col>
+              </Row>
+            </>
+          )}
 
-          {/* Experience and Date of Birth */}
-          <Row>
-            <Col md={6}>
-              <Form.Group className="mb-4">
-                <Form.Label className="text-primary-custom fw-semibold">
-                  Years of Experience
-                </Form.Label>
-                <Form.Control
-                  type="number"
-                  value={formData.yearsOfExperience}
-                  onChange={(e) => handleInputChange('yearsOfExperience', e.target.value)}
-                  isInvalid={!!errors.yearsOfExperience}
-                  readOnly={isReadOnly}
-                  placeholder="Enter years of experience"
-                  style={{
-                    borderColor: errors.yearsOfExperience ? '#dc3545' : 'var(--bs-primary)',
-                    borderWidth: '2px'
-                  }}
-                />
-                <Form.Control.Feedback type="invalid">
-                  {errors.yearsOfExperience}
-                </Form.Control.Feedback>
-              </Form.Group>
-            </Col>
-            <Col md={6}>
-              <Form.Group className="mb-4">
-                <Form.Label className="text-primary-custom fw-semibold">
-                  Date of Birth
-                </Form.Label>
-                <Form.Control
-                  type="date"
-                  value={formData.dateOfBirth}
-                  onChange={(e) => handleInputChange('dateOfBirth', e.target.value)}
-                  readOnly={isReadOnly}
-                  style={{
-                    borderColor: 'var(--bs-primary)',
-                    borderWidth: '2px'
-                  }}
-                />
-              </Form.Group>
-            </Col>
-          </Row>
-
-          {/* Training Batch and Passport */}
-          <Row>
-            <Col md={6}>
-              <Form.Group className="mb-4">
-                <Form.Label className="text-primary-custom fw-semibold">
-                  Training Batch
-                </Form.Label>
-                <Form.Control
-                  type="text"
-                  value={formData.trainingBatch}
-                  onChange={(e) => handleInputChange('trainingBatch', e.target.value)}
-                  readOnly={isReadOnly}
-                  placeholder="Enter training batch"
-                  style={{
-                    borderColor: 'var(--bs-primary)',
-                    borderWidth: '2px'
-                  }}
-                />
-              </Form.Group>
-            </Col>
-            <Col md={6}>
-              <Form.Group className="mb-4">
-                <Form.Label className="text-primary-custom fw-semibold">
-                  Passport No
-                </Form.Label>
-                <Form.Control
-                  type="text"
-                  value={formData.passportNo}
-                  onChange={(e) => handleInputChange('passportNo', e.target.value)}
-                  readOnly={isReadOnly}
-                  placeholder="Enter passport number"
-                  style={{
-                    borderColor: 'var(--bs-primary)',
-                    borderWidth: '2px'
-                  }}
-                />
-              </Form.Group>
-            </Col>
-          </Row>
-
-          {/* Nation */}
-          <Row>
-            <Col md={12}>
-              <Form.Group className="mb-4">
-                <Form.Label className="text-primary-custom fw-semibold">
-                  Nation
-                </Form.Label>
-                <Form.Select
-                  value={formData.nation}
-                  onChange={(e) => handleInputChange('nation', e.target.value)}
-                  disabled={isReadOnly}
-                  style={{
-                    borderColor: 'var(--bs-primary)',
-                    borderWidth: '2px'
-                  }}
-                >
-                  <option value="">Select nation</option>
-                  {nations.map(nation => (
-                    <option key={nation} value={nation}>{nation}</option>
-                  ))}
-                </Form.Select>
-              </Form.Group>
-            </Col>
-          </Row>
+          {formData.role === 'TRAINEE' && (
+            <>
+              {/* Trainee-specific fields */}
+              <Row>
+                <Col md={6}>
+                  <Form.Group className="mb-4">
+                    <Form.Label className="text-primary-custom fw-semibold">
+                      Date of Birth
+                    </Form.Label>
+                    <Form.Control
+                      type="date"
+                      value={formData.dateOfBirth}
+                      onChange={(e) => handleInputChange('dateOfBirth', e.target.value)}
+                      readOnly={isReadOnly}
+                      style={{
+                        borderColor: 'var(--bs-primary)',
+                        borderWidth: '2px'
+                      }}
+                    />
+                  </Form.Group>
+                </Col>
+                <Col md={6}>
+                  <Form.Group className="mb-4">
+                    <Form.Label className="text-primary-custom fw-semibold">
+                      Training Batch
+                    </Form.Label>
+                    <Form.Control
+                      type="text"
+                      value={formData.trainingBatch}
+                      onChange={(e) => handleInputChange('trainingBatch', e.target.value)}
+                      readOnly={isReadOnly}
+                      placeholder="Enter training batch"
+                      style={{
+                        borderColor: 'var(--bs-primary)',
+                        borderWidth: '2px'
+                      }}
+                    />
+                  </Form.Group>
+                </Col>
+              </Row>
+              <Row>
+                <Col md={12}>
+                  <Form.Group className="mb-4">
+                    <Form.Label className="text-primary-custom fw-semibold">
+                      Passport No
+                    </Form.Label>
+                    <Form.Control
+                      type="text"
+                      value={formData.passportNo}
+                      onChange={(e) => handleInputChange('passportNo', e.target.value)}
+                      readOnly={isReadOnly}
+                      placeholder="Enter passport number"
+                      style={{
+                        borderColor: 'var(--bs-primary)',
+                        borderWidth: '2px'
+                      }}
+                    />
+                  </Form.Group>
+                </Col>
+              </Row>
+            </>
+          )}
 
           {mode === 'view' && user && (
             <Row>
