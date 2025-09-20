@@ -3,7 +3,7 @@ import { Badge, Dropdown } from 'react-bootstrap';
 import { Eye, Pencil, Trash, ThreeDots, ShieldX } from 'react-bootstrap-icons';
 import DisableRoleButton from './DisableRoleButton';
 import { useAuth } from '../../../hooks/useAuth';
-import { PERMISSIONS } from '../../../constants/permissions';
+import { PERMISSIONS_BY_UC } from '../../../constants/permissions';
 import PermissionWrapper from '../../Common/PermissionWrapper';
 
 const RoleRow = ({ role, index, onView, onEdit, onDelete, onDisable }) => {
@@ -88,7 +88,7 @@ const RoleRow = ({ role, index, onView, onEdit, onDelete, onDisable }) => {
             {/* Disable Role Button */}
             {role.status === 'Active' && (
               <PermissionWrapper 
-                permission={PERMISSIONS.MANAGE_ROLES}
+                permission={PERMISSIONS_BY_UC['UC-07'].title}
                 fallback={null}
               >
                 <DisableRoleButton
@@ -123,7 +123,7 @@ const RoleRow = ({ role, index, onView, onEdit, onDelete, onDisable }) => {
                   View Details
                 </Dropdown.Item>
                 <PermissionWrapper 
-                  permission={PERMISSIONS.MANAGE_ROLES}
+                  permission={PERMISSIONS_BY_UC['UC-07'].title}
                   fallback={null}
                 >
                   <Dropdown.Item
@@ -135,7 +135,7 @@ const RoleRow = ({ role, index, onView, onEdit, onDelete, onDisable }) => {
                   </Dropdown.Item>
                 </PermissionWrapper>
                 <PermissionWrapper 
-                  permission={PERMISSIONS.MANAGE_ROLES}
+                  permission={PERMISSIONS_BY_UC['UC-07'].title}
                   fallback={null}
                 >
                   <Dropdown.Divider />

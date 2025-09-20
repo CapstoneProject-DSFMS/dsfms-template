@@ -3,7 +3,7 @@ import { Card, Row, Col, Button, Table, Badge, Dropdown } from 'react-bootstrap'
 import { Eye, Pencil, FileEarmarkPdf, Lock, Unlock, ThreeDots } from 'react-bootstrap-icons';
 import { SearchBar, FilterDropdown, PermissionWrapper } from '../Common';
 import { useAuth } from '../../hooks/useAuth';
-import { PERMISSIONS } from '../../constants/permissions';
+import { PERMISSIONS_BY_UC } from '../../constants/permissions';
 
 const AssessmentManagement = () => {
   const { hasPermission } = useAuth();
@@ -251,7 +251,7 @@ const AssessmentManagement = () => {
                         </Dropdown.Item>
                         
                         <PermissionWrapper 
-                          permission={PERMISSIONS.FILL_ASSESSMENT}
+                          permission={PERMISSIONS_BY_UC['UC-25'].title}
                           fallback={null}
                         >
                           <Dropdown.Item className="text-primary-custom d-flex align-items-center">
@@ -261,7 +261,7 @@ const AssessmentManagement = () => {
                         </PermissionWrapper>
                         
                         <PermissionWrapper 
-                          permission={PERMISSIONS.LOCK_FORM}
+                          permission={PERMISSIONS_BY_UC['UC-26'].title}
                           fallback={null}
                         >
                           {assessment.status === 'Draft' ? (
@@ -284,7 +284,7 @@ const AssessmentManagement = () => {
                         </PermissionWrapper>
                         
                         <PermissionWrapper 
-                          permission={PERMISSIONS.APPROVE_ASSESSMENT}
+                          permission={PERMISSIONS_BY_UC['UC-28'].title}
                           fallback={null}
                         >
                           {assessment.status === 'Submitted' && (
@@ -303,7 +303,7 @@ const AssessmentManagement = () => {
                         </PermissionWrapper>
                         
                         <PermissionWrapper 
-                          permission={PERMISSIONS.EXPORT_PDF}
+                          permission={PERMISSIONS_BY_UC['UC-31'].title}
                           fallback={null}
                         >
                           {assessment.status === 'Approved' && (

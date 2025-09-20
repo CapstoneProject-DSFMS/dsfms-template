@@ -3,7 +3,7 @@ import { Card, Row, Col, Button, Table, Badge, Dropdown } from 'react-bootstrap'
 import { Eye, Pencil, FileEarmarkText, Plus, ThreeDots, CheckCircle } from 'react-bootstrap-icons';
 import { SearchBar, FilterDropdown, PermissionWrapper } from '../Common';
 import { useAuth } from '../../hooks/useAuth';
-import { PERMISSIONS } from '../../constants/permissions';
+import { PERMISSIONS_BY_UC } from '../../constants/permissions';
 
 const ReportsManagement = () => {
   const { hasPermission } = useAuth();
@@ -111,7 +111,7 @@ const ReportsManagement = () => {
           </Col>
           <Col xs="auto">
             <PermissionWrapper 
-              permission={PERMISSIONS.SUBMIT_REPORT}
+              permission={PERMISSIONS_BY_UC['UC-32'].title}
               fallback={null}
             >
               <Button
@@ -288,7 +288,7 @@ const ReportsManagement = () => {
                         </Dropdown.Item>
                         
                         <PermissionWrapper 
-                          permission={PERMISSIONS.MANAGE_REPORT}
+                          permission={PERMISSIONS_BY_UC['UC-33'].title}
                           fallback={null}
                         >
                           <Dropdown.Item className="text-primary-custom d-flex align-items-center">
@@ -298,7 +298,7 @@ const ReportsManagement = () => {
                         </PermissionWrapper>
                         
                         <PermissionWrapper 
-                          permission={PERMISSIONS.MANAGE_REPORT}
+                          permission={PERMISSIONS_BY_UC['UC-33'].title}
                           fallback={null}
                         >
                           {report.status !== 'Resolved' && report.status !== 'Closed' && (
@@ -313,7 +313,7 @@ const ReportsManagement = () => {
                         </PermissionWrapper>
                         
                         <PermissionWrapper 
-                          permission={PERMISSIONS.MANAGE_REPORT}
+                          permission={PERMISSIONS_BY_UC['UC-33'].title}
                           fallback={null}
                         >
                           <Dropdown.Divider />
