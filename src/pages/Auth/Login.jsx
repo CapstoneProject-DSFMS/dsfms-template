@@ -126,7 +126,7 @@ function Login() {
       {/* Content */}
       <Container fluid className="position-relative" style={{ zIndex: 1 }}>
         <Row className="min-vh-100">
-          {/* Left Side - Promotional Content */}
+          {/* Left Side - Promotional Content (Desktop) */}
           <Col
             lg={6}
             className="d-flex align-items-center justify-content-center p-5 d-none d-lg-flex"
@@ -177,7 +177,7 @@ function Login() {
             className="d-flex align-items-center justify-content-center p-3 p-lg-5"
           >
             <div
-              className="w-100"
+              className="w-100 login-form-container"
               style={{
                 maxWidth: "400px",
                 background: "rgba(255, 255, 255, 0.1)",
@@ -186,7 +186,7 @@ function Login() {
                 border: "1px solid rgba(255, 255, 255, 0.2)",
                 boxShadow:
                   "0 8px 32px rgba(0, 0, 0, 0.1), inset 0 1px 0 rgba(255, 255, 255, 0.2)",
-                padding: window.innerWidth <= 768 ? "1.5rem" : "2.5rem",
+                padding: "2rem",
                 position: "relative",
                 overflow: "hidden",
               }}
@@ -218,6 +218,56 @@ function Login() {
                 }}
               />
               <div style={{ position: "relative", zIndex: 2 }}>
+                {/* Mobile/Tablet Title - Only visible on small screens */}
+                <div className="text-center mb-4 d-lg-none">
+                  {/* Travel Icon */}
+                  <div className="d-flex align-items-center justify-content-center mb-3">
+                    <div className="dashed-line me-3"></div>
+                    <svg
+                      width="20"
+                      height="20"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      xmlns="http://www.w3.org/2000/svg"
+                    >
+                      <path
+                        d="M21 16V14L13 9V3.5A1.5 1.5 0 0 0 11.5 2A1.5 1.5 0 0 0 10 3.5V9L2 14V16L10 13.5V19L8 20.5V22L11.5 21L15 22V20.5L13 19V13.5L21 16Z"
+                        fill="white"
+                      />
+                    </svg>
+                    <div className="dashed-line ms-3"></div>
+                  </div>
+
+                  <h1
+                    className="text-white fw-bold mb-2 mobile-title"
+                    style={{ 
+                      lineHeight: "1.1",
+                      textShadow: "0 2px 4px rgba(0, 0, 0, 0.5)"
+                    }}
+                  >
+                    AVIATION
+                    <br />
+                    ACADEMY
+                  </h1>
+                  <p 
+                    className="text-white mb-2 mobile-subtitle" 
+                    style={{ 
+                      opacity: 0.9,
+                      textShadow: "0 1px 2px rgba(0, 0, 0, 0.5)"
+                    }}
+                  >
+                    Where Your Dream Destinations Become Reality.
+                  </p>
+                  <p 
+                    className="text-white-50 mobile-description" 
+                    style={{ 
+                      opacity: 0.8
+                    }}
+                  >
+                    Embark on a journey where every corner of the world is within your reach.
+                  </p>
+                </div>
+
                 {error && (
                   <Alert variant="danger" className="py-2 mb-3">
                     {error}
@@ -402,6 +452,45 @@ function Login() {
             transparent 8px,
             transparent 16px
           );
+        }
+        
+        /* Mobile responsive styles */
+        .mobile-title {
+          font-size: 1.8rem;
+        }
+        
+        .mobile-subtitle {
+          font-size: 0.9rem;
+        }
+        
+        .mobile-description {
+          font-size: 0.75rem;
+        }
+        
+        /* Tablet styles */
+        @media (min-width: 576px) and (max-width: 991.98px) {
+          .mobile-title {
+            font-size: 2.2rem;
+          }
+          
+          .mobile-subtitle {
+            font-size: 1rem;
+          }
+          
+          .mobile-description {
+            font-size: 0.85rem;
+          }
+        }
+        
+        /* Mobile styles */
+        @media (max-width: 575.98px) {
+          .dashed-line {
+            width: 40px;
+          }
+          
+          .login-form-container {
+            padding: 1.5rem !important;
+          }
         }
       `}</style>
     </div>
