@@ -103,10 +103,10 @@ const RoleTable = ({
             <SortableHeader columnKey="status" className="show-mobile">
               Status
             </SortableHeader>
-            <SortableHeader columnKey="assignedUsers" className="hide-mobile">
+            <SortableHeader columnKey="assignedUsers" className="show-mobile">
               Assigned Users
             </SortableHeader>
-            <SortableHeader columnKey="lastModified" className="hide-mobile-sm">
+            <SortableHeader columnKey="lastModified" className="show-mobile">
               Last Modified
             </SortableHeader>
             <th className="border-neutral-200 text-primary-custom fw-bold letter-spacing px-3 py-3 text-center show-mobile">
@@ -117,15 +117,15 @@ const RoleTable = ({
         <tbody>
           {sortedData.map((role, index) => (
             <tr key={role.id}>
-              <td>{role.name}</td>
-              <td>
+              <td className="show-mobile">{role.name}</td>
+              <td className="show-mobile">
                 <Badge bg={role.status === 'Active' ? 'success' : 'secondary'}>
                   {role.status}
                 </Badge>
               </td>
-              <td>{role.assignedUsers}</td>
-              <td>{role.lastModified}</td>
-              <td className="text-center">
+              <td className="show-mobile">{role.assignedUsers}</td>
+              <td className="show-mobile">{role.lastModified}</td>
+              <td className="text-center show-mobile">
                 <ActionsComponent role={role} />
               </td>
             </tr>

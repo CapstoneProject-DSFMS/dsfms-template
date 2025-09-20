@@ -29,25 +29,25 @@ const UserRow = ({ user, index, onView, onEdit, onDisable }) => {
         e.currentTarget.style.backgroundColor = index % 2 === 0 ? 'white' : 'var(--bs-neutral-50)';
       }}
     >
-      <td className="border-neutral-200 align-middle">
+      <td className="border-neutral-200 align-middle show-mobile">
         <span className="fw-semibold text-primary-custom">
           {user.eid}
         </span>
       </td>
       
-      <td className="border-neutral-200 align-middle">
+      <td className="border-neutral-200 align-middle show-mobile">
         <div className="fw-medium text-dark">
           {user.fullName}
         </div>
       </td>
       
-      <td className="border-neutral-200 align-middle">
+      <td className="border-neutral-200 align-middle show-mobile">
         <span className="text-dark">
           {user.email}
         </span>
       </td>
       
-      <td className="border-neutral-200 align-middle">
+      <td className="border-neutral-200 align-middle show-mobile">
         <Badge 
           bg="secondary" 
           className="px-2 py-1"
@@ -60,13 +60,13 @@ const UserRow = ({ user, index, onView, onEdit, onDisable }) => {
         </Badge>
       </td>
       
-      <td className="border-neutral-200 align-middle">
+      <td className="border-neutral-200 align-middle hide-mobile">
         <span className="text-dark">
           {user.department}
         </span>
       </td>
       
-      <td className="border-neutral-200 align-middle">
+      <td className="border-neutral-200 align-middle show-mobile">
         <Badge 
           bg={getStatusVariant(user.status)}
           className="px-2 py-1 d-flex align-items-center"
@@ -82,7 +82,7 @@ const UserRow = ({ user, index, onView, onEdit, onDisable }) => {
         </Badge>
       </td>
       
-      <td className="border-neutral-200 align-middle text-center">
+      <td className="border-neutral-200 align-middle text-center show-mobile">
         <Dropdown>
           <Dropdown.Toggle
             variant="link"
