@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Modal, Form, Button, Row, Col, Alert, ListGroup, Badge } from 'react-bootstrap';
 import { X, Save, Eye, Shield, ChevronDown, ChevronRight } from 'react-bootstrap-icons';
-import { PERMISSIONS } from '../../../constants/permissions';
+import { FEATURES, PERMISSIONS_BY_UC, ROLE_PERMISSIONS } from '../../../constants/permissions';
 
 const RoleModal = ({ show, role, mode, onSave, onClose }) => {
   const [formData, setFormData] = useState({
@@ -12,98 +12,91 @@ const RoleModal = ({ show, role, mode, onSave, onClose }) => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [expandedGroups, setExpandedGroups] = useState({});
 
-  const permissionGroups = [
-    {
-      id: 'authentication',
-      name: 'Authentication & Access',
-      description: 'User login and basic access permissions',
-      permissions: [
-        { id: PERMISSIONS.LOGIN, label: 'Login', description: 'Access to login system' },
-        { id: PERMISSIONS.MANAGE_PROFILE, label: 'Manage Profile', description: 'Update user profile information' },
-        { id: PERMISSIONS.RESET_PASSWORD, label: 'Reset Password', description: 'Reset user passwords' }
-      ]
-    },
-    {
-      id: 'user_management',
-      name: 'User Management',
-      description: 'Manage users and roles in the system',
-      permissions: [
-        { id: PERMISSIONS.MANAGE_USERS, label: 'Manage Users', description: 'Add, edit, and remove users' },
-        { id: PERMISSIONS.MANAGE_ROLES, label: 'Manage Roles', description: 'Create and modify roles' }
-      ]
-    },
-    {
-      id: 'academic_management',
-      name: 'Academic Management',
-      description: 'Manage departments, courses, and training programs',
-      permissions: [
-        { id: PERMISSIONS.CREATE_DEPT, label: 'Create Department', description: 'Create new departments' },
-        { id: PERMISSIONS.CREATE_COURSE, label: 'Create Course', description: 'Create new courses' },
-        { id: PERMISSIONS.CREATE_SUBJECT, label: 'Create Subject', description: 'Create new subjects' },
-        { id: PERMISSIONS.ENROLL_TRAINEE, label: 'Enroll Trainee', description: 'Enroll trainees in courses' },
-        { id: PERMISSIONS.TRACK_PROGRESS, label: 'Track Progress', description: 'Track training progress' }
-      ]
-    },
-    {
-      id: 'form_management',
-      name: 'Form Management',
-      description: 'Create and manage forms and templates',
-      permissions: [
-        { id: PERMISSIONS.VIEW_TEMPLATES, label: 'View Templates', description: 'View form templates' },
-        { id: PERMISSIONS.CREATE_TEMPLATE, label: 'Create Template', description: 'Create new form templates' },
-        { id: PERMISSIONS.CREATE_FORM, label: 'Create Form', description: 'Create new forms' },
-        { id: PERMISSIONS.MANAGE_FORMS, label: 'Manage Forms', description: 'Manage existing forms' },
-        { id: PERMISSIONS.FILL_ASSESSMENT, label: 'Fill Assessment', description: 'Fill assessment forms' },
-        { id: PERMISSIONS.LOCK_FORM, label: 'Lock Form', description: 'Lock forms from editing' },
-        { id: PERMISSIONS.APPROVE_ASSESSMENT, label: 'Approve Assessment', description: 'Approve assessment forms' },
-        { id: PERMISSIONS.EXPORT_PDF, label: 'Export PDF', description: 'Export forms to PDF' }
-      ]
-    },
-    {
-      id: 'audit_management',
-      name: 'Audit Management',
-      description: 'Conduct audits and manage findings',
-      permissions: [
-        { id: PERMISSIONS.FILL_AUDIT, label: 'Fill Audit', description: 'Fill audit forms' },
-        { id: PERMISSIONS.CREATE_FINDING, label: 'Create Finding', description: 'Create audit findings' }
-      ]
-    },
-    {
-      id: 'car_management',
-      name: 'Corrective Action Request (CAR)',
-      description: 'Manage corrective action requests',
-      permissions: [
-        { id: PERMISSIONS.CREATE_CAR, label: 'Create CAR', description: 'Create Corrective Action Requests' },
-        { id: PERMISSIONS.TRACK_CAR, label: 'Track CAR', description: 'Track CAR progress' },
-        { id: PERMISSIONS.MANAGE_CAR_DEPT, label: 'Manage CAR Department', description: 'Manage department CARs' },
-        { id: PERMISSIONS.CLOSE_CAR, label: 'Close CAR', description: 'Close Corrective Action Requests' }
-      ]
-    },
-    {
-      id: 'reporting',
-      name: 'Reporting & Analytics',
-      description: 'Generate reports and view analytics',
-      permissions: [
-        { id: PERMISSIONS.SUBMIT_REPORT, label: 'Submit Report', description: 'Submit reports' },
-        { id: PERMISSIONS.MANAGE_REPORT, label: 'Manage Report', description: 'Manage reports' },
-        { id: PERMISSIONS.VIEW_ANALYTICS, label: 'View Analytics', description: 'View system analytics' }
-      ]
-    },
-    {
-      id: 'system_configuration',
-      name: 'System Configuration',
-      description: 'Configure system settings and parameters',
-      permissions: [
-        { id: PERMISSIONS.SMTP_CONFIG, label: 'SMTP Configuration', description: 'Configure email settings' }
-      ]
+  // Get permission groups based on canonical mapping
+  const getPermissionGroups = (selectedRole, mode) => {
+    const featureGroups = {};
+
+    if (mode === 'view' && selectedRole && ROLE_PERMISSIONS[selectedRole]) {
+      // View mode: only show permissions assigned to the role
+      const allowedUCs = ROLE_PERMISSIONS[selectedRole];
+      
+      allowedUCs.forEach(ucId => {
+        const permission = PERMISSIONS_BY_UC[ucId];
+        if (permission) {
+          const featureId = permission.feature;
+          if (!featureGroups[featureId]) {
+            featureGroups[featureId] = {
+              id: featureId,
+              name: FEATURES[featureId]?.name || featureId,
+              description: FEATURES[featureId]?.description || '',
+              permissions: []
+            };
+          }
+          featureGroups[featureId].permissions.push({
+            id: ucId,
+            title: permission.title,
+            description: permission.description
+          });
+        }
+      });
+    } else if (mode === 'edit' && selectedRole && ROLE_PERMISSIONS[selectedRole]) {
+      // Edit mode: only show permissions assigned to the role
+      const allowedUCs = ROLE_PERMISSIONS[selectedRole];
+      
+      allowedUCs.forEach(ucId => {
+        const permission = PERMISSIONS_BY_UC[ucId];
+        if (permission) {
+          const featureId = permission.feature;
+          if (!featureGroups[featureId]) {
+            featureGroups[featureId] = {
+              id: featureId,
+              name: FEATURES[featureId]?.name || featureId,
+              description: FEATURES[featureId]?.description || '',
+              permissions: []
+            };
+          }
+          featureGroups[featureId].permissions.push({
+            id: ucId,
+            title: permission.title,
+            description: permission.description
+          });
+        }
+      });
+    } else {
+      // Add mode: show all available permissions
+      Object.entries(PERMISSIONS_BY_UC).forEach(([ucId, permission]) => {
+        const featureId = permission.feature;
+        if (!featureGroups[featureId]) {
+          featureGroups[featureId] = {
+            id: featureId,
+            name: FEATURES[featureId]?.name || featureId,
+            description: FEATURES[featureId]?.description || '',
+            permissions: []
+          };
+        }
+        featureGroups[featureId].permissions.push({
+          id: ucId,
+          title: permission.title,
+          description: permission.description
+        });
+      });
     }
-  ];
+
+    // Convert to array, sort by feature ID, and filter out empty groups
+    return Object.values(featureGroups)
+      .filter(group => group.permissions.length > 0)
+      .sort((a, b) => a.id.localeCompare(b.id));
+  };
+
+  const permissionGroups = getPermissionGroups(role?.name, mode);
 
   useEffect(() => {
     if (role && mode !== 'add') {
+      // For both view and edit mode, use the canonical permissions for the role
+      const rolePermissions = ROLE_PERMISSIONS[role.name] || [];
       setFormData({
         name: role.name || '',
-        permissions: role.permissions || [] // This should already be an array of permission IDs
+        permissions: rolePermissions
       });
     } else if (mode === 'add') {
       setFormData({
@@ -112,6 +105,22 @@ const RoleModal = ({ show, role, mode, onSave, onClose }) => {
       });
     }
     setErrors({});
+    
+    // Set expanded groups based on mode
+    if (mode === 'view') {
+      // In view mode, expand all groups by default
+      const allGroupsExpanded = {};
+      // Get feature IDs from the role's permissions
+      const rolePermissions = role ? ROLE_PERMISSIONS[role.name] || [] : [];
+      const roleFeatureIds = [...new Set(rolePermissions.map(ucId => PERMISSIONS_BY_UC[ucId]?.feature).filter(Boolean))];
+      roleFeatureIds.forEach(featureId => {
+        allGroupsExpanded[featureId] = true;
+      });
+      setExpandedGroups(allGroupsExpanded);
+    } else {
+      // In edit/add mode, start with all groups collapsed
+      setExpandedGroups({});
+    }
   }, [role, mode, show]);
 
   const validateForm = () => {
@@ -185,32 +194,6 @@ const RoleModal = ({ show, role, mode, onSave, onClose }) => {
     }));
   };
 
-  const handleSelectAllInGroup = (groupPermissions) => {
-    const groupPermissionIds = groupPermissions.map(p => p.id);
-    const allSelected = groupPermissionIds.every(id => formData.permissions.includes(id));
-    
-    if (allSelected) {
-      // Deselect all permissions in this group
-      setFormData(prev => ({
-        ...prev,
-        permissions: prev.permissions.filter(id => !groupPermissionIds.includes(id))
-      }));
-    } else {
-      // Select all permissions in this group
-      setFormData(prev => ({
-        ...prev,
-        permissions: [...new Set([...prev.permissions, ...groupPermissionIds])]
-      }));
-    }
-    
-    // Clear error when permissions are selected
-    if (errors.permissions) {
-      setErrors(prev => ({
-        ...prev,
-        permissions: ''
-      }));
-    }
-  };
 
   const getModalTitle = () => {
     switch (mode) {
@@ -310,24 +293,29 @@ const RoleModal = ({ show, role, mode, onSave, onClose }) => {
                   
                   {permissionGroups.map((group) => {
                     const isExpanded = expandedGroups[group.id];
-                    const groupPermissionIds = group.permissions.map(p => p.id);
-                    const selectedInGroup = groupPermissionIds.filter(id => formData.permissions.includes(id));
-                    const allSelected = selectedInGroup.length === groupPermissionIds.length;
-                    const someSelected = selectedInGroup.length > 0 && selectedInGroup.length < groupPermissionIds.length;
                     
                     return (
                       <div key={group.id} className="mb-3">
-                        {/* Group Header */}
+                        {/* Feature Group Header */}
                         <div 
-                          className={`d-flex align-items-center justify-content-between p-2 bg-light rounded permission-group-header ${!isReadOnly ? 'cursor-pointer' : ''}`}
+                          className={`d-flex align-items-center p-2 bg-light rounded permission-group-header ${!isReadOnly ? 'cursor-pointer' : ''}`}
                           onClick={() => !isReadOnly && handleGroupToggle(group.id)}
+                          role={!isReadOnly ? "button" : undefined}
+                          tabIndex={!isReadOnly ? 0 : undefined}
+                          onKeyDown={!isReadOnly ? (e) => {
+                            if (e.key === 'Enter' || e.key === ' ') {
+                              e.preventDefault();
+                              handleGroupToggle(group.id);
+                            }
+                          } : undefined}
+                          aria-expanded={!isReadOnly ? isExpanded : undefined}
                         >
                           <div className="d-flex align-items-center">
                             {!isReadOnly && (
                               isExpanded ? <ChevronDown className="me-2" size={16} /> : <ChevronRight className="me-2" size={16} />
                             )}
                             <div>
-                              <div className="fw-semibold text-primary-custom">
+                              <div className="fw-bold text-primary-custom">
                                 {group.name}
                               </div>
                               <small className="text-muted">
@@ -335,26 +323,9 @@ const RoleModal = ({ show, role, mode, onSave, onClose }) => {
                               </small>
                             </div>
                           </div>
-                          <div className="d-flex align-items-center">
-                            {!isReadOnly && (
-                              <Form.Check
-                                type="checkbox"
-                                checked={allSelected}
-                                ref={input => {
-                                  if (input) input.indeterminate = someSelected;
-                                }}
-                                onChange={() => handleSelectAllInGroup(group.permissions)}
-                                className="me-2"
-                                style={{ pointerEvents: 'auto' }}
-                              />
-                            )}
-                            <Badge className={`ms-2 ${allSelected ? 'full' : someSelected ? 'half-full' : 'not-filled'}`}>
-                              {selectedInGroup.length}/{groupPermissionIds.length}
-                            </Badge>
-                          </div>
                         </div>
                         
-                        {/* Group Permissions */}
+                        {/* UC Items List */}
                         {isExpanded && (
                           <div className="ms-3 mt-2">
                             <ListGroup variant="flush">
@@ -363,25 +334,35 @@ const RoleModal = ({ show, role, mode, onSave, onClose }) => {
                                   key={permission.id}
                                   className={`border-0 px-0 py-2 permission-item ${!isReadOnly ? 'cursor-pointer' : ''}`}
                                   onClick={() => !isReadOnly && handlePermissionToggle(permission.id)}
+                                  role={!isReadOnly ? "button" : undefined}
+                                  tabIndex={!isReadOnly ? 0 : undefined}
+                                  onKeyDown={!isReadOnly ? (e) => {
+                                    if (e.key === 'Enter' || e.key === ' ') {
+                                      e.preventDefault();
+                                      handlePermissionToggle(permission.id);
+                                    }
+                                  } : undefined}
                                 >
                                   <div className="d-flex align-items-center">
                                     <Form.Check
                                       type="checkbox"
+                                      id={`permission-${permission.id}`}
                                       checked={formData.permissions.includes(permission.id)}
                                       onChange={() => handlePermissionToggle(permission.id)}
                                       disabled={isReadOnly}
                                       className="me-3"
                                       style={{ pointerEvents: isReadOnly ? 'none' : 'auto' }}
+                                      aria-label={`${permission.title}: ${permission.description}`}
                                     />
                                     <div className="flex-grow-1">
-                                      <div RclassName="fw-medium text-dark">
-                                        {permission.label}
+                                      <div className="fw-medium text-dark">
+                                        {permission.title}
                                       </div>
                                       <small className="text-muted">
                                         {permission.description}
                                       </small>
                                     </div>
-                                    {formData.permissions.includes(permission.id) && (
+                                    {!isReadOnly && formData.permissions.includes(permission.id) && (
                                       <Badge bg="primary" className="ms-2">
                                         Selected
                                       </Badge>
@@ -399,7 +380,7 @@ const RoleModal = ({ show, role, mode, onSave, onClose }) => {
                 
                 <div className="mt-2">
                   <small className="text-muted">
-                    {formData.permissions.length} of {permissionGroups.reduce((total, group) => total + group.permissions.length, 0)} permissions selected
+                    {formData.permissions.length} permissions assigned
                   </small>
                 </div>
               </Form.Group>
@@ -414,11 +395,11 @@ const RoleModal = ({ show, role, mode, onSave, onClose }) => {
                   <div className="row">
                     <div className="col-md-6">
                       <small className="text-muted">Assigned Users:</small>
-                      <div className="fw-medium">{role.assignedUsers}</div>
+                      <div className="fw-medium">{role.assignedUsers || 0}</div>
                     </div>
                     <div className="col-md-6">
                       <small className="text-muted">Total Permissions:</small>
-                      <div className="fw-medium">{role.permissions?.length || 0}</div>
+                      <div className="fw-medium">{formData.permissions.length}</div>
                     </div>
                   </div>
                 </div>

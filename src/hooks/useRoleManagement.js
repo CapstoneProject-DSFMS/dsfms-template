@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { ROLES } from '../constants/permissions';
+import { ROLE_PERMISSIONS } from '../constants/permissions';
 
 export const useRoleManagement = () => {
   const [roles, setRoles] = useState([]);
@@ -18,8 +18,8 @@ export const useRoleManagement = () => {
         // Simulate API call
         await new Promise(resolve => setTimeout(resolve, 1000));
 
-        // Convert ROLES object to array of role objects
-        const mockRoles = Object.entries(ROLES).map(([name, permissions], index) => ({
+        // Convert ROLE_PERMISSIONS object to array of role objects
+        const mockRoles = Object.entries(ROLE_PERMISSIONS).map(([name, permissions], index) => ({
           id: index + 1,
           name,
           permissions,
