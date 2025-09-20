@@ -9,7 +9,7 @@ import {
   ResponsiveContainer
 } from 'recharts';
 import { useAuth } from '../../hooks/useAuth';
-import { PERMISSIONS } from '../../constants/permissions';
+import { PERMISSIONS_BY_UC } from '../../constants/permissions';
 import { PermissionWrapper } from '../../components/Common';
 import { useDashboard } from '../../hooks/useDashboard';
 
