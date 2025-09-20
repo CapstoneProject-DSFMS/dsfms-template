@@ -1,14 +1,16 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { useLocation } from 'react-router-dom';
 import { Navbar, Nav, Dropdown, Button } from 'react-bootstrap';
 import { 
   PersonCircle, 
   BoxArrowRight,
-  List
+  List,
+  X
 } from 'react-bootstrap-icons';
 
 const Header = ({ onToggleSidebar }) => {
   const location = useLocation();
+  const [showProfileMenu, setShowProfileMenu] = useState(false);
   
   // Map routes to titles
   const getTitleFromPath = (path) => {
@@ -45,30 +47,38 @@ const Header = ({ onToggleSidebar }) => {
     window.location.href = getBasename();
   };
 
+  const toggleProfileMenu = () => {
+    setShowProfileMenu(!showProfileMenu);
+  };
+
+  const closeProfileMenu = () => {
+    setShowProfileMenu(false);
+  };
+
   return (
-    <Navbar 
-      bg="white" 
-      expand="lg" 
-      className="border-bottom border-neutral-200 shadow-sm"
-      style={{ minHeight: '60px' }}
-    >
-      <div className="container-fluid">
-        <Button
-          variant="link"
-          className="text-primary-custom p-2 me-3"
-          onClick={onToggleSidebar}
-          style={{ border: 'none', background: 'transparent' }}
-        >
-          <List size={20} />
-        </Button>
+    <>
+      <Navbar 
+        bg="white" 
+        expand="lg" 
+        className="border-bottom border-neutral-200 shadow-sm"
+        style={{ minHeight: '60px' }}
+      >
+        <div className="container-fluid">
+          <Button
+            variant="link"
+            className="text-primary-custom p-2 me-3"
+            onClick={onToggleSidebar}
+            style={{ border: 'none', background: 'transparent' }}
+          >
+            <List size={20} />
+          </Button>
 
-        <Navbar.Brand className="text-primary-custom fw-bold custom-title">
-          {getTitleFromPath(location.pathname)}
-        </Navbar.Brand>
+          <Navbar.Brand className="text-primary-custom fw-bold custom-title">
+            {getTitleFromPath(location.pathname)}
+          </Navbar.Brand>
 
-        <Navbar.Toggle aria-controls="basic-navbar-nav" />
-        <Navbar.Collapse id="basic-navbar-nav">
-          <Nav className="ms-auto align-items-center">
+          {/* Desktop Profile Menu */}
+          <div className="d-none d-lg-block ms-auto">
             <Dropdown align="end">
               <Dropdown.Toggle
                 variant="link"
@@ -76,7 +86,7 @@ const Header = ({ onToggleSidebar }) => {
                 style={{ border: 'none', background: 'transparent', textDecoration: 'none' }}
               >
                 <PersonCircle size={32} className="me-2" />
-                <span className="d-none d-md-inline">Admin User</span>
+                <span>Admin User</span>
               </Dropdown.Toggle>
 
               <Dropdown.Menu className="border-0 shadow">
@@ -99,10 +109,82 @@ const Header = ({ onToggleSidebar }) => {
                 </Dropdown.Item>
               </Dropdown.Menu>
             </Dropdown>
-          </Nav>
-        </Navbar.Collapse>
+          </div>
+
+          {/* Mobile/Tablet Profile Icon - Replaces right hamburger */}
+          <div 
+            className="d-lg-none text-primary-custom p-2"
+            onClick={toggleProfileMenu}
+            style={{ 
+              border: 'none', 
+              background: 'transparent', 
+              textDecoration: 'none',
+              cursor: 'pointer',
+              marginLeft: 'auto'
+            }}
+          >
+            <PersonCircle size={32} />
+          </div>
+        </div>
+      </Navbar>
+
+      {/* Profile Menu Overlay */}
+      {showProfileMenu && (
+        <div 
+          className={`profile-menu-overlay ${showProfileMenu ? 'show' : ''}`}
+          onClick={closeProfileMenu}
+        />
+      )}
+
+      {/* Profile Menu Slide Panel */}
+      <div className={`profile-menu-slide ${showProfileMenu ? 'show' : ''}`}>
+        {/* Profile Menu Header */}
+        <div className="profile-menu-header">
+          <button 
+            className="profile-menu-close"
+            onClick={closeProfileMenu}
+            aria-label="Close profile menu"
+          >
+            <X size={20} />
+          </button>
+          
+          <div className="profile-avatar">
+            <PersonCircle size={40} />
+          </div>
+          
+          <div className="profile-name">Admin User</div>
+          <div className="profile-email">admin@company.com</div>
+        </div>
+
+        {/* Profile Menu Items */}
+        <ul className="profile-menu-items">
+          <li className="profile-menu-item">
+            <a 
+              href="#profile" 
+              className="profile-menu-link"
+              onClick={closeProfileMenu}
+            >
+              <PersonCircle className="icon" />
+              Profile
+            </a>
+          </li>
+          <li className="profile-menu-item">
+            <a 
+              href="#" 
+              className="profile-menu-link danger"
+              onClick={(e) => {
+                e.preventDefault();
+                closeProfileMenu();
+                handleLogout();
+              }}
+            >
+              <BoxArrowRight className="icon" />
+              Logout
+            </a>
+          </li>
+        </ul>
       </div>
-    </Navbar>
+    </>
   );
 };
 
