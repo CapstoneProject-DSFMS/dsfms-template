@@ -2,7 +2,7 @@ import React from 'react';
 import { Badge, Dropdown } from 'react-bootstrap';
 import { Eye, Pencil, PersonX, CheckCircle, ThreeDots } from 'react-bootstrap-icons';
 import { useAuth } from '../../../hooks/useAuth';
-import { PERMISSIONS } from '../../../constants/permissions';
+import { PERMISSIONS_BY_UC } from '../../../constants/permissions';
 import PermissionWrapper from '../../Common/PermissionWrapper';
 
 const UserRow = ({ user, index, onView, onEdit, onDisable }) => {
@@ -105,7 +105,7 @@ const UserRow = ({ user, index, onView, onEdit, onDisable }) => {
               View Details
             </Dropdown.Item>
             <PermissionWrapper 
-              permission={PERMISSIONS.MANAGE_USERS}
+              permission={PERMISSIONS_BY_UC['UC-06'].title}
               fallback={null}
             >
               <Dropdown.Item
@@ -117,7 +117,7 @@ const UserRow = ({ user, index, onView, onEdit, onDisable }) => {
               </Dropdown.Item>
             </PermissionWrapper>
             <PermissionWrapper 
-              permission={PERMISSIONS.MANAGE_USERS}
+              permission={PERMISSIONS_BY_UC['UC-06'].title}
               fallback={null}
             >
               <Dropdown.Divider />

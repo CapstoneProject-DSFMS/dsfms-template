@@ -4,7 +4,7 @@ import { Plus, ThreeDotsVertical } from 'react-bootstrap-icons';
 import { RoleTable, RoleModal, RoleFilterPanel, DisableRoleModal } from '../../components/Dashboard/Role';
 import { SearchBar, PermissionWrapper } from '../../components/Common';
 import { useRoleManagement } from '../../hooks/useRoleManagement';
-import { PERMISSIONS } from '../../constants/permissions';
+import { PERMISSIONS_BY_UC } from '../../constants/permissions';
 
 const RoleManagementPage = () => {
   const [disableModalShow, setDisableModalShow] = useState(false);
@@ -152,7 +152,7 @@ const RoleManagementPage = () => {
             </Col>
             <Col xs={12} md={4} className="mt-2 mt-md-0">
               <PermissionWrapper 
-                permission={PERMISSIONS.MANAGE_ROLES}
+                permission={PERMISSIONS_BY_UC['UC-07'].title}
                 fallback={null}
               >
                 <Button

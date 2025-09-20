@@ -4,7 +4,7 @@ import { Plus, Upload, Funnel, ChevronDown } from 'react-bootstrap-icons';
 import { UserTable, UserModal, BulkImportModal, DisableUserModal, FilterPanel } from '../../components/Dashboard/User';
 import { SearchBar, PermissionWrapper } from '../../components/Common';
 import { useUserManagement } from '../../hooks/useUserManagement';
-import { PERMISSIONS } from '../../constants/permissions';
+import { PERMISSIONS_BY_UC } from '../../constants/permissions';
 import '../../styles/scrollable-table.css';
 
 const UserManagementPage = () => {
@@ -83,7 +83,7 @@ const UserManagementPage = () => {
             <Col xs={12} md={4} className="mt-2 mt-md-0">
               <div className="d-flex gap-2 action-buttons-mobile">
                 <PermissionWrapper 
-                  permission={PERMISSIONS.MANAGE_USERS}
+                  permission={PERMISSIONS_BY_UC['UC-06'].title}
                   fallback={null}
                 >
                   <Button
@@ -98,7 +98,7 @@ const UserManagementPage = () => {
                   </Button>
                 </PermissionWrapper>
                 <PermissionWrapper 
-                  permission={PERMISSIONS.MANAGE_USERS}
+                  permission={PERMISSIONS_BY_UC['UC-06'].title}
                   fallback={null}
                 >
                   <Button
