@@ -5,7 +5,6 @@ import { PERMISSIONS_BY_UC } from '../../../constants/permissions';
 import PermissionWrapper from '../../Common/PermissionWrapper';
 import { Dropdown } from 'react-bootstrap';
 import { Eye, Pencil, PersonX, ThreeDotsVertical } from 'react-bootstrap-icons';
-import '../../../styles/dropdown-clean.css';
 
 const UserRow = ({ user, index, onView, onEdit, onDisable }) => {
   

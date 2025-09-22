@@ -2,7 +2,6 @@ import React from 'react';
 import { Badge } from 'react-bootstrap';
 import { Dropdown } from 'react-bootstrap';
 import { Eye, Pencil, PersonX, ThreeDotsVertical } from 'react-bootstrap-icons';
-import '../../../styles/dropdown-clean.css';
 
 const DepartmentRow = ({ department, index, onView, onEdit, onToggleStatus }) => {
   const getStatusVariant = (status) => {

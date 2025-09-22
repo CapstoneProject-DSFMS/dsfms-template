@@ -102,3 +102,24 @@
   top: 100% !important;
   margin-top: 0.125rem !important;
 }
+
+/* Custom dropdown for header */
+.custom-dropdown {
+  position: absolute !important;
+  z-index: 9999 !important;
+  display: block !important;
+  visibility: visible !important;
+  opacity: 1 !important;
+}
+
+.custom-dropdown.hide {
+  display: none !important;
+  visibility: hidden !important;
+  opacity: 0 !important;
+}
+
+.custom-dropdown.show {
+  display: block !important;
+  visibility: visible !important;
+  opacity: 1 !important;
+}
