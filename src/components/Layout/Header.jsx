@@ -1,15 +1,18 @@
 import React, { useState } from 'react';
-import { useLocation } from 'react-router-dom';
-import { Navbar, Nav, Dropdown, Button } from 'react-bootstrap';
+import { useLocation, useNavigate } from 'react-router-dom';
+import { Navbar, Nav, Button } from 'react-bootstrap';
 import { 
   PersonCircle, 
   BoxArrowRight,
   List,
   X
 } from 'react-bootstrap-icons';
+import { UnifiedDropdown } from '../Common';
+import '../../styles/dropdown-clean.css';
 
 const Header = ({ onToggleSidebar }) => {
   const location = useLocation();
+  const navigate = useNavigate();
   const [showProfileMenu, setShowProfileMenu] = useState(false);
   
   // Map routes to titles
@@ -20,6 +23,7 @@ const Header = ({ onToggleSidebar }) => {
       '/admin/users': 'User Management',
       '/admin/roles': 'Role Management',
       '/admin/departments': 'Department Management',
+      '/admin/profile': 'Profile',
       '/admin/forms': 'Form Templates',
       '/admin/system-config': 'System Configuration'
     };
@@ -55,6 +59,12 @@ const Header = ({ onToggleSidebar }) => {
     setShowProfileMenu(false);
   };
 
+  const handleProfileClick = () => {
+    console.log('Profile clicked, navigating to /admin/profile');
+    navigate('/admin/profile');
+    setShowProfileMenu(false);
+  };
+
   return (
     <>
       <Navbar 
@@ -79,36 +89,46 @@ const Header = ({ onToggleSidebar }) => {
 
           {/* Desktop Profile Menu */}
           <div className="d-none d-lg-block ms-auto">
-            <Dropdown align="end">
-              <Dropdown.Toggle
-                variant="link"
-                className="text-primary-custom p-0 d-flex align-items-center"
-                style={{ border: 'none', background: 'transparent', textDecoration: 'none' }}
-              >
-                <PersonCircle size={32} className="me-2" />
-                <span>Admin User</span>
-              </Dropdown.Toggle>
-
-              <Dropdown.Menu className="border-0 shadow">
-                <Dropdown.Header className="text-primary-custom">
-                  <div className="fw-bold">Admin User</div>
-                  <small className="text-muted">admin@company.com</small>
-                </Dropdown.Header>
-                <Dropdown.Divider />
-                <Dropdown.Item href="#profile" className="text-primary-custom">
-                  <PersonCircle className="me-2" />
-                  Profile
-                </Dropdown.Item>
-                <Dropdown.Divider />
-                <Dropdown.Item 
-                  onClick={handleLogout}
-                  className="text-danger"
-                >
-                  <BoxArrowRight className="me-2" />
-                  Logout
-                </Dropdown.Item>
-              </Dropdown.Menu>
-            </Dropdown>
+            <UnifiedDropdown
+              align="end"
+              className="header-dropdown"
+              trigger={{
+                variant: 'link',
+                className: 'text-primary-custom p-0 d-flex align-items-center',
+                style: { border: 'none', background: 'transparent', textDecoration: 'none' },
+                children: (
+                  <>
+                    <PersonCircle size={32} className="me-2" />
+                    <span>Admin User</span>
+                  </>
+                )
+              }}
+              items={[
+                {
+                  type: 'header',
+                  content: (
+                    <>
+                      <div className="fw-bold text-primary-custom">Admin User</div>
+                      <small className="text-muted">admin@company.com</small>
+                    </>
+                  )
+                },
+                { type: 'divider' },
+                {
+                  label: 'Profile',
+                  icon: <PersonCircle />,
+                  className: 'text-primary-custom d-flex align-items-center',
+                  onClick: handleProfileClick
+                },
+                { type: 'divider' },
+                {
+                  label: 'Logout',
+                  icon: <BoxArrowRight />,
+                  className: 'text-danger d-flex align-items-center',
+                  onClick: handleLogout
+                }
+              ]}
+            />
           </div>
 
           {/* Mobile/Tablet Profile Icon - Replaces right hamburger */}
@@ -160,9 +180,12 @@ const Header = ({ onToggleSidebar }) => {
         <ul className="profile-menu-items">
           <li className="profile-menu-item">
             <a 
-              href="#profile" 
+              href="#" 
               className="profile-menu-link"
-              onClick={closeProfileMenu}
+              onClick={(e) => {
+                e.preventDefault();
+                handleProfileClick();
+              }}
             >
               <PersonCircle className="icon" />
               Profile

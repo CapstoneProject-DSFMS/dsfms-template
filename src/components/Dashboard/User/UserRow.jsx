@@ -3,10 +3,11 @@ import { Badge } from 'react-bootstrap';
 import { useAuth } from '../../../hooks/useAuth';
 import { PERMISSIONS_BY_UC } from '../../../constants/permissions';
 import PermissionWrapper from '../../Common/PermissionWrapper';
-import { ActionDropdown } from '../../Common';
+import { Dropdown } from 'react-bootstrap';
+import { Eye, Pencil, PersonX, ThreeDotsVertical } from 'react-bootstrap-icons';
+import '../../../styles/dropdown-clean.css';
 
 const UserRow = ({ user, index, onView, onEdit, onDisable }) => {
-  const { hasPermission } = useAuth();
   
   const getStatusVariant = (status) => {
     return status === 'Active' ? 'success' : 'secondary';
@@ -87,18 +88,73 @@ const UserRow = ({ user, index, onView, onEdit, onDisable }) => {
           permission={PERMISSIONS_BY_UC['UC-06'].title}
           fallback={null}
         >
-          <ActionDropdown
-            item={user}
-            onView={onView}
-            onEdit={onEdit}
-            onToggleStatus={onDisable}
-            viewLabel="View Details"
-            editLabel="Edit User"
-            toggleLabel={user.status === 'Active' ? 'Disable User' : 'Enable User'}
-            statusField="status"
-            activeValue="Active"
-            inactiveValue="Inactive"
-          />
+          <Dropdown align="end">
+            <Dropdown.Toggle 
+              variant="light" 
+              size="sm" 
+              id={`user-actions-${user.id}`} 
+              className="border-0"
+            >
+              <ThreeDotsVertical size={16} />
+            </Dropdown.Toggle>
+            <Dropdown.Menu className="shadow-sm">
+              <Dropdown.Item 
+                onClick={() => onView(user)}
+                className="d-flex align-items-center transition-all"
+                style={{
+                  transition: 'all 0.2s ease'
+                }}
+                onMouseEnter={(e) => {
+                  e.target.style.backgroundColor = 'rgba(0, 0, 0, 0.05)';
+                  e.target.style.paddingLeft = '1.5rem';
+                }}
+                onMouseLeave={(e) => {
+                  e.target.style.backgroundColor = 'transparent';
+                  e.target.style.paddingLeft = '1rem';
+                }}
+              >
+                <Eye className="me-2" size={16} />
+                View Details
+              </Dropdown.Item>
+              <Dropdown.Item 
+                onClick={() => onEdit(user)}
+                className="d-flex align-items-center transition-all"
+                style={{
+                  transition: 'all 0.2s ease'
+                }}
+                onMouseEnter={(e) => {
+                  e.target.style.backgroundColor = 'rgba(0, 0, 0, 0.05)';
+                  e.target.style.paddingLeft = '1.5rem';
+                }}
+                onMouseLeave={(e) => {
+                  e.target.style.backgroundColor = 'transparent';
+                  e.target.style.paddingLeft = '1rem';
+                }}
+              >
+                <Pencil className="me-2" size={16} />
+                Edit User
+              </Dropdown.Item>
+              <Dropdown.Divider />
+              <Dropdown.Item 
+                onClick={() => onDisable(user)}
+                className="d-flex align-items-center transition-all text-danger"
+                style={{
+                  transition: 'all 0.2s ease'
+                }}
+                onMouseEnter={(e) => {
+                  e.target.style.backgroundColor = 'rgba(220, 53, 69, 0.1)';
+                  e.target.style.paddingLeft = '1.5rem';
+                }}
+                onMouseLeave={(e) => {
+                  e.target.style.backgroundColor = 'transparent';
+                  e.target.style.paddingLeft = '1rem';
+                }}
+              >
+                <PersonX className="me-2" size={16} />
+                {user.status === 'Active' ? 'Disable User' : 'Enable User'}
+              </Dropdown.Item>
+            </Dropdown.Menu>
+          </Dropdown>
         </PermissionWrapper>
       </td>
     </tr>

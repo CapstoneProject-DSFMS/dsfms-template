@@ -1,8 +1,10 @@
 import React from 'react';
 import { Badge } from 'react-bootstrap';
-import { ActionDropdown } from '../../Common';
+import { Dropdown } from 'react-bootstrap';
+import { Eye, Pencil, PersonX, ThreeDotsVertical } from 'react-bootstrap-icons';
+import '../../../styles/dropdown-clean.css';
 
-const DepartmentRow = ({ department, index, onView, onEdit, onDelete, onToggleStatus }) => {
+const DepartmentRow = ({ department, index, onView, onEdit, onToggleStatus }) => {
   const getStatusVariant = (status) => {
     return status === 'ACTIVE' ? 'success' : 'secondary';
   };
@@ -84,18 +86,73 @@ const DepartmentRow = ({ department, index, onView, onEdit, onDelete, onToggleSt
       </td>
       
       <td className="border-neutral-200 align-middle text-center show-mobile">
-        <ActionDropdown
-          item={department}
-          onView={onView}
-          onEdit={onEdit}
-          onToggleStatus={onToggleStatus}
-          viewLabel="View Details"
-          editLabel="Edit Department"
-          toggleLabel={department.status === 'ACTIVE' ? 'Deactivate' : 'Activate'}
-          statusField="status"
-          activeValue="ACTIVE"
-          inactiveValue="INACTIVE"
-        />
+        <Dropdown align="end">
+          <Dropdown.Toggle 
+            variant="light" 
+            size="sm" 
+            id={`department-actions-${department.id}`} 
+            className="border-0"
+          >
+            <ThreeDotsVertical size={16} />
+          </Dropdown.Toggle>
+          <Dropdown.Menu className="shadow-sm">
+            <Dropdown.Item 
+              onClick={() => onView(department)}
+              className="d-flex align-items-center transition-all"
+              style={{
+                transition: 'all 0.2s ease'
+              }}
+              onMouseEnter={(e) => {
+                e.target.style.backgroundColor = 'rgba(0, 0, 0, 0.05)';
+                e.target.style.paddingLeft = '1.5rem';
+              }}
+              onMouseLeave={(e) => {
+                e.target.style.backgroundColor = 'transparent';
+                e.target.style.paddingLeft = '1rem';
+              }}
+            >
+              <Eye className="me-2" size={16} />
+              View Details
+            </Dropdown.Item>
+            <Dropdown.Item 
+              onClick={() => onEdit(department)}
+              className="d-flex align-items-center transition-all"
+              style={{
+                transition: 'all 0.2s ease'
+              }}
+              onMouseEnter={(e) => {
+                e.target.style.backgroundColor = 'rgba(0, 0, 0, 0.05)';
+                e.target.style.paddingLeft = '1.5rem';
+              }}
+              onMouseLeave={(e) => {
+                e.target.style.backgroundColor = 'transparent';
+                e.target.style.paddingLeft = '1rem';
+              }}
+            >
+              <Pencil className="me-2" size={16} />
+              Edit Department
+            </Dropdown.Item>
+            <Dropdown.Divider />
+            <Dropdown.Item 
+              onClick={() => onToggleStatus(department)}
+              className="d-flex align-items-center transition-all text-danger"
+              style={{
+                transition: 'all 0.2s ease'
+              }}
+              onMouseEnter={(e) => {
+                e.target.style.backgroundColor = 'rgba(220, 53, 69, 0.1)';
+                e.target.style.paddingLeft = '1.5rem';
+              }}
+              onMouseLeave={(e) => {
+                e.target.style.backgroundColor = 'transparent';
+                e.target.style.paddingLeft = '1rem';
+              }}
+            >
+              <PersonX className="me-2" size={16} />
+              {department.status === 'ACTIVE' ? 'Deactivate' : 'Activate'}
+            </Dropdown.Item>
+          </Dropdown.Menu>
+        </Dropdown>
       </td>
     </tr>
   );
