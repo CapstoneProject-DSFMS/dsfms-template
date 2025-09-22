@@ -135,7 +135,7 @@ const RoleManagementPage = () => {
   );
 
   return (
-    <Container fluid className="py-4">
+    <Container fluid className="py-4 role-management-page">
       {error && (
         <Alert variant="danger" dismissible onClose={() => setError(null)}>
           {error}
@@ -180,7 +180,7 @@ const RoleManagementPage = () => {
                 className="search-bar-mobile"
               />
             </Col>
-            <Col xs={12} lg={3} md={4} className="mb-2 mb-lg-0">
+            <Col xs={12} lg={3} md={4} className="mb-2 mb-lg-0 position-relative">
               <RoleFilterPanel
                 uniqueStatuses={uniqueStatuses}
                 selectedStatuses={selectedStatuses}
