@@ -12,7 +12,7 @@ const RoleFilterPanel = ({
   const hasActiveFilters = selectedStatuses.length > 0;
 
   return (
-    <Dropdown className={`role-filter-panel ${className}`}>
+    <Dropdown className={`filter-panel-dropdown ${className}`}>
       <Dropdown.Toggle 
         variant="outline-secondary" 
         className="w-100 d-flex align-items-center justify-content-between position-relative"

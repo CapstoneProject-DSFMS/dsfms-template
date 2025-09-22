@@ -93,9 +93,7 @@ const UserModal = ({ show, user, mode, onSave, onClose }) => {
       newErrors.role = 'Role is required';
     }
 
-    if (!formData.department) {
-      newErrors.department = 'Department is required';
-    }
+    // Department is not required for any role
 
     // Role-specific validation
     if (formData.role === 'TRAINER') {
@@ -322,7 +320,7 @@ const UserModal = ({ show, user, mode, onSave, onClose }) => {
 
           {/* Role and Department */}
           <Row>
-            <Col md={6}>
+            <Col md={formData.role === 'TRAINEE' ? 12 : 6}>
               <Form.Group className="mb-4">
                 <Form.Label className="text-primary-custom fw-semibold">
                   Role *
@@ -348,31 +346,34 @@ const UserModal = ({ show, user, mode, onSave, onClose }) => {
               </Form.Group>
             </Col>
 
-            <Col md={6}>
-              <Form.Group className="mb-4">
-                <Form.Label className="text-primary-custom fw-semibold">
-                  Department *
-                </Form.Label>
-                <Form.Select
-                  value={formData.department}
-                  onChange={(e) => handleInputChange('department', e.target.value)}
-                  isInvalid={!!errors.department}
-                  disabled={isReadOnly}
-                  style={{
-                    borderColor: errors.department ? '#dc3545' : 'var(--bs-primary)',
-                    borderWidth: '2px'
-                  }}
-                >
-                  <option value="">Select a department</option>
-                  {departments.map(dept => (
-                    <option key={dept} value={dept}>{dept}</option>
-                  ))}
-                </Form.Select>
-                <Form.Control.Feedback type="invalid">
-                  {errors.department}
-                </Form.Control.Feedback>
-              </Form.Group>
-            </Col>
+            {/* Only show Department field if role is not TRAINEE */}
+            {formData.role !== 'TRAINEE' && (
+              <Col md={6}>
+                <Form.Group className="mb-4">
+                  <Form.Label className="text-primary-custom fw-semibold">
+                    Department
+                  </Form.Label>
+                  <Form.Select
+                    value={formData.department}
+                    onChange={(e) => handleInputChange('department', e.target.value)}
+                    isInvalid={!!errors.department}
+                    disabled={isReadOnly}
+                    style={{
+                      borderColor: errors.department ? '#dc3545' : 'var(--bs-primary)',
+                      borderWidth: '2px'
+                    }}
+                  >
+                    <option value="">Select a department</option>
+                    {departments.map(dept => (
+                      <option key={dept} value={dept}>{dept}</option>
+                    ))}
+                  </Form.Select>
+                  <Form.Control.Feedback type="invalid">
+                    {errors.department}
+                  </Form.Control.Feedback>
+                </Form.Group>
+              </Col>
+            )}
           </Row>
 
           {/* Role-specific fields */}
