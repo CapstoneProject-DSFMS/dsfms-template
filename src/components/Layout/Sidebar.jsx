@@ -79,7 +79,7 @@ const Sidebar = ({ collapsed, onClose }) => {
               <img
                 src={logo}
                 alt="Logo"
-                style={{ width: "30%", marginRight: "0px" }}
+                style={{ width: "50%", marginRight: "0px" }}
               />
             </>
           )}
