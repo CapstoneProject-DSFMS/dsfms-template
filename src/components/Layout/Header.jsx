@@ -1,16 +1,20 @@
-import React, { useState } from 'react';
-import { useLocation } from 'react-router-dom';
-import { Navbar, Nav, Dropdown, Button } from 'react-bootstrap';
+import React, { useState, useRef, useEffect } from 'react';
+import { useLocation, useNavigate } from 'react-router-dom';
+import { Navbar, Nav, Button, Dropdown } from 'react-bootstrap';
 import { 
   PersonCircle, 
   BoxArrowRight,
   List,
   X
 } from 'react-bootstrap-icons';
+import '../../styles/dropdown-clean.css';
 
 const Header = ({ onToggleSidebar }) => {
   const location = useLocation();
+  const navigate = useNavigate();
   const [showProfileMenu, setShowProfileMenu] = useState(false);
+  const [showDesktopDropdown, setShowDesktopDropdown] = useState(false);
+  const dropdownRef = useRef(null);
   
   // Map routes to titles
   const getTitleFromPath = (path) => {
@@ -20,6 +24,7 @@ const Header = ({ onToggleSidebar }) => {
       '/admin/users': 'User Management',
       '/admin/roles': 'Role Management',
       '/admin/departments': 'Department Management',
+      '/admin/profile': 'Profile',
       '/admin/forms': 'Form Templates',
       '/admin/system-config': 'System Configuration'
     };
@@ -55,6 +60,28 @@ const Header = ({ onToggleSidebar }) => {
     setShowProfileMenu(false);
   };
 
+  const handleProfileClick = () => {
+    navigate('/admin/profile');
+    setShowProfileMenu(false);
+  };
+
+  // Close dropdown when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
+        setShowDesktopDropdown(false);
+      }
+    };
+
+    if (showDesktopDropdown) {
+      document.addEventListener('mousedown', handleClickOutside);
+    }
+
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, [showDesktopDropdown]);
+
   return (
     <>
       <Navbar 
@@ -78,37 +105,83 @@ const Header = ({ onToggleSidebar }) => {
           </Navbar.Brand>
 
           {/* Desktop Profile Menu */}
-          <div className="d-none d-lg-block ms-auto">
-            <Dropdown align="end">
-              <Dropdown.Toggle
-                variant="link"
+          <div className="d-none d-lg-block ms-auto" style={{ position: 'relative' }}>
+            <div ref={dropdownRef} style={{ position: 'relative' }}>
+              <button
                 className="text-primary-custom p-0 d-flex align-items-center"
-                style={{ border: 'none', background: 'transparent', textDecoration: 'none' }}
+                style={{ 
+                  border: 'none', 
+                  background: 'transparent', 
+                  textDecoration: 'none',
+                  cursor: 'pointer'
+                }}
+                onClick={() => setShowDesktopDropdown(!showDesktopDropdown)}
               >
                 <PersonCircle size={32} className="me-2" />
                 <span>Admin User</span>
-              </Dropdown.Toggle>
-
-              <Dropdown.Menu className="border-0 shadow">
-                <Dropdown.Header className="text-primary-custom">
-                  <div className="fw-bold">Admin User</div>
-                  <small className="text-muted">admin@company.com</small>
-                </Dropdown.Header>
-                <Dropdown.Divider />
-                <Dropdown.Item href="#profile" className="text-primary-custom">
-                  <PersonCircle className="me-2" />
-                  Profile
-                </Dropdown.Item>
-                <Dropdown.Divider />
-                <Dropdown.Item 
-                  onClick={handleLogout}
-                  className="text-danger"
-                >
-                  <BoxArrowRight className="me-2" />
+              </button>
+              
+              
+              {/* Real dropdown - use CSS classes */}
+              <div
+                className={`custom-dropdown ${showDesktopDropdown ? 'show' : 'hide'}`}
+                style={{
+                  position: 'absolute',
+                  top: '100%',
+                  right: '0',
+                  zIndex: 9999,
+                  minWidth: '200px',
+                  backgroundColor: 'white',
+                  border: '1px solid rgba(0,0,0,0.15)',
+                  borderRadius: '0.375rem',
+                  padding: '0.5rem 0',
+                  width: '200px',
+                  height: 'auto',
+                  overflow: 'visible'
+                }}
+              >
+                  <div className="dropdown-header">
+                    <div className="fw-bold text-primary-custom">Admin User</div>
+                    <small className="text-muted">admin@company.com</small>
+                  </div>
+                  <div className="dropdown-divider"></div>
+                  <button
+                    className="dropdown-item d-flex align-items-center text-primary-custom"
+                    style={{
+                      border: 'none',
+                      background: 'transparent',
+                      width: '100%',
+                      textAlign: 'left',
+                      padding: '0.25rem 1rem'
+                    }}
+                    onClick={() => {
+                      setShowDesktopDropdown(false);
+                      handleProfileClick();
+                    }}
+                  >
+                    <PersonCircle className="me-2" size={16} />
+                    Profile
+                  </button>
+                  <div className="dropdown-divider"></div>
+                  <button
+                    className="dropdown-item d-flex align-items-center text-danger"
+                    style={{
+                      border: 'none',
+                      background: 'transparent',
+                      width: '100%',
+                      textAlign: 'left',
+                      padding: '0.25rem 1rem'
+                    }}
+                    onClick={() => {
+                      setShowDesktopDropdown(false);
+                      handleLogout();
+                    }}
+                  >
+                  <BoxArrowRight className="me-2" size={16} />
                   Logout
-                </Dropdown.Item>
-              </Dropdown.Menu>
-            </Dropdown>
+                </button>
+              </div>
+            </div>
           </div>
 
           {/* Mobile/Tablet Profile Icon - Replaces right hamburger */}
@@ -160,9 +233,12 @@ const Header = ({ onToggleSidebar }) => {
         <ul className="profile-menu-items">
           <li className="profile-menu-item">
             <a 
-              href="#profile" 
+              href="#" 
               className="profile-menu-link"
-              onClick={closeProfileMenu}
+              onClick={(e) => {
+                e.preventDefault();
+                handleProfileClick();
+              }}
             >
               <PersonCircle className="icon" />
               Profile

@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import {
   Container,
   Row,
@@ -22,6 +22,14 @@ function Login() {
   const location = useLocation();
   const { setUser, setIsAuthenticated, isAuthenticated, isLoading } = useAuth();
 
+  // Redirect if already authenticated
+  useEffect(() => {
+    if (isAuthenticated) {
+      const from = location.state?.from?.pathname || "/admin";
+      navigate(from, { replace: true });
+    }
+  }, [isAuthenticated, navigate, location.state?.from?.pathname]);
+
   // Show loading while checking authentication
   if (isLoading) {
     return (
@@ -34,10 +42,7 @@ function Login() {
     );
   }
 
-  // Redirect if already authenticated
   if (isAuthenticated) {
-    const from = location.state?.from?.pathname || "/admin";
-    navigate(from, { replace: true });
     return null;
   }
 

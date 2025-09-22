@@ -1,10 +1,11 @@
 import React from 'react';
-import { Badge, Dropdown } from 'react-bootstrap';
-import { Eye, Pencil, Trash, ThreeDots, ShieldX } from 'react-bootstrap-icons';
-import DisableRoleButton from './DisableRoleButton';
+import { Badge } from 'react-bootstrap';
 import { useAuth } from '../../../hooks/useAuth';
 import { PERMISSIONS_BY_UC } from '../../../constants/permissions';
 import PermissionWrapper from '../../Common/PermissionWrapper';
+import { UnifiedDropdown } from '../../Common';
+import { Eye, Pencil, Trash } from 'react-bootstrap-icons';
+import '../../../styles/dropdown-clean.css';
 
 const RoleRow = ({ role, index, onView, onEdit, onDelete, onDisable }) => {
   const { hasPermission } = useAuth();
@@ -101,54 +102,45 @@ const RoleRow = ({ role, index, onView, onEdit, onDelete, onDisable }) => {
             )}
             
             {/* Actions Dropdown */}
-            <Dropdown>
-              <Dropdown.Toggle
-                variant="link"
-                className="text-primary-custom p-1"
-                style={{ 
-                  border: 'none', 
-                  background: 'transparent',
-                  boxShadow: 'none'
+            <PermissionWrapper 
+              permission={PERMISSIONS_BY_UC['UC-07'].title}
+              fallback={null}
+            >
+              <UnifiedDropdown
+                align="end"
+                className="table-dropdown"
+                trigger={{
+                  variant: 'link',
+                  className: 'btn btn-link p-0 text-primary-custom',
+                  style: { border: 'none', background: 'transparent' },
+                  children: (
+                    <span className="d-flex align-items-center">
+                      <span className="me-1">⋯</span>
+                      <span style={{ fontSize: '0.7rem' }}>▼</span>
+                    </span>
+                  )
                 }}
-              >
-                <ThreeDots size={16} />
-              </Dropdown.Toggle>
-
-              <Dropdown.Menu className="border-0 shadow">
-                <Dropdown.Item
-                  onClick={() => onView(role)}
-                  className="text-primary-custom d-flex align-items-center"
-                >
-                  <Eye className="me-2" size={16} />
-                  View Details
-                </Dropdown.Item>
-                <PermissionWrapper 
-                  permission={PERMISSIONS_BY_UC['UC-07'].title}
-                  fallback={null}
-                >
-                  <Dropdown.Item
-                    onClick={() => onEdit(role)}
-                    className="text-primary-custom d-flex align-items-center"
-                  >
-                    <Pencil className="me-2" size={16} />
-                    Edit Role
-                  </Dropdown.Item>
-                </PermissionWrapper>
-                <PermissionWrapper 
-                  permission={PERMISSIONS_BY_UC['UC-07'].title}
-                  fallback={null}
-                >
-                  <Dropdown.Divider />
-                  <Dropdown.Item
-                    onClick={() => onDelete(role.id)}
-                    className="text-danger d-flex align-items-center"
-                  >
-                    <Trash className="me-2" size={16} />
-                    Delete Role
-                  </Dropdown.Item>
-                </PermissionWrapper>
-              </Dropdown.Menu>
-            </Dropdown>
+                items={[
+                  {
+                    label: 'View Details',
+                    icon: <Eye />,
+                    onClick: () => onView(role)
+                  },
+                  {
+                    label: 'Edit Role',
+                    icon: <Pencil />,
+                    onClick: () => onEdit(role)
+                  },
+                  { type: 'divider' },
+                  {
+                    label: 'Delete Role',
+                    icon: <Trash />,
+                    className: 'text-danger',
+                    onClick: () => onDelete(role)
+                  }
+                ]}
+              />
+            </PermissionWrapper>
           </div>
         </td>
       </tr>
