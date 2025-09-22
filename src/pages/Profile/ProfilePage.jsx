@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Container, Row, Col, Card, Button, Form, Alert, Badge } from 'react-bootstrap';
 import { Person, Camera, Key, Save, Eye, EyeSlash } from 'react-bootstrap-icons';
 import { useAuth } from '../../hooks/useAuth';
@@ -14,11 +14,9 @@ const ProfilePage = () => {
 
   // Personal Info Form State
   const [personalInfo, setPersonalInfo] = useState({
-    fullName: user?.fullName || '',
-    email: user?.email || '',
-    phone: user?.phone || '',
-    department: user?.department || '',
-    position: user?.position || ''
+    fullName: '',
+    email: '',
+    phone: ''
   });
 
   // Password Reset Form State
@@ -27,6 +25,17 @@ const ProfilePage = () => {
     newPassword: '',
     confirmPassword: ''
   });
+
+  // Update personalInfo when user data is available
+  useEffect(() => {
+    if (user) {
+      setPersonalInfo({
+        fullName: user.fullName || '',
+        email: user.email || '',
+        phone: user.phone || ''
+      });
+    }
+  }, [user]);
 
   const handlePersonalInfoChange = (e) => {
     const { name, value } = e.target;
@@ -132,14 +141,7 @@ const ProfilePage = () => {
 
   return (
     <Container fluid className="py-4">
-      <Row>
-        <Col lg={12}>
-          <div className="d-flex align-items-center mb-4">
-            <Person size={24} className="me-2 text-primary" />
-            <h2 className="mb-0">Profile</h2>
-          </div>
-        </Col>
-      </Row>
+
 
       {alert.show && (
         <Row className="mb-4">
@@ -167,14 +169,28 @@ const ProfilePage = () => {
                 >
                   <Person size={48} className="text-white" />
                 </div>
-                <Button
-                  variant="outline-primary"
-                  size="sm"
-                  className="position-absolute bottom-0 end-0 rounded-circle"
-                  style={{ width: '32px', height: '32px' }}
+                <button
+                  className="position-absolute rounded-circle border border-2 border-white shadow-sm"
+                  style={{ 
+                    width: '36px', 
+                    height: '36px',
+                    bottom: '0px',
+                    right: '0px',
+                    transform: 'translate(40%, 30%)',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    border: '2px solid white',
+                    cursor: 'pointer',
+                    fontSize: '18px',
+                    color: '#456882',
+                    fontWeight: 'bold',
+                    backgroundColor: '#d2c1b6',
+                    lineHeight: '1'
+                  }}
                 >
-                  <Camera size={16} />
-                </Button>
+                  📷
+                </button>
               </div>
               
               <h4 className="mb-1">{user?.fullName || 'User Name'}</h4>
@@ -188,11 +204,6 @@ const ProfilePage = () => {
                   <strong>Employee ID:</strong>
                   <br />
                   <span className="text-muted">{user?.eid || 'N/A'}</span>
-                </div>
-                <div className="mb-2">
-                  <strong>Department:</strong>
-                  <br />
-                  <span className="text-muted">{user?.department || 'N/A'}</span>
                 </div>
                 <div className="mb-2">
                   <strong>Status:</strong>
@@ -255,31 +266,6 @@ const ProfilePage = () => {
                       />
                     </Form.Group>
                   </Col>
-                  <Col md={6} className="mb-3">
-                    <Form.Group>
-                      <Form.Label>Department</Form.Label>
-                      <Form.Control
-                        type="text"
-                        name="department"
-                        value={personalInfo.department}
-                        onChange={handlePersonalInfoChange}
-                        disabled
-                      />
-                    </Form.Group>
-                  </Col>
-                </Row>
-                <Row>
-                  <Col md={6} className="mb-3">
-                    <Form.Group>
-                      <Form.Label>Position</Form.Label>
-                      <Form.Control
-                        type="text"
-                        name="position"
-                        value={personalInfo.position}
-                        onChange={handlePersonalInfoChange}
-                      />
-                    </Form.Group>
-                  </Col>
                 </Row>
                 <div className="d-flex justify-content-end">
                   <Button 
@@ -328,8 +314,8 @@ const ProfilePage = () => {
                         <Button
                           variant="outline-secondary"
                           size="sm"
-                          className="position-absolute end-0 top-50 translate-middle-y me-2 border-0"
-                          style={{ background: 'none' }}
+                          className="position-absolute end-0 top-50 translate-middle-y border-0"
+                          style={{ background: 'none', right: '8px' }}
                           onClick={() => setShowCurrentPassword(!showCurrentPassword)}
                         >
                           {showCurrentPassword ? <EyeSlash size={16} /> : <Eye size={16} />}
@@ -352,8 +338,8 @@ const ProfilePage = () => {
                         <Button
                           variant="outline-secondary"
                           size="sm"
-                          className="position-absolute end-0 top-50 translate-middle-y me-2 border-0"
-                          style={{ background: 'none' }}
+                          className="position-absolute end-0 top-50 translate-middle-y border-0"
+                          style={{ background: 'none', right: '8px' }}
                           onClick={() => setShowNewPassword(!showNewPassword)}
                         >
                           {showNewPassword ? <EyeSlash size={16} /> : <Eye size={16} />}
@@ -376,8 +362,8 @@ const ProfilePage = () => {
                         <Button
                           variant="outline-secondary"
                           size="sm"
-                          className="position-absolute end-0 top-50 translate-middle-y me-2 border-0"
-                          style={{ background: 'none' }}
+                          className="position-absolute end-0 top-50 translate-middle-y border-0"
+                          style={{ background: 'none', right: '8px' }}
                           onClick={() => setShowConfirmPassword(!showConfirmPassword)}
                         >
                           {showConfirmPassword ? <EyeSlash size={16} /> : <Eye size={16} />}
