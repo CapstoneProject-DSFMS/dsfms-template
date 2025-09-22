@@ -10,10 +10,7 @@ const DepartmentTable = ({
   loading,
   onView,
   onEdit,
-  onDelete,
-  onToggleStatus,
-  onAssignInstructors,
-  onViewCourses
+  onToggleStatus
 }) => {
   const { sortedData, sortConfig, handleSort } = useTableSort(departments);
 
@@ -106,9 +103,6 @@ const DepartmentTable = ({
             <SortableHeader columnKey="code" className="show-mobile">
               Code
             </SortableHeader>
-            <SortableHeader columnKey="type" className="show-mobile">
-              Type
-            </SortableHeader>
             <SortableHeader columnKey="departmentHead.name" className="hide-mobile">
               Department Head
             </SortableHeader>
@@ -137,10 +131,7 @@ const DepartmentTable = ({
               index={index}
               onView={onView}
               onEdit={onEdit}
-              onDelete={onDelete}
               onToggleStatus={onToggleStatus}
-              onAssignInstructors={onAssignInstructors}
-              onViewCourses={onViewCourses}
             />
           ))}
         </tbody>

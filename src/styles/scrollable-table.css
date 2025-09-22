@@ -1,6 +1,6 @@
 /* Scrollable Table Styles */
 .scrollable-table-container {
-  max-height: calc(100vh - 300px);
+  max-height: 500px;
   overflow-y: auto;
   border: 1px solid #dee2e6;
   border-radius: 0.375rem;
@@ -12,6 +12,12 @@
 .table-padded td,
 .table-padded th {
   padding: 1rem 0.75rem !important;
+}
+
+/* Global Table Padding - Apply to all tables */
+.scrollable-table-container .table td,
+.scrollable-table-container .table th {
+  padding: 0.875rem 0.75rem !important;
 }
 
 .scrollable-table-container::-webkit-scrollbar {
@@ -507,6 +513,12 @@ body.dropdown-open {
   min-height: 400px;
 }
 
+/* Department Table Padding */
+.department-table-container .table td,
+.department-table-container .table th {
+  padding: 0.875rem 0.75rem !important;
+}
+
 /* Fix dropdown menu positioning and scrolling */
 .department-table-container .dropdown {
   position: relative;
@@ -533,22 +545,22 @@ body.dropdown-open {
 /* Responsive height adjustments */
 @media (max-height: 800px) {
   .scrollable-table-container {
-    max-height: calc(100vh - 180px);
+    max-height: 400px;
   }
   
   .department-table-container {
-    max-height: calc(100vh - 180px);
+    max-height: 400px;
     min-height: 300px;
   }
 }
 
 @media (max-height: 600px) {
   .scrollable-table-container {
-    max-height: calc(100vh - 120px);
+    max-height: 300px;
   }
   
   .department-table-container {
-    max-height: calc(100vh - 120px);
+    max-height: 300px;
     min-height: 250px;
   }
 }
@@ -579,8 +591,6 @@ body.dropdown-open {
   transform: none !important;
   max-height: none !important;
   overflow-y: visible !important;
-  box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15) !important;
-  border: 1px solid rgba(0, 0, 0, 0.15) !important;
   border-radius: 0.375rem !important;
 }
 
@@ -593,9 +603,14 @@ body.dropdown-open {
   text-decoration: none !important;
   background-color: transparent !important;
   border: none !important;
+  border-top: none !important;
+  border-bottom: none !important;
+  border-left: none !important;
+  border-right: none !important;
   width: 100% !important;
   text-align: left !important;
   transition: background-color 0.15s ease-in-out !important;
+  margin: 0 !important;
 }
 
 .dropdown-item:hover {
@@ -611,7 +626,7 @@ body.dropdown-open {
 
 .dropdown-divider {
   height: 0 !important;
-  margin: 0.5rem 0 !important;
+  margin: 0 !important;
   overflow: hidden !important;
   border-top: 1px solid #dee2e6 !important;
 }

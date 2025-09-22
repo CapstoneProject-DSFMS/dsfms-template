@@ -171,14 +171,8 @@ const DepartmentManagementPage = () => {
       <Card className="shadow-sm">
         <Card.Header className="bg-white border-0 pb-0">
           <Row className="align-items-center">
-            <Col xs={12} md={8}>
-              <div>
-                <h5 className="text-muted mb-0">
-                  Manage departments, assign heads, and track department statistics
-                </h5>
-              </div>
-            </Col>
-            <Col xs={12} md={4} className="mt-2 mt-md-0">
+           
+            <Col xs={12} className="mt-2 mt-md-0 mb-3">
               <div className="d-flex justify-content-end">
                 <Button
                   variant="primary"
@@ -242,12 +236,9 @@ const DepartmentManagementPage = () => {
             <DepartmentTable
               departments={departments}
               loading={loading}
-              onEdit={handleEditDepartment}
-              onDelete={handleDeleteDepartment}
               onView={handleViewDepartment}
+              onEdit={handleEditDepartment}
               onToggleStatus={handleToggleStatus}
-              onAssignInstructors={handleAssignInstructors}
-              onViewCourses={handleViewCourses}
             />
           </div>
         </Card.Body>
