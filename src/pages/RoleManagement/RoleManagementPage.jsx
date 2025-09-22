@@ -151,20 +151,22 @@ const RoleManagementPage = () => {
               </h5>
             </Col>
             <Col xs={12} md={4} className="mt-2 mt-md-0">
-              <PermissionWrapper 
-                permission={PERMISSIONS_BY_UC['UC-07'].title}
-                fallback={null}
-              >
-                <Button
-                  variant="primary"
-                  size="sm"
-                  onClick={handleAdd}
-                  className="d-flex align-items-center btn-mobile-full"
+              <div className="d-flex justify-content-end">
+                <PermissionWrapper 
+                  permission={PERMISSIONS_BY_UC['UC-07'].title}
+                  fallback={null}
                 >
-                  <Plus className="me-1" size={16} />
-                  Add Role
-                </Button>
-              </PermissionWrapper>
+                  <Button
+                    variant="primary"
+                    size="sm"
+                    onClick={handleAdd}
+                    className="d-flex align-items-center"
+                  >
+                    <Plus className="me-1" size={16} />
+                    Add Role
+                  </Button>
+                </PermissionWrapper>
+              </div>
             </Col>
           </Row>
         </Card.Header>

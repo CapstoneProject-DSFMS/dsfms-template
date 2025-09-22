@@ -1,9 +1,9 @@
 import React from 'react';
-import { Badge, Dropdown } from 'react-bootstrap';
-import { Eye, Pencil, PersonX, CheckCircle, ThreeDots } from 'react-bootstrap-icons';
+import { Badge } from 'react-bootstrap';
 import { useAuth } from '../../../hooks/useAuth';
 import { PERMISSIONS_BY_UC } from '../../../constants/permissions';
 import PermissionWrapper from '../../Common/PermissionWrapper';
+import { ActionDropdown } from '../../Common';
 
 const UserRow = ({ user, index, onView, onEdit, onDisable }) => {
   const { hasPermission } = useAuth();
@@ -83,65 +83,23 @@ const UserRow = ({ user, index, onView, onEdit, onDisable }) => {
       </td>
       
       <td className="border-neutral-200 align-middle text-center show-mobile">
-        <Dropdown>
-          <Dropdown.Toggle
-            variant="link"
-            className="text-primary-custom p-1"
-            style={{ 
-              border: 'none', 
-              background: 'transparent',
-              boxShadow: 'none'
-            }}
-          >
-            <ThreeDots size={16} />
-          </Dropdown.Toggle>
-
-          <Dropdown.Menu className="border-0 shadow">
-            <Dropdown.Item
-              onClick={() => onView(user)}
-              className="text-primary-custom d-flex align-items-center"
-            >
-              <Eye className="me-2" size={16} />
-              View Details
-            </Dropdown.Item>
-            <PermissionWrapper 
-              permission={PERMISSIONS_BY_UC['UC-06'].title}
-              fallback={null}
-            >
-              <Dropdown.Item
-                onClick={() => onEdit(user)}
-                className="text-primary-custom d-flex align-items-center"
-              >
-                <Pencil className="me-2" size={16} />
-                Edit User
-              </Dropdown.Item>
-            </PermissionWrapper>
-            <PermissionWrapper 
-              permission={PERMISSIONS_BY_UC['UC-06'].title}
-              fallback={null}
-            >
-              <Dropdown.Divider />
-              <Dropdown.Item
-                onClick={() => onDisable(user)}
-                className={`d-flex align-items-center ${
-                  user.status === 'Active' ? 'text-warning' : 'text-success'
-                }`}
-              >
-                {user.status === 'Active' ? (
-                  <>
-                    <PersonX className="me-2" size={16} />
-                    Disable User
-                  </>
-                ) : (
-                  <>
-                    <CheckCircle className="me-2" size={16} />
-                    Enable User
-                  </>
-                )}
-              </Dropdown.Item>
-            </PermissionWrapper>
-          </Dropdown.Menu>
-        </Dropdown>
+        <PermissionWrapper 
+          permission={PERMISSIONS_BY_UC['UC-06'].title}
+          fallback={null}
+        >
+          <ActionDropdown
+            item={user}
+            onView={onView}
+            onEdit={onEdit}
+            onToggleStatus={onDisable}
+            viewLabel="View Details"
+            editLabel="Edit User"
+            toggleLabel={user.status === 'Active' ? 'Disable User' : 'Enable User'}
+            statusField="status"
+            activeValue="Active"
+            inactiveValue="Inactive"
+          />
+        </PermissionWrapper>
       </td>
     </tr>
   );
