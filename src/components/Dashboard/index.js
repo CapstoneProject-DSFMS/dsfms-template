@@ -9,3 +9,6 @@ export * from './User';
 
 // Role components  
 export * from './Role';
+
+// Department components
+export * from './Department';

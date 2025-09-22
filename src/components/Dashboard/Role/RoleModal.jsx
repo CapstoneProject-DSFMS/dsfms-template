@@ -39,28 +39,23 @@ const RoleModal = ({ show, role, mode, onSave, onClose }) => {
           });
         }
       });
-    } else if (mode === 'edit' && selectedRole && ROLE_PERMISSIONS[selectedRole]) {
-      // Edit mode: only show permissions assigned to the role
-      const allowedUCs = ROLE_PERMISSIONS[selectedRole];
-      
-      allowedUCs.forEach(ucId => {
-        const permission = PERMISSIONS_BY_UC[ucId];
-        if (permission) {
-          const featureId = permission.feature;
-          if (!featureGroups[featureId]) {
-            featureGroups[featureId] = {
-              id: featureId,
-              name: FEATURES[featureId]?.name || featureId,
-              description: FEATURES[featureId]?.description || '',
-              permissions: []
-            };
-          }
-          featureGroups[featureId].permissions.push({
-            id: ucId,
-            title: permission.title,
-            description: permission.description
-          });
+    } else if (mode === 'edit' && selectedRole) {
+      // Edit mode: show ALL permissions in each feature group (both selected and not selected)
+      Object.entries(PERMISSIONS_BY_UC).forEach(([ucId, permission]) => {
+        const featureId = permission.feature;
+        if (!featureGroups[featureId]) {
+          featureGroups[featureId] = {
+            id: featureId,
+            name: FEATURES[featureId]?.name || featureId,
+            description: FEATURES[featureId]?.description || '',
+            permissions: []
+          };
         }
+        featureGroups[featureId].permissions.push({
+          id: ucId,
+          title: permission.title,
+          description: permission.description
+        });
       });
     } else {
       // Add mode: show all available permissions
@@ -117,8 +112,17 @@ const RoleModal = ({ show, role, mode, onSave, onClose }) => {
         allGroupsExpanded[featureId] = true;
       });
       setExpandedGroups(allGroupsExpanded);
+    } else if (mode === 'edit') {
+      // In edit mode, expand all groups by default to show all permissions
+      const allGroupsExpanded = {};
+      // Get all feature IDs from PERMISSIONS_BY_UC
+      const allFeatureIds = [...new Set(Object.values(PERMISSIONS_BY_UC).map(p => p.feature))];
+      allFeatureIds.forEach(featureId => {
+        allGroupsExpanded[featureId] = true;
+      });
+      setExpandedGroups(allGroupsExpanded);
     } else {
-      // In edit/add mode, start with all groups collapsed
+      // In add mode, start with all groups collapsed
       setExpandedGroups({});
     }
   }, [role, mode, show]);
