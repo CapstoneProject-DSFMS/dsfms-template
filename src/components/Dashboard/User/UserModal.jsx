@@ -320,7 +320,7 @@ const UserModal = ({ show, user, mode, onSave, onClose }) => {
 
           {/* Role and Department */}
           <Row>
-            <Col md={formData.role === 'TRAINEE' ? 12 : 6}>
+            <Col md={(formData.role === 'DEPT_HEAD' || formData.role === 'TRAINER') ? 6 : 12}>
               <Form.Group className="mb-4">
                 <Form.Label className="text-primary-custom fw-semibold">
                   Role *
@@ -346,8 +346,8 @@ const UserModal = ({ show, user, mode, onSave, onClose }) => {
               </Form.Group>
             </Col>
 
-            {/* Only show Department field if role is not TRAINEE */}
-            {formData.role !== 'TRAINEE' && (
+            {/* Only show Department field for DEPT_HEAD and TRAINER */}
+            {(formData.role === 'DEPT_HEAD' || formData.role === 'TRAINER') && (
               <Col md={6}>
                 <Form.Group className="mb-4">
                   <Form.Label className="text-primary-custom fw-semibold">

@@ -81,7 +81,7 @@ const UserManagementPage = () => {
               </h5>
             </Col>
             <Col xs={12} md={4} className="mt-2 mt-md-0">
-              <div className="d-flex gap-2 action-buttons-mobile">
+              <div className="d-flex justify-content-end gap-2">
                 <PermissionWrapper 
                   permission={PERMISSIONS_BY_UC['UC-06'].title}
                   fallback={null}
@@ -90,7 +90,7 @@ const UserManagementPage = () => {
                     variant="outline-primary"
                     size="sm"
                     onClick={() => setBulkImportShow(true)}
-                    className="d-flex align-items-center btn-mobile-full"
+                    className="d-flex align-items-center"
                   >
                     <Upload className="me-1" size={16} />
                     <span className="d-none d-sm-inline">Bulk Import</span>
@@ -105,7 +105,7 @@ const UserManagementPage = () => {
                     variant="primary"
                     size="sm"
                     onClick={handleAdd}
-                    className="d-flex align-items-center btn-mobile-full"
+                    className="d-flex align-items-center"
                   >
                     <Plus className="me-1" size={16} />
                     Add User

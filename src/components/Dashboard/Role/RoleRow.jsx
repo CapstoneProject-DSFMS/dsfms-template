@@ -1,10 +1,9 @@
 import React from 'react';
-import { Badge, Dropdown } from 'react-bootstrap';
-import { Eye, Pencil, Trash, ThreeDots, ShieldX } from 'react-bootstrap-icons';
-import DisableRoleButton from './DisableRoleButton';
+import { Badge } from 'react-bootstrap';
 import { useAuth } from '../../../hooks/useAuth';
 import { PERMISSIONS_BY_UC } from '../../../constants/permissions';
 import PermissionWrapper from '../../Common/PermissionWrapper';
+import { ActionDropdown } from '../../Common';
 
 const RoleRow = ({ role, index, onView, onEdit, onDelete, onDisable }) => {
   const { hasPermission } = useAuth();
@@ -101,54 +100,21 @@ const RoleRow = ({ role, index, onView, onEdit, onDelete, onDisable }) => {
             )}
             
             {/* Actions Dropdown */}
-            <Dropdown>
-              <Dropdown.Toggle
-                variant="link"
-                className="text-primary-custom p-1"
-                style={{ 
-                  border: 'none', 
-                  background: 'transparent',
-                  boxShadow: 'none'
-                }}
-              >
-                <ThreeDots size={16} />
-              </Dropdown.Toggle>
-
-              <Dropdown.Menu className="border-0 shadow">
-                <Dropdown.Item
-                  onClick={() => onView(role)}
-                  className="text-primary-custom d-flex align-items-center"
-                >
-                  <Eye className="me-2" size={16} />
-                  View Details
-                </Dropdown.Item>
-                <PermissionWrapper 
-                  permission={PERMISSIONS_BY_UC['UC-07'].title}
-                  fallback={null}
-                >
-                  <Dropdown.Item
-                    onClick={() => onEdit(role)}
-                    className="text-primary-custom d-flex align-items-center"
-                  >
-                    <Pencil className="me-2" size={16} />
-                    Edit Role
-                  </Dropdown.Item>
-                </PermissionWrapper>
-                <PermissionWrapper 
-                  permission={PERMISSIONS_BY_UC['UC-07'].title}
-                  fallback={null}
-                >
-                  <Dropdown.Divider />
-                  <Dropdown.Item
-                    onClick={() => onDelete(role.id)}
-                    className="text-danger d-flex align-items-center"
-                  >
-                    <Trash className="me-2" size={16} />
-                    Delete Role
-                  </Dropdown.Item>
-                </PermissionWrapper>
-              </Dropdown.Menu>
-            </Dropdown>
+            <PermissionWrapper 
+              permission={PERMISSIONS_BY_UC['UC-07'].title}
+              fallback={null}
+            >
+              <ActionDropdown
+                item={role}
+                onView={onView}
+                onEdit={onEdit}
+                onDelete={onDelete}
+                viewLabel="View Details"
+                editLabel="Edit Role"
+                deleteLabel="Delete Role"
+                showDelete={true}
+              />
+            </PermissionWrapper>
           </div>
         </td>
       </tr>
