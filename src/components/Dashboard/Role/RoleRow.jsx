@@ -3,7 +3,9 @@ import { Badge } from 'react-bootstrap';
 import { useAuth } from '../../../hooks/useAuth';
 import { PERMISSIONS_BY_UC } from '../../../constants/permissions';
 import PermissionWrapper from '../../Common/PermissionWrapper';
-import { ActionDropdown } from '../../Common';
+import { UnifiedDropdown } from '../../Common';
+import { Eye, Pencil, Trash } from 'react-bootstrap-icons';
+import '../../../styles/dropdown-clean.css';
 
 const RoleRow = ({ role, index, onView, onEdit, onDelete, onDisable }) => {
   const { hasPermission } = useAuth();
@@ -104,15 +106,39 @@ const RoleRow = ({ role, index, onView, onEdit, onDelete, onDisable }) => {
               permission={PERMISSIONS_BY_UC['UC-07'].title}
               fallback={null}
             >
-              <ActionDropdown
-                item={role}
-                onView={onView}
-                onEdit={onEdit}
-                onDelete={onDelete}
-                viewLabel="View Details"
-                editLabel="Edit Role"
-                deleteLabel="Delete Role"
-                showDelete={true}
+              <UnifiedDropdown
+                align="end"
+                className="table-dropdown"
+                trigger={{
+                  variant: 'link',
+                  className: 'btn btn-link p-0 text-primary-custom',
+                  style: { border: 'none', background: 'transparent' },
+                  children: (
+                    <span className="d-flex align-items-center">
+                      <span className="me-1">⋯</span>
+                      <span style={{ fontSize: '0.7rem' }}>▼</span>
+                    </span>
+                  )
+                }}
+                items={[
+                  {
+                    label: 'View Details',
+                    icon: <Eye />,
+                    onClick: () => onView(role)
+                  },
+                  {
+                    label: 'Edit Role',
+                    icon: <Pencil />,
+                    onClick: () => onEdit(role)
+                  },
+                  { type: 'divider' },
+                  {
+                    label: 'Delete Role',
+                    icon: <Trash />,
+                    className: 'text-danger',
+                    onClick: () => onDelete(role)
+                  }
+                ]}
               />
             </PermissionWrapper>
           </div>
