@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { userAPI } from '../api';
 
 export const useUserManagement = () => {
   const [users, setUsers] = useState([]);
@@ -11,16 +12,56 @@ export const useUserManagement = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
 
-  // Mock data initialization
+  // Fetch users from API
   useEffect(() => {
     const fetchUsers = async () => {
       setLoading(true);
       try {
-        // Simulating API call
-        await new Promise(resolve => setTimeout(resolve, 1000));
+        const response = await userAPI.getUsers({
+          page: 1,
+          limit: 100,
+          search: searchTerm
+        });
         
-        // Mock data - in production this would come from API
-        const mockUsers = [
+        // Transform API data to match component format
+        const transformedUsers = response.data.map(user => ({
+          id: user.id,
+          eid: user.eid,
+          fullName: [user.firstName, user.middleName, user.lastName].filter(Boolean).join(' '),
+          firstName: user.firstName,
+          middleName: user.middleName,
+          lastName: user.lastName,
+          role: user.role?.name || 'N/A',
+          department: user.department?.name || 'N/A',
+          status: user.status,
+          email: user.email,
+          phoneNumber: user.phoneNumber || '',
+          address: user.address || '',
+          certificationNumber: user.certificationNumber || '',
+          specialization: user.specialization || '',
+          yearsOfExperience: user.yearsOfExperience || '',
+          dateOfBirth: user.dateOfBirth || '',
+          trainingBatch: user.trainingBatch || '',
+          passportNo: user.passportNo || '',
+          nation: user.nation || '',
+          createdAt: user.createdAt,
+          lastLogin: user.lastLogin || ''
+        }));
+        
+        setUsers(transformedUsers);
+      } catch (err) {
+        setError(err.message || 'Failed to fetch users');
+        console.error('Error fetching users:', err);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchUsers();
+  }, [searchTerm]);
+
+  // Mock data for unique roles and departments (can be replaced with API calls later)
+  const mockUsers = [
           {
             id: 1,
             eid: 'EMP001',

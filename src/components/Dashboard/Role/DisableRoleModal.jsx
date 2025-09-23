@@ -11,7 +11,7 @@ const DisableRoleModal = ({
 }) => {
   if (!role) return null;
 
-  const isDisabling = role.status === 'Active';
+  const isDisabling = role.status === 'ACTIVE';
   const actionText = isDisabling ? 'Disable' : 'Enable';
   const actionIcon = isDisabling ? ShieldX : CheckCircle;
   const ActionIcon = actionIcon;

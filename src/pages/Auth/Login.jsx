@@ -20,7 +20,7 @@ function Login() {
 
   const navigate = useNavigate();
   const location = useLocation();
-  const { setUser, setIsAuthenticated, isAuthenticated, isLoading } = useAuth();
+  const { login, isAuthenticated, isLoading } = useAuth();
 
   // Redirect if already authenticated
   useEffect(() => {
@@ -46,57 +46,20 @@ function Login() {
     return null;
   }
 
-  // Hardcoded credentials for demo
-  const validCredentials = {
-    "admin@dsfms.com": "admin123",
-    "trainer@dsfms.com": "trainer123",
-    "trainee@dsfms.com": "trainee123",
-  };
-
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError("");
     setSubmitting(true);
 
     try {
-      // Simulate API delay
-      await new Promise((resolve) => setTimeout(resolve, 800));
-
-      // Check credentials
-      if (validCredentials[email] && validCredentials[email] === password) {
-        // Set user data based on email
-        const userRole = email.includes("admin")
-          ? "ADMIN"
-          : email.includes("trainer")
-          ? "TRAINER"
-          : "TRAINEE";
-
-        const userData = {
-          id: 1,
-          email: email,
-          fullName: email.includes("admin")
-            ? "Admin User"
-            : email.includes("trainer")
-            ? "Trainer User"
-            : "Trainee User",
-          role: userRole,
-          department: "IT",
-          lastLogin: new Date().toISOString(),
-        };
-
-        // Set auth state
-        setUser(userData);
-        setIsAuthenticated(true);
-
-        // Store in localStorage for persistence
-        localStorage.setItem("authToken", "mock-token-" + Date.now());
-        localStorage.setItem("user", JSON.stringify(userData));
-
+      const result = await login({ email, password });
+      
+      if (result.success) {
         // Navigate to intended destination or admin dashboard
         const from = location.state?.from?.pathname || "/admin";
         navigate(from, { replace: true });
       } else {
-        setError("Email or password is incorrect. Please try again.");
+        setError(result.error || "Email or password is incorrect. Please try again.");
       }
     } catch (err) {
       setError("Login failed. Please try again.");
@@ -430,12 +393,10 @@ function Login() {
                   {/* Demo credentials info */}
                   <div className="text-center">
                     <small className="text-white-50 d-block mb-2">
-                      Demo Accounts:
+                      Test Credentials:
                     </small>
                     <div className="text-white-50 small">
-                      <div>Admin: admin@dsfms.com / admin123</div>
-                      <div>Trainer: trainer@dsfms.com / trainer123</div>
-                      <div>Trainee: trainee@dsfms.com / trainee123</div>
+                      <div>Admin: michael.brown@admin.com / Admin@123</div>
                     </div>
                   </div>
                 </Form>

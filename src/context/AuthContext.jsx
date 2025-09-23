@@ -1,4 +1,5 @@
 import { createContext, useState, useEffect } from 'react';
+import { authAPI } from '../api';
 
 // Create the context
 export const AuthContext = createContext();
@@ -20,17 +21,13 @@ export const AuthProvider = ({ children }) => {
           const parsedUserData = JSON.parse(userData);
           setUser(parsedUserData);
           setIsAuthenticated(true);
-          console.log('Auth restored from localStorage:', parsedUserData);
         } catch (error) {
-          console.error('Error parsing user data:', error);
           // Clear invalid data
-          localStorage.removeItem('authToken');
-          localStorage.removeItem('user');
+          authAPI.logout();
           setUser(null);
           setIsAuthenticated(false);
         }
       } else {
-        console.log('No auth data found in localStorage');
         setUser(null);
         setIsAuthenticated(false);
       }
@@ -44,12 +41,55 @@ export const AuthProvider = ({ children }) => {
     return () => clearTimeout(timer);
   }, []);
 
+  // Login function
+  const login = async (credentials) => {
+    try {
+      setIsLoading(true);
+      
+      const response = await authAPI.login(credentials);
+      
+      // Store tokens
+      localStorage.setItem('authToken', response.access_token);
+      localStorage.setItem('refreshToken', response.refresh_token);
+      
+      // Create basic user info from login response (if available) or use default
+      const userInfo = {
+        id: '1',
+        email: credentials.email,
+        fullName: 'User',
+        role: 'ADMIN',
+        department: 'IT',
+        lastLogin: new Date().toISOString()
+      };
+      
+      localStorage.setItem('user', JSON.stringify(userInfo));
+      
+      setUser(userInfo);
+      setIsAuthenticated(true);
+      
+      return { success: true, user: userInfo };
+    } catch (error) {
+      return { success: false, error: error.message || error.response?.data?.message || 'Login failed' };
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  // Logout function
+  const logout = () => {
+    authAPI.logout();
+    setUser(null);
+    setIsAuthenticated(false);
+  };
+
   const value = {
     user,
     setUser,
     isAuthenticated,
     setIsAuthenticated,
-    isLoading
+    isLoading,
+    login,
+    logout
   };
 
   return (
