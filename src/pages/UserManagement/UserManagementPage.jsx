@@ -3,7 +3,7 @@ import { Container, Card, Row, Col, Button, Dropdown, Alert } from 'react-bootst
 import { Plus, Upload, Funnel, ChevronDown } from 'react-bootstrap-icons';
 import { UserTable, UserModal, BulkImportModal, DisableUserModal, FilterPanel } from '../../components/Dashboard/User';
 import { SearchBar, PermissionWrapper } from '../../components/Common';
-import { useUserManagement } from '../../hooks/useUserManagement';
+import { useUserManagementAPI } from '../../hooks/useUserManagementAPI';
 import { PERMISSIONS_BY_UC } from '../../constants/permissions';
 import '../../styles/scrollable-table.css';
 
@@ -37,7 +37,7 @@ const UserManagementPage = () => {
     handleBulkImport,
     handleModalClose,
     setError
-  } = useUserManagement();
+  } = useUserManagementAPI();
 
   const handleDisableClick = (user) => {
     setUserToDisable(user);
