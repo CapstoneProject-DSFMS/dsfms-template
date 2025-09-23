@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import { Modal, Form, Button, Row, Col, Alert } from 'react-bootstrap';
+import { Modal, Form, Button, Row, Col } from 'react-bootstrap';
 import { X, Save, Eye } from 'react-bootstrap-icons';
+import { toast } from 'react-toastify';
 
 const UserModal = ({ show, user, mode, onSave, onClose }) => {
   const [formData, setFormData] = useState({
@@ -11,6 +12,7 @@ const UserModal = ({ show, user, mode, onSave, onClose }) => {
     email: '',
     phoneNumber: '',
     role: '',
+    roleId: '',
     certificationNumber: '',
     specialization: '',
     yearsOfExperience: '',
@@ -24,7 +26,7 @@ const UserModal = ({ show, user, mode, onSave, onClose }) => {
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const departments = ['IT', 'HR', 'Finance', 'Marketing', 'Operations', 'Sales', 'Flight Operations', 'Cabin Crew', 'Quality Assurance', 'Training', 'Engineering'];
-  const roles = ['ADMIN', 'ACADEMIC_DEPT', 'DEPT_HEAD', 'TRAINER', 'TRAINEE', 'SQA_AUDITOR'];
+      const roles = ['ADMINISTRATOR', 'DEPARTMENT_HEAD', 'TRAINER', 'TRAINEE', 'SQA_AUDITOR'];
   const nations = ['Vietnam', 'United States', 'United Kingdom', 'Japan', 'South Korea', 'Singapore', 'Thailand', 'Philippines', 'Malaysia', 'Indonesia'];
 
   useEffect(() => {
@@ -37,6 +39,7 @@ const UserModal = ({ show, user, mode, onSave, onClose }) => {
         email: user.email || '',
         phoneNumber: user.phoneNumber || '',
         role: user.role || '',
+        roleId: user.roleId || '',
         certificationNumber: user.certificationNumber || '',
         specialization: user.specialization || '',
         yearsOfExperience: user.yearsOfExperience || '',
@@ -85,7 +88,9 @@ const UserModal = ({ show, user, mode, onSave, onClose }) => {
       newErrors.email = 'Email is invalid';
     }
 
-    if (formData.phoneNumber && !/^[\+]?[1-9][\d]{0,15}$/.test(formData.phoneNumber.replace(/\s/g, ''))) {
+    if (!formData.phoneNumber.trim()) {
+      newErrors.phoneNumber = 'Phone number is required';
+    } else if (!/^[\+]?[0-9][\d]{0,15}$/.test(formData.phoneNumber.replace(/\s/g, ''))) {
       newErrors.phoneNumber = 'Phone number is invalid';
     }
 
@@ -115,11 +120,15 @@ const UserModal = ({ show, user, mode, onSave, onClose }) => {
       return;
     }
 
+    if (isSubmitting) {
+      return;
+    }
+
     setIsSubmitting(true);
     try {
       await onSave(formData);
     } catch (error) {
-      console.error('Error saving user:', error);
+      // Error handling is done in the parent component
     } finally {
       setIsSubmitting(false);
     }
@@ -171,14 +180,14 @@ const UserModal = ({ show, user, mode, onSave, onClose }) => {
       <Form onSubmit={handleSubmit}>
         <Modal.Body className="p-4" style={{ maxHeight: '70vh', overflowY: 'auto' }}>
           {Object.keys(errors).length > 0 && (
-            <Alert variant="danger" className="mb-3">
+            <div className="alert alert-danger mb-3">
               <strong>Please fix the following errors:</strong>
               <ul className="mb-0 mt-2">
                 {Object.entries(errors).map(([field, error]) => (
                   <li key={field}>{error}</li>
                 ))}
               </ul>
-            </Alert>
+            </div>
           )}
 
           {/* Name Fields */}
@@ -274,7 +283,7 @@ const UserModal = ({ show, user, mode, onSave, onClose }) => {
             <Col md={12}>
               <Form.Group className="mb-4">
                 <Form.Label className="text-primary-custom fw-semibold">
-                  Phone Number
+                  Phone Number *
                 </Form.Label>
                 <Form.Control
                   type="tel"
@@ -282,7 +291,7 @@ const UserModal = ({ show, user, mode, onSave, onClose }) => {
                   onChange={(e) => handleInputChange('phoneNumber', e.target.value)}
                   isInvalid={!!errors.phoneNumber}
                   readOnly={isReadOnly}
-                  placeholder="Enter phone number (optional)"
+                  placeholder="Enter phone number"
                   style={{
                     borderColor: errors.phoneNumber ? '#dc3545' : 'var(--bs-primary)',
                     borderWidth: '2px'
@@ -346,8 +355,8 @@ const UserModal = ({ show, user, mode, onSave, onClose }) => {
               </Form.Group>
             </Col>
 
-            {/* Only show Department field for DEPT_HEAD and TRAINER */}
-            {(formData.role === 'DEPT_HEAD' || formData.role === 'TRAINER') && (
+                {/* Only show Department field for DEPARTMENT_HEAD and TRAINER */}
+                {(formData.role === 'DEPARTMENT_HEAD' || formData.role === 'TRAINER') && (
               <Col md={6}>
                 <Form.Group className="mb-4">
                   <Form.Label className="text-primary-custom fw-semibold">
@@ -418,6 +427,27 @@ const UserModal = ({ show, user, mode, onSave, onClose }) => {
                   </Form.Group>
                 </Col>
               </Row>
+              <Row>
+                <Col md={6}>
+                  <Form.Group className="mb-4">
+                    <Form.Label className="text-primary-custom fw-semibold">
+                      Years of Experience
+                    </Form.Label>
+                    <Form.Control
+                      type="number"
+                      value={formData.yearsOfExperience}
+                      onChange={(e) => handleInputChange('yearsOfExperience', e.target.value)}
+                      readOnly={isReadOnly}
+                      placeholder="Enter years of experience"
+                      min="0"
+                      style={{
+                        borderColor: 'var(--bs-primary)',
+                        borderWidth: '2px'
+                      }}
+                    />
+                  </Form.Group>
+                </Col>
+              </Row>
             </>
           )}
 
@@ -462,7 +492,7 @@ const UserModal = ({ show, user, mode, onSave, onClose }) => {
                 </Col>
               </Row>
               <Row>
-                <Col md={12}>
+                <Col md={6}>
                   <Form.Group className="mb-4">
                     <Form.Label className="text-primary-custom fw-semibold">
                       Passport No
@@ -478,6 +508,27 @@ const UserModal = ({ show, user, mode, onSave, onClose }) => {
                         borderWidth: '2px'
                       }}
                     />
+                  </Form.Group>
+                </Col>
+                <Col md={6}>
+                  <Form.Group className="mb-4">
+                    <Form.Label className="text-primary-custom fw-semibold">
+                      Nation
+                    </Form.Label>
+                    <Form.Select
+                      value={formData.nation}
+                      onChange={(e) => handleInputChange('nation', e.target.value)}
+                      disabled={isReadOnly}
+                      style={{
+                        borderColor: 'var(--bs-primary)',
+                        borderWidth: '2px'
+                      }}
+                    >
+                      <option value="">Select a nation</option>
+                      {nations.map(nation => (
+                        <option key={nation} value={nation}>{nation}</option>
+                      ))}
+                    </Form.Select>
                   </Form.Group>
                 </Col>
               </Row>

@@ -33,13 +33,45 @@ apiClient.interceptors.response.use(
   (response) => {
     return response;
   },
-  (error) => {
-    if (error.response?.status === 401) {
-      // Token expired or invalid
-      localStorage.removeItem('authToken');
-      localStorage.removeItem('user');
-      window.location.href = '/login';
+  async (error) => {
+    const originalRequest = error.config;
+    
+    // Skip retry for auth endpoints to avoid infinite loops
+    if (error.response?.status === 401 && !originalRequest._retry && !originalRequest.url?.includes('/auth/')) {
+      originalRequest._retry = true;
+      
+      const refreshToken = localStorage.getItem('refreshToken');
+      
+      if (refreshToken) {
+        try {
+          // Import authAPI dynamically to avoid circular dependency
+          const { authAPI } = await import('./auth.js');
+          const response = await authAPI.refreshToken(refreshToken);
+          
+          // Update tokens in localStorage
+          localStorage.setItem('authToken', response.access_token);
+          localStorage.setItem('refreshToken', response.refresh_token);
+          
+          // Retry original request with new token
+          originalRequest.headers.Authorization = `Bearer ${response.access_token}`;
+          return apiClient(originalRequest);
+          
+        } catch (refreshError) {
+          // Refresh failed, logout user
+          localStorage.removeItem('authToken');
+          localStorage.removeItem('refreshToken');
+          localStorage.removeItem('user');
+          window.location.href = '/login';
+          return Promise.reject(refreshError);
+        }
+      } else {
+        // No refresh token, logout user
+        localStorage.removeItem('authToken');
+        localStorage.removeItem('user');
+        window.location.href = '/login';
+      }
     }
+    
     return Promise.reject(error);
   }
 );

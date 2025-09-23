@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Modal, Form, Button, Row, Col, Alert } from 'react-bootstrap';
+import { Modal, Form, Button, Row, Col } from 'react-bootstrap';
 import { X, Save, Eye } from 'react-bootstrap-icons';
 
 const DepartmentModal = ({ show, department, mode, onSave, onClose, availableUsers }) => {
@@ -129,14 +129,14 @@ const DepartmentModal = ({ show, department, mode, onSave, onClose, availableUse
       <Form onSubmit={handleSubmit}>
         <Modal.Body className="p-4" style={{ maxHeight: '70vh', overflowY: 'auto' }}>
           {Object.keys(errors).length > 0 && (
-            <Alert variant="danger" className="mb-3">
+            <div className="alert alert-danger mb-3">
               <strong>Please fix the following errors:</strong>
               <ul className="mb-0 mt-2">
                 {Object.entries(errors).map(([field, error]) => (
                   <li key={field}>{error}</li>
                 ))}
               </ul>
-            </Alert>
+            </div>
           )}
 
           {/* Department Name and Code */}
