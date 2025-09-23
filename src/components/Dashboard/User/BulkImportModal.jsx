@@ -1,5 +1,5 @@
 import React, { useState, useRef } from 'react';
-import { Modal, Button, Table, Alert, Row, Col, Card, OverlayTrigger, Tooltip } from 'react-bootstrap';
+import { Modal, Button, Table, Row, Col, Card, OverlayTrigger, Tooltip } from 'react-bootstrap';
 import { X, Upload, FileEarmarkExcel, CheckCircle, XCircle, Pencil, Trash, Download } from 'react-bootstrap-icons';
 import * as XLSX from 'xlsx';
 
@@ -375,13 +375,13 @@ const BulkImportModal = ({ show, onClose, onImport, loading = false }) => {
 
         {/* Error Messages */}
         {errors.length > 0 && (
-          <Alert variant="danger" className="mb-3">
+          <div className="alert alert-danger mb-3">
             <ul className="mb-0">
               {errors.map((error, index) => (
                 <li key={index}>{error}</li>
               ))}
             </ul>
-          </Alert>
+          </div>
         )}
 
         {validationErrors.length > 0 && (

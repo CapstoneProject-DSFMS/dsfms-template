@@ -11,7 +11,7 @@ const DisableUserModal = ({
 }) => {
   if (!user) return null;
 
-  const isDisabling = user.status === 'Active';
+  const isDisabling = user.status === 'ACTIVE';
   const actionText = isDisabling ? 'Disable' : 'Enable';
   const actionIcon = isDisabling ? PersonX : CheckCircle;
   const ActionIcon = actionIcon;
