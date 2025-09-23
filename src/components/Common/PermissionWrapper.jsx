@@ -1,6 +1,6 @@
-import React, { useContext } from 'react';
+import React from 'react';
 import { Alert } from 'react-bootstrap';
-import { AuthContext } from '../../context/AuthContext';
+import { useAuth } from '../../hooks/useAuth';
 
 const PermissionWrapper = ({ 
   permission, 
@@ -11,7 +11,7 @@ const PermissionWrapper = ({
   showMessage = true,
   message = "You do not have permission to access this feature."
 }) => {
-  const { user } = useContext(AuthContext);
+  const { user } = useAuth();
 
   const hasAccess = (userPermissions, requiredPermissions) => {
     if (!requiredPermissions || requiredPermissions.length === 0) {

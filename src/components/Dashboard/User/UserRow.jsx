@@ -9,11 +9,11 @@ import { Eye, Pencil, PersonX, ThreeDotsVertical } from 'react-bootstrap-icons';
 const UserRow = ({ user, index, onView, onEdit, onDisable }) => {
   
   const getStatusVariant = (status) => {
-    return status === 'Active' ? 'success' : 'secondary';
+    return status === 'ACTIVE' ? 'success' : 'secondary';
   };
 
   const getStatusIcon = (status) => {
-    return status === 'Active' ? '●' : '○';
+    return status === 'ACTIVE' ? '●' : '○';
   };
 
   return (
@@ -150,7 +150,7 @@ const UserRow = ({ user, index, onView, onEdit, onDisable }) => {
                 }}
               >
                 <PersonX className="me-2" size={16} />
-                {user.status === 'Active' ? 'Disable User' : 'Enable User'}
+                {user.status === 'ACTIVE' ? 'Disable User' : 'Enable User'}
               </Dropdown.Item>
             </Dropdown.Menu>
           </Dropdown>

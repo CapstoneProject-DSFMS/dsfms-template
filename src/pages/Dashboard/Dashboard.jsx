@@ -1,5 +1,6 @@
 import React from 'react';
-import { Container, Row, Col, Card, Alert } from 'react-bootstrap';
+import { Container, Row, Col, Card } from 'react-bootstrap';
+import { toast } from 'react-toastify';
 import {
   AreaChart, Area,
   BarChart, Bar,
@@ -24,6 +25,19 @@ const Dashboard = () => {
     setUserError,
     setRoleError
   } = useDashboard();
+
+  // Show error toasts when error states change
+  React.useEffect(() => {
+    if (userError) {
+      toast.error(userError);
+    }
+  }, [userError]);
+
+  React.useEffect(() => {
+    if (roleError) {
+      toast.error(roleError);
+    }
+  }, [roleError]);
 
   return (
     <Container fluid className="py-4">
@@ -96,25 +110,7 @@ const Dashboard = () => {
           </Col>
         </Row>
 
-        {userError && (
-          <Row className="mt-4">
-            <Col>
-              <Alert variant="danger" dismissible onClose={() => setUserError(null)}>
-                {userError}
-              </Alert>
-            </Col>
-          </Row>
-        )}
-        
-        {roleError && (
-          <Row className="mt-4">
-            <Col>
-              <Alert variant="danger" dismissible onClose={() => setRoleError(null)}>
-                {roleError}
-              </Alert>
-            </Col>
-          </Row>
-        )}
+        {/* Error toasts are handled by useEffect hooks */}
     </Container>
   );
 };

@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Modal, Form, Button, Row, Col, Alert, ListGroup, Badge } from 'react-bootstrap';
+import { Modal, Form, Button, Row, Col, ListGroup, Badge } from 'react-bootstrap';
 import { X, Save, Eye, Shield, ChevronDown, ChevronRight } from 'react-bootstrap-icons';
 import { FEATURES, PERMISSIONS_BY_UC, ROLE_PERMISSIONS } from '../../../constants/permissions';
 
@@ -230,14 +230,14 @@ const RoleModal = ({ show, role, mode, onSave, onClose }) => {
       <Form onSubmit={handleSubmit}>
         <Modal.Body className="p-4">
           {Object.keys(errors).length > 0 && (
-            <Alert variant="danger" className="mb-3">
+            <div className="alert alert-danger mb-3">
               <strong>Please fix the following errors:</strong>
               <ul className="mb-0 mt-2">
                 {Object.entries(errors).map(([field, error]) => (
                   <li key={field}>{error}</li>
                 ))}
               </ul>
-            </Alert>
+            </div>
           )}
 
           <Row>
