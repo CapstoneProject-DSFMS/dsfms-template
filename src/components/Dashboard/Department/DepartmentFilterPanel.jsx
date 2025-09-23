@@ -3,26 +3,16 @@ import { Dropdown, Form, Button } from 'react-bootstrap';
 import { Funnel, X } from 'react-bootstrap-icons';
 
 const DepartmentFilterPanel = ({
-  filters,
-  onFilterChange,
+  uniqueTypes,
+  uniqueStatuses,
+  selectedTypes,
+  selectedStatuses,
+  onTypeToggle,
+  onStatusToggle,
   onClearFilters,
   className = ""
 }) => {
-  const departmentTypes = [
-    { value: '', label: 'All Types' },
-    { value: 'CCT', label: 'CCT - Cabin Crew Training' },
-    { value: 'FCTD', label: 'FCTD - Flight Crew Training Department' },
-    { value: 'GOT', label: 'GOT - Ground Operations Training' },
-    { value: 'SQA', label: 'SQA - Safety & Quality Assurance' }
-  ];
-
-  const statusOptions = [
-    { value: '', label: 'All Status' },
-    { value: 'ACTIVE', label: 'Active' },
-    { value: 'INACTIVE', label: 'Inactive' }
-  ];
-
-  const hasActiveFilters = filters.type !== '' || filters.status !== '';
+  const hasActiveFilters = selectedTypes.length > 0 || selectedStatuses.length > 0;
 
   return (
     <Dropdown className={`filter-panel-dropdown ${className}`}>
@@ -35,7 +25,7 @@ const DepartmentFilterPanel = ({
           Filters
           {hasActiveFilters && (
             <span className="badge bg-primary ms-2">
-              {(filters.type ? 1 : 0) + (filters.status ? 1 : 0)}
+              {selectedTypes.length + selectedStatuses.length}
             </span>
           )}
         </div>
@@ -46,51 +36,109 @@ const DepartmentFilterPanel = ({
         </div>
       </Dropdown.Toggle>
 
-      <Dropdown.Menu className="p-3" style={{ minWidth: '300px', zIndex: 1050 }}>
-        <div className="d-flex justify-content-between align-items-center mb-3">
-          <h6 className="mb-0 fw-semibold">Filters</h6>
-          {hasActiveFilters && (
+      <Dropdown.Menu 
+        className="p-3" 
+        style={{ 
+          width: window.innerWidth <= 768 ? 'calc(100vw - 2rem)' : '320px',
+          maxWidth: '90vw',
+          maxHeight: window.innerWidth <= 768 ? '50vh' : '70vh',
+          overflowY: 'auto'
+        }}
+        align="end"
+        flip={true}
+        popperConfig={{
+          modifiers: [
+            {
+              name: 'preventOverflow',
+              options: {
+                boundary: 'viewport',
+                padding: 16,
+              },
+            },
+            {
+              name: 'flip',
+              options: {
+                fallbackPlacements: ['top-end', 'bottom-end', 'top-start'],
+              },
+            },
+          ],
+        }}
+      >
+        {/* Department Type Filters */}
+        <div className="mb-4">
+          <div className="d-flex justify-content-between align-items-center mb-2">
+            <label className="form-label small fw-semibold mb-0">Department Types</label>
+            {selectedTypes.length > 0 && (
+              <Button
+                variant="link"
+                size="sm"
+                className="p-0 text-danger"
+                onClick={() => onTypeToggle('clear')}
+              >
+                <X size={12} />
+              </Button>
+            )}
+          </div>
+          <div className="max-height-150 overflow-auto">
+            {uniqueTypes.map(type => (
+              <Form.Check
+                key={type}
+                type="checkbox"
+                id={`type-${type}`}
+                label={type}
+                checked={selectedTypes.includes(type)}
+                onChange={() => onTypeToggle(type)}
+                className="mb-1"
+              />
+            ))}
+          </div>
+        </div>
+
+        {/* Status Filters */}
+        <div className="mb-3">
+          <div className="d-flex justify-content-between align-items-center mb-2">
+            <label className="form-label small fw-semibold mb-0">Status</label>
+            {selectedStatuses.length > 0 && (
+              <Button
+                variant="link"
+                size="sm"
+                className="p-0 text-danger"
+                onClick={() => onStatusToggle('clear')}
+              >
+                <X size={12} />
+              </Button>
+            )}
+          </div>
+          <div className="max-height-150 overflow-auto">
+            {uniqueStatuses.map(status => (
+              <Form.Check
+                key={status}
+                type="checkbox"
+                id={`status-${status}`}
+                label={status}
+                checked={selectedStatuses.includes(status)}
+                onChange={() => onStatusToggle(status)}
+                className="mb-1"
+              />
+            ))}
+          </div>
+        </div>
+
+        {/* Clear All Filters */}
+        {hasActiveFilters && (
+          <div className="border-top pt-3">
             <Button
-              variant="link"
+              variant="outline-danger"
               size="sm"
+              className="w-100"
               onClick={onClearFilters}
-              className="p-0 text-decoration-none"
             >
-              <X size={14} className="me-1" />
-              Clear All
+              <X className="me-1" size={12} />
+              Clear All Filters
             </Button>
-          )}
-        </div>
+          </div>
+        )}
 
-        <div className="mb-3">
-          <Form.Label className="fw-semibold small mb-2">Department Type</Form.Label>
-          <Form.Select
-            size="sm"
-            value={filters.type}
-            onChange={(e) => onFilterChange('type', e.target.value)}
-          >
-            {departmentTypes.map((type) => (
-              <option key={type.value} value={type.value}>
-                {type.label}
-              </option>
-            ))}
-          </Form.Select>
-        </div>
-
-        <div className="mb-3">
-          <Form.Label className="fw-semibold small mb-2">Status</Form.Label>
-          <Form.Select
-            size="sm"
-            value={filters.status}
-            onChange={(e) => onFilterChange('status', e.target.value)}
-          >
-            {statusOptions.map((status) => (
-              <option key={status.value} value={status.value}>
-                {status.label}
-              </option>
-            ))}
-          </Form.Select>
-        </div>
       </Dropdown.Menu>
     </Dropdown>
   );
