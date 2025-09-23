@@ -46,6 +46,10 @@ const DepartmentManagementPage = () => {
   const [modalMode, setModalMode] = useState('add'); // 'add', 'edit', 'view'
   const [selectedDepartment, setSelectedDepartment] = useState(null);
   const [filterPanelExpanded, setFilterPanelExpanded] = useState(false);
+  
+  // Checkbox filter states
+  const [selectedTypes, setSelectedTypes] = useState([]);
+  const [selectedStatuses, setSelectedStatuses] = useState([]);
 
   // Modal handlers
   const handleAddDepartment = () => {
@@ -164,6 +168,51 @@ const DepartmentManagementPage = () => {
     setFilterPanelExpanded(!filterPanelExpanded);
   };
 
+  // Checkbox filter handlers
+  const handleTypeToggle = (type) => {
+    if (type === 'clear') {
+      setSelectedTypes([]);
+    } else {
+      setSelectedTypes(prev => 
+        prev.includes(type) 
+          ? prev.filter(t => t !== type)
+          : [...prev, type]
+      );
+    }
+  };
+
+  const handleStatusToggle = (status) => {
+    if (status === 'clear') {
+      setSelectedStatuses([]);
+    } else {
+      setSelectedStatuses(prev => 
+        prev.includes(status) 
+          ? prev.filter(s => s !== status)
+          : [...prev, status]
+      );
+    }
+  };
+
+  const handleClearAllFilters = () => {
+    setSelectedTypes([]);
+    setSelectedStatuses([]);
+  };
+
+  // Get unique values for filters
+  const uniqueTypes = [...new Set(departments.map(dept => dept.type).filter(Boolean))];
+  // Always show all status options, not just from data
+  const uniqueStatuses = ['ACTIVE', 'INACTIVE'];
+
+  // Apply checkbox filters
+  const filteredDepartments = departments.filter(dept => {
+    // Type filter
+    const typeMatch = selectedTypes.length === 0 || selectedTypes.includes(dept.type);
+    // Status filter
+    const statusMatch = selectedStatuses.length === 0 || selectedStatuses.includes(dept.status);
+    
+    return typeMatch && statusMatch;
+  });
+
   const availableUsers = getAvailableUsers();
 
   return (
@@ -201,16 +250,20 @@ const DepartmentManagementPage = () => {
             </Col>
             <Col xs={12} lg={3} md={4} className="mb-2 mb-lg-0 position-relative">
               <DepartmentFilterPanel
-                filters={filters}
-                onFilterChange={handleFilterChange}
-                onClearFilters={clearFilters}
+                uniqueTypes={uniqueTypes}
+                uniqueStatuses={uniqueStatuses}
+                selectedTypes={selectedTypes}
+                selectedStatuses={selectedStatuses}
+                onTypeToggle={handleTypeToggle}
+                onStatusToggle={handleStatusToggle}
+                onClearFilters={handleClearAllFilters}
                 className="filter-panel-mobile"
               />
             </Col>
             <Col xs={12} lg={3} md={3}>
               <div className="text-end text-mobile-center">
                 <small className="text-muted">
-                  {departments.length} department{departments.length !== 1 ? 's' : ''}
+                  {filteredDepartments.length} department{filteredDepartments.length !== 1 ? 's' : ''}
                 </small>
               </div>
             </Col>
@@ -234,7 +287,7 @@ const DepartmentManagementPage = () => {
           {/* Department Table with Scrollable Container */}
           <div className="position-relative">
             <DepartmentTable
-              departments={departments}
+              departments={filteredDepartments}
               loading={loading}
               onView={handleViewDepartment}
               onEdit={handleEditDepartment}

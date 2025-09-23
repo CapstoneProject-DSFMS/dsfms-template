@@ -1,16 +1,15 @@
 import React, { useState, useEffect } from 'react';
 import { Container, Row, Col, Card, Button, Form, Alert, Badge } from 'react-bootstrap';
-import { Person, Camera, Key, Save, Eye, EyeSlash } from 'react-bootstrap-icons';
+import { Person, Camera, Key, Save } from 'react-bootstrap-icons';
 import { useAuth } from '../../hooks/useAuth';
+import ResetPasswordModal from '../../components/Common/ResetPasswordModal';
 
 const ProfilePage = () => {
   const { user } = useAuth();
   const [showPassword, setShowPassword] = useState(false);
-  const [showCurrentPassword, setShowCurrentPassword] = useState(false);
-  const [showNewPassword, setShowNewPassword] = useState(false);
-  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [alert, setAlert] = useState({ show: false, message: '', variant: 'success' });
   const [loading, setLoading] = useState(false);
+  const [showResetPasswordModal, setShowResetPasswordModal] = useState(false);
 
   // Personal Info Form State
   const [personalInfo, setPersonalInfo] = useState({
@@ -19,12 +18,6 @@ const ProfilePage = () => {
     phone: ''
   });
 
-  // Password Reset Form State
-  const [passwordForm, setPasswordForm] = useState({
-    currentPassword: '',
-    newPassword: '',
-    confirmPassword: ''
-  });
 
   // Update personalInfo when user data is available
   useEffect(() => {
@@ -45,13 +38,6 @@ const ProfilePage = () => {
     }));
   };
 
-  const handlePasswordChange = (e) => {
-    const { name, value } = e.target;
-    setPasswordForm(prev => ({
-      ...prev,
-      [name]: value
-    }));
-  };
 
   const handleSavePersonalInfo = async (e) => {
     e.preventDefault();
@@ -77,27 +63,7 @@ const ProfilePage = () => {
     }
   };
 
-  const handleResetPassword = async (e) => {
-    e.preventDefault();
-    
-    if (passwordForm.newPassword !== passwordForm.confirmPassword) {
-      setAlert({
-        show: true,
-        message: 'New password and confirm password do not match.',
-        variant: 'danger'
-      });
-      return;
-    }
-
-    if (passwordForm.newPassword.length < 6) {
-      setAlert({
-        show: true,
-        message: 'New password must be at least 6 characters long.',
-        variant: 'danger'
-      });
-      return;
-    }
-
+  const handleResetPassword = async (passwordData) => {
     setLoading(true);
     
     try {
@@ -109,19 +75,13 @@ const ProfilePage = () => {
         message: 'Password updated successfully!',
         variant: 'success'
       });
-      
-      // Reset form
-      setPasswordForm({
-        currentPassword: '',
-        newPassword: '',
-        confirmPassword: ''
-      });
     } catch (error) {
       setAlert({
         show: true,
         message: 'Failed to update password. Please check your current password.',
         variant: 'danger'
       });
+      throw error; // Re-throw to let modal handle it
     } finally {
       setLoading(false);
     }
@@ -200,10 +160,23 @@ const ProfilePage = () => {
               </Badge>
               
               <div className="text-start">
-                <div className="mb-2">
-                  <strong>Employee ID:</strong>
-                  <br />
-                  <span className="text-muted">{user?.eid || 'N/A'}</span>
+                <div className="mb-2 d-flex align-items-center justify-content-between">
+                  <div>
+                    <strong>Employee ID:</strong>
+                    <br />
+                    <span className="text-muted">{user?.eid || 'N/A'}</span>
+                  </div>
+                  <div>
+                    <Button
+                      variant="outline-secondary"
+                      size="sm"
+                      onClick={() => setShowResetPasswordModal(true)}
+                      className="d-flex align-items-center"
+                    >
+                      <Key size={14} className="me-1" />
+                      Reset Password
+                    </Button>
+                  </div>
                 </div>
                 <div className="mb-2">
                   <strong>Status:</strong>
@@ -287,110 +260,14 @@ const ProfilePage = () => {
         </Col>
       </Row>
 
-      {/* Password Reset */}
-      <Row>
-        <Col lg={12}>
-          <Card>
-            <Card.Header>
-              <div className="d-flex align-items-center">
-                <Key size={20} className="me-2 text-primary" />
-                <h5 className="mb-0">Reset Password</h5>
-              </div>
-            </Card.Header>
-            <Card.Body>
-              <Form onSubmit={handleResetPassword}>
-                <Row>
-                  <Col md={4} className="mb-3">
-                    <Form.Group>
-                      <Form.Label>Current Password</Form.Label>
-                      <div className="position-relative">
-                        <Form.Control
-                          type={showCurrentPassword ? 'text' : 'password'}
-                          name="currentPassword"
-                          value={passwordForm.currentPassword}
-                          onChange={handlePasswordChange}
-                          required
-                        />
-                        <Button
-                          variant="outline-secondary"
-                          size="sm"
-                          className="position-absolute end-0 top-50 translate-middle-y border-0"
-                          style={{ background: 'none', right: '8px' }}
-                          onClick={() => setShowCurrentPassword(!showCurrentPassword)}
-                        >
-                          {showCurrentPassword ? <EyeSlash size={16} /> : <Eye size={16} />}
-                        </Button>
-                      </div>
-                    </Form.Group>
-                  </Col>
-                  <Col md={4} className="mb-3">
-                    <Form.Group>
-                      <Form.Label>New Password</Form.Label>
-                      <div className="position-relative">
-                        <Form.Control
-                          type={showNewPassword ? 'text' : 'password'}
-                          name="newPassword"
-                          value={passwordForm.newPassword}
-                          onChange={handlePasswordChange}
-                          required
-                          minLength={6}
-                        />
-                        <Button
-                          variant="outline-secondary"
-                          size="sm"
-                          className="position-absolute end-0 top-50 translate-middle-y border-0"
-                          style={{ background: 'none', right: '8px' }}
-                          onClick={() => setShowNewPassword(!showNewPassword)}
-                        >
-                          {showNewPassword ? <EyeSlash size={16} /> : <Eye size={16} />}
-                        </Button>
-                      </div>
-                    </Form.Group>
-                  </Col>
-                  <Col md={4} className="mb-3">
-                    <Form.Group>
-                      <Form.Label>Confirm New Password</Form.Label>
-                      <div className="position-relative">
-                        <Form.Control
-                          type={showConfirmPassword ? 'text' : 'password'}
-                          name="confirmPassword"
-                          value={passwordForm.confirmPassword}
-                          onChange={handlePasswordChange}
-                          required
-                          minLength={6}
-                        />
-                        <Button
-                          variant="outline-secondary"
-                          size="sm"
-                          className="position-absolute end-0 top-50 translate-middle-y border-0"
-                          style={{ background: 'none', right: '8px' }}
-                          onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-                        >
-                          {showConfirmPassword ? <EyeSlash size={16} /> : <Eye size={16} />}
-                        </Button>
-                      </div>
-                    </Form.Group>
-                  </Col>
-                </Row>
-                <div className="d-flex justify-content-end">
-                  <Button 
-                    type="submit" 
-                    variant="warning"
-                    disabled={loading}
-                  >
-                    {loading ? 'Updating...' : (
-                      <>
-                        <Key size={16} className="me-1" />
-                        Update Password
-                      </>
-                    )}
-                  </Button>
-                </div>
-              </Form>
-            </Card.Body>
-          </Card>
-        </Col>
-      </Row>
+
+      {/* Reset Password Modal */}
+      <ResetPasswordModal
+        show={showResetPasswordModal}
+        onClose={() => setShowResetPasswordModal(false)}
+        onSave={handleResetPassword}
+        loading={loading}
+      />
     </Container>
   );
 };

@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Container, Card, Row, Col, Button, Dropdown, Alert } from 'react-bootstrap';
-import { Plus, ThreeDotsVertical } from 'react-bootstrap-icons';
+import { Plus, ThreeDotsVertical, Eye, Pencil, PersonX } from 'react-bootstrap-icons';
 import { RoleTable, RoleModal, RoleFilterPanel, DisableRoleModal } from '../../components/Dashboard/Role';
 import { SearchBar, PermissionWrapper } from '../../components/Common';
 import { useRoleManagement } from '../../hooks/useRoleManagement';
@@ -84,6 +84,7 @@ const RoleManagementPage = () => {
             e.target.style.paddingLeft = '1rem';
           }}
         >
+          <Eye className="me-2" size={16} />
           View Details
         </Dropdown.Item>
         <Dropdown.Item 
@@ -101,6 +102,7 @@ const RoleManagementPage = () => {
             e.target.style.paddingLeft = '1rem';
           }}
         >
+          <Pencil className="me-2" size={16} />
           Edit Role
         </Dropdown.Item>
         {/* Only show disable/enable option if role is not admin */}
@@ -126,6 +128,7 @@ const RoleManagementPage = () => {
                 e.target.style.paddingLeft = '1rem';
               }}
             >
+              <PersonX className="me-2" size={16} />
               {role.status === 'Active' ? 'Disable Role' : 'Enable Role'}
             </Dropdown.Item>
           </>
