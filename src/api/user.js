@@ -67,5 +67,15 @@ export const userAPI = {
     } catch (error) {
       throw error.response?.data || error.message;
     }
+  },
+
+  // Get all roles
+  getRoles: async () => {
+    try {
+      const response = await apiClient.get('/roles');
+      return response.data;
+    } catch (error) {
+      throw error.response?.data || error.message;
+    }
   }
 };

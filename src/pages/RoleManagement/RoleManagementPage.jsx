@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
-import { Container, Card, Row, Col, Button, Dropdown, Alert } from 'react-bootstrap';
+import { Container, Card, Row, Col, Button, Dropdown } from 'react-bootstrap';
+import { toast } from 'react-toastify';
 import { Plus, ThreeDotsVertical, Eye, Pencil, PersonX } from 'react-bootstrap-icons';
 import { RoleTable, RoleModal, RoleFilterPanel, DisableRoleModal } from '../../components/Dashboard/Role';
 import { SearchBar, PermissionWrapper } from '../../components/Common';
@@ -137,13 +138,15 @@ const RoleManagementPage = () => {
     </Dropdown>
   );
 
+  // Show error toast when error state changes
+  React.useEffect(() => {
+    if (error) {
+      toast.error(error);
+    }
+  }, [error]);
+
   return (
     <Container fluid className="py-4 role-management-page">
-      {error && (
-        <Alert variant="danger" dismissible onClose={() => setError(null)}>
-          {error}
-        </Alert>
-      )}
 
       <Card className="border-neutral-200 shadow-sm">
         <Card.Header className="bg-light-custom border-neutral-200">

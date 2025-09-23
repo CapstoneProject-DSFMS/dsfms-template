@@ -5,18 +5,17 @@ import {
   Col,
   Form,
   Button,
-  Alert,
   Spinner,
 } from "react-bootstrap";
 import { useNavigate, useLocation } from "react-router-dom";
 import { useAuth } from "../../hooks/useAuth";
+import { toast } from "react-toastify";
 
 function Login() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [submitting, setSubmitting] = useState(false);
-  const [error, setError] = useState("");
 
   const navigate = useNavigate();
   const location = useLocation();
@@ -48,7 +47,6 @@ function Login() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    setError("");
     setSubmitting(true);
 
     try {
@@ -59,10 +57,10 @@ function Login() {
         const from = location.state?.from?.pathname || "/admin";
         navigate(from, { replace: true });
       } else {
-        setError(result.error || "Email or password is incorrect. Please try again.");
+        toast.error(result.error || "Email or password is incorrect. Please try again.");
       }
     } catch (err) {
-      setError("Login failed. Please try again.");
+      toast.error("Login failed. Please try again.");
     } finally {
       setSubmitting(false);
     }
@@ -236,11 +234,6 @@ function Login() {
                   </p>
                 </div>
 
-                {error && (
-                  <Alert variant="danger" className="py-2 mb-3">
-                    {error}
-                  </Alert>
-                )}
 
                 <Form onSubmit={handleSubmit}>
                   <Form.Group className="mb-3" controlId="email">

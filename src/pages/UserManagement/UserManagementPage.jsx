@@ -1,7 +1,9 @@
 import React, { useState } from 'react';
-import { Container, Card, Row, Col, Button, Dropdown, Alert } from 'react-bootstrap';
+import { Container, Card, Row, Col, Button, Dropdown } from 'react-bootstrap';
+import { toast } from 'react-toastify';
 import { Plus, Upload, Funnel, ChevronDown } from 'react-bootstrap-icons';
 import { UserTable, UserModal, BulkImportModal, DisableUserModal, FilterPanel } from '../../components/Dashboard/User';
+import RoleChangeConfirmModal from '../../components/Dashboard/User/RoleChangeConfirmModal';
 import { SearchBar, PermissionWrapper } from '../../components/Common';
 import { useUserManagementAPI } from '../../hooks/useUserManagementAPI';
 import { PERMISSIONS_BY_UC } from '../../constants/permissions';
@@ -25,6 +27,8 @@ const UserManagementPage = () => {
     modalShow,
     selectedUser,
     modalMode,
+    confirmRoleChange,
+    pendingUserData,
     handleSearch,
     handleRoleToggle,
     handleDepartmentToggle,
@@ -36,6 +40,8 @@ const UserManagementPage = () => {
     handleSave,
     handleBulkImport,
     handleModalClose,
+    handleConfirmRoleChange,
+    handleCancelRoleChange,
     setError
   } = useUserManagementAPI();
 
@@ -64,20 +70,21 @@ const UserManagementPage = () => {
     setUserToDisable(null);
   };
 
+  // Show error toast when error state changes
+  React.useEffect(() => {
+    if (error) {
+      toast.error(error);
+    }
+  }, [error]);
+
   return (
     <Container fluid className="py-4 user-management-page">
-      {error && (
-        <Alert variant="danger" dismissible onClose={() => setError(null)}>
-          {error}
-        </Alert>
-      )}
-      
       <Card className="border-neutral-200 shadow-sm">
         <Card.Header className="bg-light-custom border-neutral-200">
           <Row className="align-items-center">
           
-            <Col xs={12} className="mt-2 mt-md-0 mb-3">
-              <div className="d-flex justify-content-end gap-2">
+                <Col xs={12} className="mt-2 mt-md-0 mb-3">
+                  <div className="d-flex justify-content-end gap-2">
                 <PermissionWrapper 
                   permission={PERMISSIONS_BY_UC['UC-06'].title}
                   fallback={null}
@@ -188,6 +195,16 @@ const UserManagementPage = () => {
             onConfirm={handleDisableConfirm}
             onCancel={handleDisableCancel}
             loading={disableLoading}
+          />
+
+          {/* Role Change Confirmation Modal */}
+          <RoleChangeConfirmModal
+            show={confirmRoleChange}
+            user={selectedUser}
+            newRole={pendingUserData?.role}
+            onConfirm={handleConfirmRoleChange}
+            onCancel={handleCancelRoleChange}
+            loading={loading}
           />
         </Card.Body>
       </Card>

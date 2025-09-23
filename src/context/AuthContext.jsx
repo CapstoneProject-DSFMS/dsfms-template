@@ -13,33 +13,61 @@ export const AuthProvider = ({ children }) => {
   // Check for existing auth data on mount
   useEffect(() => {
     const initializeAuth = () => {
-      const token = localStorage.getItem('authToken');
-      const userData = localStorage.getItem('user');
-      
-      if (token && userData) {
-        try {
-          const parsedUserData = JSON.parse(userData);
-          setUser(parsedUserData);
-          setIsAuthenticated(true);
-        } catch (error) {
-          // Clear invalid data
-          authAPI.logout();
+      try {
+        const token = localStorage.getItem('authToken');
+        const userData = localStorage.getItem('user');
+        
+        if (token && userData) {
+          try {
+            const parsedUserData = JSON.parse(userData);
+            setUser(parsedUserData);
+            setIsAuthenticated(true);
+          } catch (error) {
+            // Clear invalid data
+            authAPI.logout();
+            setUser(null);
+            setIsAuthenticated(false);
+          }
+        } else {
           setUser(null);
           setIsAuthenticated(false);
         }
-      } else {
+      } catch (error) {
+        // Handle localStorage access errors
+        console.error('Error accessing localStorage:', error);
         setUser(null);
         setIsAuthenticated(false);
+      } finally {
+        // Mark loading as complete
+        setIsLoading(false);
       }
-      
-      // Mark loading as complete
-      setIsLoading(false);
     };
 
     // Add a small delay to ensure localStorage is available
     const timer = setTimeout(initializeAuth, 100);
     return () => clearTimeout(timer);
   }, []);
+
+  // Auto refresh token before expiry - DISABLED to prevent loops
+  // useEffect(() => {
+  //   if (!isAuthenticated) return;
+
+  //   const refreshTokenInterval = setInterval(async () => {
+  //     const refreshToken = localStorage.getItem('refreshToken');
+  //     if (refreshToken) {
+  //       try {
+  //         const response = await authAPI.refreshToken(refreshToken);
+  //         localStorage.setItem('authToken', response.access_token);
+  //         localStorage.setItem('refreshToken', response.refresh_token);
+  //       } catch (error) {
+  //         // Refresh failed, logout user
+  //         logout();
+  //       }
+  //     }
+  //   }, 5 * 60 * 1000); // Refresh every 5 minutes
+
+  //   return () => clearInterval(refreshTokenInterval);
+  // }, [isAuthenticated]);
 
   // Login function
   const login = async (credentials) => {
@@ -91,6 +119,12 @@ export const AuthProvider = ({ children }) => {
     login,
     logout
   };
+
+  // Ensure value is never undefined
+  if (!value) {
+    console.error('AuthContext value is undefined');
+    return null;
+  }
 
   return (
     <AuthContext.Provider value={value}>
