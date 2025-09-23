@@ -6,7 +6,6 @@ const DepartmentModal = ({ show, department, mode, onSave, onClose, availableUse
   const [formData, setFormData] = useState({
     name: '',
     code: '',
-    type: '',
     description: '',
     departmentHeadId: '',
     status: 'ACTIVE'
@@ -14,20 +13,12 @@ const DepartmentModal = ({ show, department, mode, onSave, onClose, availableUse
   const [errors, setErrors] = useState({});
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const departmentTypes = [
-    { value: '', label: 'Select department type' },
-    { value: 'CCT', label: 'CCT - Cabin Crew Training' },
-    { value: 'FCTD', label: 'FCTD - Flight Crew Training Department' },
-    { value: 'GOT', label: 'GOT - Ground Operations Training' },
-    { value: 'SQA', label: 'SQA - Safety & Quality Assurance' }
-  ];
 
   useEffect(() => {
     if (department && mode !== 'add') {
       setFormData({
         name: department.name || '',
         code: department.code || '',
-        type: department.type || '',
         description: department.description || '',
         departmentHeadId: department.departmentHeadId || '',
         status: department.status || 'ACTIVE'
@@ -36,7 +27,6 @@ const DepartmentModal = ({ show, department, mode, onSave, onClose, availableUse
       setFormData({
         name: '',
         code: '',
-        type: '',
         description: '',
         departmentHeadId: '',
         status: 'ACTIVE'
@@ -60,9 +50,6 @@ const DepartmentModal = ({ show, department, mode, onSave, onClose, availableUse
       newErrors.code = 'Department code must be 2-5 uppercase letters';
     }
 
-    if (!formData.type) {
-      newErrors.type = 'Department type is required';
-    }
 
     if (!formData.departmentHeadId) {
       newErrors.departmentHeadId = 'Department head is required';
@@ -200,34 +187,8 @@ const DepartmentModal = ({ show, department, mode, onSave, onClose, availableUse
             </Col>
           </Row>
 
-          {/* Department Type and Status */}
+          {/* Status */}
           <Row>
-            <Col md={6}>
-              <Form.Group className="mb-4">
-                <Form.Label className="text-primary-custom fw-semibold">
-                  Department Type *
-                </Form.Label>
-                <Form.Select
-                  value={formData.type}
-                  onChange={(e) => handleInputChange('type', e.target.value)}
-                  isInvalid={!!errors.type}
-                  disabled={isReadOnly}
-                  style={{
-                    borderColor: errors.type ? '#dc3545' : 'var(--bs-primary)',
-                    borderWidth: '2px'
-                  }}
-                >
-                  {departmentTypes.map(type => (
-                    <option key={type.value} value={type.value}>
-                      {type.label}
-                    </option>
-                  ))}
-                </Form.Select>
-                <Form.Control.Feedback type="invalid">
-                  {errors.type}
-                </Form.Control.Feedback>
-              </Form.Group>
-            </Col>
             <Col md={6}>
               <Form.Group className="mb-4">
                 <Form.Label className="text-primary-custom fw-semibold">
