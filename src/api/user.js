@@ -97,7 +97,7 @@ export const userAPI = {
   // Disable user
   disableUser: async (userId) => {
     try {
-      const response = await apiClient.patch(`/users/${userId}`);
+      const response = await apiClient.delete(`/users/${userId}`);
       return response.data;
     } catch (error) {
       throw error.response?.data || error.message;
