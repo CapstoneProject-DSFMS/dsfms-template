@@ -206,8 +206,13 @@ export const useUserManagementAPI = () => {
   const handleDisable = async (user) => {
     try {
       setLoading(true);
-      // Call API to disable user
-      await userAPI.updateUser(user.id, { status: 'DISABLED' });
+      
+      // Determine new status based on current status
+      const newStatus = user.status === 'ACTIVE' ? 'DISABLED' : 'ACTIVE';
+      
+      // Call API to toggle user status using dynamic endpoint
+      await userAPI.toggleUserStatus(user.id, newStatus);
+      
       // Refresh users list
       const response = await userAPI.getUsers({ page: 1, limit: 100 });
       const transformedUsers = response.data.map(user => ({
@@ -237,9 +242,15 @@ export const useUserManagementAPI = () => {
         lastLogin: user.lastLogin || ''
       }));
       setUsers(transformedUsers);
+      
+      // Show success message
+      const action = newStatus === 'DISABLED' ? 'disabled' : 'enabled';
+      toast.success(`User has been ${action} successfully!`);
+      
     } catch (err) {
       const errorMessage = mapError(err, { context: 'disable_user' });
       setError(errorMessage);
+      toast.error(errorMessage);
     } finally {
       setLoading(false);
     }
