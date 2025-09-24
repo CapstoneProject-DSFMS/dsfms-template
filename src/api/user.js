@@ -77,5 +77,15 @@ export const userAPI = {
     } catch (error) {
       throw error.response?.data || error.message;
     }
+  },
+
+  // Disable/Enable user with dynamic API endpoint
+  toggleUserStatus: async (userId, status) => {
+    try {
+      const response = await apiClient.patch(`/users/${userId}`, { status });
+      return response.data;
+    } catch (error) {
+      throw error.response?.data || error.message;
+    }
   }
 };
