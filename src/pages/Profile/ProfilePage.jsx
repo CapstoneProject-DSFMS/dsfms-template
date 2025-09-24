@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Container, Row, Col, Card, Button, Form, Alert, Badge } from 'react-bootstrap';
 import { Person, Camera, Key, Save } from 'react-bootstrap-icons';
 import { useAuth } from '../../hooks/useAuth';
+import { userAPI } from '../../api/user';
 import ResetPasswordModal from '../../components/Common/ResetPasswordModal';
 
 const ProfilePage = () => {
@@ -10,25 +11,69 @@ const ProfilePage = () => {
   const [alert, setAlert] = useState({ show: false, message: '', variant: 'success' });
   const [loading, setLoading] = useState(false);
   const [showResetPasswordModal, setShowResetPasswordModal] = useState(false);
+  const [profileData, setProfileData] = useState(null);
+  const [profileLoading, setProfileLoading] = useState(true);
 
   // Personal Info Form State
   const [personalInfo, setPersonalInfo] = useState({
     fullName: '',
     email: '',
-    phone: ''
+    phone: '',
+    address: '',
+    gender: '',
+    avatarUrl: ''
   });
 
 
-  // Update personalInfo when user data is available
+  // Fetch profile data from API
   useEffect(() => {
-    if (user) {
+    const fetchProfile = async () => {
+      try {
+        setProfileLoading(true);
+        const response = await userAPI.getProfile();
+        setProfileData(response);
+        
+        // Update form with API data
+        const fullName = [response.firstName, response.middleName, response.lastName]
+          .filter(Boolean)
+          .join(' ');
+        
+        setPersonalInfo({
+          fullName: fullName || '',
+          email: response.email || '',
+          phone: response.phoneNumber || '',
+          address: response.address || '',
+          gender: response.gender || '',
+          avatarUrl: response.avatarUrl || ''
+        });
+      } catch (error) {
+        console.error('Failed to fetch profile:', error);
+        setAlert({
+          show: true,
+          message: 'Failed to load profile data. Please refresh the page.',
+          variant: 'danger'
+        });
+      } finally {
+        setProfileLoading(false);
+      }
+    };
+
+    fetchProfile();
+  }, []);
+
+  // Update personalInfo when user data is available (fallback)
+  useEffect(() => {
+    if (user && !profileData) {
       setPersonalInfo({
         fullName: user.fullName || '',
         email: user.email || '',
-        phone: user.phone || ''
+        phone: user.phone || '',
+        address: '',
+        gender: '',
+        avatarUrl: ''
       });
     }
-  }, [user]);
+  }, [user, profileData]);
 
   const handlePersonalInfoChange = (e) => {
     const { name, value } = e.target;
@@ -99,6 +144,23 @@ const ProfilePage = () => {
     return variants[role] || 'secondary';
   };
 
+  if (profileLoading) {
+    return (
+      <Container fluid className="py-4">
+        <Row>
+          <Col>
+            <div className="text-center py-5">
+              <div className="spinner-border text-primary" role="status">
+                <span className="visually-hidden">Loading...</span>
+              </div>
+              <p className="mt-3 text-muted">Loading profile data...</p>
+            </div>
+          </Col>
+        </Row>
+      </Container>
+    );
+  }
+
   return (
     <Container fluid className="py-4">
 
@@ -153,10 +215,19 @@ const ProfilePage = () => {
                 </button>
               </div>
               
-              <h4 className="mb-1">{user?.fullName || 'User Name'}</h4>
-              <p className="text-muted mb-2">{user?.email || 'user@example.com'}</p>
-              <Badge bg={getRoleVariant(user?.role)} className="mb-3">
-                {user?.role || 'USER'}
+              <h4 className="mb-1">
+                {profileData ? 
+                  [profileData.firstName, profileData.middleName, profileData.lastName]
+                    .filter(Boolean)
+                    .join(' ') || 'User Name'
+                  : user?.fullName || 'User Name'
+                }
+              </h4>
+              <p className="text-muted mb-2">
+                {profileData?.email || user?.email || 'user@example.com'}
+              </p>
+              <Badge bg={getRoleVariant(profileData?.role?.name || user?.role)} className="mb-3">
+                {profileData?.role?.name || user?.role || 'USER'}
               </Badge>
               
               <div className="text-start">
@@ -164,7 +235,7 @@ const ProfilePage = () => {
                   <div>
                     <strong>Employee ID:</strong>
                     <br />
-                    <span className="text-muted">{user?.eid || 'N/A'}</span>
+                    <span className="text-muted">{profileData?.eid || user?.eid || 'N/A'}</span>
                   </div>
                   <div>
                     <Button
@@ -181,10 +252,17 @@ const ProfilePage = () => {
                 <div className="mb-2">
                   <strong>Status:</strong>
                   <br />
-                  <Badge bg={user?.status === 'Active' ? 'success' : 'secondary'}>
-                    {user?.status || 'Active'}
+                  <Badge bg="success">
+                    Active
                   </Badge>
                 </div>
+                {profileData?.address && (
+                  <div className="mb-2">
+                    <strong>Address:</strong>
+                    <br />
+                    <span className="text-muted">{profileData.address}</span>
+                  </div>
+                )}
               </div>
             </Card.Body>
           </Card>
@@ -236,6 +314,49 @@ const ProfilePage = () => {
                         name="phone"
                         value={personalInfo.phone}
                         onChange={handlePersonalInfoChange}
+                      />
+                    </Form.Group>
+                  </Col>
+                  <Col md={6} className="mb-3">
+                    <Form.Group>
+                      <Form.Label>Gender</Form.Label>
+                      <Form.Select
+                        name="gender"
+                        value={personalInfo.gender}
+                        onChange={handlePersonalInfoChange}
+                      >
+                        <option value="">Select Gender</option>
+                        <option value="MALE">Male</option>
+                        <option value="FEMALE">Female</option>
+                      </Form.Select>
+                    </Form.Group>
+                  </Col>
+                </Row>
+                <Row>
+                  <Col md={12} className="mb-3">
+                    <Form.Group>
+                      <Form.Label>Address</Form.Label>
+                      <Form.Control
+                        as="textarea"
+                        rows={3}
+                        name="address"
+                        value={personalInfo.address}
+                        onChange={handlePersonalInfoChange}
+                        placeholder="Enter your address"
+                      />
+                    </Form.Group>
+                  </Col>
+                </Row>
+                <Row>
+                  <Col md={12} className="mb-3">
+                    <Form.Group>
+                      <Form.Label>Avatar URL</Form.Label>
+                      <Form.Control
+                        type="url"
+                        name="avatarUrl"
+                        value={personalInfo.avatarUrl}
+                        onChange={handlePersonalInfoChange}
+                        placeholder="Enter avatar image URL"
                       />
                     </Form.Group>
                   </Col>
