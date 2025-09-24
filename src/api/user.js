@@ -22,6 +22,16 @@ export const userAPI = {
     }
   },
 
+  // Get current user profile
+  getProfile: async () => {
+    try {
+      const response = await apiClient.get('/profile');
+      return response.data;
+    } catch (error) {
+      throw error.response?.data || error.message;
+    }
+  },
+
   // Create new user
   createUser: async (userData) => {
     try {
@@ -53,15 +63,10 @@ export const userAPI = {
   },
 
   // Bulk import users
-  bulkImportUsers: async (file) => {
+  bulkImportUsers: async (usersData) => {
     try {
-      const formData = new FormData();
-      formData.append('file', file);
-      
-      const response = await apiClient.post('/users/bulk-import', formData, {
-        headers: {
-          'Content-Type': 'multipart/form-data',
-        },
+      const response = await apiClient.post('/users/bulk', {
+        users: usersData
       });
       return response.data;
     } catch (error) {
@@ -79,7 +84,27 @@ export const userAPI = {
     }
   },
 
-  // Disable/Enable user with dynamic API endpoint
+  // Enable user
+  enableUser: async (userId) => {
+    try {
+      const response = await apiClient.patch(`/users/${userId}/enable`);
+      return response.data;
+    } catch (error) {
+      throw error.response?.data || error.message;
+    }
+  },
+
+  // Disable user
+  disableUser: async (userId) => {
+    try {
+      const response = await apiClient.patch(`/users/${userId}`);
+      return response.data;
+    } catch (error) {
+      throw error.response?.data || error.message;
+    }
+  },
+
+  // Disable/Enable user with dynamic API endpoint (legacy method)
   toggleUserStatus: async (userId, status) => {
     try {
       const response = await apiClient.patch(`/users/${userId}`, { status });
