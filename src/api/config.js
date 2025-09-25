@@ -16,6 +16,8 @@ const apiClient = axios.create({
 // Flag to prevent multiple refresh token calls
 let isRefreshing = false;
 let failedQueue = [];
+let refreshAttempts = 0;
+const MAX_REFRESH_ATTEMPTS = 2;
 
 // Process failed requests queue
 const processQueue = (error, token = null) => {
@@ -53,7 +55,11 @@ apiClient.interceptors.response.use(
     const originalRequest = error.config;
     
     // Xử lý cả 401 Unauthorized và 403 Forbidden (token hết hạn hoặc không hợp lệ)
-    if ((error.response?.status === 401 || error.response?.status === 403) && !originalRequest._retry && !originalRequest.url?.includes('/auth/')) {
+    // Chỉ retry tối đa MAX_REFRESH_ATTEMPTS lần để tránh infinite loop
+    if ((error.response?.status === 401 || error.response?.status === 403) && 
+        !originalRequest._retry && 
+        !originalRequest.url?.includes('/auth/') &&
+        refreshAttempts < MAX_REFRESH_ATTEMPTS) {
       
       // Nếu đang refresh token, thêm request vào queue
       if (isRefreshing) {
@@ -69,6 +75,7 @@ apiClient.interceptors.response.use(
 
       originalRequest._retry = true;
       isRefreshing = true;
+      refreshAttempts++;
 
       const refreshToken = localStorage.getItem('refreshToken');
       
@@ -87,13 +94,29 @@ apiClient.interceptors.response.use(
           localStorage.setItem('authToken', access_token);
           localStorage.setItem('refreshToken', newRefreshToken);
           
+          // Reset refresh attempts khi thành công
+          refreshAttempts = 0;
+          
           console.log('✅ Refresh token thành công, retry request gốc');
           
           // Process queue và retry request gốc
           processQueue(null, access_token);
           originalRequest.headers.Authorization = `Bearer ${access_token}`;
           
-          return apiClient(originalRequest);
+          try {
+            return await apiClient(originalRequest);
+          } catch (retryError) {
+            // Nếu retry vẫn thất bại với 403, có thể token mới vẫn không hợp lệ
+            if (retryError.response?.status === 403) {
+              console.error('❌ Retry request vẫn trả về 403 - token mới có thể không hợp lệ');
+              // Clear storage và logout
+              localStorage.removeItem('authToken');
+              localStorage.removeItem('refreshToken');
+              localStorage.removeItem('user');
+              window.location.href = '/';
+            }
+            throw retryError;
+          }
           
         } catch (refreshError) {
           console.error('❌ Refresh token thất bại:', refreshError);
@@ -121,6 +144,13 @@ apiClient.interceptors.response.use(
         localStorage.removeItem('user');
         window.location.href = '/';
       }
+    } else if (refreshAttempts >= MAX_REFRESH_ATTEMPTS) {
+      // Đã vượt quá số lần refresh cho phép - logout user
+      console.error('❌ Đã vượt quá số lần refresh cho phép, logout user');
+      localStorage.removeItem('authToken');
+      localStorage.removeItem('refreshToken');
+      localStorage.removeItem('user');
+      window.location.href = '/';
     }
     
     return Promise.reject(error);
