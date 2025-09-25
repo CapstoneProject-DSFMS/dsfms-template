@@ -1,5 +1,6 @@
 import { createContext, useState, useEffect } from 'react';
 import { authAPI } from '../api';
+import { mapError } from '../utils/errorMapping';
 
 // Create the context
 export const AuthContext = createContext();
@@ -99,7 +100,7 @@ export const AuthProvider = ({ children }) => {
       
       return { success: true, user: userInfo };
     } catch (error) {
-      return { success: false, error: error.message || error.response?.data?.message || 'Login failed' };
+      return { success: false, error: mapError(error) || 'Login failed' };
     } finally {
       setIsLoading(false);
     }

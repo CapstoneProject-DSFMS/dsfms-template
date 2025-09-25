@@ -112,5 +112,18 @@ export const userAPI = {
     } catch (error) {
       throw error.response?.data || error.message;
     }
+  },
+
+  // Reset password
+  resetPassword: async (passwordData) => {
+    try {
+      const response = await apiClient.put('/profile/reset-password', {
+        newPassword: passwordData.newPassword,
+        confirmNewPassword: passwordData.confirmPassword
+      });
+      return response.data;
+    } catch (error) {
+      throw error.response?.data || error.message;
+    }
   }
 };

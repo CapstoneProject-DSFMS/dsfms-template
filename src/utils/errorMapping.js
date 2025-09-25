@@ -25,10 +25,12 @@ export const ERROR_MAPPINGS = {
   
   // Authentication errors
   'Unauthorized': 'You do not have permission to access. Please login again.',
+  'Unauthorized access': 'Wrong username or password. Please check your credentials and try again.',
   'Access token is missing': 'Your session has expired. Please login again.',
   'Invalid refresh token': 'Your session is invalid. Please login again.',
   'User not found or inactive': 'Account does not exist or has been deactivated.',
   'Email or password is incorrect': 'Email or password is incorrect.',
+  'Wrong password or username': 'Wrong password or username. Please check your credentials and try again.',
   
   // User management errors
   'User not found': 'User not found.',
@@ -60,7 +62,7 @@ export const ERROR_MAPPINGS = {
 export const mapError = (error, context = {}) => {
   // If error is a string, try to map it directly
   if (typeof error === 'string') {
-    return ERROR_MAPPINGS[error]?.default || error;
+    return ERROR_MAPPINGS[error] || error;
   }
   
   // If error is an object with message and errors array
@@ -85,7 +87,7 @@ export const mapError = (error, context = {}) => {
     }
     
     // Map the main message
-    const mappedMessage = ERROR_MAPPINGS[mainMessage]?.default || mainMessage;
+    const mappedMessage = ERROR_MAPPINGS[mainMessage] || mainMessage;
     
     // If there are specific field errors, try to map them
     if (errors && Array.isArray(errors) && errors.length > 0) {

@@ -1,14 +1,14 @@
 import React, { useState, useEffect } from 'react';
-import { Container, Row, Col, Card, Button, Form, Alert, Badge } from 'react-bootstrap';
+import { Container, Row, Col, Card, Button, Form, Badge } from 'react-bootstrap';
 import { Person, Camera, Key, Save } from 'react-bootstrap-icons';
 import { useAuth } from '../../hooks/useAuth';
 import { userAPI } from '../../api/user';
 import ResetPasswordModal from '../../components/Common/ResetPasswordModal';
+import { toast } from 'react-toastify';
 
 const ProfilePage = () => {
   const { user } = useAuth();
   const [showPassword, setShowPassword] = useState(false);
-  const [alert, setAlert] = useState({ show: false, message: '', variant: 'success' });
   const [loading, setLoading] = useState(false);
   const [showResetPasswordModal, setShowResetPasswordModal] = useState(false);
   const [profileData, setProfileData] = useState(null);
@@ -48,11 +48,7 @@ const ProfilePage = () => {
         });
       } catch (error) {
         console.error('Failed to fetch profile:', error);
-        setAlert({
-          show: true,
-          message: 'Failed to load profile data. Please refresh the page.',
-          variant: 'danger'
-        });
+        toast.error('Failed to load profile data. Please refresh the page.');
       } finally {
         setProfileLoading(false);
       }
@@ -92,17 +88,11 @@ const ProfilePage = () => {
       // Simulate API call
       await new Promise(resolve => setTimeout(resolve, 1000));
       
-      setAlert({
-        show: true,
-        message: 'Personal information updated successfully!',
-        variant: 'success'
-      });
+      // Show success toast
+      toast.success('Personal information updated successfully!');
     } catch (error) {
-      setAlert({
-        show: true,
-        message: 'Failed to update personal information. Please try again.',
-        variant: 'danger'
-      });
+      // Show error toast
+      toast.error('Failed to update personal information. Please try again.');
     } finally {
       setLoading(false);
     }
@@ -112,20 +102,14 @@ const ProfilePage = () => {
     setLoading(true);
     
     try {
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 1000));
+      // Call reset password API
+      const response = await userAPI.resetPassword(passwordData);
       
-      setAlert({
-        show: true,
-        message: 'Password updated successfully!',
-        variant: 'success'
-      });
+      // Show success toast
+      toast.success(response.message || 'Password updated successfully!');
     } catch (error) {
-      setAlert({
-        show: true,
-        message: 'Failed to update password. Please check your current password.',
-        variant: 'danger'
-      });
+      // Show error toast
+      toast.error(error.message || 'Failed to update password. Please check your current password.');
       throw error; // Re-throw to let modal handle it
     } finally {
       setLoading(false);
@@ -163,22 +147,6 @@ const ProfilePage = () => {
 
   return (
     <Container fluid className="py-4">
-
-
-      {alert.show && (
-        <Row className="mb-4">
-          <Col lg={12}>
-            <Alert 
-              variant={alert.variant} 
-              dismissible 
-              onClose={() => setAlert({ show: false, message: '', variant: 'success' })}
-            >
-              {alert.message}
-            </Alert>
-          </Col>
-        </Row>
-      )}
-
       <Row>
         {/* Avatar and Basic Info */}
         <Col lg={4} className="mb-4">
