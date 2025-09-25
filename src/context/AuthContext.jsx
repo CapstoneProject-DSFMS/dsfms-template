@@ -48,26 +48,28 @@ export const AuthProvider = ({ children }) => {
     return () => clearTimeout(timer);
   }, []);
 
-  // Auto refresh token before expiry - DISABLED to prevent loops
-  // useEffect(() => {
-  //   if (!isAuthenticated) return;
+  // Auto refresh token before expiry
+  useEffect(() => {
+    if (!isAuthenticated) return;
 
-  //   const refreshTokenInterval = setInterval(async () => {
-  //     const refreshToken = localStorage.getItem('refreshToken');
-  //     if (refreshToken) {
-  //       try {
-  //         const response = await authAPI.refreshToken(refreshToken);
-  //         localStorage.setItem('authToken', response.access_token);
-  //         localStorage.setItem('refreshToken', response.refresh_token);
-  //       } catch (error) {
-  //         // Refresh failed, logout user
-  //         logout();
-  //       }
-  //     }
-  //   }, 5 * 60 * 1000); // Refresh every 5 minutes
+    const refreshTokenInterval = setInterval(async () => {
+      const refreshToken = localStorage.getItem('refreshToken');
+      if (refreshToken) {
+        try {
+          const response = await authAPI.refreshToken(refreshToken);
+          localStorage.setItem('authToken', response.access_token);
+          localStorage.setItem('refreshToken', response.refresh_token);
+          console.log('Token refreshed successfully');
+        } catch (error) {
+          console.error('Token refresh failed:', error);
+          // Refresh failed, logout user
+          logout();
+        }
+      }
+    }, 5 * 60 * 1000); // Refresh every 5 minutes
 
-  //   return () => clearInterval(refreshTokenInterval);
-  // }, [isAuthenticated]);
+    return () => clearInterval(refreshTokenInterval);
+  }, [isAuthenticated]);
 
   // Login function
   const login = async (credentials) => {
@@ -76,7 +78,7 @@ export const AuthProvider = ({ children }) => {
       
       const response = await authAPI.login(credentials);
       
-      // Store tokens
+      // Store tokens from login response
       localStorage.setItem('authToken', response.access_token);
       localStorage.setItem('refreshToken', response.refresh_token);
       
@@ -103,6 +105,26 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
+  // Manual refresh token function
+  const refreshToken = async () => {
+    try {
+      const refreshTokenValue = localStorage.getItem('refreshToken');
+      if (!refreshTokenValue) {
+        throw new Error('No refresh token available');
+      }
+      
+      const response = await authAPI.refreshToken(refreshTokenValue);
+      localStorage.setItem('authToken', response.access_token);
+      localStorage.setItem('refreshToken', response.refresh_token);
+      
+      return { success: true, tokens: response };
+    } catch (error) {
+      console.error('Manual token refresh failed:', error);
+      logout();
+      return { success: false, error: error.message };
+    }
+  };
+
   // Logout function
   const logout = () => {
     authAPI.logout();
@@ -117,7 +139,8 @@ export const AuthProvider = ({ children }) => {
     setIsAuthenticated,
     isLoading,
     login,
-    logout
+    logout,
+    refreshToken
   };
 
   // Ensure value is never undefined

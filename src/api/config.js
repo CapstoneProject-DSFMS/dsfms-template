@@ -1,5 +1,4 @@
 import axios from 'axios';
-
 import { API_CONFIG } from '../config/api.js';
 
 // Base configuration for API calls
@@ -14,7 +13,24 @@ const apiClient = axios.create({
   },
 });
 
-// Request interceptor to add auth token
+// Flag to prevent multiple refresh token calls
+let isRefreshing = false;
+let failedQueue = [];
+
+// Process failed requests queue
+const processQueue = (error, token = null) => {
+  failedQueue.forEach(prom => {
+    if (error) {
+      prom.reject(error);
+    } else {
+      prom.resolve(token);
+    }
+  });
+  
+  failedQueue = [];
+};
+
+// Request interceptor - tự động gắn access_token vào header
 apiClient.interceptors.request.use(
   (config) => {
     const token = localStorage.getItem('authToken');
@@ -28,7 +44,7 @@ apiClient.interceptors.request.use(
   }
 );
 
-// Response interceptor to handle common errors
+// Response interceptor - xử lý 401 và refresh token
 apiClient.interceptors.response.use(
   (response) => {
     return response;
@@ -36,39 +52,74 @@ apiClient.interceptors.response.use(
   async (error) => {
     const originalRequest = error.config;
     
-    // Skip retry for auth endpoints to avoid infinite loops
-    if (error.response?.status === 401 && !originalRequest._retry && !originalRequest.url?.includes('/auth/')) {
-      originalRequest._retry = true;
+    // Xử lý cả 401 Unauthorized và 403 Forbidden (token hết hạn hoặc không hợp lệ)
+    if ((error.response?.status === 401 || error.response?.status === 403) && !originalRequest._retry && !originalRequest.url?.includes('/auth/')) {
       
+      // Nếu đang refresh token, thêm request vào queue
+      if (isRefreshing) {
+        return new Promise((resolve, reject) => {
+          failedQueue.push({ resolve, reject });
+        }).then(token => {
+          originalRequest.headers.Authorization = `Bearer ${token}`;
+          return apiClient(originalRequest);
+        }).catch(err => {
+          return Promise.reject(err);
+        });
+      }
+
+      originalRequest._retry = true;
+      isRefreshing = true;
+
       const refreshToken = localStorage.getItem('refreshToken');
       
       if (refreshToken) {
         try {
-          // Import authAPI dynamically to avoid circular dependency
-          const { authAPI } = await import('./auth.js');
-          const response = await authAPI.refreshToken(refreshToken);
+          console.log('🔄 Token hết hạn hoặc không hợp lệ (401/403), đang refresh token...');
           
-          // Update tokens in localStorage
-          localStorage.setItem('authToken', response.access_token);
-          localStorage.setItem('refreshToken', response.refresh_token);
+          // Gọi API refresh token
+          const refreshResponse = await axios.post(`${API_BASE_URL}/auth/refresh`, {
+            refresh_token: refreshToken
+          });
           
-          // Retry original request with new token
-          originalRequest.headers.Authorization = `Bearer ${response.access_token}`;
+          const { access_token, refresh_token: newRefreshToken } = refreshResponse.data;
+          
+          // Cập nhật tokens mới vào localStorage
+          localStorage.setItem('authToken', access_token);
+          localStorage.setItem('refreshToken', newRefreshToken);
+          
+          console.log('✅ Refresh token thành công, retry request gốc');
+          
+          // Process queue và retry request gốc
+          processQueue(null, access_token);
+          originalRequest.headers.Authorization = `Bearer ${access_token}`;
+          
           return apiClient(originalRequest);
           
         } catch (refreshError) {
-          // Refresh failed, logout user
+          console.error('❌ Refresh token thất bại:', refreshError);
+          
+          // Refresh thất bại - clear storage và logout
+          processQueue(refreshError, null);
+          
+          // Clear tất cả auth data
           localStorage.removeItem('authToken');
           localStorage.removeItem('refreshToken');
           localStorage.removeItem('user');
-          window.location.href = '/login';
+          
+          // Redirect về login
+          window.location.href = '/';
+          
           return Promise.reject(refreshError);
+        } finally {
+          isRefreshing = false;
         }
       } else {
-        // No refresh token, logout user
+        // Không có refresh token - logout user
+        console.log('❌ Không có refresh token, logout user');
+        
         localStorage.removeItem('authToken');
         localStorage.removeItem('user');
-        window.location.href = '/login';
+        window.location.href = '/';
       }
     }
     
