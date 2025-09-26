@@ -3,6 +3,7 @@ import { Container, Row, Col, Card, Form, Button, Alert } from 'react-bootstrap'
 import { Key, Eye, EyeSlash, CheckCircle } from 'react-bootstrap-icons';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { toast } from 'react-toastify';
+import { API_CONFIG } from '../../config/api';
 
 const ResetPasswordPage = () => {
   const [searchParams] = useSearchParams();
@@ -76,7 +77,7 @@ const ResetPasswordPage = () => {
     setLoading(true);
 
     try {
-      const response = await fetch(`${import.meta.env.VITE_API_BASE_URL}/auth/reset-password`, {
+      const response = await fetch(`${API_CONFIG.BASE_URL}${API_CONFIG.ENDPOINTS.AUTH.RESET_PASSWORD}`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -88,17 +89,41 @@ const ResetPasswordPage = () => {
         }),
       });
 
-      const data = await response.json();
-
-      if (response.ok) {
-        toast.success('Password has been reset successfully! You can now login with your new password.');
-        navigate('/login');
-      } else {
-        setError(data.message || 'Failed to reset password. Please try again.');
+      // Check if response is ok first
+      if (!response.ok) {
+        if (response.status === 405) {
+          setError('Reset password feature is not available on this server. Please contact support.');
+        } else if (response.status === 404) {
+          setError('Reset password endpoint not found. Please contact support.');
+        } else if (response.status === 400) {
+          setError('Invalid token or password. Please request a new reset link.');
+        } else {
+          setError(`Server error (${response.status}). Please try again later.`);
+        }
+        return;
       }
+
+      // Try to parse JSON response
+      let data;
+      try {
+        data = await response.json();
+      } catch (jsonError) {
+        console.error('JSON parsing error:', jsonError);
+        setError('Server returned invalid response. Please try again later.');
+        return;
+      }
+
+      // Success case
+      toast.success('Password has been reset successfully! You can now login with your new password.');
+      navigate('/login');
+      
     } catch (error) {
       console.error('Reset password error:', error);
-      setError('Network error. Please check your connection and try again.');
+      if (error.name === 'TypeError' && error.message.includes('fetch')) {
+        setError('Cannot connect to server. Please check your internet connection.');
+      } else {
+        setError('An unexpected error occurred. Please try again later.');
+      }
     } finally {
       setLoading(false);
     }
