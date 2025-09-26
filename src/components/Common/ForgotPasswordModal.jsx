@@ -22,7 +22,7 @@ const ForgotPasswordModal = ({ show, onHide }) => {
         },
         body: JSON.stringify({
           email: email,
-          magicLink: "https://capstoneproject-dsfms.github.io/dsfms-template/reset-password/"
+          magicLink: "https://capstoneproject-dsfms.github.io/dsfms-template/#/reset-password/"
         }),
       });
 
@@ -39,9 +39,8 @@ const ForgotPasswordModal = ({ show, onHide }) => {
       }
 
       // Try to parse JSON response
-      let data;
       try {
-        data = await response.json();
+        await response.json();
       } catch (jsonError) {
         console.error('JSON parsing error:', jsonError);
         setError('Server returned invalid response. Please try again later.');
