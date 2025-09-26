@@ -22,7 +22,7 @@ const ForgotPasswordModal = ({ show, onHide }) => {
         },
         body: JSON.stringify({
           email: email,
-          magicLink: "https://capstoneproject-dsfms.github.io/dsfms-template/#/reset-password/"
+          magicLink: "https://capstoneproject-dsfms.github.io/dsfms-template/reset-password/"
         }),
       });
 

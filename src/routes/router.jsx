@@ -1,4 +1,4 @@
-import { createHashRouter } from 'react-router-dom'
+import { createBrowserRouter } from 'react-router-dom'
 import { LayoutWrapper } from '../components/Layout'
 import { ProtectedRoute, ErrorBoundary } from '../components/Common'
 import Login from '../pages/Auth/Login'
@@ -16,14 +16,10 @@ const getBasename = () => {
     return "/";
   }
   // For production (GitHub Pages), use the repository name as basename
-  const pathname = window.location.pathname;
-  if (pathname.includes('/dsfms-template')) {
-    return "/dsfms-template";
-  }
-  return "/";
+  return "/dsfms-template";
 };
 
-export const router = createHashRouter([
+export const router = createBrowserRouter([
   {
     path: "/",
     element: <Login />,
