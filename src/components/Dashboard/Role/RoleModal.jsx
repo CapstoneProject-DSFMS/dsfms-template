@@ -6,6 +6,7 @@ import { FEATURES, PERMISSIONS_BY_UC, ROLE_PERMISSIONS } from '../../../constant
 const RoleModal = ({ show, role, mode, onSave, onClose }) => {
   const [formData, setFormData] = useState({
     name: '',
+    description: '',
     permissions: []
   });
   const [errors, setErrors] = useState({});
@@ -91,11 +92,13 @@ const RoleModal = ({ show, role, mode, onSave, onClose }) => {
       const rolePermissions = ROLE_PERMISSIONS[role.name] || [];
       setFormData({
         name: role.name || '',
+        description: role.description || '',
         permissions: rolePermissions
       });
     } else if (mode === 'add') {
       setFormData({
         name: '',
+        description: '',
         permissions: []
       });
     }
@@ -132,6 +135,8 @@ const RoleModal = ({ show, role, mode, onSave, onClose }) => {
 
     if (!formData.name.trim()) {
       newErrors.name = 'Role name is required';
+    } else if (!/^[a-zA-Z0-9\s_]+$/.test(formData.name.trim())) {
+      newErrors.name = 'Role name cannot contain special characters';
     }
 
     if (formData.permissions.length === 0) {
@@ -140,7 +145,7 @@ const RoleModal = ({ show, role, mode, onSave, onClose }) => {
 
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
-  };
+};
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -245,7 +250,7 @@ const RoleModal = ({ show, role, mode, onSave, onClose }) => {
               <Form.Group className="mb-4">
                 <Row className="align-items-center">
                   <Col md={3}>
-                    <Form.Label className="text-primary-custom fw-semibold mb-0">
+                    <Form.Label className="text-primary-custom fw-semibold fs-5 mb-0">
                       Role Name *
                     </Form.Label>
                   </Col>
@@ -253,7 +258,13 @@ const RoleModal = ({ show, role, mode, onSave, onClose }) => {
                     <Form.Control
                       type="text"
                       value={formData.name}
-                      onChange={(e) => handleInputChange('name', e.target.value)}
+                      onChange={(e) => {
+                        const value = e.target.value;
+                        // Only allow alphanumeric characters, spaces, and underscores
+                        if (/^[a-zA-Z0-9\s_]*$/.test(value)) {
+                          handleInputChange('name', value);
+                        }
+                      }}
                       isInvalid={!!errors.name}
                       readOnly={isReadOnly}
                       style={{
@@ -264,6 +275,35 @@ const RoleModal = ({ show, role, mode, onSave, onClose }) => {
                     <Form.Control.Feedback type="invalid">
                       {errors.name}
                     </Form.Control.Feedback>
+                  </Col>
+                </Row>
+              </Form.Group>
+            </Col>
+          </Row>
+
+          <Row>
+            <Col md={12}>
+              <Form.Group className="mb-4">
+                <Row className="align-items-start">
+                  <Col md={3}>
+                    <Form.Label className="text-primary-custom fw-semibold fs-5 mb-0">
+                      Description
+                    </Form.Label>
+                  </Col>
+                  <Col md={6}>
+                    <Form.Control
+                      as="textarea"
+                      rows={3}
+                      value={formData.description}
+                      onChange={(e) => handleInputChange('description', e.target.value)}
+                      readOnly={isReadOnly}
+                      placeholder="Enter role description (optional)"
+                      style={{
+                        borderColor: 'var(--bs-primary)',
+                        borderWidth: '2px',
+                        resize: 'none'
+                      }}
+                    />
                   </Col>
                 </Row>
               </Form.Group>

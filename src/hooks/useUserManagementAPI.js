@@ -24,8 +24,7 @@ export const useUserManagementAPI = () => {
       setLoading(true);
       try {
         const response = await userAPI.getUsers({
-          page: 1,
-          limit: 100
+          includeDeleted: true
         });
         
         
@@ -222,7 +221,9 @@ export const useUserManagementAPI = () => {
       }
       
       // Refresh users list
-      const usersResponse = await userAPI.getUsers({ page: 1, limit: 100 });
+      const usersResponse = await userAPI.getUsers({
+        includeDeleted: true
+      });
       const transformedUsers = usersResponse.data.map(user => ({
         id: user.id,
         eid: user.eid,
@@ -357,7 +358,9 @@ export const useUserManagementAPI = () => {
           }
       setModalShow(false);
       // Refresh users list
-      const response = await userAPI.getUsers({ page: 1, limit: 100 });
+      const response = await userAPI.getUsers({
+        includeDeleted: true
+      });
       
       // Check if the updated user has traineeProfile (only for edit mode)
       if (modalMode === 'edit' && selectedUser?.id) {
@@ -426,7 +429,9 @@ export const useUserManagementAPI = () => {
       }
       
       // Refresh users list
-      const usersResponse = await userAPI.getUsers({ page: 1, limit: 100 });
+      const usersResponse = await userAPI.getUsers({
+        includeDeleted: true
+      });
       const transformedUsers = usersResponse.data.map(user => ({
         id: user.id,
         eid: user.eid,
