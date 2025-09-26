@@ -17,7 +17,9 @@ export const useRoleManagement = () => {
     const fetchRoles = async () => {
       setLoading(true);
       try {
-        const response = await roleAPI.getRoles();
+        const response = await roleAPI.getRoles({
+          includeDeleted: true
+        });
         
         // Transform API data to match component format
         const transformedRoles = response.roles.map(role => ({
@@ -25,7 +27,7 @@ export const useRoleManagement = () => {
           name: role.name,
           description: role.description || '',
           assignedUsers: role.userCount || 0,
-          status: role.isActive ? 'Active' : 'Inactive',
+          status: role.isActive === 'ACTIVE' ? 'Active' : 'Inactive',
           createdAt: role.createdAt ? role.createdAt.split('T')[0] : '',
           lastModified: role.updatedAt ? role.updatedAt.split('T')[0] : '',
           isActive: role.isActive,
@@ -135,13 +137,15 @@ export const useRoleManagement = () => {
       }
 
       // Refresh roles list
-      const response = await roleAPI.getRoles();
+      const response = await roleAPI.getRoles({
+          includeDeleted: true
+        });
       const transformedRoles = response.roles.map(role => ({
         id: role.id,
         name: role.name,
         description: role.description || '',
         assignedUsers: role.userCount || 0,
-        status: role.isActive ? 'Active' : 'Inactive',
+        status: role.isActive === 'ACTIVE' ? 'Active' : 'Inactive',
         createdAt: role.createdAt ? role.createdAt.split('T')[0] : '',
         lastModified: role.updatedAt ? role.updatedAt.split('T')[0] : '',
         isActive: role.isActive,
@@ -171,17 +175,19 @@ export const useRoleManagement = () => {
       }
 
       // Toggle the status
-      const newIsActive = !role.isActive;
-      await roleAPI.toggleRoleStatus(roleId, newIsActive);
+      const newIsActive = role.isActive === 'ACTIVE' ? 'INACTIVE' : 'ACTIVE';
+      await roleAPI.toggleRoleStatus(roleId);
 
       // Refresh roles list
-      const response = await roleAPI.getRoles();
+      const response = await roleAPI.getRoles({
+          includeDeleted: true
+        });
       const transformedRoles = response.roles.map(role => ({
         id: role.id,
         name: role.name,
         description: role.description || '',
         assignedUsers: role.userCount || 0,
-        status: role.isActive ? 'Active' : 'Inactive',
+        status: role.isActive === 'ACTIVE' ? 'Active' : 'Inactive',
         createdAt: role.createdAt ? role.createdAt.split('T')[0] : '',
         lastModified: role.updatedAt ? role.updatedAt.split('T')[0] : '',
         isActive: role.isActive,
@@ -189,7 +195,7 @@ export const useRoleManagement = () => {
       }));
       setRoles(transformedRoles);
 
-      const action = newIsActive ? 'enabled' : 'disabled';
+      const action = newIsActive === 'ACTIVE' ? 'enabled' : 'disabled';
       toast.success(`Role has been ${action} successfully!`);
       setError(null);
     } catch (err) {
