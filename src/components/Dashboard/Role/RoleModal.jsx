@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import { Modal, Form, Button, Row, Col, ListGroup, Badge } from 'react-bootstrap';
+import { Modal, Form, Button, Row, Col, ListGroup, Badge, Spinner } from 'react-bootstrap';
 import { X, Save, Eye, Shield, ChevronDown, ChevronRight } from 'react-bootstrap-icons';
-import { FEATURES, PERMISSIONS_BY_UC, ROLE_PERMISSIONS } from '../../../constants/permissions';
+import { usePermissions } from '../../../hooks/usePermissions';
 
 const RoleModal = ({ show, role, mode, onSave, onClose }) => {
   const [formData, setFormData] = useState({
@@ -12,84 +12,41 @@ const RoleModal = ({ show, role, mode, onSave, onClose }) => {
   const [errors, setErrors] = useState({});
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [expandedGroups, setExpandedGroups] = useState({});
+  
+  // Use permissions hook to get API data
+  const { 
+    getPermissionGroups, 
+    loading: permissionsLoading, 
+    error: permissionsError,
+    isPermissionActive 
+  } = usePermissions();
 
-  // Get permission groups based on canonical mapping
-  const getPermissionGroups = (selectedRole, mode) => {
-    const featureGroups = {};
-
-    if (mode === 'view' && selectedRole && ROLE_PERMISSIONS[selectedRole]) {
+  // Get permission groups for current mode
+  const getPermissionGroupsForMode = (selectedRole, mode) => {
+    const allGroups = getPermissionGroups();
+    
+    if (mode === 'view' && selectedRole && role?.permissions) {
       // View mode: only show permissions assigned to the role
-      const allowedUCs = ROLE_PERMISSIONS[selectedRole];
+      const assignedPermissionIds = role.permissions.map(p => p.id || p);
       
-      allowedUCs.forEach(ucId => {
-        const permission = PERMISSIONS_BY_UC[ucId];
-        if (permission) {
-          const featureId = permission.feature;
-          if (!featureGroups[featureId]) {
-            featureGroups[featureId] = {
-              id: featureId,
-              name: FEATURES[featureId]?.name || featureId,
-              description: FEATURES[featureId]?.description || '',
-              permissions: []
-            };
-          }
-          featureGroups[featureId].permissions.push({
-            id: ucId,
-            title: permission.title,
-            description: permission.description
-          });
-        }
-      });
-    } else if (mode === 'edit' && selectedRole) {
-      // Edit mode: show ALL permissions in each feature group (both selected and not selected)
-      Object.entries(PERMISSIONS_BY_UC).forEach(([ucId, permission]) => {
-        const featureId = permission.feature;
-        if (!featureGroups[featureId]) {
-          featureGroups[featureId] = {
-            id: featureId,
-            name: FEATURES[featureId]?.name || featureId,
-            description: FEATURES[featureId]?.description || '',
-            permissions: []
-          };
-        }
-        featureGroups[featureId].permissions.push({
-          id: ucId,
-          title: permission.title,
-          description: permission.description
-        });
-      });
-    } else {
-      // Add mode: show all available permissions
-      Object.entries(PERMISSIONS_BY_UC).forEach(([ucId, permission]) => {
-        const featureId = permission.feature;
-        if (!featureGroups[featureId]) {
-          featureGroups[featureId] = {
-            id: featureId,
-            name: FEATURES[featureId]?.name || featureId,
-            description: FEATURES[featureId]?.description || '',
-            permissions: []
-          };
-        }
-        featureGroups[featureId].permissions.push({
-          id: ucId,
-          title: permission.title,
-          description: permission.description
-        });
-      });
+      return allGroups.map(group => ({
+        ...group,
+        permissions: group.permissions.filter(permission => 
+          assignedPermissionIds.includes(permission.id)
+        )
+      })).filter(group => group.permissions.length > 0);
     }
-
-    // Convert to array, sort by feature ID, and filter out empty groups
-    return Object.values(featureGroups)
-      .filter(group => group.permissions.length > 0)
-      .sort((a, b) => a.id.localeCompare(b.id));
+    
+    // Add/Edit mode: show all permissions
+    return allGroups;
   };
 
-  const permissionGroups = getPermissionGroups(role?.name, mode);
+  const permissionGroups = getPermissionGroupsForMode(role?.name, mode);
 
   useEffect(() => {
     if (role && mode !== 'add') {
-      // For both view and edit mode, use the canonical permissions for the role
-      const rolePermissions = ROLE_PERMISSIONS[role.name] || [];
+      // For both view and edit mode, use the role's assigned permissions
+      const rolePermissions = role.permissions ? role.permissions.map(p => p.id || p) : [];
       setFormData({
         name: role.name || '',
         description: role.description || '',
@@ -108,20 +65,17 @@ const RoleModal = ({ show, role, mode, onSave, onClose }) => {
     if (mode === 'view') {
       // In view mode, expand all groups by default
       const allGroupsExpanded = {};
-      // Get feature IDs from the role's permissions
-      const rolePermissions = role ? ROLE_PERMISSIONS[role.name] || [] : [];
-      const roleFeatureIds = [...new Set(rolePermissions.map(ucId => PERMISSIONS_BY_UC[ucId]?.feature).filter(Boolean))];
-      roleFeatureIds.forEach(featureId => {
-        allGroupsExpanded[featureId] = true;
+      const allModuleIds = permissionGroups.map(group => group.id);
+      allModuleIds.forEach(moduleId => {
+        allGroupsExpanded[moduleId] = true;
       });
       setExpandedGroups(allGroupsExpanded);
     } else if (mode === 'edit') {
       // In edit mode, expand all groups by default to show all permissions
       const allGroupsExpanded = {};
-      // Get all feature IDs from PERMISSIONS_BY_UC
-      const allFeatureIds = [...new Set(Object.values(PERMISSIONS_BY_UC).map(p => p.feature))];
-      allFeatureIds.forEach(featureId => {
-        allGroupsExpanded[featureId] = true;
+      const allModuleIds = permissionGroups.map(group => group.id);
+      allModuleIds.forEach(moduleId => {
+        allGroupsExpanded[moduleId] = true;
       });
       setExpandedGroups(allGroupsExpanded);
     } else {
@@ -320,22 +274,37 @@ const RoleModal = ({ show, role, mode, onSave, onClose }) => {
                   <div className="text-danger small mb-2">{errors.permissions}</div>
                 )}
                 
+                {permissionsError && (
+                  <div className="text-danger small mb-2">
+                    Error loading permissions: {permissionsError.message || 'Unknown error'}
+                  </div>
+                )}
+                
                 <div className="border rounded p-4 bg-light" style={{ 
                   maxHeight: '250px', 
                   overflowY: 'auto',
                   borderColor: 'var(--bs-primary)',
                   borderWidth: '2px'
                 }}>
-                  {/* Debug info */}
-                  {mode === 'edit' && (
-                    <div className="mb-2 p-2 bg-light rounded">
-                      <small className="text-muted">
-                        Debug: Role permissions = {JSON.stringify(formData.permissions)}
-                      </small>
+                  {permissionsLoading ? (
+                    <div className="text-center py-4">
+                      <Spinner animation="border" size="sm" className="me-2" />
+                      Loading permissions...
                     </div>
-                  )}
-                  
-                  {permissionGroups.map((group) => {
+                  ) : (
+                    <>
+                      {/* Debug info */}
+                      {mode === 'edit' && (
+                        <div className="mb-2 p-2 bg-light rounded">
+                          <small className="text-muted">
+                            Debug: Total permissions = {permissionGroups.reduce((total, group) => total + group.permissions.length, 0)} | 
+                            Selected = {formData.permissions.length} | 
+                            Groups = {permissionGroups.length}
+                          </small>
+                        </div>
+                      )}
+                      
+                      {permissionGroups.map((group) => {
                     const isExpanded = expandedGroups[group.id];
                     
                     return (
@@ -420,11 +389,13 @@ const RoleModal = ({ show, role, mode, onSave, onClose }) => {
                       </div>
                     );
                   })}
+                    </>
+                  )}
                 </div>
                 
                 <div className="mt-2">
                   <small className="text-muted">
-                    {formData.permissions.length} permissions assigned
+                    {formData.permissions.length} of {permissionGroups.reduce((total, group) => total + group.permissions.length, 0)} permissions assigned
                   </small>
                 </div>
               </Form.Group>
