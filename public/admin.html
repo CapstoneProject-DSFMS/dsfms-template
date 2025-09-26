@@ -1,0 +1,16 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <title>Redirecting...</title>
+    <script>
+      // Redirect to main app with admin route
+      const search = window.location.search;
+      const hash = window.location.hash;
+      window.location.replace('/dsfms-template/admin' + search + hash);
+    </script>
+  </head>
+  <body>
+    <p>Redirecting to admin dashboard...</p>
+  </body>
+</html>
