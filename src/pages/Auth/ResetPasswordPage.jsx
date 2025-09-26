@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Container, Row, Col, Card, Form, Button, Alert } from 'react-bootstrap';
-import { Key, Eye, EyeSlash, CheckCircle } from 'react-bootstrap-icons';
+import { Key, Eye, EyeSlash } from 'react-bootstrap-icons';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { toast } from 'react-toastify';
 import { API_CONFIG } from '../../config/api';
@@ -35,28 +35,12 @@ const ResetPasswordPage = () => {
     if (error) setError('');
   };
 
-  const validatePassword = (password) => {
-    const minLength = password.length >= 8;
-    const hasUpperCase = /[A-Z]/.test(password);
-    const hasLowerCase = /[a-z]/.test(password);
-    const hasNumbers = /\d/.test(password);
-    const hasSpecialChar = /[!@#$%^&*(),.?":{}|<>]/.test(password);
-
-    return {
-      minLength,
-      hasUpperCase,
-      hasLowerCase,
-      hasNumbers,
-      hasSpecialChar,
-      isValid: minLength && hasUpperCase && hasLowerCase && hasNumbers && hasSpecialChar
-    };
-  };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError('');
 
-    // Validation
+    // Basic validation
     if (!formData.newPassword || !formData.confirmPassword) {
       setError('Please fill in all fields.');
       return;
@@ -64,12 +48,6 @@ const ResetPasswordPage = () => {
 
     if (formData.newPassword !== formData.confirmPassword) {
       setError('Passwords do not match.');
-      return;
-    }
-
-    const passwordValidation = validatePassword(formData.newPassword);
-    if (!passwordValidation.isValid) {
-      setError('Password must be at least 8 characters long and contain uppercase, lowercase, numbers, and special characters.');
       return;
     }
 
@@ -104,9 +82,8 @@ const ResetPasswordPage = () => {
       }
 
       // Try to parse JSON response
-      let data;
       try {
-        data = await response.json();
+        await response.json();
       } catch (jsonError) {
         console.error('JSON parsing error:', jsonError);
         setError('Server returned invalid response. Please try again later.');
@@ -129,7 +106,6 @@ const ResetPasswordPage = () => {
     }
   };
 
-  const passwordValidation = validatePassword(formData.newPassword);
 
   return (
     <div className="min-vh-100 d-flex align-items-center" style={{ background: 'linear-gradient(135deg, var(--bs-primary) 0%, var(--bs-secondary) 100%)' }}>
@@ -233,37 +209,6 @@ const ResetPasswordPage = () => {
                     </div>
                   </Form.Group>
 
-                  {/* Password Requirements */}
-                  {formData.newPassword && (
-                    <div className="mb-3 p-3 rounded-3" style={{ 
-                      background: 'rgba(27, 60, 83, 0.05)',
-                      border: '1px solid var(--bs-neutral-200)'
-                    }}>
-                      <small style={{ color: 'var(--bs-primary)', fontWeight: '600' }}>Password requirements:</small>
-                      <div className="mt-2">
-                        <div className={`d-flex align-items-center mb-1 ${passwordValidation.minLength ? 'text-success' : 'text-muted'}`}>
-                          <CheckCircle size={12} className="me-2" />
-                          <small>At least 8 characters</small>
-                        </div>
-                        <div className={`d-flex align-items-center mb-1 ${passwordValidation.hasUpperCase ? 'text-success' : 'text-muted'}`}>
-                          <CheckCircle size={12} className="me-2" />
-                          <small>One uppercase letter</small>
-                        </div>
-                        <div className={`d-flex align-items-center mb-1 ${passwordValidation.hasLowerCase ? 'text-success' : 'text-muted'}`}>
-                          <CheckCircle size={12} className="me-2" />
-                          <small>One lowercase letter</small>
-                        </div>
-                        <div className={`d-flex align-items-center mb-1 ${passwordValidation.hasNumbers ? 'text-success' : 'text-muted'}`}>
-                          <CheckCircle size={12} className="me-2" />
-                          <small>One number</small>
-                        </div>
-                        <div className={`d-flex align-items-center mb-1 ${passwordValidation.hasSpecialChar ? 'text-success' : 'text-muted'}`}>
-                          <CheckCircle size={12} className="me-2" />
-                          <small>One special character</small>
-                        </div>
-                      </div>
-                    </div>
-                  )}
 
                   <div className="d-grid gap-2">
                     <Button
