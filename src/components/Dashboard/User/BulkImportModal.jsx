@@ -1,7 +1,8 @@
-import React, { useState, useRef } from 'react';
-import { Modal, Button, Table, Row, Col, Card, OverlayTrigger, Tooltip } from 'react-bootstrap';
+import React, { useState, useRef, useEffect } from 'react';
+import { Modal, Button, Table, Row, Col, Card, OverlayTrigger, Tooltip, Alert } from 'react-bootstrap';
 import { X, Upload, FileEarmarkExcel, CheckCircle, XCircle, Pencil, Trash, Download } from 'react-bootstrap-icons';
 import * as XLSX from 'xlsx';
+import { userAPI } from '../../../api/user.js';
 
 const BulkImportModal = ({ show, onClose, onImport, loading = false }) => {
   const [dragActive, setDragActive] = useState(false);
@@ -9,6 +10,8 @@ const BulkImportModal = ({ show, onClose, onImport, loading = false }) => {
   const [previewData, setPreviewData] = useState([]);
   const [errors, setErrors] = useState([]);
   const [validationErrors, setValidationErrors] = useState([]);
+  const [roles, setRoles] = useState([]);
+  const [rolesLoading, setRolesLoading] = useState(false);
   const fileInputRef = useRef(null);
 
   // Required columns for user import
@@ -27,17 +30,86 @@ const BulkImportModal = ({ show, onClose, onImport, loading = false }) => {
     'address',
     'email',
     'phone_number',
+    'avatar_url',
+    'gender',
     'role',
     'certification_number',
     'specialization',
     'years_of_experience',
+    'bio',
     'date_of_birth',
+    'enrollment_date',
     'training_batch',
     'passport_no',
     'nation'
   ];
 
-  const validRoles = ['ADMIN', 'ACADEMIC_DEPT', 'DEPT_HEAD', 'TRAINER', 'TRAINEE', 'SQA_AUDITOR'];
+
+  // Fetch roles when modal opens
+  useEffect(() => {
+    if (show) {
+      fetchRoles();
+    }
+  }, [show]);
+
+  const fetchRoles = async () => {
+    try {
+      setRolesLoading(true);
+      const response = await userAPI.getRoles();
+      setRoles(response.roles || []);
+    } catch (error) {
+      console.error('Failed to fetch roles:', error);
+      setErrors(['Failed to load roles. Please refresh the page.']);
+    } finally {
+      setRolesLoading(false);
+    }
+  };
+
+  // Smart role mapping function
+  const findRoleId = (roleName) => {
+    if (!roleName || !roles.length) return null;
+    
+    const normalizedInput = roleName.toUpperCase().trim();
+    
+    // Direct match first
+    const directMatch = roles.find(role => 
+      role.name.toUpperCase() === normalizedInput
+    );
+    if (directMatch) return directMatch.id;
+    
+    // Partial match for common variations
+    const partialMatches = {
+      'ADMIN': 'ADMINISTRATOR',
+      'ADMINISTRATOR': 'ADMINISTRATOR',
+      'TRAINER': 'TRAINER',
+      'TRAINEE': 'TRAINEE',
+      'DEPT_HEAD': 'DEPARTMENT_HEAD',
+      'DEPARTMENT_HEAD': 'DEPARTMENT_HEAD',
+      'DEPT HEAD': 'DEPARTMENT_HEAD',
+      'SQA_AUDITOR': 'SQA_AUDITOR',
+      'SQA AUDITOR': 'SQA_AUDITOR',
+      'ACADEMIC_DEPARTMENT': 'ACADEMIC_DEPARTMENT',
+      'ACADEMIC_DEPT': 'ACADEMIC_DEPARTMENT',
+      'ACADEMIC DEPT': 'ACADEMIC_DEPARTMENT'
+    };
+    
+    const mappedName = partialMatches[normalizedInput];
+    if (mappedName) {
+      const mappedRole = roles.find(role => 
+        role.name.toUpperCase() === mappedName
+      );
+      if (mappedRole) return mappedRole.id;
+    }
+    
+    // Fuzzy match - find roles that contain the input
+    const fuzzyMatch = roles.find(role => 
+      role.name.toUpperCase().includes(normalizedInput) ||
+      normalizedInput.includes(role.name.toUpperCase())
+    );
+    if (fuzzyMatch) return fuzzyMatch.id;
+    
+    return null;
+  };
 
   const downloadTemplate = () => {
     // Create sample data for template
@@ -222,9 +294,18 @@ const BulkImportModal = ({ show, onClose, onImport, loading = false }) => {
             }
 
             // Validate role
-            if (header === 'role' && value && !validRoles.includes(value.toUpperCase())) {
+            if (header === 'role' && value) {
+              const roleId = findRoleId(value);
+              if (!roleId) {
+                hasError = true;
+                rowErrors.push('Invalid role');
+              }
+            }
+
+            // Validate phone number length
+            if (header === 'phone_number' && value && value.length > 15) {
               hasError = true;
-              rowErrors.push('Invalid role');
+              rowErrors.push('Phone number too long (max 15 characters)');
             }
 
             // Validate years of experience
@@ -244,7 +325,7 @@ const BulkImportModal = ({ show, onClose, onImport, loading = false }) => {
         });
 
         setPreviewData(processedData);
-      } catch (error) {
+      } catch {
         setErrors(['Error reading file. Please make sure it\'s a valid Excel file.']);
       }
     };
@@ -259,29 +340,63 @@ const BulkImportModal = ({ show, onClose, onImport, loading = false }) => {
       return;
     }
 
+    if (!roles.length) {
+      setErrors(['Roles not loaded. Please wait and try again.']);
+      return;
+    }
+
     // Transform data to match backend format
-    const usersToImport = validUsers.map(user => ({
-      firstName: user.first_name || '',
-      middleName: user.middle_name || '',
-      lastName: user.last_name || '',
-      address: user.address || '',
-      email: user.email || '',
-      phoneNumber: user.phone_number || '',
-      role: user.role || '',
-      certificationNumber: user.certification_number || '',
-      specialization: user.specialization || '',
-      yearsOfExperience: user.years_of_experience || '',
-      dateOfBirth: user.date_of_birth || '',
-      trainingBatch: user.training_batch || '',
-      passportNo: user.passport_no || '',
-      nation: user.nation || ''
-    }));
+    const usersToImport = validUsers.map(user => {
+      // Truncate phone number to 15 characters
+      const phoneNumber = user.phone_number ? user.phone_number.substring(0, 15) : '';
+      
+      // Find role ID using smart mapping
+      const roleId = findRoleId(user.role);
+      if (!roleId) {
+        throw new Error(`Role "${user.role}" not found in system`);
+      }
+      
+      const userData = {
+        firstName: user.first_name || '',
+        middleName: user.middle_name || '',
+        lastName: user.last_name || '',
+        address: user.address || '',
+        email: user.email || '',
+        phoneNumber: phoneNumber,
+        avatarUrl: user.avatar_url || '',
+        gender: user.gender || 'MALE',
+        role: {
+          id: roleId,
+          name: user.role || ''
+        }
+      };
+
+      // Add role-specific profiles based on role
+      if (user.role === 'TRAINER') {
+        userData.trainerProfile = {
+          specialization: user.specialization || '',
+          yearsOfExp: user.years_of_experience ? parseInt(user.years_of_experience) : 0,
+          certificationNumber: user.certification_number || '',
+          bio: user.bio || ''
+        };
+      } else if (user.role === 'TRAINEE') {
+        userData.traineeProfile = {
+          dob: user.date_of_birth || '',
+          enrollmentDate: user.enrollment_date || new Date().toISOString().split('T')[0],
+          trainingBatch: user.training_batch || '',
+          passportNo: user.passport_no || '',
+          nation: user.nation || ''
+        };
+      }
+
+      return userData;
+    });
 
     try {
       await onImport(usersToImport);
       handleClose();
     } catch (error) {
-      setErrors(['Failed to import users. Please try again.']);
+      setErrors([error.message || 'Failed to import users. Please try again.']);
     }
   };
 
@@ -318,7 +433,18 @@ const BulkImportModal = ({ show, onClose, onImport, loading = false }) => {
         </Button>
       </Modal.Header>
 
-      <Modal.Body className="p-4" style={{ maxHeight: '80vh', overflowY: 'auto' }}>
+      <Modal.Body className="p-4" style={{ maxHeight: '60vh', overflowY: 'auto' }}>
+        
+        {/* Loading indicator for roles */}
+        {rolesLoading && (
+          <div className="text-center mb-3">
+            <div className="spinner-border spinner-border-sm text-primary" role="status">
+              <span className="visually-hidden">Loading roles...</span>
+            </div>
+            <span className="ms-2 text-muted">Loading roles...</span>
+          </div>
+        )}
+        
         {/* File Upload Section */}
         <Card className="mb-4">
           <Card.Body>
@@ -409,7 +535,7 @@ const BulkImportModal = ({ show, onClose, onImport, loading = false }) => {
                   overflowX: 'auto'
                 }}
               >
-                <Table striped hover className="mb-0" style={{ minWidth: '1400px' }}>
+                <Table striped hover className="mb-0" style={{ minWidth: '1600px' }}>
                   <thead className="table-light">
                     <tr>
                       <th style={{ minWidth: '50px' }}>NO.</th>
@@ -419,6 +545,7 @@ const BulkImportModal = ({ show, onClose, onImport, loading = false }) => {
                       <th style={{ minWidth: '200px' }}>EMAIL</th>
                       <th style={{ minWidth: '120px' }}>ROLE</th>
                       <th style={{ minWidth: '150px' }}>PHONE NUMBER</th>
+                      <th style={{ minWidth: '100px' }}>GENDER</th>
                       <th style={{ minWidth: '150px' }}>CERTIFICATION</th>
                       <th style={{ minWidth: '150px' }}>SPECIALIZATION</th>
                       <th style={{ minWidth: '100px' }}>EXPERIENCE</th>
@@ -441,6 +568,7 @@ const BulkImportModal = ({ show, onClose, onImport, loading = false }) => {
                         <td>{user.email || '-'}</td>
                         <td>{user.role || '-'}</td>
                         <td>{user.phone_number || '-'}</td>
+                        <td>{user.gender || '-'}</td>
                         <td>{user.certification_number || '-'}</td>
                         <td>{user.specialization || '-'}</td>
                         <td>{user.years_of_experience || '-'}</td>

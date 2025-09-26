@@ -1,5 +1,7 @@
 import { useState, useEffect } from 'react';
-import { ROLE_PERMISSIONS } from '../constants/permissions';
+import { roleAPI } from '../api';
+import { mapError } from '../utils/errorMapping';
+import { toast } from 'react-toastify';
 
 export const useRoleManagement = () => {
   const [roles, setRoles] = useState([]);
@@ -15,25 +17,27 @@ export const useRoleManagement = () => {
     const fetchRoles = async () => {
       setLoading(true);
       try {
-        // Simulate API call
-        await new Promise(resolve => setTimeout(resolve, 1000));
-
-        // Convert ROLE_PERMISSIONS object to array of role objects
-        const mockRoles = Object.entries(ROLE_PERMISSIONS).map(([name, permissions], index) => ({
-          id: index + 1,
-          name,
-          permissions,
-          assignedUsers: Math.floor(Math.random() * 50), // Random number for demo
-          status: Math.random() > 0.3 ? 'Active' : 'Inactive', // Random status for demo
-          description: `${name} role with ${permissions.length} permissions`,
-          createdAt: '2023-01-01',
-          lastModified: '2023-12-01'
+        const response = await roleAPI.getRoles();
+        
+        // Transform API data to match component format
+        const transformedRoles = response.roles.map(role => ({
+          id: role.id,
+          name: role.name,
+          description: role.description || '',
+          assignedUsers: role.userCount || 0,
+          status: role.isActive ? 'Active' : 'Inactive',
+          createdAt: role.createdAt ? role.createdAt.split('T')[0] : '',
+          lastModified: role.updatedAt ? role.updatedAt.split('T')[0] : '',
+          isActive: role.isActive,
+          // Keep original API data for reference
+          originalData: role
         }));
 
-        setRoles(mockRoles);
+        setRoles(transformedRoles);
         setError(null);
       } catch (err) {
-        setError('Failed to fetch roles');
+        const errorMessage = mapError(err, { context: 'fetch_roles' });
+        setError(errorMessage);
         console.error('Error fetching roles:', err);
       } finally {
         setLoading(false);
@@ -70,13 +74,29 @@ export const useRoleManagement = () => {
   const handleEdit = async (role) => {
     try {
       setLoading(true);
-      await new Promise(resolve => setTimeout(resolve, 500));
-      setSelectedRole(role);
+      // Fetch fresh role data from API
+      const roleDetail = await roleAPI.getRoleById(role.id);
+      
+      // Transform the fresh data
+      const transformedRole = {
+        id: roleDetail.id,
+        name: roleDetail.name,
+        description: roleDetail.description || '',
+        assignedUsers: roleDetail.userCount || 0,
+        status: roleDetail.isActive ? 'Active' : 'Inactive',
+        createdAt: roleDetail.createdAt ? roleDetail.createdAt.split('T')[0] : '',
+        lastModified: roleDetail.updatedAt ? roleDetail.updatedAt.split('T')[0] : '',
+        isActive: roleDetail.isActive,
+        originalData: roleDetail
+      };
+      
+      setSelectedRole(transformedRole);
       setModalMode('edit');
       setModalShow(true);
       setError(null);
     } catch (err) {
-      setError('Failed to load role details');
+      const errorMessage = mapError(err, { context: 'load_role_details' });
+      setError(errorMessage);
     } finally {
       setLoading(false);
     }
@@ -106,35 +126,36 @@ export const useRoleManagement = () => {
   const handleSave = async (roleData) => {
     setLoading(true);
     try {
-      await new Promise(resolve => setTimeout(resolve, 1000));
-
       if (modalMode === 'add') {
-        const newRole = {
-          ...roleData,
-          id: Math.max(...roles.map(r => r.id)) + 1,
-          assignedUsers: 0,
-          status: 'Active',
-          createdAt: new Date().toISOString().split('T')[0],
-          lastModified: new Date().toISOString().split('T')[0]
-        };
-        setRoles(prevRoles => [...prevRoles, newRole]);
+        await roleAPI.createRole(roleData);
+        toast.success('Role created successfully!');
       } else {
-        setRoles(prevRoles => 
-          prevRoles.map(role => 
-            role.id === selectedRole.id ? { 
-              ...role, 
-              ...roleData,
-              lastModified: new Date().toISOString().split('T')[0]
-            } : role
-          )
-        );
+        await roleAPI.updateRole(selectedRole.id, roleData);
+        toast.success('Role updated successfully!');
       }
+
+      // Refresh roles list
+      const response = await roleAPI.getRoles();
+      const transformedRoles = response.roles.map(role => ({
+        id: role.id,
+        name: role.name,
+        description: role.description || '',
+        assignedUsers: role.userCount || 0,
+        status: role.isActive ? 'Active' : 'Inactive',
+        createdAt: role.createdAt ? role.createdAt.split('T')[0] : '',
+        lastModified: role.updatedAt ? role.updatedAt.split('T')[0] : '',
+        isActive: role.isActive,
+        originalData: role
+      }));
+      setRoles(transformedRoles);
 
       setModalShow(false);
       setSelectedRole(null);
       setError(null);
     } catch (err) {
-      setError('Failed to save role');
+      const errorMessage = mapError(err, { context: 'save_role' });
+      setError(errorMessage);
+      toast.error(errorMessage);
     } finally {
       setLoading(false);
     }
@@ -143,19 +164,38 @@ export const useRoleManagement = () => {
   const handleDisable = async (roleId) => {
     setLoading(true);
     try {
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      setRoles(prevRoles => 
-        prevRoles.map(role => 
-          role.id === roleId ? { 
-            ...role, 
-            status: role.status === 'Active' ? 'Inactive' : 'Active',
-            lastModified: new Date().toISOString().split('T')[0]
-          } : role
-        )
-      );
+      // Find the role to get current status
+      const role = roles.find(r => r.id === roleId);
+      if (!role) {
+        throw new Error('Role not found');
+      }
+
+      // Toggle the status
+      const newIsActive = !role.isActive;
+      await roleAPI.toggleRoleStatus(roleId, newIsActive);
+
+      // Refresh roles list
+      const response = await roleAPI.getRoles();
+      const transformedRoles = response.roles.map(role => ({
+        id: role.id,
+        name: role.name,
+        description: role.description || '',
+        assignedUsers: role.userCount || 0,
+        status: role.isActive ? 'Active' : 'Inactive',
+        createdAt: role.createdAt ? role.createdAt.split('T')[0] : '',
+        lastModified: role.updatedAt ? role.updatedAt.split('T')[0] : '',
+        isActive: role.isActive,
+        originalData: role
+      }));
+      setRoles(transformedRoles);
+
+      const action = newIsActive ? 'enabled' : 'disabled';
+      toast.success(`Role has been ${action} successfully!`);
       setError(null);
     } catch (err) {
-      setError('Failed to update role status');
+      const errorMessage = mapError(err, { context: 'toggle_role_status' });
+      setError(errorMessage);
+      toast.error(errorMessage);
     } finally {
       setLoading(false);
     }
