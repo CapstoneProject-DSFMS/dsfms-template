@@ -10,12 +10,14 @@ import {
 import { useNavigate, useLocation } from "react-router-dom";
 import { useAuth } from "../../hooks/useAuth";
 import { toast } from "react-toastify";
+import ForgotPasswordModal from "../../components/Common/ForgotPasswordModal";
 
 function Login() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [submitting, setSubmitting] = useState(false);
+  const [showForgotPasswordModal, setShowForgotPasswordModal] = useState(false);
 
   const navigate = useNavigate();
   const location = useLocation();
@@ -355,19 +357,21 @@ function Login() {
                   </Button>
 
                   <div className="text-center mb-2">
-                    <a
-                      href="#"
-                      className="text-decoration-none fw-semibold px-2"
+                    <button
+                      type="button"
+                      onClick={() => setShowForgotPasswordModal(true)}
+                      className="btn btn-link text-decoration-none fw-semibold px-2 border-0 p-0"
                       style={{
                         fontSize: "0.9rem",
                         color: "rgba(201, 212, 229, 0.8)",
                         boxShadow: "none",
                         textShadow: "none",
                         cursor: "pointer",
+                        background: "none",
                       }}
                     >
                       Forgot password?
-                    </a>
+                    </button>
                   </div>
 
                   <div className="text-center mb-4">
@@ -452,6 +456,12 @@ function Login() {
           }
         }
       `}</style>
+
+      {/* Forgot Password Modal */}
+      <ForgotPasswordModal 
+        show={showForgotPasswordModal}
+        onHide={() => setShowForgotPasswordModal(false)}
+      />
     </div>
   );
 }

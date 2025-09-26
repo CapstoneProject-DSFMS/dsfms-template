@@ -2,6 +2,7 @@ import { createBrowserRouter } from 'react-router-dom'
 import { LayoutWrapper } from '../components/Layout'
 import { ProtectedRoute, ErrorBoundary } from '../components/Common'
 import Login from '../pages/Auth/Login'
+import ResetPasswordPage from '../pages/Auth/ResetPasswordPage'
 import Dashboard from '../pages/Dashboard/Dashboard'
 import UserManagementPage from '../pages/UserManagement/UserManagementPage'
 import RoleManagementPage from '../pages/RoleManagement/RoleManagementPage'
@@ -26,6 +27,16 @@ export const router = createBrowserRouter([
   {
     path: "/",
     element: <Login />,
+    errorElement: <ErrorBoundary />
+  },
+  {
+    path: "/login",
+    element: <Login />,
+    errorElement: <ErrorBoundary />
+  },
+  {
+    path: "/reset-password",
+    element: <ResetPasswordPage />,
     errorElement: <ErrorBoundary />
   },
   {
