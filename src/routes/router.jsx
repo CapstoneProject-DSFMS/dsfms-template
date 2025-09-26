@@ -1,4 +1,4 @@
-import { createBrowserRouter } from 'react-router-dom'
+import { createHashRouter } from 'react-router-dom'
 import { LayoutWrapper } from '../components/Layout'
 import { ProtectedRoute, ErrorBoundary } from '../components/Common'
 import Login from '../pages/Auth/Login'
@@ -23,7 +23,7 @@ const getBasename = () => {
   return "/";
 };
 
-export const router = createBrowserRouter([
+export const router = createHashRouter([
   {
     path: "/",
     element: <Login />,
