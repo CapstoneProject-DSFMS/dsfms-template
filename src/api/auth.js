@@ -45,6 +45,33 @@ export const authAPI = {
     }
   },
 
+  // Forgot password - send reset link
+  forgotPassword: async (email, magicLink) => {
+    try {
+      const response = await authClient.post('/auth/forgot-password', {
+        email,
+        magicLink
+      });
+      return response.data;
+    } catch (error) {
+      throw error.response?.data || error.message;
+    }
+  },
+
+  // Reset password with token
+  resetPasswordWithToken: async (token, newPassword, confirmPassword) => {
+    try {
+      const response = await authClient.post('/auth/reset-password', {
+        token,
+        newPassword,
+        confirmPassword
+      });
+      return response.data;
+    } catch (error) {
+      throw error.response?.data || error.message;
+    }
+  },
+
   // Logout (clear local storage)
   logout: () => {
     localStorage.removeItem('authToken');
