@@ -7,8 +7,7 @@ const DepartmentModal = ({ show, department, mode, onSave, onClose, availableUse
     name: '',
     code: '',
     description: '',
-    departmentHeadId: '',
-    status: 'ACTIVE'
+    departmentHeadId: ''
   });
   const [errors, setErrors] = useState({});
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -20,16 +19,14 @@ const DepartmentModal = ({ show, department, mode, onSave, onClose, availableUse
         name: department.name || '',
         code: department.code || '',
         description: department.description || '',
-        departmentHeadId: department.departmentHeadId || '',
-        status: department.status || 'ACTIVE'
+        departmentHeadId: department.departmentHeadId || ''
       });
     } else if (mode === 'add') {
       setFormData({
         name: '',
         code: '',
         description: '',
-        departmentHeadId: '',
-        status: 'ACTIVE'
+        departmentHeadId: ''
       });
     }
     setErrors({});
@@ -187,28 +184,6 @@ const DepartmentModal = ({ show, department, mode, onSave, onClose, availableUse
             </Col>
           </Row>
 
-          {/* Status */}
-          <Row>
-            <Col md={6}>
-              <Form.Group className="mb-4">
-                <Form.Label className="text-primary-custom fw-semibold">
-                  Status
-                </Form.Label>
-                <Form.Select
-                  value={formData.status}
-                  onChange={(e) => handleInputChange('status', e.target.value)}
-                  disabled={isReadOnly}
-                  style={{
-                    borderColor: 'var(--bs-primary)',
-                    borderWidth: '2px'
-                  }}
-                >
-                  <option value="ACTIVE">Active</option>
-                  <option value="INACTIVE">Inactive</option>
-                </Form.Select>
-              </Form.Group>
-            </Col>
-          </Row>
 
           {/* Department Head */}
           <Row>

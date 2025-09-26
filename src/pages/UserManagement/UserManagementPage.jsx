@@ -41,8 +41,7 @@ const UserManagementPage = () => {
     handleBulkImport,
     handleModalClose,
     handleConfirmRoleChange,
-    handleCancelRoleChange,
-    setError
+    handleCancelRoleChange
   } = useUserManagementAPI();
 
   const handleDisableClick = (user) => {

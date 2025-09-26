@@ -4,11 +4,9 @@ import { Key, Eye, EyeSlash, X } from 'react-bootstrap-icons';
 
 const ResetPasswordModal = ({ show, onClose, onSave, loading = false }) => {
   const [passwordForm, setPasswordForm] = useState({
-    currentPassword: '',
     newPassword: '',
     confirmPassword: ''
   });
-  const [showCurrentPassword, setShowCurrentPassword] = useState(false);
   const [showNewPassword, setShowNewPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [alert, setAlert] = useState({ show: false, message: '', variant: 'success' });
@@ -58,7 +56,6 @@ const ResetPasswordModal = ({ show, onClose, onSave, loading = false }) => {
       
       // Reset form after successful update
       setPasswordForm({
-        currentPassword: '',
         newPassword: '',
         confirmPassword: ''
       });
@@ -81,7 +78,6 @@ const ResetPasswordModal = ({ show, onClose, onSave, loading = false }) => {
   const handleClose = () => {
     // Reset form when closing
     setPasswordForm({
-      currentPassword: '',
       newPassword: '',
       confirmPassword: ''
     });
@@ -114,30 +110,6 @@ const ResetPasswordModal = ({ show, onClose, onSave, loading = false }) => {
         )}
 
         <Form onSubmit={handleSubmit}>
-          <Form.Group className="mb-3">
-            <Form.Label className="fw-semibold">Current Password</Form.Label>
-            <div className="position-relative">
-              <Form.Control
-                type={showCurrentPassword ? 'text' : 'password'}
-                name="currentPassword"
-                value={passwordForm.currentPassword}
-                onChange={handlePasswordChange}
-                required
-                placeholder="Enter current password"
-              />
-              <Button
-                variant="outline-secondary"
-                size="sm"
-                className="position-absolute end-0 top-50 translate-middle-y border-0"
-                style={{ background: 'none', right: '8px' }}
-                onClick={() => setShowCurrentPassword(!showCurrentPassword)}
-                type="button"
-              >
-                {showCurrentPassword ? <EyeSlash size={16} /> : <Eye size={16} />}
-              </Button>
-            </div>
-          </Form.Group>
-
           <Form.Group className="mb-3">
             <Form.Label className="fw-semibold">New Password</Form.Label>
             <div className="position-relative">

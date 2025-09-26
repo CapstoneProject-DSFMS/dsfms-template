@@ -206,11 +206,24 @@ export const useUserManagementAPI = () => {
   const handleDisable = async (user) => {
     try {
       setLoading(true);
-      // Call API to disable user
-      await userAPI.updateUser(user.id, { status: 'DISABLED' });
+      
+      let response;
+      let action;
+      
+      // Call appropriate API based on current status
+      if (user.status === 'ACTIVE') {
+        // Disable user
+        response = await userAPI.disableUser(user.id);
+        action = 'disabled';
+      } else {
+        // Enable user
+        response = await userAPI.enableUser(user.id);
+        action = 'enabled';
+      }
+      
       // Refresh users list
-      const response = await userAPI.getUsers({ page: 1, limit: 100 });
-      const transformedUsers = response.data.map(user => ({
+      const usersResponse = await userAPI.getUsers({ page: 1, limit: 100 });
+      const transformedUsers = usersResponse.data.map(user => ({
         id: user.id,
         eid: user.eid,
         fullName: [user.firstName, user.middleName, user.lastName].filter(Boolean).join(' '),
@@ -237,9 +250,15 @@ export const useUserManagementAPI = () => {
         lastLogin: user.lastLogin || ''
       }));
       setUsers(transformedUsers);
+      
+      // Show success message with API response message
+      const message = response?.message || `User has been ${action} successfully!`;
+      toast.success(message);
+      
     } catch (err) {
       const errorMessage = mapError(err, { context: 'disable_user' });
       setError(errorMessage);
+      toast.error(errorMessage);
     } finally {
       setLoading(false);
     }
@@ -389,13 +408,26 @@ export const useUserManagementAPI = () => {
     }
   };
   
-  const handleBulkImport = async (file) => {
+  const handleBulkImport = async (usersData) => {
     try {
       setLoading(true);
-      await userAPI.bulkImportUsers(file);
+      const response = await userAPI.bulkImportUsers(usersData);
+      
+      // Handle the response with success/failed arrays
+      if (response.success && response.success.length > 0) {
+        toast.success(`Successfully imported ${response.success.length} users!`);
+      }
+      
+      if (response.failed && response.failed.length > 0) {
+        const failedMessages = response.failed.map(failure => 
+          `User ${failure.index + 1}: ${failure.error}`
+        );
+        toast.error(`Failed to import ${response.failed.length} users: ${failedMessages.join(', ')}`);
+      }
+      
       // Refresh users list
-      const response = await userAPI.getUsers({ page: 1, limit: 100 });
-      const transformedUsers = response.data.map(user => ({
+      const usersResponse = await userAPI.getUsers({ page: 1, limit: 100 });
+      const transformedUsers = usersResponse.data.map(user => ({
         id: user.id,
         eid: user.eid,
         fullName: [user.firstName, user.middleName, user.lastName].filter(Boolean).join(' '),
@@ -425,6 +457,7 @@ export const useUserManagementAPI = () => {
     } catch (err) {
       const errorMessage = mapError(err, { context: 'import_users' });
       setError(errorMessage);
+      toast.error(errorMessage);
     } finally {
       setLoading(false);
     }
