@@ -6,7 +6,9 @@ export const API_CONFIG = {
     AUTH: {
       LOGIN: '/auth/login',
       REFRESH: '/auth/refresh',
-      STATUS: '/auth/status'
+      STATUS: '/auth/status',
+      FORGOT_PASSWORD: '/auth/forgot-password',
+      RESET_PASSWORD: '/auth/reset-password'
     }
   }
 };
