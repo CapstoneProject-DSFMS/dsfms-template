@@ -1,6 +1,8 @@
 import React, { useState } from 'react';
-import { Container, Row, Col, Button, Alert, Card } from 'react-bootstrap';
+import { Container, Row, Col, Button, Card } from 'react-bootstrap';
 import { Plus } from 'react-bootstrap-icons';
+import { useNavigate } from 'react-router-dom';
+import { toast } from 'react-toastify';
 import {
   DepartmentTable,
   DepartmentModal,
@@ -13,6 +15,7 @@ import { SearchBar } from '../../components/Common';
 import useDepartmentManagement from '../../hooks/useDepartmentManagement';
 
 const DepartmentManagementPage = () => {
+  const navigate = useNavigate();
   const {
     departments,
     selectedDepartments,
@@ -26,6 +29,8 @@ const DepartmentManagementPage = () => {
     updateDepartment,
     deleteDepartment,
     toggleDepartmentStatus,
+    disableDepartment,
+    enableDepartment,
     bulkDeleteDepartments,
     bulkToggleStatus,
     sortDepartments,
@@ -59,14 +64,11 @@ const DepartmentManagementPage = () => {
   };
 
   const handleEditDepartment = (department) => {
-    setSelectedDepartment(department);
-    setModalMode('edit');
-    setShowModal(true);
+    navigate(`/admin/departments/${department.id}`);
   };
 
   const handleViewDepartment = (department) => {
-    setSelectedDepartment(department);
-    setShowDetailsModal(true);
+    navigate(`/admin/departments/${department.id}`);
   };
 
   const handleAssignInstructors = (department) => {
@@ -120,39 +122,53 @@ const DepartmentManagementPage = () => {
     try {
       if (modalMode === 'add') {
         await createDepartment(departmentData);
+        toast.success('Department created successfully');
       } else if (modalMode === 'edit') {
         await updateDepartment(selectedDepartment.id, departmentData);
+        toast.success('Department updated successfully');
       }
       handleCloseModal();
     } catch (error) {
       console.error('Error saving department:', error);
+      toast.error('Failed to save department');
     }
   };
 
   const handleConfirmDisable = async () => {
     try {
       if (selectedDepartment) {
-        await toggleDepartmentStatus(selectedDepartment.id);
+        if (selectedDepartment.status === 'ACTIVE') {
+          await disableDepartment(selectedDepartment.id);
+          toast.success('Department disabled successfully');
+        } else {
+          await enableDepartment(selectedDepartment.id);
+          toast.success('Department enabled successfully');
+        }
         handleCloseDisableModal();
       }
     } catch (error) {
       console.error('Error toggling department status:', error);
+      toast.error('Failed to toggle department status');
     }
   };
 
   const handleBulkDelete = async (ids) => {
     try {
       await bulkDeleteDepartments(ids);
+      toast.success(`${ids.length} department(s) deleted successfully`);
     } catch (error) {
       console.error('Error deleting departments:', error);
+      toast.error('Failed to delete departments');
     }
   };
 
   const handleBulkToggleStatus = async (ids, status) => {
     try {
       await bulkToggleStatus(ids, status);
+      toast.success(`${ids.length} department(s) ${status.toLowerCase()}d successfully`);
     } catch (error) {
       console.error('Error updating department status:', error);
+      toast.error('Failed to update department status');
     }
   };
 
@@ -269,20 +285,6 @@ const DepartmentManagementPage = () => {
             </Col>
           </Row>
 
-          {/* Error Alert */}
-          {error && (
-            <Row className="mb-3">
-              <Col>
-                <Alert
-                  variant="danger"
-                  dismissible
-                  onClose={() => setError(null)}
-                >
-                  <strong>Error:</strong> {error}
-                </Alert>
-              </Col>
-            </Row>
-          )}
 
           {/* Department Table with Scrollable Container */}
           <div className="position-relative">
@@ -290,7 +292,6 @@ const DepartmentManagementPage = () => {
               departments={filteredDepartments}
               loading={loading}
               onView={handleViewDepartment}
-              onEdit={handleEditDepartment}
               onToggleStatus={handleToggleStatus}
             />
           </div>

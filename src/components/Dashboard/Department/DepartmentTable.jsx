@@ -9,7 +9,6 @@ const DepartmentTable = ({
   departments,
   loading,
   onView,
-  onEdit,
   onToggleStatus
 }) => {
   const { sortedData, sortConfig, handleSort } = useTableSort(departments);
@@ -130,7 +129,6 @@ const DepartmentTable = ({
               department={department}
               index={index}
               onView={onView}
-              onEdit={onEdit}
               onToggleStatus={onToggleStatus}
             />
           ))}
