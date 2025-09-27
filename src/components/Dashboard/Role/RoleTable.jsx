@@ -119,7 +119,17 @@ const RoleTable = ({
             <tr key={role.id}>
               <td className="show-mobile">{role.name}</td>
               <td className="show-mobile">
-                <Badge bg={role.status === 'Active' ? 'success' : 'secondary'}>
+                <Badge 
+                  bg={role.status === 'Active' ? 'success' : 'secondary'}
+                  className="px-2 py-1 d-flex align-items-center"
+                  style={{ 
+                    fontSize: '0.75rem',
+                    width: 'fit-content'
+                  }}
+                >
+                  <span className="me-1" style={{ fontSize: '0.8rem' }}>
+                    {role.status === 'Active' ? '●' : '○'}
+                  </span>
                   {role.status}
                 </Badge>
               </td>

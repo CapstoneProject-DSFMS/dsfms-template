@@ -4,7 +4,7 @@ import { useAuth } from '../../../hooks/useAuth';
 import { PERMISSIONS_BY_UC } from '../../../constants/permissions';
 import PermissionWrapper from '../../Common/PermissionWrapper';
 import { UnifiedDropdown } from '../../Common';
-import { Eye, Pencil, Trash } from 'react-bootstrap-icons';
+import { Eye, Pencil, Trash, ShieldX } from 'react-bootstrap-icons';
 import '../../../styles/dropdown-clean.css';
 
 const RoleRow = ({ role, index, onView, onEdit, onDelete, onDisable }) => {
@@ -78,7 +78,7 @@ const RoleRow = ({ role, index, onView, onEdit, onDelete, onDisable }) => {
             }}
           >
             <span className="me-1" style={{ fontSize: '0.8rem' }}>
-              {getStatusIcon(role.status)}
+              {getStatusIcon(role.status)} TEST
             </span>
             {role.status}
           </Badge>

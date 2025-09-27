@@ -27,7 +27,17 @@ const UserModal = ({ show, user, mode, onSave, onClose }) => {
 
   const departments = ['IT', 'HR', 'Finance', 'Marketing', 'Operations', 'Sales', 'Flight Operations', 'Cabin Crew', 'Quality Assurance', 'Training', 'Engineering'];
       const roles = ['ADMINISTRATOR', 'DEPARTMENT_HEAD', 'TRAINER', 'TRAINEE', 'SQA_AUDITOR'];
-  const nations = ['Vietnam', 'United States', 'United Kingdom', 'Japan', 'South Korea', 'Singapore', 'Thailand', 'Philippines', 'Malaysia', 'Indonesia'];
+  const nations = [
+    'Afghanistan', 'Albania', 'Algeria', 'Argentina', 'Armenia', 'Australia', 'Austria', 'Azerbaijan',
+    'Bahrain', 'Bangladesh', 'Belarus', 'Belgium', 'Brazil', 'Bulgaria', 'Cambodia', 'Canada', 'Chile', 'China', 'Colombia', 'Croatia', 'Cyprus', 'Czech Republic',
+    'Denmark', 'Egypt', 'Estonia', 'Finland', 'France', 'Georgia', 'Germany', 'Greece', 'Hungary',
+    'Iceland', 'India', 'Indonesia', 'Iran', 'Iraq', 'Ireland', 'Israel', 'Italy', 'Japan', 'Jordan',
+    'Kazakhstan', 'Kuwait', 'Latvia', 'Lebanon', 'Lithuania', 'Luxembourg', 'Malaysia', 'Mexico', 'Morocco', 'Myanmar',
+    'Nepal', 'Netherlands', 'New Zealand', 'Norway', 'Oman', 'Pakistan', 'Philippines', 'Poland', 'Portugal', 'Qatar',
+    'Romania', 'Russia', 'Saudi Arabia', 'Singapore', 'Slovakia', 'Slovenia', 'South Africa', 'South Korea', 'Spain', 'Sri Lanka', 'Sweden', 'Switzerland',
+    'Thailand', 'Turkey', 'Ukraine', 'United Arab Emirates', 'United Kingdom', 'United States', 'Uzbekistan',
+    'Vietnam', 'Yemen'
+  ];
 
   useEffect(() => {
     if (user && mode !== 'add') {
@@ -76,10 +86,18 @@ const UserModal = ({ show, user, mode, onSave, onClose }) => {
 
     if (!formData.firstName.trim()) {
       newErrors.firstName = 'First name is required';
+    } else if (!/^[a-zA-Z\s]+$/.test(formData.firstName.trim())) {
+      newErrors.firstName = 'First name cannot contain special characters';
     }
 
     if (!formData.lastName.trim()) {
       newErrors.lastName = 'Last name is required';
+    } else if (!/^[a-zA-Z\s]+$/.test(formData.lastName.trim())) {
+      newErrors.lastName = 'Last name cannot contain special characters';
+    }
+
+    if (formData.middleName.trim() && !/^[a-zA-Z\s]+$/.test(formData.middleName.trim())) {
+      newErrors.middleName = 'Middle name cannot contain special characters';
     }
 
     if (!formData.email.trim()) {
@@ -90,8 +108,14 @@ const UserModal = ({ show, user, mode, onSave, onClose }) => {
 
     if (!formData.phoneNumber.trim()) {
       newErrors.phoneNumber = 'Phone number is required';
-    } else if (!/^[\+]?[0-9][\d]{0,15}$/.test(formData.phoneNumber.replace(/\s/g, ''))) {
-      newErrors.phoneNumber = 'Phone number is invalid';
+    } else if (!/^[\+]?[0-9\s\-\(\)]+$/.test(formData.phoneNumber)) {
+      newErrors.phoneNumber = 'Phone number cannot contain letters';
+    } else {
+      // Remove all non-digit characters except + at the beginning
+      const cleanPhone = formData.phoneNumber.replace(/[^\d\+]/g, '');
+      if (cleanPhone.length < 7 || cleanPhone.length > 16) {
+        newErrors.phoneNumber = 'Phone number must be 7-16 digits';
+      }
     }
 
     if (!formData.role) {
@@ -102,11 +126,35 @@ const UserModal = ({ show, user, mode, onSave, onClose }) => {
 
     // Role-specific validation
     if (formData.role === 'TRAINER') {
-      // Trainer-specific validations can be added here if needed
+      if (!formData.specialization.trim()) {
+        newErrors.specialization = 'Specialization is required for trainers';
+      }
+      if (!formData.certificationNumber.trim()) {
+        newErrors.certificationNumber = 'Certification number is required for trainers';
+      }
     }
     
     if (formData.role === 'TRAINEE') {
-      // Trainee-specific validations can be added here if needed
+      if (!formData.trainingBatch.trim()) {
+        newErrors.trainingBatch = 'Training batch is required for trainees';
+      }
+      if (!formData.passportNo.trim()) {
+        newErrors.passportNo = 'Passport number is required for trainees';
+      }
+      if (!formData.dateOfBirth.trim()) {
+        newErrors.dateOfBirth = 'Date of birth is required for trainees';
+      } else {
+        // Check if date format is correct (YYYY-MM-DD)
+        if (formData.dateOfBirth.length !== 10 || !/^\d{4}-\d{2}-\d{2}$/.test(formData.dateOfBirth)) {
+          newErrors.dateOfBirth = 'Please enter date in YYYY-MM-DD format';
+        } else {
+          const birthDate = new Date(formData.dateOfBirth);
+          const today = new Date();
+          if (birthDate >= today) {
+            newErrors.dateOfBirth = 'Date of birth must be in the past';
+          }
+        }
+      }
     }
 
     setErrors(newErrors);
@@ -140,13 +188,26 @@ const UserModal = ({ show, user, mode, onSave, onClose }) => {
       [field]: value
     }));
     
-    // Clear error when user starts typing
-    if (errors[field]) {
-      setErrors(prev => ({
-        ...prev,
-        [field]: ''
-      }));
-    }
+    // Clear errors when user starts typing
+    setErrors(prev => {
+      const newErrors = { ...prev };
+      
+      // Clear the current field error
+      if (newErrors[field]) {
+        delete newErrors[field];
+      }
+      
+      // Clear role-specific errors when role changes
+      if (field === 'role') {
+        delete newErrors.specialization;
+        delete newErrors.certificationNumber;
+        delete newErrors.trainingBatch;
+        delete newErrors.passportNo;
+        delete newErrors.dateOfBirth;
+      }
+      
+      return newErrors;
+    });
   };
 
   const getModalTitle = () => {
@@ -222,12 +283,16 @@ const UserModal = ({ show, user, mode, onSave, onClose }) => {
                   type="text"
                   value={formData.middleName}
                   onChange={(e) => handleInputChange('middleName', e.target.value)}
+                  isInvalid={!!errors.middleName}
                   readOnly={isReadOnly}
                   style={{
-                    borderColor: 'var(--bs-primary)',
+                    borderColor: errors.middleName ? '#dc3545' : 'var(--bs-primary)',
                     borderWidth: '2px'
                   }}
                 />
+                <Form.Control.Feedback type="invalid">
+                  {errors.middleName}
+                </Form.Control.Feedback>
               </Form.Group>
             </Col>
             <Col md={4}>
@@ -393,37 +458,45 @@ const UserModal = ({ show, user, mode, onSave, onClose }) => {
                 <Col md={6}>
                   <Form.Group className="mb-4">
                     <Form.Label className="text-primary-custom fw-semibold">
-                      Specialization
+                      Specialization *
                     </Form.Label>
                     <Form.Control
                       type="text"
                       value={formData.specialization}
                       onChange={(e) => handleInputChange('specialization', e.target.value)}
+                      isInvalid={!!errors.specialization}
                       readOnly={isReadOnly}
                       placeholder="Enter specialization"
                       style={{
-                        borderColor: 'var(--bs-primary)',
+                        borderColor: errors.specialization ? '#dc3545' : 'var(--bs-primary)',
                         borderWidth: '2px'
                       }}
                     />
+                    <Form.Control.Feedback type="invalid">
+                      {errors.specialization}
+                    </Form.Control.Feedback>
                   </Form.Group>
                 </Col>
                 <Col md={6}>
                   <Form.Group className="mb-4">
                     <Form.Label className="text-primary-custom fw-semibold">
-                      Certification Number
+                      Certification Number *
                     </Form.Label>
                     <Form.Control
                       type="text"
                       value={formData.certificationNumber}
                       onChange={(e) => handleInputChange('certificationNumber', e.target.value)}
+                      isInvalid={!!errors.certificationNumber}
                       readOnly={isReadOnly}
                       placeholder="Enter certification number"
                       style={{
-                        borderColor: 'var(--bs-primary)',
+                        borderColor: errors.certificationNumber ? '#dc3545' : 'var(--bs-primary)',
                         borderWidth: '2px'
                       }}
                     />
+                    <Form.Control.Feedback type="invalid">
+                      {errors.certificationNumber}
+                    </Form.Control.Feedback>
                   </Form.Group>
                 </Col>
               </Row>
@@ -458,36 +531,52 @@ const UserModal = ({ show, user, mode, onSave, onClose }) => {
                 <Col md={6}>
                   <Form.Group className="mb-4">
                     <Form.Label className="text-primary-custom fw-semibold">
-                      Date of Birth
+                      Date of Birth *
                     </Form.Label>
                     <Form.Control
                       type="date"
                       value={formData.dateOfBirth}
-                      onChange={(e) => handleInputChange('dateOfBirth', e.target.value)}
+                      onChange={(e) => {
+                        const value = e.target.value;
+                        // Simple validation - only allow if year has 4 digits or less
+                        if (value === '' || (value.length === 10 && /^\d{4}-\d{2}-\d{2}$/.test(value))) {
+                          handleInputChange('dateOfBirth', value);
+                        }
+                      }}
+                      isInvalid={!!errors.dateOfBirth}
                       readOnly={isReadOnly}
+                      max="2024-12-31"
+                      min="1900-01-01"
                       style={{
-                        borderColor: 'var(--bs-primary)',
+                        borderColor: errors.dateOfBirth ? '#dc3545' : 'var(--bs-primary)',
                         borderWidth: '2px'
                       }}
                     />
+                    <Form.Control.Feedback type="invalid">
+                      {errors.dateOfBirth}
+                    </Form.Control.Feedback>
                   </Form.Group>
                 </Col>
                 <Col md={6}>
                   <Form.Group className="mb-4">
                     <Form.Label className="text-primary-custom fw-semibold">
-                      Training Batch
+                      Training Batch *
                     </Form.Label>
                     <Form.Control
                       type="text"
                       value={formData.trainingBatch}
                       onChange={(e) => handleInputChange('trainingBatch', e.target.value)}
+                      isInvalid={!!errors.trainingBatch}
                       readOnly={isReadOnly}
                       placeholder="Enter training batch"
                       style={{
-                        borderColor: 'var(--bs-primary)',
+                        borderColor: errors.trainingBatch ? '#dc3545' : 'var(--bs-primary)',
                         borderWidth: '2px'
                       }}
                     />
+                    <Form.Control.Feedback type="invalid">
+                      {errors.trainingBatch}
+                    </Form.Control.Feedback>
                   </Form.Group>
                 </Col>
               </Row>
@@ -495,19 +584,23 @@ const UserModal = ({ show, user, mode, onSave, onClose }) => {
                 <Col md={6}>
                   <Form.Group className="mb-4">
                     <Form.Label className="text-primary-custom fw-semibold">
-                      Passport No
+                      Passport No *
                     </Form.Label>
                     <Form.Control
                       type="text"
                       value={formData.passportNo}
                       onChange={(e) => handleInputChange('passportNo', e.target.value)}
+                      isInvalid={!!errors.passportNo}
                       readOnly={isReadOnly}
                       placeholder="Enter passport number"
                       style={{
-                        borderColor: 'var(--bs-primary)',
+                        borderColor: errors.passportNo ? '#dc3545' : 'var(--bs-primary)',
                         borderWidth: '2px'
                       }}
                     />
+                    <Form.Control.Feedback type="invalid">
+                      {errors.passportNo}
+                    </Form.Control.Feedback>
                   </Form.Group>
                 </Col>
                 <Col md={6}>
