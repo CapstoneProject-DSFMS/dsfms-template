@@ -1,98 +1,31 @@
 import { useState, useEffect } from 'react';
+import { toast } from 'react-toastify';
+import { departmentAPI } from '../api';
 
-// Mock data for departments
-const mockDepartments = [
-  {
-    id: "dept_001",
-    name: "Cabin Crew Training Department",
-    code: "CCT",
-    type: "CCT",
-    description: "Department specialized in cabin crew training, teaching customer service skills and flight safety procedures",
-    departmentHeadId: "user_123",
-    departmentHead: {
-      id: "user_123",
-      name: "John Smith",
-      email: "john.smith@academy.com",
-      role: "DEPT_HEAD"
-    },
-    status: "ACTIVE",
-    coursesCount: 8,
-    traineesCount: 156,
-    trainersCount: 15,
-    createdAt: "2024-01-15",
-    updatedAt: "2024-03-20"
-  },
-  {
-    id: "dept_002",
-    name: "Quality Assurance Department",
-    code: "SQA",
-    type: "SQA",
-    description: "Department responsible for ensuring training quality and compliance with international standards",
-    departmentHeadId: "user_124",
-    departmentHead: {
-      id: "user_124",
-      name: "Sarah Johnson",
-      email: "sarah.johnson@academy.com",
-      role: "DEPT_HEAD"
-    },
-    status: "ACTIVE",
-    coursesCount: 3,
+// Helper function to transform API data to expected format
+const transformDepartmentData = (departmentsData) => {
+  return departmentsData.map(dept => ({
+    id: dept.id,
+    name: dept.name,
+    code: dept.name.split(' ').map(word => word[0]).join('').toUpperCase(),
+    type: dept.name.split(' ').map(word => word[0]).join('').toUpperCase(),
+    description: dept.description,
+    departmentHeadId: dept.headUserId,
+    departmentHead: dept.headUser ? {
+      id: dept.headUser.id,
+      name: dept.headUser.name || dept.headUser.email,
+      email: dept.headUser.email,
+      role: dept.headUser.role
+    } : null,
+    status: dept.isActive,
+    coursesCount: dept.courseCount || 0,
     traineesCount: 0,
-    trainersCount: 8,
-    createdAt: "2024-01-10",
-    updatedAt: "2024-03-15"
-  },
-  {
-    id: "dept_003",
-    name: "Flight Crew Training Department",
-    code: "FCTD",
-    type: "FCTD",
-    description: "Department specialized in pilot training, teaching flying skills and air traffic management",
-    departmentHeadId: "user_125",
-    departmentHead: {
-      id: "user_125",
-      name: "Michael Brown",
-      email: "michael.brown@academy.com",
-      role: "DEPT_HEAD"
-    },
-    status: "ACTIVE",
-    coursesCount: 12,
-    traineesCount: 200,
-    trainersCount: 18,
-    createdAt: "2024-01-20",
-    updatedAt: "2024-03-25"
-  },
-  {
-    id: "dept_004",
-    name: "Ground Operations Department",
-    code: "GOT",
-    type: "GOT",
-    description: "Department specialized in ground operations, airport management and ground services",
-    departmentHeadId: "user_126",
-    departmentHead: {
-      id: "user_126",
-      name: "Emily Davis",
-      email: "emily.davis@academy.com",
-      role: "DEPT_HEAD"
-    },
-    status: "INACTIVE",
-    coursesCount: 5,
-    traineesCount: 80,
-    trainersCount: 6,
-    createdAt: "2024-01-25",
-    updatedAt: "2024-03-30"
-  }
-];
-
-// Mock users for department head selection
-const mockUsers = [
-  { id: "user_123", name: "John Smith", email: "john.smith@academy.com", role: "DEPT_HEAD" },
-  { id: "user_124", name: "Sarah Johnson", email: "sarah.johnson@academy.com", role: "DEPT_HEAD" },
-  { id: "user_125", name: "Michael Brown", email: "michael.brown@academy.com", role: "DEPT_HEAD" },
-  { id: "user_126", name: "Emily Davis", email: "emily.davis@academy.com", role: "DEPT_HEAD" },
-  { id: "user_127", name: "David Wilson", email: "david.wilson@academy.com", role: "TRAINER" },
-  { id: "user_128", name: "Lisa Anderson", email: "lisa.anderson@academy.com", role: "TRAINER" }
-];
+    trainersCount: 0,
+    createdAt: dept.createdAt,
+    updatedAt: dept.updatedAt,
+    deletedAt: dept.deletedAt
+  }));
+};
 
 const useDepartmentManagement = () => {
   const [departments, setDepartments] = useState([]);
@@ -107,18 +40,23 @@ const useDepartmentManagement = () => {
   const [sortConfig, setSortConfig] = useState({ key: null, direction: 'asc' });
   const [selectedDepartments, setSelectedDepartments] = useState([]);
 
-  // Load departments from localStorage or use mock data
+  // Load departments from API
   useEffect(() => {
-    const loadDepartments = () => {
+    const loadDepartments = async () => {
       setLoading(true);
+      setError(null);
       try {
-        // Force update with new English mock data
-        setDepartments(mockDepartments);
-        localStorage.setItem('departments', JSON.stringify(mockDepartments));
+        const response = await departmentAPI.getDepartments();
+        const departmentsData = response.departments || [];
+        
+        // Transform API data to match expected format
+        const transformedDepartments = transformDepartmentData(departmentsData);
+        
+        setDepartments(transformedDepartments);
       } catch (err) {
         console.error('Error loading departments:', err);
         setError('Failed to load departments');
-        setDepartments(mockDepartments);
+        setDepartments([]);
       } finally {
         setLoading(false);
       }
@@ -177,23 +115,20 @@ const useDepartmentManagement = () => {
   // CRUD operations
   const createDepartment = async (departmentData) => {
     setLoading(true);
+    setError(null);
     try {
-      const newDepartment = {
-        id: `dept_${Date.now()}`,
-        ...departmentData,
-        coursesCount: 0,
-        traineesCount: 0,
-        trainersCount: 0,
-        createdAt: new Date().toISOString().split('T')[0],
-        updatedAt: new Date().toISOString().split('T')[0]
-      };
-
-      const updatedDepartments = [...departments, newDepartment];
-      setDepartments(updatedDepartments);
-      localStorage.setItem('departments', JSON.stringify(updatedDepartments));
+      const response = await departmentAPI.createDepartment(departmentData);
       
-      return newDepartment;
+      // Reload departments to get the latest data
+      const updatedResponse = await departmentAPI.getDepartments();
+      const departmentsData = updatedResponse.departments || [];
+      
+      const transformedDepartments = transformDepartmentData(departmentsData);
+      
+      setDepartments(transformedDepartments);
+      return response;
     } catch (err) {
+      console.error('Error creating department:', err);
       setError('Failed to create department');
       throw err;
     } finally {
@@ -203,18 +138,20 @@ const useDepartmentManagement = () => {
 
   const updateDepartment = async (id, departmentData) => {
     setLoading(true);
+    setError(null);
     try {
-      const updatedDepartments = departments.map(dept =>
-        dept.id === id
-          ? { ...dept, ...departmentData, updatedAt: new Date().toISOString().split('T')[0] }
-          : dept
-      );
+      const response = await departmentAPI.updateDepartment(id, departmentData);
       
-      setDepartments(updatedDepartments);
-      localStorage.setItem('departments', JSON.stringify(updatedDepartments));
+      // Reload departments to get the latest data
+      const updatedResponse = await departmentAPI.getDepartments();
+      const departmentsData = updatedResponse.departments || [];
       
-      return updatedDepartments.find(dept => dept.id === id);
+      const transformedDepartments = transformDepartmentData(departmentsData);
+      
+      setDepartments(transformedDepartments);
+      return response;
     } catch (err) {
+      console.error('Error updating department:', err);
       setError('Failed to update department');
       throw err;
     } finally {
@@ -224,11 +161,19 @@ const useDepartmentManagement = () => {
 
   const deleteDepartment = async (id) => {
     setLoading(true);
+    setError(null);
     try {
-      const updatedDepartments = departments.filter(dept => dept.id !== id);
-      setDepartments(updatedDepartments);
-      localStorage.setItem('departments', JSON.stringify(updatedDepartments));
+      await departmentAPI.deleteDepartment(id);
+      
+      // Reload departments to get the latest data
+      const updatedResponse = await departmentAPI.getDepartments();
+      const departmentsData = updatedResponse.departments || [];
+      
+      const transformedDepartments = transformDepartmentData(departmentsData);
+      
+      setDepartments(transformedDepartments);
     } catch (err) {
+      console.error('Error deleting department:', err);
       setError('Failed to delete department');
       throw err;
     } finally {
@@ -238,21 +183,64 @@ const useDepartmentManagement = () => {
 
   const toggleDepartmentStatus = async (id) => {
     setLoading(true);
+    setError(null);
     try {
-      const updatedDepartments = departments.map(dept =>
-        dept.id === id
-          ? { 
-              ...dept, 
-              status: dept.status === 'ACTIVE' ? 'INACTIVE' : 'ACTIVE',
-              updatedAt: new Date().toISOString().split('T')[0]
-            }
-          : dept
-      );
+      await departmentAPI.toggleDepartmentStatus(id);
       
-      setDepartments(updatedDepartments);
-      localStorage.setItem('departments', JSON.stringify(updatedDepartments));
+      // Reload departments to get the latest data
+      const updatedResponse = await departmentAPI.getDepartments();
+      const departmentsData = updatedResponse.departments || [];
+      
+      const transformedDepartments = transformDepartmentData(departmentsData);
+      
+      setDepartments(transformedDepartments);
     } catch (err) {
-      setError('Failed to toggle department status');
+      console.error('Error toggling department status:', err);
+      toast.error('Failed to toggle department status');
+      throw err;
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const disableDepartment = async (id) => {
+    setLoading(true);
+    setError(null);
+    try {
+      await departmentAPI.disableDepartment(id);
+      
+      // Reload departments to get the latest data
+      const updatedResponse = await departmentAPI.getDepartments();
+      const departmentsData = updatedResponse.departments || [];
+      
+      const transformedDepartments = transformDepartmentData(departmentsData);
+      
+      setDepartments(transformedDepartments);
+    } catch (err) {
+      console.error('Error disabling department:', err);
+      toast.error('Failed to disable department');
+      throw err;
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const enableDepartment = async (id) => {
+    setLoading(true);
+    setError(null);
+    try {
+      await departmentAPI.enableDepartment(id);
+      
+      // Reload departments to get the latest data
+      const updatedResponse = await departmentAPI.getDepartments();
+      const departmentsData = updatedResponse.departments || [];
+      
+      const transformedDepartments = transformDepartmentData(departmentsData);
+      
+      setDepartments(transformedDepartments);
+    } catch (err) {
+      console.error('Error enabling department:', err);
+      toast.error('Failed to enable department');
       throw err;
     } finally {
       setLoading(false);
@@ -262,13 +250,21 @@ const useDepartmentManagement = () => {
   // Bulk operations
   const bulkDeleteDepartments = async (ids) => {
     setLoading(true);
+    setError(null);
     try {
-      const updatedDepartments = departments.filter(dept => !ids.includes(dept.id));
-      setDepartments(updatedDepartments);
-      localStorage.setItem('departments', JSON.stringify(updatedDepartments));
+      await departmentAPI.bulkDeleteDepartments(ids);
+      
+      // Reload departments to get the latest data
+      const updatedResponse = await departmentAPI.getDepartments();
+      const departmentsData = updatedResponse.departments || [];
+      
+      const transformedDepartments = transformDepartmentData(departmentsData);
+      
+      setDepartments(transformedDepartments);
       setSelectedDepartments([]);
     } catch (err) {
-      setError('Failed to delete departments');
+      console.error('Error bulk deleting departments:', err);
+      toast.error('Failed to delete departments');
       throw err;
     } finally {
       setLoading(false);
@@ -277,22 +273,21 @@ const useDepartmentManagement = () => {
 
   const bulkToggleStatus = async (ids, status) => {
     setLoading(true);
+    setError(null);
     try {
-      const updatedDepartments = departments.map(dept =>
-        ids.includes(dept.id)
-          ? { 
-              ...dept, 
-              status,
-              updatedAt: new Date().toISOString().split('T')[0]
-            }
-          : dept
-      );
+      await departmentAPI.bulkToggleStatus(ids, status);
       
-      setDepartments(updatedDepartments);
-      localStorage.setItem('departments', JSON.stringify(updatedDepartments));
+      // Reload departments to get the latest data
+      const updatedResponse = await departmentAPI.getDepartments();
+      const departmentsData = updatedResponse.departments || [];
+      
+      const transformedDepartments = transformDepartmentData(departmentsData);
+      
+      setDepartments(transformedDepartments);
       setSelectedDepartments([]);
     } catch (err) {
-      setError('Failed to update department status');
+      console.error('Error bulk toggling department status:', err);
+      toast.error('Failed to update department status');
       throw err;
     } finally {
       setLoading(false);
@@ -331,9 +326,26 @@ const useDepartmentManagement = () => {
 
   // Get available users for department head selection
   const getAvailableUsers = () => {
-    return mockUsers.filter(user => 
-      user.role === 'DEPT_HEAD' || user.role === 'TRAINER'
-    );
+    // This would typically fetch from a users API
+    // For now, return empty array as we don't have user data in the department API
+    return [];
+  };
+
+  // Manual refresh function
+  const refreshDepartments = async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      const response = await departmentAPI.getDepartments();
+      const departmentsData = response.departments || [];
+      const transformedDepartments = transformDepartmentData(departmentsData);
+      setDepartments(transformedDepartments);
+    } catch (err) {
+      console.error('Error refreshing departments:', err);
+      setError('Failed to refresh departments');
+    } finally {
+      setLoading(false);
+    }
   };
 
 
@@ -355,6 +367,8 @@ const useDepartmentManagement = () => {
     updateDepartment,
     deleteDepartment,
     toggleDepartmentStatus,
+    disableDepartment,
+    enableDepartment,
     bulkDeleteDepartments,
     bulkToggleStatus,
     sortDepartments,
@@ -369,6 +383,7 @@ const useDepartmentManagement = () => {
     
     // Utils
     getAvailableUsers,
+    refreshDepartments,
     setError
   };
 };
