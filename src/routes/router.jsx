@@ -7,6 +7,7 @@ import Dashboard from '../pages/Dashboard/Dashboard'
 import UserManagementPage from '../pages/UserManagement/UserManagementPage'
 import RoleManagementPage from '../pages/RoleManagement/RoleManagementPage'
 import DepartmentManagementPage from '../pages/DepartmentManagement/DepartmentManagementPage'
+import DepartmentDetailPage from '../pages/DepartmentManagement/DepartmentDetailPage'
 import ProfilePage from '../pages/Profile/ProfilePage'
 
 // Determine basename based on environment
@@ -63,6 +64,10 @@ export const router = createBrowserRouter([
       {
         path: "departments",
         element: <DepartmentManagementPage />
+      },
+      {
+        path: "departments/:id",
+        element: <DepartmentDetailPage />
       },
       {
         path: "profile",

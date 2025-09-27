@@ -1,9 +1,9 @@
 import React from 'react';
 import { Badge } from 'react-bootstrap';
 import { Dropdown } from 'react-bootstrap';
-import { Eye, Pencil, PersonX, ThreeDotsVertical } from 'react-bootstrap-icons';
+import { Eye, PersonX, ThreeDotsVertical } from 'react-bootstrap-icons';
 
-const DepartmentRow = ({ department, index, onView, onEdit, onToggleStatus }) => {
+const DepartmentRow = ({ department, index, onView, onToggleStatus }) => {
   const getStatusVariant = (status) => {
     return status === 'ACTIVE' ? 'success' : 'secondary';
   };
@@ -113,33 +113,20 @@ const DepartmentRow = ({ department, index, onView, onEdit, onToggleStatus }) =>
               <Eye className="me-2" size={16} />
               View Details
             </Dropdown.Item>
-            <Dropdown.Item 
-              onClick={() => onEdit(department)}
-              className="d-flex align-items-center transition-all"
-              style={{
-                transition: 'all 0.2s ease'
-              }}
-              onMouseEnter={(e) => {
-                e.target.style.backgroundColor = 'rgba(0, 0, 0, 0.05)';
-                e.target.style.paddingLeft = '1.5rem';
-              }}
-              onMouseLeave={(e) => {
-                e.target.style.backgroundColor = 'transparent';
-                e.target.style.paddingLeft = '1rem';
-              }}
-            >
-              <Pencil className="me-2" size={16} />
-              Edit Department
-            </Dropdown.Item>
             <Dropdown.Divider />
             <Dropdown.Item 
               onClick={() => onToggleStatus(department)}
-              className="d-flex align-items-center transition-all text-danger"
+              className={`d-flex align-items-center transition-all ${
+                department.status === 'ACTIVE' ? 'text-danger' : 'text-success'
+              }`}
               style={{
                 transition: 'all 0.2s ease'
               }}
               onMouseEnter={(e) => {
-                e.target.style.backgroundColor = 'rgba(220, 53, 69, 0.1)';
+                const bgColor = department.status === 'ACTIVE' 
+                  ? 'rgba(220, 53, 69, 0.1)' 
+                  : 'rgba(25, 135, 84, 0.1)';
+                e.target.style.backgroundColor = bgColor;
                 e.target.style.paddingLeft = '1.5rem';
               }}
               onMouseLeave={(e) => {
