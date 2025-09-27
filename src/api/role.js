@@ -53,9 +53,9 @@ export const roleAPI = {
   },
 
   // Toggle role status (disable/enable)
-  toggleRoleStatus: async (id, isActive) => {
+  toggleRoleStatus: async (id) => {
     try {
-      const response = await apiClient.patch(`/roles/${id}`, { isActive });
+      const response = await apiClient.delete(`/roles/${id}`);
       return response.data;
     } catch (error) {
       throw error.response?.data || error.message;
