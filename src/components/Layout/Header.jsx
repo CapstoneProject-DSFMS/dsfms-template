@@ -7,6 +7,7 @@ import {
   List,
   X
 } from 'react-bootstrap-icons';
+import useProfile from '../../hooks/useProfile';
 import '../../styles/dropdown-clean.css';
 
 const Header = ({ onToggleSidebar }) => {
@@ -15,6 +16,7 @@ const Header = ({ onToggleSidebar }) => {
   const [showProfileMenu, setShowProfileMenu] = useState(false);
   const [showDesktopDropdown, setShowDesktopDropdown] = useState(false);
   const dropdownRef = useRef(null);
+  const { profile, loading, getDisplayName, getRoleName } = useProfile();
   
   // Map routes to titles
   const getTitleFromPath = (path) => {
@@ -28,6 +30,12 @@ const Header = ({ onToggleSidebar }) => {
       '/admin/forms': 'Form Templates',
       '/admin/system-config': 'System Configuration'
     };
+    
+    // Check for department detail page (pattern: /admin/departments/:id)
+    if (path.startsWith('/admin/departments/') && path !== '/admin/departments') {
+      return 'Edit Department Detail';
+    }
+    
     return routes[path] || 'Dashboard';
   };
 
@@ -118,7 +126,7 @@ const Header = ({ onToggleSidebar }) => {
                 onClick={() => setShowDesktopDropdown(!showDesktopDropdown)}
               >
                 <PersonCircle size={32} className="me-2" />
-                <span>Admin User</span>
+                <span>{loading ? 'Loading...' : getDisplayName()}</span>
               </button>
               
               
@@ -140,9 +148,13 @@ const Header = ({ onToggleSidebar }) => {
                   overflow: 'visible'
                 }}
               >
-                  <div className="dropdown-header">
-                    <div className="fw-bold text-primary-custom">Admin User</div>
-                    <small className="text-muted">admin@company.com</small>
+                  <div className="dropdown-header">                  
+                    <div className="fw-bold text-primary-custom">
+                      {loading ? 'Loading...' : getDisplayName()}
+                    </div>
+                    <small className="text-muted">
+                      {loading ? 'Loading...' : profile?.email || 'No email'}
+                    </small>
                   </div>
                   <div className="dropdown-divider"></div>
                   <button
@@ -225,8 +237,12 @@ const Header = ({ onToggleSidebar }) => {
             <PersonCircle size={40} />
           </div>
           
-          <div className="profile-name">Admin User</div>
-          <div className="profile-email">admin@company.com</div>
+          <div className="profile-name">
+            {loading ? 'Loading...' : getDisplayName()}
+          </div>
+          <div className="profile-email">
+            {loading ? 'Loading...' : profile?.email || 'No email'}
+          </div>
         </div>
 
         {/* Profile Menu Items */}
