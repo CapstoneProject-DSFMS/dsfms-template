@@ -1,6 +1,7 @@
 import { createContext, useState, useEffect } from 'react';
 import { authAPI } from '../api';
 import { mapError } from '../utils/errorMapping';
+import { initializeBasename } from '../utils/navigation';
 
 // Create the context
 export const AuthContext = createContext();
@@ -13,6 +14,9 @@ export const AuthProvider = ({ children }) => {
 
   // Check for existing auth data on mount
   useEffect(() => {
+    // Initialize basename for navigation
+    initializeBasename();
+    
     const initializeAuth = async () => {
       try {
         const token = localStorage.getItem('authToken');
