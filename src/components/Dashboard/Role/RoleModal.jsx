@@ -7,7 +7,7 @@ const RoleModal = ({ show, role, mode, onSave, onClose }) => {
   const [formData, setFormData] = useState({
     name: '',
     description: '',
-    permissions: []
+    permissionIds: []
   });
   const [errors, setErrors] = useState({});
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -37,26 +37,32 @@ const RoleModal = ({ show, role, mode, onSave, onClose }) => {
       })).filter(group => group.permissions.length > 0);
     }
     
-    // Add/Edit mode: show all permissions
+    // Add/Edit mode: show all permissions (no filtering)
     return allGroups;
   };
 
   const permissionGroups = getPermissionGroupsForMode(role?.name, mode);
 
   useEffect(() => {
+    console.log('RoleModal useEffect - Role:', role);
+    console.log('RoleModal useEffect - Mode:', mode);
+    console.log('RoleModal useEffect - Role permissions:', role?.permissions);
+    
     if (role && mode !== 'add') {
       // For both view and edit mode, use the role's assigned permissions
       const rolePermissions = role.permissions ? role.permissions.map(p => p.id || p) : [];
+      console.log('RoleModal useEffect - Mapped permission IDs:', rolePermissions);
+      
       setFormData({
         name: role.name || '',
         description: role.description || '',
-        permissions: rolePermissions
+        permissionIds: rolePermissions
       });
     } else if (mode === 'add') {
       setFormData({
         name: '',
         description: '',
-        permissions: []
+        permissionIds: []
       });
     }
     setErrors({});
@@ -93,8 +99,8 @@ const RoleModal = ({ show, role, mode, onSave, onClose }) => {
       newErrors.name = 'Role name cannot contain special characters';
     }
 
-    if (formData.permissions.length === 0) {
-      newErrors.permissions = 'At least one permission is required';
+    if (formData.permissionIds.length === 0) {
+      newErrors.permissionIds = 'At least one permission is required';
     }
 
     setErrors(newErrors);
@@ -136,16 +142,16 @@ const RoleModal = ({ show, role, mode, onSave, onClose }) => {
   const handlePermissionToggle = (permissionId) => {
     setFormData(prev => ({
       ...prev,
-      permissions: prev.permissions.includes(permissionId)
-        ? prev.permissions.filter(p => p !== permissionId)
-        : [...prev.permissions, permissionId]
+      permissionIds: prev.permissionIds.includes(permissionId)
+        ? prev.permissionIds.filter(p => p !== permissionId)
+        : [...prev.permissionIds, permissionId]
     }));
     
     // Clear error when permissions are selected
-    if (errors.permissions) {
+    if (errors.permissionIds) {
       setErrors(prev => ({
         ...prev,
-        permissions: ''
+        permissionIds: ''
       }));
     }
   };
@@ -270,8 +276,8 @@ const RoleModal = ({ show, role, mode, onSave, onClose }) => {
                 <Form.Label className="text-primary-custom fw-semibold fs-5 mb-3">
                   Permissions *
                 </Form.Label>
-                {errors.permissions && (
-                  <div className="text-danger small mb-2">{errors.permissions}</div>
+                {errors.permissionIds && (
+                  <div className="text-danger small mb-2">{errors.permissionIds}</div>
                 )}
                 
                 {permissionsError && (
@@ -298,7 +304,7 @@ const RoleModal = ({ show, role, mode, onSave, onClose }) => {
                         <div className="mb-2 p-2 bg-light rounded">
                           <small className="text-muted">
                             Debug: Total permissions = {permissionGroups.reduce((total, group) => total + group.permissions.length, 0)} | 
-                            Selected = {formData.permissions.length} | 
+                            Selected = {formData.permissionIds.length} | 
                             Groups = {permissionGroups.length}
                           </small>
                         </div>
@@ -360,7 +366,7 @@ const RoleModal = ({ show, role, mode, onSave, onClose }) => {
                                     <Form.Check
                                       type="checkbox"
                                       id={`permission-${permission.id}`}
-                                      checked={formData.permissions.includes(permission.id)}
+                                      checked={formData.permissionIds.includes(permission.id)}
                                       onChange={() => handlePermissionToggle(permission.id)}
                                       disabled={isReadOnly}
                                       className="me-3"
@@ -375,7 +381,7 @@ const RoleModal = ({ show, role, mode, onSave, onClose }) => {
                                         {permission.description}
                                       </small>
                                     </div>
-                                    {!isReadOnly && formData.permissions.includes(permission.id) && (
+                                    {!isReadOnly && formData.permissionIds.includes(permission.id) && (
                                       <Badge bg="primary" className="ms-2">
                                         Selected
                                       </Badge>
@@ -395,7 +401,7 @@ const RoleModal = ({ show, role, mode, onSave, onClose }) => {
                 
                 <div className="mt-2">
                   <small className="text-muted">
-                    {formData.permissions.length} of {permissionGroups.reduce((total, group) => total + group.permissions.length, 0)} permissions assigned
+                    {formData.permissionIds.length} of {permissionGroups.reduce((total, group) => total + group.permissions.length, 0)} permissions assigned
                   </small>
                 </div>
               </Form.Group>
@@ -414,7 +420,7 @@ const RoleModal = ({ show, role, mode, onSave, onClose }) => {
                     </div>
                     <div className="col-md-6">
                       <small className="text-muted">Total Permissions:</small>
-                      <div className="fw-medium">{formData.permissions.length}</div>
+                      <div className="fw-medium">{formData.permissionIds.length}</div>
                     </div>
                   </div>
                 </div>
