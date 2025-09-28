@@ -9,7 +9,7 @@
     "deploy": "vite build && gh-pages -d dist",
     "lint": "eslint .",
     "preview": "vite preview",
-    "preview:build": "vite preview --base=/dsfms-template/"
+    "preview:build": "vite preview"
   },
   "dependencies": {
     "@headlessui/react": "^2.2.8",

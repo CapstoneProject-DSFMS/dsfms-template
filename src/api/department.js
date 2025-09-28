@@ -130,5 +130,31 @@ export const departmentAPI = {
       console.error('Error fetching department heads:', error);
       throw error;
     }
+  },
+
+  // Assign trainers to department
+  assignTrainersToDepartment: async (departmentId, trainerEids) => {
+    try {
+      const response = await apiClient.patch(`/departments/${departmentId}/add-trainers`, {
+        trainerEids
+      });
+      return response.data;
+    } catch (error) {
+      console.error('Error assigning trainers to department:', error);
+      throw error;
+    }
+  },
+
+  // Remove trainers from department
+  removeTrainersFromDepartment: async (departmentId, trainerIds) => {
+    try {
+      const response = await apiClient.delete(`/departments/${departmentId}/trainers`, {
+        data: { trainerIds }
+      });
+      return response.data;
+    } catch (error) {
+      console.error('Error removing trainers from department:', error);
+      throw error;
+    }
   }
 };

@@ -3,6 +3,7 @@ import { Modal, Form, Button, Alert } from 'react-bootstrap';
 import { Envelope, X } from 'react-bootstrap-icons';
 import { toast } from 'react-toastify';
 import { API_CONFIG } from '../../config/api';
+import { getCurrentBasename } from '../../utils/navigation';
 
 const ForgotPasswordModal = ({ show, onHide }) => {
   const [email, setEmail] = useState('');
@@ -22,7 +23,7 @@ const ForgotPasswordModal = ({ show, onHide }) => {
         },
         body: JSON.stringify({
           email: email,
-          magicLink: "https://capstoneproject-dsfms.github.io/dsfms-template/reset-password/"
+          magicLink: `${window.location.origin}${getCurrentBasename()}/reset-password/`
         }),
       });
 
