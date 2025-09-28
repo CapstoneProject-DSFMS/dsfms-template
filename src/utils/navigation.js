@@ -31,7 +31,24 @@ export const getCurrentBasename = () => {
       return storedBasename;
     }
     
+    // Check referrer for basename
+    if (document.referrer) {
+      try {
+        const referrerUrl = new URL(document.referrer);
+        if (referrerUrl.hostname === hostname) {
+          const referrerPath = referrerUrl.pathname;
+          const referrerSegments = referrerPath.split('/').filter(Boolean);
+          if (referrerSegments.length > 0) {
+            return `/${referrerSegments[0]}`;
+          }
+        }
+      } catch (e) {
+        console.log('Error parsing referrer:', e);
+      }
+    }
+    
     // Default for GitHub Pages with repo name
+    // Hardcode for this specific repo to avoid 404
     return "/dsfms-template";
   }
   
@@ -44,6 +61,10 @@ export const smartRedirect = (path = '/') => {
   const fullPath = basename === '/' ? path : `${basename}${path}`;
   
   console.log(`🔄 Smart redirect: ${path} -> ${fullPath}`);
+  console.log(`📍 Current URL: ${window.location.href}`);
+  console.log(`📍 Basename: ${basename}`);
+  console.log(`📍 Full path: ${fullPath}`);
+  
   window.location.href = fullPath;
 };
 
@@ -56,8 +77,25 @@ export const initializeBasename = () => {
   }
 };
 
+// Check and redirect if user is on wrong URL
+export const checkAndRedirectIfNeeded = () => {
+  const hostname = window.location.hostname;
+  if (hostname.includes('.github.io') && window.location.pathname === '/') {
+    console.log('🔧 Detected wrong URL, redirecting to correct path');
+    window.location.href = 'https://capstoneproject-dsfms.github.io/dsfms-template/';
+  }
+};
+
 // Navigate to login page with proper basename
 export const redirectToLogin = () => {
+  // Force redirect to correct GitHub Pages URL
+  const hostname = window.location.hostname;
+  if (hostname.includes('.github.io') && !window.location.pathname.includes('/dsfms-template')) {
+    console.log('🔧 Force redirect to correct GitHub Pages URL');
+    window.location.href = 'https://capstoneproject-dsfms.github.io/dsfms-template/';
+    return;
+  }
+  
   smartRedirect('/');
 };
 
