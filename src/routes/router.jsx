@@ -10,14 +10,29 @@ import DepartmentManagementPage from '../pages/DepartmentManagement/DepartmentMa
 import DepartmentDetailPage from '../pages/DepartmentManagement/DepartmentDetailPage'
 import ProfilePage from '../pages/Profile/ProfilePage'
 
-// Determine basename based on environment
+// Determine basename based on environment and deployment
 const getBasename = () => {
-  // For development, don't use basename to avoid routing issues
+  // Check if we're in development
   if (import.meta.env.DEV) {
     return "/";
   }
-  // For production (GitHub Pages), use the repository name as basename
-  return "/dsfms-template";
+  
+  // For production, check environment variable first (most flexible)
+  if (import.meta.env.VITE_BASE_PATH) {
+    return import.meta.env.VITE_BASE_PATH;
+  }
+  
+  // Auto-detect from current URL (works for any repo)
+  const pathname = window.location.pathname;
+  const pathSegments = pathname.split('/').filter(Boolean);
+  
+  // If we're on GitHub Pages, the first segment is usually the repo name
+  if (pathSegments.length > 0 && pathname.includes('.github.io')) {
+    return `/${pathSegments[0]}`;
+  }
+  
+  // Default for root deployment
+  return "/";
 };
 
 export const router = createBrowserRouter([
@@ -88,7 +103,6 @@ export const router = createBrowserRouter([
     element: <Login />,
     errorElement: <ErrorBoundary />
   }
-],
-  {
-    basename: getBasename(),
-  })
+], {
+  basename: getBasename(),
+})
