@@ -13,23 +13,51 @@ export const AuthProvider = ({ children }) => {
 
   // Check for existing auth data on mount
   useEffect(() => {
-    const initializeAuth = () => {
+    const initializeAuth = async () => {
       try {
         const token = localStorage.getItem('authToken');
         const userData = localStorage.getItem('user');
+        const refreshTokenValue = localStorage.getItem('refreshToken');
         
-        if (token && userData) {
+        if (token && userData && refreshTokenValue) {
           try {
-            const parsedUserData = JSON.parse(userData);
-            setUser(parsedUserData);
-            setIsAuthenticated(true);
+            // Check if token is expired
+            const tokenPayload = JSON.parse(atob(token.split('.')[1]));
+            const currentTime = Date.now() / 1000;
+            
+            if (tokenPayload.exp < currentTime) {
+              console.log('🔄 Token expired on initialization, attempting refresh...');
+              // Token expired, try to refresh
+              try {
+                const response = await authAPI.refreshToken(refreshTokenValue);
+                localStorage.setItem('authToken', response.access_token);
+                localStorage.setItem('refreshToken', response.refresh_token);
+                
+                const parsedUserData = JSON.parse(userData);
+                setUser(parsedUserData);
+                setIsAuthenticated(true);
+                console.log('✅ Token refreshed successfully on initialization');
+              } catch (refreshError) {
+                console.error('❌ Token refresh failed on initialization:', refreshError);
+                authAPI.logout();
+                setUser(null);
+                setIsAuthenticated(false);
+              }
+            } else {
+              // Token is still valid
+              const parsedUserData = JSON.parse(userData);
+              setUser(parsedUserData);
+              setIsAuthenticated(true);
+              console.log('✅ Valid token found on initialization');
+            }
           } catch (error) {
-            // Clear invalid data
+            console.error('❌ Error parsing token or user data:', error);
             authAPI.logout();
             setUser(null);
             setIsAuthenticated(false);
           }
         } else {
+          console.log('❌ No valid auth data found');
           setUser(null);
           setIsAuthenticated(false);
         }
@@ -44,33 +72,71 @@ export const AuthProvider = ({ children }) => {
       }
     };
 
-    // Add a small delay to ensure localStorage is available
-    const timer = setTimeout(initializeAuth, 100);
-    return () => clearTimeout(timer);
+    // Initialize immediately without delay to prevent race condition
+    initializeAuth();
   }, []);
 
-  // Auto refresh token before expiry
+  // Token validation on mount and periodic check
   useEffect(() => {
-    if (!isAuthenticated) return;
+    if (!isAuthenticated || isLoading) return;
 
-    const refreshTokenInterval = setInterval(async () => {
-      const refreshToken = localStorage.getItem('refreshToken');
-      if (refreshToken) {
+    const validateToken = async () => {
+      const token = localStorage.getItem('authToken');
+      const refreshTokenValue = localStorage.getItem('refreshToken');
+      
+      if (!token || !refreshTokenValue) {
+        console.log('❌ Missing token or refresh token, logging out');
+        logout();
+        return;
+      }
+
+      try {
+        // Check if token is expired by trying to decode it
+        const tokenPayload = JSON.parse(atob(token.split('.')[1]));
+        const currentTime = Date.now() / 1000;
+        const timeUntilExpiry = tokenPayload.exp - currentTime;
+        
+        console.log(`⏰ Token expires in ${Math.round(timeUntilExpiry / 60)} minutes`);
+        
+        // If token expires in less than 5 minutes, refresh it
+        if (timeUntilExpiry < 300) {
+          console.log('🔄 Token expires soon, refreshing...');
+          const refreshResult = await refreshToken();
+          if (!refreshResult.success) {
+            console.error('❌ Token refresh failed in validation');
+            logout();
+          }
+        }
+      } catch (error) {
+        console.error('❌ Token validation failed:', error);
+        // Token is invalid, try to refresh
         try {
-          const response = await authAPI.refreshToken(refreshToken);
-          localStorage.setItem('authToken', response.access_token);
-          localStorage.setItem('refreshToken', response.refresh_token);
-          console.log('Token refreshed successfully');
-        } catch (error) {
-          console.error('Token refresh failed:', error);
-          // Refresh failed, logout user
+          console.log('🔄 Token invalid, attempting refresh...');
+          const refreshResult = await refreshToken();
+          if (!refreshResult.success) {
+            console.error('❌ Token refresh failed after validation error');
+            logout();
+          }
+        } catch (refreshError) {
+          console.error('❌ Token refresh failed:', refreshError);
           logout();
         }
       }
-    }, 5 * 60 * 1000); // Refresh every 5 minutes
+    };
 
-    return () => clearInterval(refreshTokenInterval);
-  }, [isAuthenticated]);
+    // Add a small delay before starting validation to ensure initialization is complete
+    const validationTimer = setTimeout(() => {
+      validateToken();
+      
+      // Check token every 2 minutes
+      const tokenCheckInterval = setInterval(validateToken, 2 * 60 * 1000);
+      
+      // Store interval ID for cleanup
+      return () => clearInterval(tokenCheckInterval);
+    }, 500);
+
+    return () => clearTimeout(validationTimer);
+  }, [isAuthenticated, isLoading]);
 
   // Login function
   const login = async (credentials) => {
