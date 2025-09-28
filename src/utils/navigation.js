@@ -12,8 +12,26 @@ export const getCurrentBasename = () => {
     return import.meta.env.VITE_BASE_PATH;
   }
   
-  const pathname = window.location.pathname;
-  if (pathname.startsWith('/dsfms-template')) {
+  // Check if we're on GitHub Pages
+  const hostname = window.location.hostname;
+  if (hostname.includes('.github.io')) {
+    // For GitHub Pages, check if we have a repo name in the path
+    const pathname = window.location.pathname;
+    const pathSegments = pathname.split('/').filter(Boolean);
+    
+    // If we're on GitHub Pages and have a repo name, use it
+    if (pathSegments.length > 0 && pathSegments[0] !== '') {
+      return `/${pathSegments[0]}`;
+    }
+    
+    // If we're on GitHub Pages but no repo name in path, 
+    // check if we came from a repo URL (from referrer or stored)
+    const storedBasename = localStorage.getItem('app_basename');
+    if (storedBasename) {
+      return storedBasename;
+    }
+    
+    // Default for GitHub Pages with repo name
     return "/dsfms-template";
   }
   
@@ -27,6 +45,15 @@ export const smartRedirect = (path = '/') => {
   
   console.log(`🔄 Smart redirect: ${path} -> ${fullPath}`);
   window.location.href = fullPath;
+};
+
+// Initialize and store basename for future use
+export const initializeBasename = () => {
+  const basename = getCurrentBasename();
+  if (basename !== '/') {
+    localStorage.setItem('app_basename', basename);
+    console.log(`📍 Stored basename: ${basename}`);
+  }
 };
 
 // Navigate to login page with proper basename
