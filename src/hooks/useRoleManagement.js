@@ -31,6 +31,7 @@ export const useRoleManagement = () => {
           createdAt: role.createdAt ? role.createdAt.split('T')[0] : '',
           lastModified: role.updatedAt ? role.updatedAt.split('T')[0] : '',
           isActive: role.isActive,
+          permissions: role.permissions || [], // Include permissions
           // Keep original API data for reference
           originalData: role
         }));
@@ -67,10 +68,21 @@ export const useRoleManagement = () => {
     setSelectedStatuses([]);
   };
 
-  const handleView = (role) => {
-    setSelectedRole(role);
-    setModalMode('view');
-    setModalShow(true);
+  const handleView = async (role) => {
+    try {
+      setLoading(true);
+      // Fetch fresh role data with permissions from API
+      const response = await roleAPI.getRoleById(role.id);
+      setSelectedRole(response);
+      setModalMode('view');
+      setModalShow(true);
+    } catch (err) {
+      const errorMessage = mapError(err, { context: 'fetch_role_details' });
+      setError(errorMessage);
+      console.error('Error fetching role details:', err);
+    } finally {
+      setLoading(false);
+    }
   };
 
   const handleEdit = async (role) => {
@@ -89,6 +101,7 @@ export const useRoleManagement = () => {
         createdAt: roleDetail.createdAt ? roleDetail.createdAt.split('T')[0] : '',
         lastModified: roleDetail.updatedAt ? roleDetail.updatedAt.split('T')[0] : '',
         isActive: roleDetail.isActive,
+        permissions: roleDetail.permissions || [], // Include permissions
         originalData: roleDetail
       };
       
