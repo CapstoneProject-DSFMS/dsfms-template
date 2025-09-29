@@ -4,7 +4,8 @@ import react from '@vitejs/plugin-react'
 // https://vite.dev/config/
 export default defineConfig({
   plugins: [react()],
-  base: process.env.NODE_ENV === 'production' ? '/dsfms-template/' : '/',
+  // Use environment variable for base path - proper GitHub Pages setup
+  base: process.env.VITE_BASE_PATH || '/',
   build: {
     outDir: 'dist',
     assetsDir: 'assets',
