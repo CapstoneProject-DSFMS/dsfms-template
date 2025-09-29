@@ -193,7 +193,7 @@ apiClient.interceptors.response.use(
       localStorage.removeItem('authToken');
       localStorage.removeItem('refreshToken');
       localStorage.removeItem('user');
-      window.location.href = '/';
+      redirectToLogin();
     }
     
     return Promise.reject(error);
