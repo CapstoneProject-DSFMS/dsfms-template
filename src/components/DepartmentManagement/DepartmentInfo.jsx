@@ -1,5 +1,5 @@
 import React from 'react';
-import { Row, Col, Badge } from 'react-bootstrap';
+import { Row, Col } from 'react-bootstrap';
 import { Calendar, People, Book } from 'react-bootstrap-icons';
 
 const DepartmentInfo = ({ department }) => {
@@ -12,13 +12,6 @@ const DepartmentInfo = ({ department }) => {
     });
   };
 
-  const getStatusBadge = (isActive) => {
-    return isActive === 'ACTIVE' ? (
-      <Badge bg="success">Active</Badge>
-    ) : (
-      <Badge bg="secondary">Inactive</Badge>
-    );
-  };
 
   return (
     <div className="department-info">
@@ -39,10 +32,6 @@ const DepartmentInfo = ({ department }) => {
               <div className="info-item">
                 <span className="info-label">Code:</span>
                 <span className="info-value">{department.code || 'N/A'}</span>
-              </div>
-              <div className="info-item">
-                <span className="info-label">Status:</span>
-                <span className="info-value">{getStatusBadge(department.isActive)}</span>
               </div>
               <div className="info-item">
                 <span className="info-label">Description:</span>
@@ -72,9 +61,12 @@ const DepartmentInfo = ({ department }) => {
                 <span className="info-value">{department.trainerCount || 0}</span>
               </div>
               <div className="info-item">
-                <span className="info-label">Head User:</span>
+                <span className="info-label">Head of Department:</span>
                 <span className="info-value">
-                  {department.headUser ? department.headUser.name : 'Not assigned'}
+                  {department.headUser ? 
+                    `${department.headUser.firstName} ${department.headUser.lastName}` : 
+                    'Not assigned'
+                  }
                 </span>
               </div>
             </div>
