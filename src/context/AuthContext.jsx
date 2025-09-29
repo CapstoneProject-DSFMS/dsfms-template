@@ -64,7 +64,6 @@ export const AuthProvider = ({ children }) => {
             setIsAuthenticated(false);
           }
         } else {
-          console.log('❌ No valid auth data found');
           setUser(null);
           setIsAuthenticated(false);
         }

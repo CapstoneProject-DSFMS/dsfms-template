@@ -325,10 +325,15 @@ const useDepartmentManagement = () => {
   };
 
   // Get available users for department head selection
-  const getAvailableUsers = () => {
-    // This would typically fetch from a users API
-    // For now, return empty array as we don't have user data in the department API
-    return [];
+  const getAvailableUsers = async () => {
+    try {
+      const response = await departmentAPI.getDepartmentHeads();
+      return response || [];
+    } catch (error) {
+      console.error('Error fetching department heads:', error);
+      toast.error('Failed to load department heads');
+      return [];
+    }
   };
 
   // Manual refresh function

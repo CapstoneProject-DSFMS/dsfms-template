@@ -132,9 +132,10 @@ const AddTrainersModal = ({ show, onHide, departmentId, assignedTrainers = [], o
 
   return (
     <Modal show={show} onHide={handleClose} size="xl" centered>
-      <Modal.Header className="border-0 pb-0" style={{ 
+      <Modal.Header className="border-0 pb-0 d-flex align-items-center justify-content-between" style={{ 
         background: 'linear-gradient(135deg, var(--bs-primary) 0%, var(--bs-secondary) 100%)' 
       }}>
+        <div></div>
         <Modal.Title className="d-flex align-items-center text-white">
           <PersonPlus className="me-2" size={20} />
           Add Trainers to Department
@@ -142,7 +143,7 @@ const AddTrainersModal = ({ show, onHide, departmentId, assignedTrainers = [], o
         <Button
           variant="link"
           onClick={handleClose}
-          className="p-0 ms-auto"
+          className="p-0"
           style={{ 
             fontSize: '1.5rem', 
             lineHeight: 1,
@@ -156,7 +157,7 @@ const AddTrainersModal = ({ show, onHide, departmentId, assignedTrainers = [], o
       
       <Modal.Body className="pt-0">
         <div className="mb-4">
-          <p className="text-muted mb-3">
+          <p className="text-muted mb-3" style={{ padding: '20px 24px' }}>
             Select trainers to assign to this department.
           </p>
           
@@ -187,35 +188,35 @@ const AddTrainersModal = ({ show, onHide, departmentId, assignedTrainers = [], o
             <Table hover className="mb-0">
               <thead className="table-light sticky-top">
                 <tr>
-                  <th style={{ width: '50px' }}>
+                  <th style={{ width: '50px', padding: '16px 12px' }}>
                     <Form.Check
                       type="checkbox"
                       checked={allSelected}
                       onChange={(e) => handleSelectAll(e.target.checked)}
                     />
                   </th>
-                  <th>EID</th>
-                  <th>Full Name</th>
-                  <th>Email</th>
+                  <th style={{ padding: '16px 12px' }}>EID</th>
+                  <th style={{ padding: '16px 12px' }}>Full Name</th>
+                  <th style={{ padding: '16px 12px' }}>Email</th>
                 </tr>
               </thead>
               <tbody>
                 {filteredTrainers.map((trainer) => (
                   <tr key={trainer.id}>
-                    <td>
+                    <td style={{ padding: '16px 12px' }}>
                       <Form.Check
                         type="checkbox"
                         checked={selectedTrainers.includes(trainer.id)}
                         onChange={(e) => handleTrainerSelect(trainer.id, e.target.checked)}
                       />
                     </td>
-                    <td>
+                    <td style={{ padding: '16px 12px' }}>
                       <code className="text-primary">{trainer.eid}</code>
                     </td>
-                    <td>
+                    <td style={{ padding: '16px 12px' }}>
                       <span>{getFullName(trainer)}</span>
                     </td>
-                    <td>{trainer.email}</td>
+                    <td style={{ padding: '16px 12px' }}>{trainer.email}</td>
                   </tr>
                 ))}
               </tbody>
