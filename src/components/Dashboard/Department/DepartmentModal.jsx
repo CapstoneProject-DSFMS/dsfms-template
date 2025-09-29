@@ -39,6 +39,8 @@ const DepartmentModal = ({ show, department, mode, onSave, onClose, availableUse
       newErrors.name = 'Department name is required';
     } else if (formData.name.trim().length < 3) {
       newErrors.name = 'Department name must be at least 3 characters';
+    } else if (!/^[a-zA-Z0-9\s]+$/.test(formData.name.trim())) {
+      newErrors.name = 'Department name cannot contain special characters';
     }
 
     if (!formData.code.trim()) {
@@ -205,7 +207,7 @@ const DepartmentModal = ({ show, department, mode, onSave, onClose, availableUse
                   <option value="">Select department head</option>
                   {availableUsers.map(user => (
                     <option key={user.id} value={user.id}>
-                      {user.name} ({user.email}) - {user.role}
+                      {user.firstName} {user.lastName} ({user.eid})
                     </option>
                   ))}
                 </Form.Select>
