@@ -132,6 +132,7 @@ export const departmentAPI = {
     }
   },
 
+
   // Assign trainers to department
   assignTrainersToDepartment: async (departmentId, trainerEids) => {
     try {

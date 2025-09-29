@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { Container, Row, Col, Button, Card, Spinner } from 'react-bootstrap';
 import { useParams, useNavigate } from 'react-router-dom';
 import { ArrowLeft } from 'react-bootstrap-icons';
@@ -24,6 +24,7 @@ const transformDepartmentData = (response) => {
     courseCount: response.courseCount || 0,
     traineeCount: response.traineeCount || 0,
     trainerCount: response.trainerCount || 0,
+    trainers: response.trainers || [], // Include trainers data
     createdAt: response.createdAt,
     updatedAt: response.updatedAt,
     deletedAt: response.deletedAt
@@ -38,32 +39,32 @@ const DepartmentDetailPage = () => {
   const [error, setError] = useState(null);
   const [activeTab, setActiveTab] = useState('info'); // 'info', 'trainers', or 'edit'
 
-  useEffect(() => {
-    const loadDepartment = async () => {
-      if (!id) {
-        toast.error('Department ID is required');
-        setLoading(false);
-        return;
-      }
+  const loadDepartment = useCallback(async () => {
+    if (!id) {
+      toast.error('Department ID is required');
+      setLoading(false);
+      return;
+    }
 
-      setLoading(true);
-      setError(null);
-      try {
-        const response = await departmentAPI.getDepartmentById(id);
-        // Transform API data to match expected format
-        const transformedDepartment = transformDepartmentData(response);
-        setDepartment(transformedDepartment);
-      } catch (err) {
-        console.error('Error loading department:', err);
-        toast.error('Failed to load department details');
-        setError('Failed to load department details');
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    loadDepartment();
+    setLoading(true);
+    setError(null);
+    try {
+      const response = await departmentAPI.getDepartmentById(id);
+      // Transform API data to match expected format
+      const transformedDepartment = transformDepartmentData(response);
+      setDepartment(transformedDepartment);
+    } catch (err) {
+      console.error('Error loading department:', err);
+      toast.error('Failed to load department details');
+      setError('Failed to load department details');
+    } finally {
+      setLoading(false);
+    }
   }, [id]);
+
+  useEffect(() => {
+    loadDepartment();
+  }, [loadDepartment]);
 
   const handleBack = () => {
     navigate('/admin/departments');
@@ -131,6 +132,7 @@ const DepartmentDetailPage = () => {
         return (
           <AddTrainersToDepartment 
             department={department}
+            onDepartmentUpdate={loadDepartment}
           />
         );
       case 'edit':
