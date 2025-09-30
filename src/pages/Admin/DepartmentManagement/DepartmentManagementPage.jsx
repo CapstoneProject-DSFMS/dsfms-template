@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Container, Row, Col, Button, Card } from 'react-bootstrap';
 import { Plus } from 'react-bootstrap-icons';
 import { useNavigate } from 'react-router-dom';
@@ -10,9 +10,9 @@ import {
   DisableDepartmentModal,
   AssignInstructorsModal,
   DepartmentDetailsModal
-} from '../../components/Dashboard/Department';
-import { SearchBar } from '../../components/Common';
-import useDepartmentManagement from '../../hooks/useDepartmentManagement';
+} from '../../../components/Admin/Department';
+import { SearchBar } from '../../../components/Common';
+import useDepartmentManagement from '../../../hooks/useDepartmentManagement';
 
 const DepartmentManagementPage = () => {
   const navigate = useNavigate();
@@ -55,6 +55,24 @@ const DepartmentManagementPage = () => {
   // Checkbox filter states
   const [selectedTypes, setSelectedTypes] = useState([]);
   const [selectedStatuses, setSelectedStatuses] = useState([]);
+  
+  // Available users for department head selection
+  const [availableUsers, setAvailableUsers] = useState([]);
+
+  // Load available users for department head selection
+  useEffect(() => {
+    const loadAvailableUsers = async () => {
+      try {
+        const users = await getAvailableUsers();
+        setAvailableUsers(users);
+      } catch (error) {
+        console.error('Error loading available users:', error);
+        setAvailableUsers([]);
+      }
+    };
+
+    loadAvailableUsers();
+  }, []);
 
   // Modal handlers
   const handleAddDepartment = () => {
@@ -229,7 +247,6 @@ const DepartmentManagementPage = () => {
     return typeMatch && statusMatch;
   });
 
-  const availableUsers = getAvailableUsers();
 
   return (
     <Container fluid className="py-4 department-management-page">

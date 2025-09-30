@@ -2,10 +2,10 @@ import React, { useState } from 'react';
 import { Container, Card, Row, Col, Button, Dropdown } from 'react-bootstrap';
 import { toast } from 'react-toastify';
 import { Plus, ThreeDotsVertical, Eye, Pencil, PersonX } from 'react-bootstrap-icons';
-import { RoleTable, RoleModal, RoleFilterPanel, DisableRoleModal } from '../../components/Dashboard/Role';
-import { SearchBar, PermissionWrapper } from '../../components/Common';
-import { useRoleManagement } from '../../hooks/useRoleManagement';
-import { PERMISSIONS_BY_UC } from '../../constants/permissions';
+import { RoleTable, RoleModal, RoleFilterPanel, DisableRoleModal } from '../../../components/Admin/Role';
+import { SearchBar, PermissionWrapper } from '../../../components/Common';
+import { useRoleManagement } from '../../../hooks/useRoleManagement';
+import { PERMISSIONS_BY_UC } from '../../../constants/permissions';
 
 const RoleManagementPage = () => {
   const [disableModalShow, setDisableModalShow] = useState(false);

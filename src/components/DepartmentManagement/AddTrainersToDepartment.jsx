@@ -25,6 +25,8 @@ const AddTrainersToDepartment = ({ department, onDepartmentUpdate }) => {
         loading={false}
         showAddButton={true}
         onAddClick={() => setShowAddModal(true)}
+        departmentId={department?.id}
+        onTrainerRemoved={handleTrainersAdded}
       />
 
       {/* Add Trainers Modal */}
