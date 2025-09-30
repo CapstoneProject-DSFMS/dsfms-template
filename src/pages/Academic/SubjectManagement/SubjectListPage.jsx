@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Container, Row, Col, Card, Button, Table, Badge, Dropdown } from 'react-bootstrap';
 import { Plus, ThreeDotsVertical, Eye, Pencil, Trash, Upload } from 'react-bootstrap-icons';
-import SubjectModal from '../../../components/Academic/SubjectModal';
+import SubjectModal from '../../../components/Academic/Subject/SubjectModal';
 
 const SubjectListPage = () => {
   const [showModal, setShowModal] = useState(false);

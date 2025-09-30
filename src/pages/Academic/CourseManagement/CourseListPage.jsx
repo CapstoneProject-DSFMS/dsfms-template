@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Container, Row, Col, Card, Button, Table, Badge, Dropdown } from 'react-bootstrap';
 import { Plus, ThreeDotsVertical, Eye, Pencil, Trash } from 'react-bootstrap-icons';
-import CourseModal from '../../../components/Academic/CourseModal';
+import CourseModal from '../../../components/Academic/Course/CourseModal';
 
 const CourseListPage = () => {
   const [showModal, setShowModal] = useState(false);
