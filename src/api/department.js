@@ -147,10 +147,10 @@ export const departmentAPI = {
   },
 
   // Remove trainers from department
-  removeTrainersFromDepartment: async (departmentId, trainerIds) => {
+  removeTrainersFromDepartment: async (departmentId, trainerEids) => {
     try {
-      const response = await apiClient.delete(`/departments/${departmentId}/trainers`, {
-        data: { trainerIds }
+      const response = await apiClient.patch(`/departments/${departmentId}/remove-trainers`, {
+        trainerEids
       });
       return response.data;
     } catch (error) {
