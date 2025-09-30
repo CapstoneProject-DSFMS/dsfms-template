@@ -2,12 +2,12 @@ import React, { useState } from 'react';
 import { Container, Card, Row, Col, Button, Dropdown } from 'react-bootstrap';
 import { toast } from 'react-toastify';
 import { Plus, Upload, Funnel, ChevronDown } from 'react-bootstrap-icons';
-import { UserTable, UserModal, BulkImportModal, DisableUserModal, FilterPanel } from '../../components/Dashboard/User';
-import RoleChangeConfirmModal from '../../components/Dashboard/User/RoleChangeConfirmModal';
-import { SearchBar, PermissionWrapper } from '../../components/Common';
-import { useUserManagementAPI } from '../../hooks/useUserManagementAPI';
-import { PERMISSIONS_BY_UC } from '../../constants/permissions';
-import '../../styles/scrollable-table.css';
+import { UserTable, UserModal, BulkImportModal, DisableUserModal, FilterPanel } from '../../../components/Admin/User';
+import RoleChangeConfirmModal from '../../../components/Admin/User/RoleChangeConfirmModal';
+import { SearchBar, PermissionWrapper } from '../../../components/Common';
+import { useUserManagementAPI } from '../../../hooks/useUserManagementAPI';
+import { PERMISSIONS_BY_UC } from '../../../constants/permissions';
+import '../../../styles/scrollable-table.css';
 
 const UserManagementPage = () => {
   const [disableModalShow, setDisableModalShow] = useState(false);

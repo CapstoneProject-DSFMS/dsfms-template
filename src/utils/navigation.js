@@ -12,7 +12,6 @@ export const smartRedirect = (path = '/') => {
   const basename = getCurrentBasename();
   const fullPath = basename === '/' ? path : `${basename}${path}`;
   
-  console.log(`🔄 Redirecting: ${path} -> ${fullPath}`);
   window.location.href = fullPath;
 };
 
@@ -29,11 +28,9 @@ export const redirectToDashboard = () => {
 // Initialize basename (for compatibility)
 export const initializeBasename = () => {
   const basename = getCurrentBasename();
-  console.log(`📍 App basename: ${basename}`);
 };
 
 // Check and redirect if needed (for compatibility)
 export const checkAndRedirectIfNeeded = () => {
   // No longer needed with simple basename logic
-  console.log('📍 Basename check completed');
 };

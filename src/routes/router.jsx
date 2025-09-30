@@ -1,14 +1,22 @@
 import { createBrowserRouter } from 'react-router-dom'
 import { LayoutWrapper } from '../components/Layout'
 import { ProtectedRoute, ErrorBoundary } from '../components/Common'
+import RoleBasedRedirect from '../components/Common/RoleBasedRedirect'
 import Login from '../pages/Auth/Login'
 import ResetPasswordPage from '../pages/Auth/ResetPasswordPage'
-import Dashboard from '../pages/Dashboard/Dashboard'
-import UserManagementPage from '../pages/UserManagement/UserManagementPage'
-import RoleManagementPage from '../pages/RoleManagement/RoleManagementPage'
-import DepartmentManagementPage from '../pages/DepartmentManagement/DepartmentManagementPage'
-import DepartmentDetailPage from '../pages/DepartmentManagement/DepartmentDetailPage'
+import Dashboard from '../pages/Admin/Dashboard'
+import UserManagementPage from '../pages/Admin/UserManagement/UserManagementPage'
+import RoleManagementPage from '../pages/Admin/RoleManagement/RoleManagementPage'
+import DepartmentManagementPage from '../pages/Admin/DepartmentManagement/DepartmentManagementPage'
+import DepartmentDetailPage from '../pages/Admin/DepartmentManagement/DepartmentDetailPage'
 import ProfilePage from '../pages/Profile/ProfilePage'
+// Academic pages
+import AcademicDashboard from '../pages/Academic/AcademicDashboard'
+import CourseListPage from '../pages/Academic/CourseManagement/CourseListPage'
+import SubjectListPage from '../pages/Academic/SubjectManagement/SubjectListPage'
+import TraineeEnrollmentPage from '../pages/Academic/TraineeEnrollmentPage'
+import AssessmentFormsPage from '../pages/Academic/AssessmentFormsPage'
+import AssessmentHistoryPage from '../pages/Academic/AssessmentHistoryPage'
 
 // Proper GitHub Pages basename configuration
 const getBasename = () => {
@@ -43,7 +51,7 @@ export const router = createBrowserRouter([
     children: [
       {
         path: "",
-        element: <Dashboard />
+        element: <RoleBasedRedirect />
       },
       {
         path: "dashboard",
@@ -76,6 +84,53 @@ export const router = createBrowserRouter([
       {
         path: "system-config",
         element: <div>System Configuration Page</div>
+      }
+    ]
+  },
+  {
+    path: "/academic",
+    element: (
+      <ProtectedRoute>
+        <LayoutWrapper />
+      </ProtectedRoute>
+    ),
+    errorElement: <ErrorBoundary />,
+    children: [
+      {
+        path: "",
+        element: <AcademicDashboard />
+      },
+      {
+        path: "dashboard",
+        element: <AcademicDashboard />
+      },
+      {
+        path: "courses",
+        element: <CourseListPage />
+      },
+      {
+        path: "courses/create",
+        element: <div>Create Course Page</div>
+      },
+      {
+        path: "subjects",
+        element: <SubjectListPage />
+      },
+      {
+        path: "subjects/bulk-import",
+        element: <div>Bulk Import Subjects Page</div>
+      },
+      {
+        path: "enrollment",
+        element: <TraineeEnrollmentPage />
+      },
+      {
+        path: "assessment-forms",
+        element: <AssessmentFormsPage />
+      },
+      {
+        path: "assessment-history",
+        element: <AssessmentHistoryPage />
       }
     ]
   },
