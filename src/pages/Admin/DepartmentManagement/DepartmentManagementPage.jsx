@@ -10,9 +10,9 @@ import {
   DisableDepartmentModal,
   AssignInstructorsModal,
   DepartmentDetailsModal
-} from '../../components/Dashboard/Department';
-import { SearchBar } from '../../components/Common';
-import useDepartmentManagement from '../../hooks/useDepartmentManagement';
+} from '../../../components/Admin/Department';
+import { SearchBar } from '../../../components/Common';
+import useDepartmentManagement from '../../../hooks/useDepartmentManagement';
 
 const DepartmentManagementPage = () => {
   const navigate = useNavigate();

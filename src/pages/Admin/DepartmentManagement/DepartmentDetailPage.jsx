@@ -3,13 +3,13 @@ import { Container, Row, Col, Button, Card, Spinner } from 'react-bootstrap';
 import { useParams, useNavigate } from 'react-router-dom';
 import { ArrowLeft } from 'react-bootstrap-icons';
 import { toast } from 'react-toastify';
-import { departmentAPI } from '../../api';
-import DepartmentHeader from '../../components/DepartmentManagement/DepartmentHeader';
-import DepartmentTabs from '../../components/DepartmentManagement/DepartmentTabs';
-import EditDepartmentDetails from '../../components/DepartmentManagement/EditDepartmentDetails';
-import AddTrainersToDepartment from '../../components/DepartmentManagement/AddTrainersToDepartment';
-import DepartmentInfo from '../../components/DepartmentManagement/DepartmentInfo';
-import '../../styles/department-tabs.css';
+import { departmentAPI } from '../../../api';
+import DepartmentHeader from '../../../components/DepartmentManagement/DepartmentHeader';
+import DepartmentTabs from '../../../components/DepartmentManagement/DepartmentTabs';
+import EditDepartmentDetails from '../../../components/DepartmentManagement/EditDepartmentDetails';
+import AddTrainersToDepartment from '../../../components/DepartmentManagement/AddTrainersToDepartment';
+import DepartmentInfo from '../../../components/DepartmentManagement/DepartmentInfo';
+import '../../../styles/department-tabs.css';
 
 // Helper function to transform API data to expected format
 const transformDepartmentData = (response) => {
