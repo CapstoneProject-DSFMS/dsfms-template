@@ -129,17 +129,19 @@ export const usePermissions = () => {
 
     // Group permissions by module
     uiPermissions.forEach(permission => {
-      const module = permission.module;
-      if (!featureGroups[module]) {
-        featureGroups[module] = {
-          id: module,
-          name: `${module} Management`,
-          description: `Manage ${module.toLowerCase()} related permissions`,
+      const moduleId = permission.module;
+      const moduleName = permission.viewModule || `${permission.module} Management`;
+      
+      if (!featureGroups[moduleId]) {
+        featureGroups[moduleId] = {
+          id: moduleId,
+          name: moduleName,
+          description: `Manage ${moduleName.toLowerCase()} related permissions`,
           permissions: []
         };
       }
       
-      featureGroups[module].permissions.push({
+      featureGroups[moduleId].permissions.push({
         id: permission.id,
         title: permission.title,
         description: permission.description,
