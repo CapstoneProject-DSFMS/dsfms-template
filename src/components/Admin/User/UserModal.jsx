@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Modal, Form, Button, Row, Col } from 'react-bootstrap';
 import { X, Save, Eye } from 'react-bootstrap-icons';
 import { toast } from 'react-toastify';
+import { departmentAPI } from '../../../api/department';
 
 const UserModal = ({ show, user, mode, onSave, onClose }) => {
   const [formData, setFormData] = useState({
@@ -24,9 +25,29 @@ const UserModal = ({ show, user, mode, onSave, onClose }) => {
   });
   const [errors, setErrors] = useState({});
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [departments, setDepartments] = useState([]);
+  const [departmentsLoading, setDepartmentsLoading] = useState(false);
+  const roles = ['ADMINISTRATOR', 'DEPARTMENT_HEAD', 'TRAINER', 'TRAINEE', 'SQA_AUDITOR'];
 
-  const departments = ['IT', 'HR', 'Finance', 'Marketing', 'Operations', 'Sales', 'Flight Operations', 'Cabin Crew', 'Quality Assurance', 'Training', 'Engineering'];
-      const roles = ['ADMINISTRATOR', 'DEPARTMENT_HEAD', 'TRAINER', 'TRAINEE', 'SQA_AUDITOR'];
+  // Fetch departments from API
+  const fetchDepartments = async () => {
+    setDepartmentsLoading(true);
+    try {
+      const response = await departmentAPI.getDepartments();
+      const departmentsData = response.departments || response.data || [];
+      
+      // Transform to simple array of department names
+      const departmentNames = departmentsData.map(dept => dept.name);
+      setDepartments(departmentNames);
+    } catch (error) {
+      console.error('Error fetching departments:', error);
+      toast.error('Failed to load departments');
+      // Fallback to empty array
+      setDepartments([]);
+    } finally {
+      setDepartmentsLoading(false);
+    }
+  };
   const nations = [
     'Afghanistan', 'Albania', 'Algeria', 'Argentina', 'Armenia', 'Australia', 'Austria', 'Azerbaijan',
     'Bahrain', 'Bangladesh', 'Belarus', 'Belgium', 'Brazil', 'Bulgaria', 'Cambodia', 'Canada', 'Chile', 'China', 'Colombia', 'Croatia', 'Cyprus', 'Czech Republic',
@@ -38,6 +59,13 @@ const UserModal = ({ show, user, mode, onSave, onClose }) => {
     'Thailand', 'Turkey', 'Ukraine', 'United Arab Emirates', 'United Kingdom', 'United States', 'Uzbekistan',
     'Vietnam', 'Yemen'
   ];
+
+  // Fetch departments when modal opens
+  useEffect(() => {
+    if (show) {
+      fetchDepartments();
+    }
+  }, [show]);
 
   useEffect(() => {
     if (user && mode !== 'add') {
@@ -108,11 +136,11 @@ const UserModal = ({ show, user, mode, onSave, onClose }) => {
 
     if (!formData.phoneNumber.trim()) {
       newErrors.phoneNumber = 'Phone number is required';
-    } else if (!/^[\+]?[0-9\s\-\(\)]+$/.test(formData.phoneNumber)) {
+    } else if (!/^[+]?[0-9\s\-()]+$/.test(formData.phoneNumber)) {
       newErrors.phoneNumber = 'Phone number cannot contain letters';
     } else {
       // Remove all non-digit characters except + at the beginning
-      const cleanPhone = formData.phoneNumber.replace(/[^\d\+]/g, '');
+      const cleanPhone = formData.phoneNumber.replace(/[^\d+]/g, '');
       if (cleanPhone.length < 7 || cleanPhone.length > 16) {
         newErrors.phoneNumber = 'Phone number must be 7-16 digits';
       }
@@ -175,8 +203,9 @@ const UserModal = ({ show, user, mode, onSave, onClose }) => {
     setIsSubmitting(true);
     try {
       await onSave(formData);
-    } catch (error) {
+    } catch (err) {
       // Error handling is done in the parent component
+      console.error('Error in handleSubmit:', err);
     } finally {
       setIsSubmitting(false);
     }
@@ -431,13 +460,15 @@ const UserModal = ({ show, user, mode, onSave, onClose }) => {
                     value={formData.department}
                     onChange={(e) => handleInputChange('department', e.target.value)}
                     isInvalid={!!errors.department}
-                    disabled={isReadOnly}
+                    disabled={isReadOnly || departmentsLoading}
                     style={{
                       borderColor: errors.department ? '#dc3545' : 'var(--bs-primary)',
                       borderWidth: '2px'
                     }}
                   >
-                    <option value="">Select a department</option>
+                    <option value="">
+                      {departmentsLoading ? 'Loading departments...' : 'Select a department'}
+                    </option>
                     {departments.map(dept => (
                       <option key={dept} value={dept}>{dept}</option>
                     ))}
