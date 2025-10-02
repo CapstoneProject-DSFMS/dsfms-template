@@ -11,8 +11,9 @@ import {
   AssignInstructorsModal,
   DepartmentDetailsModal
 } from '../../../components/Admin/Department';
-import { SearchBar } from '../../../components/Common';
+import { SearchBar, PermissionWrapper } from '../../../components/Common';
 import useDepartmentManagement from '../../../hooks/useDepartmentManagement';
+import { API_PERMISSIONS } from '../../../constants/apiPermissions';
 
 const DepartmentManagementPage = () => {
   const navigate = useNavigate();
@@ -256,15 +257,20 @@ const DepartmentManagementPage = () => {
            
             <Col xs={12} className="mt-2 mt-md-0 mb-3">
               <div className="d-flex justify-content-end">
-                <Button
-                  variant="primary"
-                  size="sm"
-                  onClick={handleAddDepartment}
-                  className="d-flex align-items-center"
+                <PermissionWrapper 
+                  permission={API_PERMISSIONS.DEPARTMENTS.CREATE}
+                  fallback={null}
                 >
-                  <Plus className="me-1" size={16} />
-                  Add Department
-                </Button>
+                  <Button
+                    variant="primary"
+                    size="sm"
+                    onClick={handleAddDepartment}
+                    className="d-flex align-items-center"
+                  >
+                    <Plus className="me-1" size={16} />
+                    Add Department
+                  </Button>
+                </PermissionWrapper>
               </div>
             </Col>
           </Row>

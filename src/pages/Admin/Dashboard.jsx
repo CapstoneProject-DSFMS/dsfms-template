@@ -9,22 +9,26 @@ import {
   XAxis, YAxis, CartesianGrid, Tooltip, Legend,
   ResponsiveContainer
 } from 'recharts';
-import { useAuth } from '../../hooks/useAuth';
-import { PERMISSIONS_BY_UC } from '../../constants/permissions';
-import { PermissionWrapper } from '../../components/Common';
+import { PermissionWrapper, ModuleAccess } from '../../components/Common';
 import { useDashboard } from '../../hooks/useDashboard';
+import { API_PERMISSIONS } from '../../constants/apiPermissions';
 
 const Dashboard = () => {
-  const { user, hasPermission } = useAuth();
   const {
     userStats,
     roleDistribution,
     departmentStats,
     userError,
-    roleError,
-    setUserError,
-    setRoleError
+    roleError
   } = useDashboard();
+
+  // Debug logging
+  React.useEffect(() => {
+    console.log('Dashboard mounted');
+    console.log('User stats:', userStats);
+    console.log('Role distribution:', roleDistribution);
+    console.log('Department stats:', departmentStats);
+  }, [userStats, roleDistribution, departmentStats]);
 
   // Show error toasts when error states change
   React.useEffect(() => {
@@ -49,64 +53,96 @@ const Dashboard = () => {
 
         <Row className="mb-4">
           <Col lg={8} md={12} className="mb-3 mb-lg-0">
-            <Card className="dashboard-chart-mobile">
-              <Card.Header>User Activity Trends</Card.Header>
-              <Card.Body>
-                <ResponsiveContainer width="100%" height={300} className="chart-mobile-height">
-                  <AreaChart data={userStats}>
-                    <CartesianGrid strokeDasharray="3 3" />
-                    <XAxis dataKey="month" />
-                    <YAxis />
-                    <Tooltip />
-                    <Legend />
-                    <Area type="monotone" dataKey="active" stroke="#8884d8" fill="#8884d8" name="Active Users" />
-                    <Area type="monotone" dataKey="inactive" stroke="#82ca9d" fill="#82ca9d" name="Inactive Users" />
-                  </AreaChart>
-                </ResponsiveContainer>
-              </Card.Body>
-            </Card>
+            <PermissionWrapper 
+              permission={API_PERMISSIONS.USERS.VIEW_ALL}
+              fallback={null}
+            >
+              <Card className="dashboard-chart-mobile">
+                <Card.Header>User Activity Trends</Card.Header>
+                <Card.Body>
+                  <ResponsiveContainer width="100%" height={300} className="chart-mobile-height">
+                    <AreaChart data={userStats}>
+                      <CartesianGrid strokeDasharray="3 3" />
+                      <XAxis dataKey="month" />
+                      <YAxis />
+                      <Tooltip />
+                      <Legend />
+                      <Area type="monotone" dataKey="active" stroke="#8884d8" fill="#8884d8" name="Active Users" />
+                      <Area type="monotone" dataKey="inactive" stroke="#82ca9d" fill="#82ca9d" name="Inactive Users" />
+                    </AreaChart>
+                  </ResponsiveContainer>
+                </Card.Body>
+              </Card>
+            </PermissionWrapper>
           </Col>
           <Col lg={4} md={12}>
-            <Card className="dashboard-chart-mobile">
-              <Card.Header>Role Distribution</Card.Header>
-              <Card.Body>
-                <ResponsiveContainer width="100%" height={300} className="chart-mobile-height">
-                  <PieChart>
-                    <Pie
-                      data={roleDistribution}
-                      dataKey="value"
-                      nameKey="name"
-                      cx="50%"
-                      cy="50%"
-                      fill="#8884d8"
-                    />
-                    <Tooltip />
-                    <Legend />
-                  </PieChart>
-                </ResponsiveContainer>
-              </Card.Body>
-            </Card>
+            <PermissionWrapper 
+              permission={API_PERMISSIONS.ROLES.VIEW_ALL}
+              fallback={null}
+            >
+              <Card className="dashboard-chart-mobile">
+                <Card.Header>Role Distribution</Card.Header>
+                <Card.Body>
+                  <ResponsiveContainer width="100%" height={300} className="chart-mobile-height">
+                    <PieChart>
+                      <Pie
+                        data={roleDistribution}
+                        dataKey="value"
+                        nameKey="name"
+                        cx="50%"
+                        cy="50%"
+                        fill="#8884d8"
+                      />
+                      <Tooltip />
+                      <Legend />
+                    </PieChart>
+                  </ResponsiveContainer>
+                </Card.Body>
+              </Card>
+            </PermissionWrapper>
           </Col>
         </Row>
 
         <Row>
           <Col>
-            <Card className="dashboard-chart-mobile">
-              <Card.Header>Department Statistics</Card.Header>
-              <Card.Body>
-                <ResponsiveContainer width="100%" height={300} className="chart-mobile-height">
-                  <BarChart data={departmentStats}>
-                    <CartesianGrid strokeDasharray="3 3" />
-                    <XAxis dataKey="name" />
-                    <YAxis />
-                    <Tooltip />
-                    <Legend />
-                    <Bar dataKey="users" fill="#8884d8" name="Users" />
-                    <Bar dataKey="courses" fill="#82ca9d" name="Courses" />
-                  </BarChart>
-                </ResponsiveContainer>
-              </Card.Body>
-            </Card>
+            <ModuleAccess module="DEPARTMENTS">
+              <Card className="dashboard-chart-mobile">
+                <Card.Header>Department Statistics</Card.Header>
+                <Card.Body>
+                  <ResponsiveContainer width="100%" height={300} className="chart-mobile-height">
+                    <BarChart data={departmentStats}>
+                      <CartesianGrid strokeDasharray="3 3" />
+                      <XAxis dataKey="name" />
+                      <YAxis />
+                      <Tooltip />
+                      <Legend />
+                      <Bar dataKey="users" fill="#8884d8" name="Users" />
+                      <Bar dataKey="courses" fill="#82ca9d" name="Courses" />
+                    </BarChart>
+                  </ResponsiveContainer>
+                </Card.Body>
+              </Card>
+            </ModuleAccess>
+          </Col>
+        </Row>
+
+        {/* Fallback content when no permissions - only show if user has no dashboard access */}
+        <Row>
+          <Col>
+            <PermissionWrapper 
+              permission={API_PERMISSIONS.DASHBOARD.VIEW}
+              fallback={
+                <Card className="dashboard-chart-mobile">
+                  <Card.Header>System Status</Card.Header>
+                  <Card.Body>
+                    <p className="text-muted">Dashboard is loading. Please wait for permissions to be loaded.</p>
+                    <p className="text-muted">If you continue to see this message, please contact your administrator.</p>
+                  </Card.Body>
+                </Card>
+              }
+            >
+              {/* This will be hidden if user has dashboard access */}
+            </PermissionWrapper>
           </Col>
         </Row>
 
