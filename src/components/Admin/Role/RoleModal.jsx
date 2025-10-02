@@ -287,7 +287,7 @@ const RoleModal = ({ show, role, mode, onSave, onClose }) => {
                 )}
                 
                 <div className="border rounded p-4 bg-light" style={{ 
-                  maxHeight: '250px', 
+                  maxHeight: '190px', 
                   overflowY: 'auto',
                   borderColor: 'var(--bs-primary)',
                   borderWidth: '2px'

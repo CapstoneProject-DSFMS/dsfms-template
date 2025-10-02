@@ -10,6 +10,7 @@ import RoleManagementPage from '../pages/Admin/RoleManagement/RoleManagementPage
 import DepartmentManagementPage from '../pages/Admin/DepartmentManagement/DepartmentManagementPage'
 import DepartmentDetailPage from '../pages/Admin/DepartmentManagement/DepartmentDetailPage'
 import ProfilePage from '../pages/Profile/ProfilePage'
+import { API_PERMISSIONS } from '../constants/apiPermissions'
 
 // Proper GitHub Pages basename configuration
 const getBasename = () => {
@@ -49,7 +50,10 @@ export const router = createBrowserRouter([
       {
         path: "dashboard",
         element: (
-          <PermissionRoute permission="GET /dashboard">
+          <PermissionRoute 
+            permission={API_PERMISSIONS.DASHBOARD.VIEW}
+            fallback={<div className="p-4 text-center text-muted">You don't have permission to access the dashboard.</div>}
+          >
             <Dashboard />
           </PermissionRoute>
         )
@@ -57,7 +61,10 @@ export const router = createBrowserRouter([
       {
         path: "users",
         element: (
-          <PermissionRoute permission="GET /users">
+          <PermissionRoute 
+            permission={API_PERMISSIONS.USERS.VIEW_ALL}
+            fallback={<div className="p-4 text-center text-muted">You don't have permission to access user management.</div>}
+          >
             <UserManagementPage />
           </PermissionRoute>
         )
@@ -65,7 +72,10 @@ export const router = createBrowserRouter([
       {
         path: "roles",
         element: (
-          <PermissionRoute permission="GET /roles">
+          <PermissionRoute 
+            permission={API_PERMISSIONS.ROLES.VIEW_ALL}
+            fallback={<div className="p-4 text-center text-muted">You don't have permission to access role management.</div>}
+          >
             <RoleManagementPage />
           </PermissionRoute>
         )
@@ -73,7 +83,10 @@ export const router = createBrowserRouter([
       {
         path: "departments",
         element: (
-          <PermissionRoute permission="GET /departments">
+          <PermissionRoute 
+            permission={API_PERMISSIONS.DEPARTMENTS.VIEW_ALL}
+            fallback={<div className="p-4 text-center text-muted">You don't have permission to access department management.</div>}
+          >
             <DepartmentManagementPage />
           </PermissionRoute>
         )
@@ -81,7 +94,10 @@ export const router = createBrowserRouter([
       {
         path: "departments/:id",
         element: (
-          <PermissionRoute permission="GET /departments/:departmentId">
+          <PermissionRoute 
+            permission={API_PERMISSIONS.DEPARTMENTS.VIEW_DETAIL}
+            fallback={<div className="p-4 text-center text-muted">You don't have permission to view department details.</div>}
+          >
             <DepartmentDetailPage />
           </PermissionRoute>
         )
@@ -89,7 +105,10 @@ export const router = createBrowserRouter([
       {
         path: "profile",
         element: (
-          <PermissionRoute permission="GET /profile">
+          <PermissionRoute 
+            permission={API_PERMISSIONS.PROFILES.VIEW}
+            fallback={<div className="p-4 text-center text-muted">You don't have permission to access your profile.</div>}
+          >
             <ProfilePage />
           </PermissionRoute>
         )
@@ -97,7 +116,10 @@ export const router = createBrowserRouter([
       {
         path: "forms",
         element: (
-          <PermissionRoute permission="GET /templates">
+          <PermissionRoute 
+            permission={API_PERMISSIONS.TEMPLATES.VIEW_ALL}
+            fallback={<div className="p-4 text-center text-muted">You don't have permission to access form templates.</div>}
+          >
             <div>Forms Page</div>
           </PermissionRoute>
         )
@@ -105,7 +127,10 @@ export const router = createBrowserRouter([
       {
         path: "system-config",
         element: (
-          <PermissionRoute permission="GET /global-fields">
+          <PermissionRoute 
+            permission={API_PERMISSIONS.GLOBAL_FIELDS.VIEW_ALL}
+            fallback={<div className="p-4 text-center text-muted">You don't have permission to access system configuration.</div>}
+          >
             <div>System Configuration Page</div>
           </PermissionRoute>
         )

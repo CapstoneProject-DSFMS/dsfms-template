@@ -7,7 +7,7 @@ import {
   Shield,
   Building,
   FileText,
-  Airplane, // Add this import
+  Airplane,
   ChevronLeft,
   ChevronRight,
   Gear,
@@ -15,6 +15,7 @@ import {
 } from "react-bootstrap-icons";
 import logo from "../../assets/logo-light.png";
 import { usePermissions } from "../../hooks/usePermissions";
+import { API_PERMISSIONS } from "../../constants/apiPermissions";
 
 const Sidebar = ({ collapsed, onClose }) => {
   const { hasModuleAccess, hasPermission } = usePermissions();
@@ -25,7 +26,7 @@ const Sidebar = ({ collapsed, onClose }) => {
       label: "Dashboard",
       icon: House,
       path: "/admin/dashboard",
-      permission: "GET /dashboard",
+      permission: API_PERMISSIONS.DASHBOARD.VIEW,
       module: "DASHBOARD"
     },
     {
@@ -33,7 +34,7 @@ const Sidebar = ({ collapsed, onClose }) => {
       label: "User Management",
       icon: People,
       path: "/admin/users",
-      permission: "GET /users",
+      permission: API_PERMISSIONS.USERS.VIEW_ALL,
       module: "USERS"
     },
     {
@@ -41,7 +42,7 @@ const Sidebar = ({ collapsed, onClose }) => {
       label: "Role Management",
       icon: Shield,
       path: "/admin/roles",
-      permission: "GET /roles",
+      permission: API_PERMISSIONS.ROLES.VIEW_ALL,
       module: "ROLES"
     },
     {
@@ -49,7 +50,7 @@ const Sidebar = ({ collapsed, onClose }) => {
       label: "Departments",
       icon: Building,
       path: "/admin/departments",
-      permission: "GET /departments",
+      permission: API_PERMISSIONS.DEPARTMENTS.VIEW_ALL,
       module: "DEPARTMENTS"
     },
     {
@@ -57,7 +58,7 @@ const Sidebar = ({ collapsed, onClose }) => {
       label: "Form Templates",
       icon: FileText,
       path: "/admin/forms",
-      permission: "GET /templates",
+      permission: API_PERMISSIONS.TEMPLATES.VIEW_ALL,
       module: "TEMPLATES"
     },
     {
@@ -65,7 +66,7 @@ const Sidebar = ({ collapsed, onClose }) => {
       label: "System Configuration",
       icon: Gear,
       path: "/admin/system-config",
-      permission: "GET /global-fields",
+      permission: API_PERMISSIONS.GLOBAL_FIELDS.VIEW_ALL,
       module: "GLOBAL_FIELDS"
     },
   ];

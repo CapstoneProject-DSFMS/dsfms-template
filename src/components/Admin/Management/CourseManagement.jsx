@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { Card, Row, Col, Button, Table, Badge, Dropdown } from 'react-bootstrap';
 import { Plus, Eye, Pencil, Trash, ThreeDots } from 'react-bootstrap-icons';
 import { SearchBar, FilterDropdown, PermissionWrapper } from '../Common';
+import { API_PERMISSIONS } from '../../../constants/apiPermissions';
 
 const CourseManagement = () => {
   const [courses] = useState([
@@ -58,7 +59,7 @@ const CourseManagement = () => {
           </Col>
           <Col xs="auto">
             <PermissionWrapper 
-              permission="POST /courses"
+              permission={API_PERMISSIONS.COURSES.CREATE}
               fallback={null}
             >
               <Button
@@ -205,7 +206,7 @@ const CourseManagement = () => {
                           View Details
                         </Dropdown.Item>
                         <PermissionWrapper 
-                          permission="POST /courses"
+                          permission={API_PERMISSIONS.COURSES.UPDATE}
                           fallback={null}
                         >
                           <Dropdown.Item className="text-primary-custom d-flex align-items-center">
@@ -214,7 +215,7 @@ const CourseManagement = () => {
                           </Dropdown.Item>
                         </PermissionWrapper>
                         <PermissionWrapper 
-                          permission="POST /subjects"
+                          permission={API_PERMISSIONS.SUBJECTS.CREATE}
                           fallback={null}
                         >
                           <Dropdown.Item className="text-primary-custom d-flex align-items-center">
@@ -223,7 +224,7 @@ const CourseManagement = () => {
                           </Dropdown.Item>
                         </PermissionWrapper>
                         <PermissionWrapper 
-                          permission="POST /enrollments"
+                          permission={API_PERMISSIONS.ENROLLMENTS.CREATE}
                           fallback={null}
                         >
                           <Dropdown.Item className="text-primary-custom d-flex align-items-center">
@@ -232,7 +233,7 @@ const CourseManagement = () => {
                           </Dropdown.Item>
                         </PermissionWrapper>
                         <PermissionWrapper 
-                          permission="POST /courses"
+                          permission={API_PERMISSIONS.COURSES.DELETE}
                           fallback={null}
                         >
                           <Dropdown.Divider />

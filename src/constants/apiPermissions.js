@@ -75,6 +75,7 @@ export const API_PERMISSIONS = {
 
   // Assessment Management
   ASSESSMENTS: {
+    CREATE: "POST /assessments",
     VIEW_ALL: "GET /assessments",
     VIEW_RESULTS: "GET /assessments/results",
     VIEW_TRAINEE_RESULTS: "GET /assessments/results/me",

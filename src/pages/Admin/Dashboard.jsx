@@ -11,6 +11,7 @@ import {
 } from 'recharts';
 import { PermissionWrapper, ModuleAccess } from '../../components/Common';
 import { useDashboard } from '../../hooks/useDashboard';
+import { API_PERMISSIONS } from '../../constants/apiPermissions';
 
 const Dashboard = () => {
   const {
@@ -52,7 +53,10 @@ const Dashboard = () => {
 
         <Row className="mb-4">
           <Col lg={8} md={12} className="mb-3 mb-lg-0">
-            <PermissionWrapper permission="GET /users">
+            <PermissionWrapper 
+              permission={API_PERMISSIONS.USERS.VIEW_ALL}
+              fallback={null}
+            >
               <Card className="dashboard-chart-mobile">
                 <Card.Header>User Activity Trends</Card.Header>
                 <Card.Body>
@@ -72,7 +76,10 @@ const Dashboard = () => {
             </PermissionWrapper>
           </Col>
           <Col lg={4} md={12}>
-            <PermissionWrapper permission="GET /roles">
+            <PermissionWrapper 
+              permission={API_PERMISSIONS.ROLES.VIEW_ALL}
+              fallback={null}
+            >
               <Card className="dashboard-chart-mobile">
                 <Card.Header>Role Distribution</Card.Header>
                 <Card.Body>
@@ -119,16 +126,23 @@ const Dashboard = () => {
           </Col>
         </Row>
 
-        {/* Fallback content when no permissions */}
+        {/* Fallback content when no permissions - only show if user has no dashboard access */}
         <Row>
           <Col>
-            <Card className="dashboard-chart-mobile">
-              <Card.Header>System Status</Card.Header>
-              <Card.Body>
-                <p className="text-muted">Dashboard is loading. Please wait for permissions to be loaded.</p>
-                <p className="text-muted">If you continue to see this message, please contact your administrator.</p>
-              </Card.Body>
-            </Card>
+            <PermissionWrapper 
+              permission={API_PERMISSIONS.DASHBOARD.VIEW}
+              fallback={
+                <Card className="dashboard-chart-mobile">
+                  <Card.Header>System Status</Card.Header>
+                  <Card.Body>
+                    <p className="text-muted">Dashboard is loading. Please wait for permissions to be loaded.</p>
+                    <p className="text-muted">If you continue to see this message, please contact your administrator.</p>
+                  </Card.Body>
+                </Card>
+              }
+            >
+              {/* This will be hidden if user has dashboard access */}
+            </PermissionWrapper>
           </Col>
         </Row>
 
