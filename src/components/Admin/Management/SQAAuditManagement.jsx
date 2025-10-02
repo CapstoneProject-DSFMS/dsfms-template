@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { Card, Row, Col, Button, Table, Badge, Dropdown } from 'react-bootstrap';
 import { Eye, Pencil, FileEarmarkText, Plus, ThreeDots, CheckCircle, XCircle } from 'react-bootstrap-icons';
 import { SearchBar, FilterDropdown, PermissionWrapper } from '../Common';
+import { API_PERMISSIONS } from '../../../constants/apiPermissions';
 const SQAAuditManagement = () => {
   const [audits, setAudits] = useState([
     {
@@ -272,7 +273,7 @@ const SQAAuditManagement = () => {
                           </Dropdown.Item>
                           
                           <PermissionWrapper 
-                            permission="POST /reports"
+                            permission={API_PERMISSIONS.REPORTS.CREATE}
                             fallback={null}
                           >
                             <Dropdown.Item className="text-primary-custom d-flex align-items-center">
@@ -282,7 +283,7 @@ const SQAAuditManagement = () => {
                           </PermissionWrapper>
                           
                           <PermissionWrapper 
-                            permission="GET /reports"
+                            permission={API_PERMISSIONS.REPORTS.VIEW_ALL}
                             fallback={null}
                           >
                             <Dropdown.Item className="text-primary-custom d-flex align-items-center">
@@ -292,7 +293,7 @@ const SQAAuditManagement = () => {
                           </PermissionWrapper>
                           
                           <PermissionWrapper 
-                            permission="POST /reports"
+                            permission={API_PERMISSIONS.REPORTS.CREATE}
                             fallback={null}
                           >
                             <Dropdown.Item className="text-primary-custom d-flex align-items-center">
@@ -302,7 +303,7 @@ const SQAAuditManagement = () => {
                           </PermissionWrapper>
                           
                           <PermissionWrapper 
-                            permission="POST /reports"
+                            permission={API_PERMISSIONS.REPORTS.CREATE}
                             fallback={null}
                           >
                             <Dropdown.Divider />
@@ -418,7 +419,7 @@ const SQAAuditManagement = () => {
                           </Dropdown.Item>
                           
                           <PermissionWrapper 
-                            permission="GET /reports"
+                            permission={API_PERMISSIONS.REPORTS.VIEW_ALL}
                             fallback={null}
                           >
                             <Dropdown.Item className="text-primary-custom d-flex align-items-center">
@@ -428,7 +429,7 @@ const SQAAuditManagement = () => {
                           </PermissionWrapper>
                           
                           <PermissionWrapper 
-                            permission="GET /reports"
+                            permission={API_PERMISSIONS.REPORTS.VIEW_ALL}
                             fallback={null}
                           >
                             {car.status !== 'Closed' && (

@@ -5,6 +5,7 @@ import { Plus, ThreeDotsVertical, Eye, Pencil, PersonX } from 'react-bootstrap-i
 import { RoleTable, RoleModal, RoleFilterPanel, DisableRoleModal } from '../../../components/Admin/Role';
 import { SearchBar, PermissionWrapper } from '../../../components/Common';
 import { useRoleManagement } from '../../../hooks/useRoleManagement';
+import { API_PERMISSIONS } from '../../../constants/apiPermissions';
 
 const RoleManagementPage = () => {
   const [disableModalShow, setDisableModalShow] = useState(false);
@@ -154,7 +155,7 @@ const RoleManagementPage = () => {
             <Col xs={12} className="mt-2 mt-md-0 mb-3">
               <div className="d-flex justify-content-end">
                 <PermissionWrapper 
-                  permission="POST /roles"
+                  permission={API_PERMISSIONS.ROLES.CREATE}
                   fallback={null}
                 >
                   <Button

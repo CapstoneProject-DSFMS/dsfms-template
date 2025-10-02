@@ -1,5 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
-import { permissionAPI } from '../api/permission';
+import { useState, useEffect, useCallback, useMemo } from 'react';
 import { useAuth } from './useAuth';
 
 // Helper function to format API endpoint names to be more user-friendly
@@ -173,20 +172,33 @@ export const usePermissions = () => {
     return permissions.find(p => p.id === permissionId);
   }, [permissions]);
 
-  // Check if user has specific permission
+  // Create optimized permission lookup sets for better performance
+  const userPermissionNames = useMemo(() => {
+    if (!userPermissions || userPermissions.length === 0) return new Set();
+    return new Set(userPermissions.map(p => p.name));
+  }, [userPermissions]);
+
+  const userPermissionPaths = useMemo(() => {
+    if (!userPermissions || userPermissions.length === 0) return new Set();
+    return new Set(userPermissions.map(p => p.path));
+  }, [userPermissions]);
+
+  const userPermissionIds = useMemo(() => {
+    if (!userPermissions || userPermissions.length === 0) return new Set();
+    return new Set(userPermissions.map(p => p.id));
+  }, [userPermissions]);
+
+  // Check if user has specific permission - optimized with Set lookup
   const hasPermission = useCallback((permissionName) => {
     if (!userPermissions || userPermissions.length === 0) {
       return false;
     }
     
-    const hasAccess = userPermissions.some(permission => 
-      permission.name === permissionName || 
-      permission.path === permissionName ||
-      permission.id === permissionName
-    );
-    
-    return hasAccess;
-  }, [userPermissions]);
+    // Check against name, path, or id using Set for O(1) lookup
+    return userPermissionNames.has(permissionName) || 
+           userPermissionPaths.has(permissionName) ||
+           userPermissionIds.has(permissionName);
+  }, [userPermissions, userPermissionNames, userPermissionPaths, userPermissionIds]);
 
   // Check if user has any of the specified permissions
   const hasAnyPermission = useCallback((permissionNames) => {
