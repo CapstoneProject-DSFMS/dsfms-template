@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { permissionAPI } from '../api/permission';
+import { useAuth } from './useAuth';
 
 // Helper function to format API endpoint names to be more user-friendly
 const formatPermissionName = (name) => {
@@ -90,24 +91,30 @@ export const usePermissions = () => {
   const [permissions, setPermissions] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
+  const { userPermissions, userRole } = useAuth();
 
-  // Fetch permissions from API
+  // Use userPermissions as the source of permissions instead of fetching from API
   const fetchPermissions = useCallback(async () => {
     setLoading(true);
     setError(null);
     
     try {
-      const response = await permissionAPI.getPermissions();
-      setPermissions(response.data || []);
+      // Use userPermissions from AuthContext instead of calling API
+      if (userPermissions && userPermissions.length > 0) {
+        setPermissions(userPermissions);
+        console.log('✅ Using userPermissions from AuthContext:', userPermissions.length, 'permissions');
+      } else {
+        setPermissions([]);
+        console.log('⚠️ No userPermissions available');
+      }
     } catch (err) {
       setError(err);
-      console.error('Error fetching permissions:', err);
+      console.error('Error setting permissions from userPermissions:', err);
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [userPermissions]);
 
-  // Get all permissions from API (74 permissions)
   const getUIPermissions = useCallback(() => {
     return permissions.map(permission => ({
       id: permission.id,
@@ -166,10 +173,115 @@ export const usePermissions = () => {
     return permissions.find(p => p.id === permissionId);
   }, [permissions]);
 
-  // Initialize permissions on mount
+  // Check if user has specific permission
+  const hasPermission = useCallback((permissionName) => {
+    if (!userPermissions || userPermissions.length === 0) {
+      return false;
+    }
+    
+    const hasAccess = userPermissions.some(permission => 
+      permission.name === permissionName || 
+      permission.path === permissionName ||
+      permission.id === permissionName
+    );
+    
+    return hasAccess;
+  }, [userPermissions]);
+
+  // Check if user has any of the specified permissions
+  const hasAnyPermission = useCallback((permissionNames) => {
+    if (!userPermissions || userPermissions.length === 0) {
+      return false;
+    }
+    
+    return permissionNames.some(permissionName => 
+      hasPermission(permissionName)
+    );
+  }, [userPermissions, hasPermission]);
+
+  // Check if user has all specified permissions
+  const hasAllPermissions = useCallback((permissionNames) => {
+    if (!userPermissions || userPermissions.length === 0) {
+      return false;
+    }
+    
+    return permissionNames.every(permissionName => 
+      hasPermission(permissionName)
+    );
+  }, [userPermissions, hasPermission]);
+
+  // Check if user has access to a specific module
+  const hasModuleAccess = useCallback((moduleName) => {
+    if (!userPermissions || userPermissions.length === 0) {
+      return false;
+    }
+    
+    return userPermissions.some(permission => 
+      permission.module === moduleName
+    );
+  }, [userPermissions]);
+
+  // Get accessible modules for user
+  const getAccessibleModules = useCallback(() => {
+    if (!userPermissions || userPermissions.length === 0) {
+      return [];
+    }
+    
+    const modules = [...new Set(userPermissions.map(p => p.module))];
+    return modules;
+  }, [userPermissions]);
+
+  // Get user's permissions grouped by module
+  const getUserPermissionGroups = useCallback(() => {
+    if (!userPermissions || userPermissions.length === 0) {
+      return [];
+    }
+    
+    const uiPermissions = userPermissions.map(permission => ({
+      id: permission.id,
+      title: permission.viewName || permission.description || formatPermissionName(permission.name),
+      description: permission.description || '',
+      module: permission.module,
+      method: permission.method,
+      path: permission.path,
+      isActive: permission.isActive,
+      viewName: permission.viewName,
+      viewModule: permission.viewModule
+    }));
+
+    const featureGroups = {};
+    uiPermissions.forEach(permission => {
+      const moduleId = permission.module;
+      const moduleName = permission.viewModule || `${permission.module} Management`;
+      
+      if (!featureGroups[moduleId]) {
+        featureGroups[moduleId] = {
+          id: moduleId,
+          name: moduleName,
+          description: `Manage ${moduleName.toLowerCase()} related permissions`,
+          permissions: []
+        };
+      }
+      
+      featureGroups[moduleId].permissions.push({
+        id: permission.id,
+        title: permission.title,
+        description: permission.description,
+        isActive: permission.isActive,
+        method: permission.method,
+        path: permission.path
+      });
+    });
+
+    return Object.values(featureGroups).sort((a, b) => a.name.localeCompare(b.name));
+  }, [userPermissions]);
+
+  // Initialize permissions when userPermissions change
   useEffect(() => {
-    fetchPermissions();
-  }, [fetchPermissions]);
+    if (userPermissions && userPermissions.length > 0) {
+      fetchPermissions();
+    }
+  }, [fetchPermissions, userPermissions]);
 
   return {
     permissions,
@@ -179,6 +291,16 @@ export const usePermissions = () => {
     getUIPermissions,
     getPermissionGroups,
     isPermissionActive,
-    getApiPermission
+    getApiPermission,
+    // User permission checking functions
+    hasPermission,
+    hasAnyPermission,
+    hasAllPermissions,
+    hasModuleAccess,
+    getAccessibleModules,
+    getUserPermissionGroups,
+    // User data
+    userPermissions,
+    userRole
   };
 };

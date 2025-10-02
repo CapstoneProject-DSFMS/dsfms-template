@@ -1,15 +1,13 @@
 import React from 'react';
-import { Alert } from 'react-bootstrap';
+import { Navigate } from 'react-router-dom';
 import { usePermissions } from '../../hooks/usePermissions';
 
-const PermissionWrapper = ({ 
+const PermissionRoute = ({ 
   permission, 
   permissions = [], 
   requireAll = false, 
   children, 
-  fallback = null,
-  showMessage = false,
-  message = "You do not have permission to access this feature."
+  redirectTo = "/admin/dashboard"
 }) => {
   const { hasPermission, hasAnyPermission, hasAllPermissions } = usePermissions();
 
@@ -37,23 +35,10 @@ const PermissionWrapper = ({
   };
 
   if (!canAccess()) {
-    if (fallback) {
-      return fallback;
-    }
-    
-    if (showMessage) {
-      return (
-        <Alert variant="warning" className="mt-3">
-          <Alert.Heading>Access Denied</Alert.Heading>
-          <p>{message}</p>
-        </Alert>
-      );
-    }
-    
-    return null;
+    return <Navigate to={redirectTo} replace />;
   }
 
   return children;
 };
 
-export default PermissionWrapper;
+export default PermissionRoute;

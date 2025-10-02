@@ -3,6 +3,7 @@ import { Modal, Form, Button, Row, Col } from 'react-bootstrap';
 import { X, Save, Eye } from 'react-bootstrap-icons';
 import { toast } from 'react-toastify';
 import { departmentAPI } from '../../../api/department';
+import { roleAPI } from '../../../api/role';
 
 const UserModal = ({ show, user, mode, onSave, onClose }) => {
   const [formData, setFormData] = useState({
@@ -27,7 +28,8 @@ const UserModal = ({ show, user, mode, onSave, onClose }) => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [departments, setDepartments] = useState([]);
   const [departmentsLoading, setDepartmentsLoading] = useState(false);
-  const roles = ['ADMINISTRATOR', 'DEPARTMENT_HEAD', 'TRAINER', 'TRAINEE', 'SQA_AUDITOR'];
+  const [roles, setRoles] = useState([]);
+  const [rolesLoading, setRolesLoading] = useState(false);
 
   // Fetch departments from API
   const fetchDepartments = async () => {
@@ -48,6 +50,26 @@ const UserModal = ({ show, user, mode, onSave, onClose }) => {
       setDepartmentsLoading(false);
     }
   };
+
+  // Fetch roles from API
+  const fetchRoles = async () => {
+    setRolesLoading(true);
+    try {
+      const response = await roleAPI.getRoles();
+      const rolesData = response.roles || response.data || [];
+      
+      // Transform to simple array of role names
+      const roleNames = rolesData.map(role => role.name);
+      setRoles(roleNames);
+    } catch (error) {
+      console.error('Error fetching roles:', error);
+      toast.error('Failed to load roles');
+      // Fallback to empty array
+      setRoles([]);
+    } finally {
+      setRolesLoading(false);
+    }
+  };
   const nations = [
     'Afghanistan', 'Albania', 'Algeria', 'Argentina', 'Armenia', 'Australia', 'Austria', 'Azerbaijan',
     'Bahrain', 'Bangladesh', 'Belarus', 'Belgium', 'Brazil', 'Bulgaria', 'Cambodia', 'Canada', 'Chile', 'China', 'Colombia', 'Croatia', 'Cyprus', 'Czech Republic',
@@ -60,10 +82,11 @@ const UserModal = ({ show, user, mode, onSave, onClose }) => {
     'Vietnam', 'Yemen'
   ];
 
-  // Fetch departments when modal opens
+  // Fetch departments and roles when modal opens
   useEffect(() => {
     if (show) {
       fetchDepartments();
+      fetchRoles();
     }
   }, [show]);
 
@@ -432,13 +455,15 @@ const UserModal = ({ show, user, mode, onSave, onClose }) => {
                   value={formData.role}
                   onChange={(e) => handleInputChange('role', e.target.value)}
                   isInvalid={!!errors.role}
-                  disabled={isReadOnly}
+                  disabled={isReadOnly || rolesLoading}
                   style={{
                     borderColor: errors.role ? '#dc3545' : 'var(--bs-primary)',
                     borderWidth: '2px'
                   }}
                 >
-                  <option value="">Select a role</option>
+                  <option value="">
+                    {rolesLoading ? 'Loading roles...' : 'Select a role'}
+                  </option>
                   {roles.map(role => (
                     <option key={role} value={role}>{role}</option>
                   ))}
