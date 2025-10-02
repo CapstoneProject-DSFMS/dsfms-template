@@ -7,53 +7,75 @@ import {
   Shield,
   Building,
   FileText,
-  Airplane, // Add this import
+  Airplane,
   ChevronLeft,
   ChevronRight,
   Gear,
   X,
 } from "react-bootstrap-icons";
 import logo from "../../assets/logo-light.png";
+import { usePermissions } from "../../hooks/usePermissions";
+import { API_PERMISSIONS } from "../../constants/apiPermissions";
 
 const Sidebar = ({ collapsed, onClose }) => {
-  const navItems = [
+  const { hasModuleAccess, hasPermission } = usePermissions();
+
+  const allNavItems = [
     {
       id: "dashboard",
       label: "Dashboard",
       icon: House,
       path: "/admin/dashboard",
+      permission: API_PERMISSIONS.DASHBOARD.VIEW,
+      module: "DASHBOARD"
     },
     {
       id: "users",
       label: "User Management",
       icon: People,
       path: "/admin/users",
+      permission: API_PERMISSIONS.USERS.VIEW_ALL,
+      module: "USERS"
     },
     {
       id: "roles",
       label: "Role Management",
       icon: Shield,
       path: "/admin/roles",
+      permission: API_PERMISSIONS.ROLES.VIEW_ALL,
+      module: "ROLES"
     },
     {
       id: "departments",
       label: "Departments",
       icon: Building,
       path: "/admin/departments",
+      permission: API_PERMISSIONS.DEPARTMENTS.VIEW_ALL,
+      module: "DEPARTMENTS"
     },
     {
       id: "forms",
       label: "Form Templates",
       icon: FileText,
       path: "/admin/forms",
+      permission: API_PERMISSIONS.TEMPLATES.VIEW_ALL,
+      module: "TEMPLATES"
     },
     {
       id: "system-config",
       label: "System Configuration",
       icon: Gear,
       path: "/admin/system-config",
+      permission: API_PERMISSIONS.GLOBAL_FIELDS.VIEW_ALL,
+      module: "GLOBAL_FIELDS"
     },
   ];
+
+  // Filter nav items based on user permissions
+  const navItems = allNavItems.filter(item => {
+    // Check if user has access to the module or specific permission
+    return hasModuleAccess(item.module) || hasPermission(item.permission);
+  });
 
   return (
     <div

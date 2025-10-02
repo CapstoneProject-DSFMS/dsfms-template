@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { Card, Row, Col, Button, Table, Badge, Dropdown } from 'react-bootstrap';
 import { Plus, Eye, Pencil, Trash, ThreeDots } from 'react-bootstrap-icons';
 import { SearchBar, FilterDropdown, PermissionWrapper } from '../Common';
-import { PERMISSIONS_BY_UC } from '../../constants/permissions';
+import { API_PERMISSIONS } from '../../../constants/apiPermissions';
 
 const CourseManagement = () => {
   const [courses] = useState([
@@ -59,7 +59,7 @@ const CourseManagement = () => {
           </Col>
           <Col xs="auto">
             <PermissionWrapper 
-              permission={PERMISSIONS_BY_UC['UC-11'].title}
+              permission={API_PERMISSIONS.COURSES.CREATE}
               fallback={null}
             >
               <Button
@@ -206,7 +206,7 @@ const CourseManagement = () => {
                           View Details
                         </Dropdown.Item>
                         <PermissionWrapper 
-                          permission={PERMISSIONS_BY_UC['UC-11'].title}
+                          permission={API_PERMISSIONS.COURSES.UPDATE}
                           fallback={null}
                         >
                           <Dropdown.Item className="text-primary-custom d-flex align-items-center">
@@ -215,7 +215,7 @@ const CourseManagement = () => {
                           </Dropdown.Item>
                         </PermissionWrapper>
                         <PermissionWrapper 
-                          permission={PERMISSIONS_BY_UC['UC-13'].title}
+                          permission={API_PERMISSIONS.SUBJECTS.CREATE}
                           fallback={null}
                         >
                           <Dropdown.Item className="text-primary-custom d-flex align-items-center">
@@ -224,7 +224,7 @@ const CourseManagement = () => {
                           </Dropdown.Item>
                         </PermissionWrapper>
                         <PermissionWrapper 
-                          permission={PERMISSIONS_BY_UC['UC-15'].title}
+                          permission={API_PERMISSIONS.ENROLLMENTS.CREATE}
                           fallback={null}
                         >
                           <Dropdown.Item className="text-primary-custom d-flex align-items-center">
@@ -233,7 +233,7 @@ const CourseManagement = () => {
                           </Dropdown.Item>
                         </PermissionWrapper>
                         <PermissionWrapper 
-                          permission={PERMISSIONS_BY_UC['UC-11'].title}
+                          permission={API_PERMISSIONS.COURSES.DELETE}
                           fallback={null}
                         >
                           <Dropdown.Divider />
