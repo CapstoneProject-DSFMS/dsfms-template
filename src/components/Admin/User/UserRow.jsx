@@ -1,10 +1,10 @@
 import React from 'react';
 import { Badge } from 'react-bootstrap';
 import { useAuth } from '../../../hooks/useAuth';
-import { PERMISSIONS_BY_UC } from '../../../constants/permissions';
 import PermissionWrapper from '../../Common/PermissionWrapper';
 import { Dropdown } from 'react-bootstrap';
 import { Eye, Pencil, PersonX, ThreeDotsVertical } from 'react-bootstrap-icons';
+import { API_PERMISSIONS } from '../../../constants/apiPermissions';
 
 const UserRow = ({ user, index, onView, onEdit, onDisable }) => {
   
@@ -84,7 +84,7 @@ const UserRow = ({ user, index, onView, onEdit, onDisable }) => {
       
       <td className="border-neutral-200 align-middle text-center show-mobile">
         <PermissionWrapper 
-          permission={PERMISSIONS_BY_UC['UC-06'].title}
+          permission={API_PERMISSIONS.USERS.UPDATE}
           fallback={null}
         >
           <Dropdown align="end">

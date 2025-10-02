@@ -2,11 +2,7 @@ import React, { useState } from 'react';
 import { Card, Row, Col, Button, Table, Badge, Dropdown } from 'react-bootstrap';
 import { Eye, Pencil, FileEarmarkText, Plus, ThreeDots, CheckCircle, XCircle } from 'react-bootstrap-icons';
 import { SearchBar, FilterDropdown, PermissionWrapper } from '../Common';
-import { useAuth } from '../../hooks/useAuth';
-import { PERMISSIONS_BY_UC } from '../../constants/permissions';
-
 const SQAAuditManagement = () => {
-  const { hasPermission } = useAuth();
   const [audits, setAudits] = useState([
     {
       id: 1,
@@ -276,7 +272,7 @@ const SQAAuditManagement = () => {
                           </Dropdown.Item>
                           
                           <PermissionWrapper 
-                            permission={PERMISSIONS_BY_UC['UC-32'].title}
+                            permission="POST /reports"
                             fallback={null}
                           >
                             <Dropdown.Item className="text-primary-custom d-flex align-items-center">
@@ -286,7 +282,7 @@ const SQAAuditManagement = () => {
                           </PermissionWrapper>
                           
                           <PermissionWrapper 
-                            permission={PERMISSIONS_BY_UC['UC-33'].title}
+                            permission="GET /reports"
                             fallback={null}
                           >
                             <Dropdown.Item className="text-primary-custom d-flex align-items-center">
@@ -296,7 +292,7 @@ const SQAAuditManagement = () => {
                           </PermissionWrapper>
                           
                           <PermissionWrapper 
-                            permission={PERMISSIONS_BY_UC['UC-32'].title}
+                            permission="POST /reports"
                             fallback={null}
                           >
                             <Dropdown.Item className="text-primary-custom d-flex align-items-center">
@@ -306,7 +302,7 @@ const SQAAuditManagement = () => {
                           </PermissionWrapper>
                           
                           <PermissionWrapper 
-                            permission={PERMISSIONS_BY_UC['UC-32'].title}
+                            permission="POST /reports"
                             fallback={null}
                           >
                             <Dropdown.Divider />
@@ -422,7 +418,7 @@ const SQAAuditManagement = () => {
                           </Dropdown.Item>
                           
                           <PermissionWrapper 
-                            permission={PERMISSIONS_BY_UC['UC-33'].title}
+                            permission="GET /reports"
                             fallback={null}
                           >
                             <Dropdown.Item className="text-primary-custom d-flex align-items-center">
@@ -432,7 +428,7 @@ const SQAAuditManagement = () => {
                           </PermissionWrapper>
                           
                           <PermissionWrapper 
-                            permission={PERMISSIONS_BY_UC['UC-33'].title}
+                            permission="GET /reports"
                             fallback={null}
                           >
                             {car.status !== 'Closed' && (

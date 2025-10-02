@@ -1,4 +1,7 @@
 
+// DEPRECATED: This file contains hardcoded permissions that are no longer used.
+// All permissions are now fetched from API and managed through usePermissions hook.
+// Keeping this file for reference only.
 
 export const FEATURES = {
   'FE-01': { name: 'Authentication', description: 'Provides secure login, logout, and password management functions for all users.' },

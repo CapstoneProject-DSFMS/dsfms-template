@@ -1,6 +1,6 @@
 import { createBrowserRouter } from 'react-router-dom'
 import { LayoutWrapper } from '../components/Layout'
-import { ProtectedRoute, ErrorBoundary } from '../components/Common'
+import { ProtectedRoute, ErrorBoundary, PermissionRoute } from '../components/Common'
 import RoleBasedRedirect from '../components/Common/RoleBasedRedirect'
 import Login from '../pages/Auth/Login'
 import ResetPasswordPage from '../pages/Auth/ResetPasswordPage'
@@ -48,35 +48,67 @@ export const router = createBrowserRouter([
       },
       {
         path: "dashboard",
-        element: <Dashboard />
+        element: (
+          <PermissionRoute permission="GET /dashboard">
+            <Dashboard />
+          </PermissionRoute>
+        )
       },
       {
         path: "users",
-        element: <UserManagementPage />
+        element: (
+          <PermissionRoute permission="GET /users">
+            <UserManagementPage />
+          </PermissionRoute>
+        )
       },
       {
         path: "roles",
-        element: <RoleManagementPage />
+        element: (
+          <PermissionRoute permission="GET /roles">
+            <RoleManagementPage />
+          </PermissionRoute>
+        )
       },
       {
         path: "departments",
-        element: <DepartmentManagementPage />
+        element: (
+          <PermissionRoute permission="GET /departments">
+            <DepartmentManagementPage />
+          </PermissionRoute>
+        )
       },
       {
         path: "departments/:id",
-        element: <DepartmentDetailPage />
+        element: (
+          <PermissionRoute permission="GET /departments/:departmentId">
+            <DepartmentDetailPage />
+          </PermissionRoute>
+        )
       },
       {
         path: "profile",
-        element: <ProfilePage />
+        element: (
+          <PermissionRoute permission="GET /profile">
+            <ProfilePage />
+          </PermissionRoute>
+        )
       },
       {
         path: "forms",
-        element: <div>Forms Page</div>
+        element: (
+          <PermissionRoute permission="GET /templates">
+            <div>Forms Page</div>
+          </PermissionRoute>
+        )
       },
       {
         path: "system-config",
-        element: <div>System Configuration Page</div>
+        element: (
+          <PermissionRoute permission="GET /global-fields">
+            <div>System Configuration Page</div>
+          </PermissionRoute>
+        )
       }
     ]
   },

@@ -6,7 +6,8 @@ import { UserTable, UserModal, BulkImportModal, DisableUserModal, FilterPanel } 
 import RoleChangeConfirmModal from '../../../components/Admin/User/RoleChangeConfirmModal';
 import { SearchBar, PermissionWrapper } from '../../../components/Common';
 import { useUserManagementAPI } from '../../../hooks/useUserManagementAPI';
-import { PERMISSIONS_BY_UC } from '../../../constants/permissions';
+import { usePermissions } from '../../../hooks/usePermissions';
+import { API_PERMISSIONS } from '../../../constants/apiPermissions';
 import '../../../styles/scrollable-table.css';
 
 const UserManagementPage = () => {
@@ -85,7 +86,7 @@ const UserManagementPage = () => {
                 <Col xs={12} className="mt-2 mt-md-0 mb-3">
                   <div className="d-flex justify-content-end gap-2">
                 <PermissionWrapper 
-                  permission={PERMISSIONS_BY_UC['UC-06'].title}
+                  permission={API_PERMISSIONS.USERS.BULK_CREATE}
                   fallback={null}
                 >
                   <Button
@@ -100,7 +101,7 @@ const UserManagementPage = () => {
                   </Button>
                 </PermissionWrapper>
                 <PermissionWrapper 
-                  permission={PERMISSIONS_BY_UC['UC-06'].title}
+                  permission={API_PERMISSIONS.USERS.CREATE}
                   fallback={null}
                 >
                   <Button
