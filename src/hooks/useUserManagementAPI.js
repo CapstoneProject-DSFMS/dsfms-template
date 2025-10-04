@@ -1,10 +1,12 @@
 import React, { useState, useEffect } from 'react';
 import { userAPI } from '../api';
+import { departmentAPI } from '../api/department';
 import { mapError } from '../utils/errorMapping';
 import { toast } from 'react-toastify';
 
 export const useUserManagementAPI = () => {
   const [users, setUsers] = useState([]);
+  const [departments, setDepartments] = useState([]);
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedRoles, setSelectedRoles] = useState([]);
   const [selectedDepartments, setSelectedDepartments] = useState([]);
@@ -18,18 +20,19 @@ export const useUserManagementAPI = () => {
   const [pendingUserData, setPendingUserData] = useState(null);
 
 
-  // Fetch users from API
+  // Fetch users and departments from API
   useEffect(() => {
-    const fetchUsers = async () => {
+    const fetchData = async () => {
       setLoading(true);
       try {
-        const response = await userAPI.getUsers({
-          includeDeleted: true
-        });
+        // Fetch users and departments in parallel
+        const [usersResponse, departmentsResponse] = await Promise.all([
+          userAPI.getUsers({ includeDeleted: true }),
+          departmentAPI.getDepartments({ includeDeleted: true })
+        ]);
         
-        
-        // Transform API data to match component format
-        const transformedUsers = response.data.map(user => ({
+        // Transform users data to match component format
+        const transformedUsers = usersResponse.data.map(user => ({
           id: user.id,
           eid: user.eid,
           fullName: [user.firstName, user.middleName, user.lastName].filter(Boolean).join(' '),
@@ -54,8 +57,11 @@ export const useUserManagementAPI = () => {
           lastLogin: user.lastLogin || ''
         }));
         
+        // Transform departments data
+        const transformedDepartments = departmentsResponse.departments || departmentsResponse || [];
         
         setUsers(transformedUsers);
+        setDepartments(transformedDepartments);
         setError(null);
       } catch (err) {
         const errorMessage = mapError(err, { context: 'fetch_users' });
@@ -65,12 +71,18 @@ export const useUserManagementAPI = () => {
       }
     };
 
-    fetchUsers();
+    fetchData();
   }, []); 
 
-  // Get unique roles and departments from current users
+  // Get unique roles from current users
   const uniqueRoles = [...new Set(users.map(user => user.role).filter(Boolean))];
-  const uniqueDepartments = [...new Set(users.map(user => user.department).filter(Boolean))];
+  
+  // Get unique departments from API departments data (not just from users)
+  const uniqueDepartments = [
+    ...new Set(departments.map(dept => dept.name).filter(Boolean)),
+    // Also include departments from users that might not be in the departments API
+    ...new Set(users.map(user => user.department).filter(Boolean))
+  ].filter((dept, index, arr) => arr.indexOf(dept) === index); // Remove duplicates
 
   // Filter users based on search term and selected filters
   const filteredUsers = users.filter(user => {
@@ -220,10 +232,12 @@ export const useUserManagementAPI = () => {
         action = 'enabled';
       }
       
-      // Refresh users list
-      const usersResponse = await userAPI.getUsers({
-        includeDeleted: true
-      });
+      // Refresh users and departments list
+      const [usersResponse, departmentsResponse] = await Promise.all([
+        userAPI.getUsers({ includeDeleted: true }),
+        departmentAPI.getDepartments({ includeDeleted: true })
+      ]);
+      
       const transformedUsers = usersResponse.data.map(user => ({
         id: user.id,
         eid: user.eid,
@@ -250,7 +264,11 @@ export const useUserManagementAPI = () => {
         createdAt: user.createdAt,
         lastLogin: user.lastLogin || ''
       }));
+      
+      const transformedDepartments = departmentsResponse.departments || departmentsResponse || [];
+      
       setUsers(transformedUsers);
+      setDepartments(transformedDepartments);
       
       // Show success message with API response message
       const message = response?.message || `User has been ${action} successfully!`;
@@ -357,20 +375,21 @@ export const useUserManagementAPI = () => {
             toast.success('User updated successfully!');
           }
       setModalShow(false);
-      // Refresh users list
-      const response = await userAPI.getUsers({
-        includeDeleted: true
-      });
+      // Refresh users and departments list
+      const [usersResponse, departmentsResponse] = await Promise.all([
+        userAPI.getUsers({ includeDeleted: true }),
+        departmentAPI.getDepartments({ includeDeleted: true })
+      ]);
       
       // Check if the updated user has traineeProfile (only for edit mode)
       if (modalMode === 'edit' && selectedUser?.id) {
-        const updatedUser = response.data.find(u => u.id === selectedUser.id);
+        const updatedUser = usersResponse.data.find(u => u.id === selectedUser.id);
         if (updatedUser) {
           // User found and updated successfully
         }
       }
       
-      const transformedUsers = response.data.map(user => ({
+      const transformedUsers = usersResponse.data.map(user => ({
         id: user.id,
         eid: user.eid,
         fullName: [user.firstName, user.middleName, user.lastName].filter(Boolean).join(' '),
@@ -397,7 +416,10 @@ export const useUserManagementAPI = () => {
         lastLogin: user.lastLogin || ''
       }));
       
+      const transformedDepartments = departmentsResponse.departments || departmentsResponse || [];
+      
       setUsers(transformedUsers);
+      setDepartments(transformedDepartments);
     } catch (err) {
       
       // Use error mapping to get custom error message
@@ -428,10 +450,12 @@ export const useUserManagementAPI = () => {
         toast.error(`Failed to import ${response.failed.length} users: ${failedMessages.join(', ')}`);
       }
       
-      // Refresh users list
-      const usersResponse = await userAPI.getUsers({
-        includeDeleted: true
-      });
+      // Refresh users and departments list
+      const [usersResponse, departmentsResponse] = await Promise.all([
+        userAPI.getUsers({ includeDeleted: true }),
+        departmentAPI.getDepartments({ includeDeleted: true })
+      ]);
+      
       const transformedUsers = usersResponse.data.map(user => ({
         id: user.id,
         eid: user.eid,
@@ -458,7 +482,11 @@ export const useUserManagementAPI = () => {
         createdAt: user.createdAt,
         lastLogin: user.lastLogin || ''
       }));
+      
+      const transformedDepartments = departmentsResponse.departments || departmentsResponse || [];
+      
       setUsers(transformedUsers);
+      setDepartments(transformedDepartments);
     } catch (err) {
       const errorMessage = mapError(err, { context: 'import_users' });
       setError(errorMessage);
