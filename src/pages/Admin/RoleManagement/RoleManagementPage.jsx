@@ -106,8 +106,8 @@ const RoleManagementPage = () => {
           <Pencil className="me-2" size={16} />
           Edit Role
         </Dropdown.Item>
-        {/* Only show disable/enable option if role is not admin */}
-        {role.name.toLowerCase() !== 'admin' && (
+        {/* Only show disable/enable option if role is not administrator */}
+        {role.name.toLowerCase() !== 'administrator' && (
           <>
             <Dropdown.Divider />
             <Dropdown.Item 

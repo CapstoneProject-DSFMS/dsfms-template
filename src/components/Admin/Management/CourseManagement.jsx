@@ -201,10 +201,15 @@ const CourseManagement = () => {
                       </Dropdown.Toggle>
 
                       <Dropdown.Menu className="border-0 shadow">
-                        <Dropdown.Item className="text-primary-custom d-flex align-items-center">
-                          <Eye className="me-2" size={16} />
-                          View Details
-                        </Dropdown.Item>
+                        <PermissionWrapper 
+                          permission={API_PERMISSIONS.COURSES.VIEW_DETAIL}
+                          fallback={null}
+                        >
+                          <Dropdown.Item className="text-primary-custom d-flex align-items-center">
+                            <Eye className="me-2" size={16} />
+                            View Details
+                          </Dropdown.Item>
+                        </PermissionWrapper>
                         <PermissionWrapper 
                           permission={API_PERMISSIONS.COURSES.UPDATE}
                           fallback={null}
