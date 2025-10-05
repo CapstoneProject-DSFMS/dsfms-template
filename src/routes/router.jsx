@@ -14,17 +14,9 @@ import { CourseSelectionView } from '../components/AcademicDepartment'
 import CourseDetailsWrapper from '../components/AcademicDepartment/CourseDetailsWrapper'
 import SubjectDetailsWrapper from '../components/AcademicDepartment/SubjectDetailsWrapper'
 import { API_PERMISSIONS } from '../constants/apiPermissions'
+import { getCurrentBasename } from '../utils/navigation'
 
-// Proper GitHub Pages basename configuration
-const getBasename = () => {
-  // For GitHub Pages, always use /dsfms-template/
-  if (window.location.hostname.includes('github.io')) {
-    return '/dsfms-template/';
-  }
-  // For local development, use environment variable or default
-  return import.meta.env.VITE_BASE_PATH || "/";
-};
-
+// Using getCurrentBasename from navigation.js for consistency
 export const router = createBrowserRouter([
   {
     path: "/",
@@ -177,5 +169,5 @@ export const router = createBrowserRouter([
     errorElement: <ErrorBoundary />
   }
 ], {
-  basename: getBasename(),
+  basename: getCurrentBasename(),
 })
