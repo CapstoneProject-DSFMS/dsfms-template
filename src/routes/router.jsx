@@ -10,6 +10,9 @@ import RoleManagementPage from '../pages/Admin/RoleManagement/RoleManagementPage
 import DepartmentManagementPage from '../pages/Admin/DepartmentManagement/DepartmentManagementPage'
 import DepartmentDetailPage from '../pages/Admin/DepartmentManagement/DepartmentDetailPage'
 import ProfilePage from '../pages/Profile/ProfilePage'
+import { CourseSelectionView } from '../components/AcademicDepartment'
+import CourseDetailsWrapper from '../components/AcademicDepartment/CourseDetailsWrapper'
+import SubjectDetailsWrapper from '../components/AcademicDepartment/SubjectDetailsWrapper'
 import { API_PERMISSIONS } from '../constants/apiPermissions'
 
 // Proper GitHub Pages basename configuration
@@ -134,6 +137,33 @@ export const router = createBrowserRouter([
             <div>System Configuration Page</div>
           </PermissionRoute>
         )
+      },
+    ]
+  },
+  {
+    path: "/academic",
+    element: (
+      <ProtectedRoute>
+        <LayoutWrapper />
+      </ProtectedRoute>
+    ),
+    errorElement: <ErrorBoundary />,
+    children: [
+      {
+        path: "",
+        element: <RoleBasedRedirect />
+      },
+      {
+        path: "dashboard",
+        element: <CourseSelectionView />
+      },
+      {
+        path: "course/:courseId",
+        element: <CourseDetailsWrapper />
+      },
+      {
+        path: "subject/:subjectId",
+        element: <SubjectDetailsWrapper />
       }
     ]
   },
