@@ -2,7 +2,7 @@
  * Simple navigation utility for consistent routing
  */
 
-// Get the current basename - same logic as router
+// Get the current basename - consistent with Vite config
 export const getCurrentBasename = () => {
   return import.meta.env.VITE_BASE_PATH || "/";
 };
