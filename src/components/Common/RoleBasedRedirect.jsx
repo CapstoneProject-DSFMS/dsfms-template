@@ -11,7 +11,7 @@ const RoleBasedRedirect = () => {
       let redirectPath = '/admin/dashboard'; // default
       
       switch (user.role) {
-        case 'ACADEMIC_DEPT':
+        case 'ACADEMIC_DEPARTMENT':
           redirectPath = '/academic/dashboard';
           break;
         case 'ADMIN':
