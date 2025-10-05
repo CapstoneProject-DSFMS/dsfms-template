@@ -86,8 +86,8 @@ const RoleRow = ({ role, index, onView, onEdit, onDelete, onDisable }) => {
         
         <td className="border-neutral-200 align-middle text-center">
           <div className="d-flex justify-content-center gap-1">
-            {/* Disable Role Button */}
-            {role.status === 'Active' && (
+            {/* Disable Role Button - Hide for ADMIN role */}
+            {role.status === 'Active' && role.name.toLowerCase() !== 'administrator' && (
               <PermissionWrapper 
                 permission={API_PERMISSIONS.ROLES.DELETE}
                 fallback={null}
@@ -103,7 +103,7 @@ const RoleRow = ({ role, index, onView, onEdit, onDelete, onDisable }) => {
             
             {/* Actions Dropdown */}
             <PermissionWrapper 
-              permission={API_PERMISSIONS.ROLES.UPDATE}
+              permissions={[API_PERMISSIONS.ROLES.VIEW_DETAIL, API_PERMISSIONS.ROLES.UPDATE]}
               fallback={null}
             >
               <UnifiedDropdown
@@ -124,20 +124,26 @@ const RoleRow = ({ role, index, onView, onEdit, onDelete, onDisable }) => {
                   {
                     label: 'View Details',
                     icon: <Eye />,
-                    onClick: () => onView(role)
+                    onClick: () => onView(role),
+                    permission: API_PERMISSIONS.ROLES.VIEW_DETAIL
                   },
                   {
                     label: 'Edit Role',
                     icon: <Pencil />,
-                    onClick: () => onEdit(role)
+                    onClick: () => onEdit(role),
+                    permission: API_PERMISSIONS.ROLES.UPDATE
                   },
-                  { type: 'divider' },
-                  {
-                    label: 'Delete Role',
-                    icon: <Trash />,
-                    className: 'text-danger',
-                    onClick: () => onDelete(role)
-                  }
+                  // Only show delete option if role is not ADMIN
+                  ...(role.name.toLowerCase() !== 'administrator' ? [
+                    { type: 'divider' },
+                    {
+                      label: 'Delete Role',
+                      icon: <Trash />,
+                      className: 'text-danger',
+                      onClick: () => onDelete(role),
+                      permission: API_PERMISSIONS.ROLES.DELETE
+                    }
+                  ] : [])
                 ]}
               />
             </PermissionWrapper>

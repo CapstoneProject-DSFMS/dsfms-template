@@ -187,15 +187,25 @@ export const useRoleManagement = () => {
         throw new Error('Role not found');
       }
 
-      // Toggle the status
-      const newIsActive = role.isActive === 'ACTIVE' ? 'INACTIVE' : 'ACTIVE';
-      await roleAPI.toggleRoleStatus(roleId);
+      let response;
+      let action;
+      
+      // Call appropriate API based on current status
+      if (role.isActive === 'ACTIVE') {
+        // Disable role
+        response = await roleAPI.disableRole(roleId);
+        action = 'disabled';
+      } else {
+        // Enable role
+        response = await roleAPI.enableRole(roleId);
+        action = 'enabled';
+      }
 
       // Refresh roles list
-      const response = await roleAPI.getRoles({
+      const rolesResponse = await roleAPI.getRoles({
           includeDeleted: true
         });
-      const transformedRoles = response.roles.map(role => ({
+      const transformedRoles = rolesResponse.roles.map(role => ({
         id: role.id,
         name: role.name,
         description: role.description || '',
@@ -208,8 +218,9 @@ export const useRoleManagement = () => {
       }));
       setRoles(transformedRoles);
 
-      const action = newIsActive === 'ACTIVE' ? 'enabled' : 'disabled';
-      toast.success(`Role has been ${action} successfully!`);
+      // Show success message with API response message
+      const message = response?.message || `Role has been ${action} successfully!`;
+      toast.success(message);
       setError(null);
     } catch (err) {
       const errorMessage = mapError(err, { context: 'toggle_role_status' });

@@ -193,7 +193,7 @@ const RoleModal = ({ show, role, mode, onSave, onClose }) => {
       </Modal.Header>
 
       <Form onSubmit={handleSubmit}>
-        <Modal.Body className="p-4">
+        <Modal.Body className="p-4" style={{ maxHeight: '70vh', overflowY: 'auto' }}>
           {Object.keys(errors).length > 0 && (
             <div className="alert alert-danger mb-3">
               <strong>Please fix the following errors:</strong>

@@ -3,6 +3,8 @@ import { Table, Button, Dropdown, Modal } from 'react-bootstrap';
 import { PersonCheck, PersonPlus, ThreeDotsVertical, PersonDash } from 'react-bootstrap-icons';
 import { toast } from 'react-toastify';
 import { departmentAPI } from '../../api/department';
+import PermissionWrapper from '../Common/PermissionWrapper';
+import { API_PERMISSIONS } from '../../constants/apiPermissions';
 
 const AssignedTrainersTable = ({ 
   trainers = [], 
@@ -134,24 +136,29 @@ const AssignedTrainersTable = ({
                   )}
                 </td>
                 <td>
-                  <Dropdown align="end">
-                    <Dropdown.Toggle 
-                      variant="outline-secondary" 
-                      size="sm"
-                      className="border-0 bg-transparent p-1"
-                    >
-                      <ThreeDotsVertical size={16} />
-                    </Dropdown.Toggle>
-                    <Dropdown.Menu>
-                      <Dropdown.Item 
-                        onClick={() => handleRemoveClick(trainer)}
-                        className="text-danger"
+                  <PermissionWrapper 
+                    permission={API_PERMISSIONS.DEPARTMENTS.REMOVE_TRAINERS}
+                    fallback={null}
+                  >
+                    <Dropdown align="end">
+                      <Dropdown.Toggle 
+                        variant="outline-secondary" 
+                        size="sm"
+                        className="border-0 bg-transparent p-1"
                       >
-                        <PersonDash className="me-2" size={14} />
-                        Remove from Department
-                      </Dropdown.Item>
-                    </Dropdown.Menu>
-                  </Dropdown>
+                        <ThreeDotsVertical size={16} />
+                      </Dropdown.Toggle>
+                      <Dropdown.Menu>
+                        <Dropdown.Item 
+                          onClick={() => handleRemoveClick(trainer)}
+                          className="text-danger"
+                        >
+                          <PersonDash className="me-2" size={14} />
+                          Remove from Department
+                        </Dropdown.Item>
+                      </Dropdown.Menu>
+                    </Dropdown>
+                  </PermissionWrapper>
                 </td>
               </tr>
             ))}
