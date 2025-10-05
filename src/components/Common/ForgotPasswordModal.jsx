@@ -23,7 +23,7 @@ const ForgotPasswordModal = ({ show, onHide }) => {
         },
         body: JSON.stringify({
           email: email,
-          magicLink: `${window.location.origin}${getCurrentBasename()}/reset-password/`
+          magicLink: `${window.location.origin}${getCurrentBasename()}reset-password/`
         }),
       });
 
