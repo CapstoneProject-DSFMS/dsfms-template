@@ -17,7 +17,11 @@ import { API_PERMISSIONS } from '../constants/apiPermissions'
 
 // Proper GitHub Pages basename configuration
 const getBasename = () => {
-  // Use environment variable for basename - proper deployment setup
+  // For GitHub Pages, always use /dsfms-template/
+  if (window.location.hostname.includes('github.io')) {
+    return '/dsfms-template/';
+  }
+  // For local development, use environment variable or default
   return import.meta.env.VITE_BASE_PATH || "/";
 };
 
