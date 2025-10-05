@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState } from "react";
 import { Nav, Button } from "react-bootstrap";
 import { Link } from "react-router-dom";
 import {
@@ -12,13 +12,32 @@ import {
   ChevronRight,
   Gear,
   X,
+  ChevronDown,
+  ChevronRight as ChevronRightIcon,
 } from "react-bootstrap-icons";
 import logo from "../../assets/logo-light.png";
 import { usePermissions } from "../../hooks/usePermissions";
 import { API_PERMISSIONS } from "../../constants/apiPermissions";
+import { useAuth } from "../../hooks/useAuth";
 
 const Sidebar = ({ collapsed, onClose }) => {
   const { hasModuleAccess, hasPermission } = usePermissions();
+  const { user } = useAuth();
+  const [showDepartmentDropdown, setShowDepartmentDropdown] = useState(false);
+  
+  // Debug log
+  console.log('🔍 Sidebar - User role:', user?.role);
+  console.log('🔍 Sidebar - User object:', user);
+  
+  // Hardcoded courses data for Academic Department
+  const courses = [
+    { id: 1, name: "Cabin Crew Training", code: "CCT" },
+    { id: 2, name: "Flight Crew Training", code: "FCTD" },
+    { id: 3, name: "Ground Operations Training", code: "GOT" },
+    { id: 4, name: "Ground Affairs Training", code: "GAT" },
+    { id: 5, name: "Technical & Aircraft Maintenance", code: "TAMT" },
+    { id: 6, name: "Safety & Quality Assurance", code: "SQA" }
+  ];
 
   const allNavItems = [
     {
@@ -71,9 +90,17 @@ const Sidebar = ({ collapsed, onClose }) => {
     },
   ];
 
-  // Filter nav items based on user permissions
+  // Filter nav items based on user permissions and role
   const navItems = allNavItems.filter(item => {
-    // Check if user has access to the module or specific permission
+    // For ADMIN role, show all items based on permissions
+    if (user?.role === 'ADMIN') {
+      return hasModuleAccess(item.module) || hasPermission(item.permission);
+    }
+    // For ACADEMIC_DEPARTMENT role, only show dashboard
+    if (user?.role === 'ACADEMIC_DEPARTMENT') {
+      return item.id === 'dashboard';
+    }
+    // Default behavior for other roles
     return hasModuleAccess(item.module) || hasPermission(item.permission);
   });
 
@@ -127,6 +154,7 @@ const Sidebar = ({ collapsed, onClose }) => {
 
       {/* Navigation */}
       <Nav className="flex-column flex-grow-1 p-3 bg-gradient-primary-custom">
+        {/* Regular nav items */}
         {navItems.map((item) => {
           const IconComponent = item.icon;
           return (
@@ -153,6 +181,65 @@ const Sidebar = ({ collapsed, onClose }) => {
             </Nav.Item>
           );
         })}
+
+        {/* Academic Department - Department dropdown */}
+        {user?.role === 'ACADEMIC_DEPARTMENT' && (
+          <Nav.Item className="mb-3">
+            <div
+              className={`sidebar-nav-link text-white d-flex align-items-center py-3 pe-1 rounded nav-link text-nowrap ${collapsed ? "justify-content-center" : ""}`}
+              style={{
+                minHeight: collapsed ? "48px" : "auto",
+                cursor: "pointer"
+              }}
+              onClick={() => !collapsed && setShowDepartmentDropdown(!showDepartmentDropdown)}
+            >
+              <Building
+                size={20}
+                className={collapsed ? "me-2" : "me-3"}
+                style={{
+                  display: "inline-block",
+                  flexShrink: 0,
+                  transition: "transform 0.3s cubic-bezier(.68,-0.55,.27,1.55)",
+                }}
+              />
+              {!collapsed && (
+                <>
+                  <span className="sidebar-nav-label">Department</span>
+                  <ChevronDown
+                    size={16}
+                    className="ms-auto"
+                    style={{
+                      transform: showDepartmentDropdown ? "rotate(180deg)" : "rotate(0deg)",
+                      transition: "transform 0.3s ease"
+                    }}
+                  />
+                </>
+              )}
+            </div>
+            
+            {/* Department dropdown items */}
+            {!collapsed && showDepartmentDropdown && (
+              <Nav className="flex-column ms-3 mt-2">
+                {courses.map((course) => (
+                  <Nav.Item key={course.id} className="mb-2">
+                    <Link
+                      to={`/academic/course/${course.id}`}
+                      className="sidebar-nav-link text-white-50 d-flex align-items-center py-2 pe-1 rounded nav-link text-nowrap"
+                      style={{
+                        fontSize: "0.9rem",
+                        paddingLeft: "1rem"
+                      }}
+                      onClick={onClose}
+                    >
+                      <ChevronRightIcon size={14} className="me-2" />
+                      <span>{course.name}</span>
+                    </Link>
+                  </Nav.Item>
+                ))}
+              </Nav>
+            )}
+          </Nav.Item>
+        )}
       </Nav>
     </div>
   );

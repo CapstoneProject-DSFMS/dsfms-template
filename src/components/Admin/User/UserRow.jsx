@@ -84,7 +84,7 @@ const UserRow = ({ user, index, onView, onEdit, onDisable }) => {
       
       <td className="border-neutral-200 align-middle text-center show-mobile">
         <PermissionWrapper 
-          permission={API_PERMISSIONS.USERS.UPDATE}
+          permissions={[API_PERMISSIONS.USERS.VIEW_DETAIL, API_PERMISSIONS.USERS.UPDATE]}
           fallback={null}
         >
           <Dropdown align="end">
@@ -97,61 +97,76 @@ const UserRow = ({ user, index, onView, onEdit, onDisable }) => {
               <ThreeDotsVertical size={16} />
             </Dropdown.Toggle>
             <Dropdown.Menu className="shadow-sm">
-              <Dropdown.Item 
-                onClick={() => onView(user)}
-                className="d-flex align-items-center transition-all"
-                style={{
-                  transition: 'all 0.2s ease'
-                }}
-                onMouseEnter={(e) => {
-                  e.target.style.backgroundColor = 'rgba(0, 0, 0, 0.05)';
-                  e.target.style.paddingLeft = '1.5rem';
-                }}
-                onMouseLeave={(e) => {
-                  e.target.style.backgroundColor = 'transparent';
-                  e.target.style.paddingLeft = '1rem';
-                }}
+              <PermissionWrapper 
+                permission={API_PERMISSIONS.USERS.VIEW_DETAIL}
+                fallback={null}
               >
-                <Eye className="me-2" size={16} />
-                View Details
-              </Dropdown.Item>
-              <Dropdown.Item 
-                onClick={() => onEdit(user)}
-                className="d-flex align-items-center transition-all"
-                style={{
-                  transition: 'all 0.2s ease'
-                }}
-                onMouseEnter={(e) => {
-                  e.target.style.backgroundColor = 'rgba(0, 0, 0, 0.05)';
-                  e.target.style.paddingLeft = '1.5rem';
-                }}
-                onMouseLeave={(e) => {
-                  e.target.style.backgroundColor = 'transparent';
-                  e.target.style.paddingLeft = '1rem';
-                }}
+                <Dropdown.Item 
+                  onClick={() => onView(user)}
+                  className="d-flex align-items-center transition-all"
+                  style={{
+                    transition: 'all 0.2s ease'
+                  }}
+                  onMouseEnter={(e) => {
+                    e.target.style.backgroundColor = 'rgba(0, 0, 0, 0.05)';
+                    e.target.style.paddingLeft = '1.5rem';
+                  }}
+                  onMouseLeave={(e) => {
+                    e.target.style.backgroundColor = 'transparent';
+                    e.target.style.paddingLeft = '1rem';
+                  }}
+                >
+                  <Eye className="me-2" size={16} />
+                  View Details
+                </Dropdown.Item>
+              </PermissionWrapper>
+              <PermissionWrapper 
+                permission={API_PERMISSIONS.USERS.UPDATE}
+                fallback={null}
               >
-                <Pencil className="me-2" size={16} />
-                Edit User
-              </Dropdown.Item>
-              <Dropdown.Divider />
-              <Dropdown.Item 
-                onClick={() => onDisable(user)}
-                className="d-flex align-items-center transition-all text-danger"
-                style={{
-                  transition: 'all 0.2s ease'
-                }}
-                onMouseEnter={(e) => {
-                  e.target.style.backgroundColor = 'rgba(220, 53, 69, 0.1)';
-                  e.target.style.paddingLeft = '1.5rem';
-                }}
-                onMouseLeave={(e) => {
-                  e.target.style.backgroundColor = 'transparent';
-                  e.target.style.paddingLeft = '1rem';
-                }}
+                <Dropdown.Item 
+                  onClick={() => onEdit(user)}
+                  className="d-flex align-items-center transition-all"
+                  style={{
+                    transition: 'all 0.2s ease'
+                  }}
+                  onMouseEnter={(e) => {
+                    e.target.style.backgroundColor = 'rgba(0, 0, 0, 0.05)';
+                    e.target.style.paddingLeft = '1.5rem';
+                  }}
+                  onMouseLeave={(e) => {
+                    e.target.style.backgroundColor = 'transparent';
+                    e.target.style.paddingLeft = '1rem';
+                  }}
+                >
+                  <Pencil className="me-2" size={16} />
+                  Edit User
+                </Dropdown.Item>
+              </PermissionWrapper>
+              <PermissionWrapper 
+                permission={API_PERMISSIONS.USERS.UPDATE}
+                fallback={null}
               >
-                <PersonX className="me-2" size={16} />
-                {user.status === 'ACTIVE' ? 'Disable User' : 'Enable User'}
-              </Dropdown.Item>
+                <Dropdown.Divider />
+                <Dropdown.Item 
+                  onClick={() => onDisable(user)}
+                  className="d-flex align-items-center transition-all text-danger"
+                  style={{
+                    transition: 'all 0.2s ease'
+                  }}
+                  onMouseEnter={(e) => {
+                    e.target.style.backgroundColor = 'rgba(220, 53, 69, 0.1)';
+                    e.target.style.paddingLeft = '1.5rem';
+                  }}
+                  onMouseLeave={(e) => {
+                    e.target.style.backgroundColor = 'transparent';
+                    e.target.style.paddingLeft = '1rem';
+                  }}
+                >
+                  <PersonX className="me-2" size={16} />
+                  {user.status === 'ACTIVE' ? 'Disable User' : 'Enable User'}
+                </Dropdown.Item>
+              </PermissionWrapper>
             </Dropdown.Menu>
           </Dropdown>
         </PermissionWrapper>
