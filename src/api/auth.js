@@ -4,7 +4,7 @@ import { API_CONFIG } from '../config/api.js';
 
 // Create a separate axios instance for auth calls to avoid interceptor loops
 const authClient = axios.create({
-  baseURL: import.meta.env.VITE_API_BASE_URL || API_CONFIG.BASE_URL,
+  baseURL: import.meta.env.VITE_API_BASE_URL || 'https://dsfms.id.vn',
   timeout: 10000,
   headers: {
     'Content-Type': 'application/json',

@@ -3,7 +3,7 @@ import { API_CONFIG } from '../config/api.js';
 import { redirectToLogin } from '../utils/navigation.js';
 
 // Base configuration for API calls
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || API_CONFIG.BASE_URL;
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'https://dsfms.id.vn';
 
 // Create axios instance with default config
 const apiClient = axios.create({
