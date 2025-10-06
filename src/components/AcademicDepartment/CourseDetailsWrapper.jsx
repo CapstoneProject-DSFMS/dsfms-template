@@ -7,7 +7,7 @@ const CourseDetailsWrapper = () => {
   
   console.log('🔍 CourseDetailsWrapper - courseId:', courseId);
 
-  return <CourseDetailsView courseId={parseInt(courseId)} />;
+  return <CourseDetailsView courseId={courseId} />;
 };
 
 export default CourseDetailsWrapper;
