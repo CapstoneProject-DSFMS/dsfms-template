@@ -13,6 +13,8 @@ import ProfilePage from '../pages/Profile/ProfilePage'
 import { CourseSelectionView } from '../components/AcademicDepartment'
 import CourseDetailsWrapper from '../components/AcademicDepartment/CourseDetailsWrapper'
 import SubjectDetailsWrapper from '../components/AcademicDepartment/SubjectDetailsWrapper'
+import CourseDetailPage from '../components/AcademicDepartment/CourseDetailPage'
+import EnrollTraineesPage from '../components/AcademicDepartment/EnrollTraineesPage'
 import { API_PERMISSIONS } from '../constants/apiPermissions'
 import { getCurrentBasename } from '../utils/navigation'
 
@@ -156,6 +158,14 @@ export const router = createBrowserRouter([
       {
         path: "course/:courseId",
         element: <CourseDetailsWrapper />
+      },
+      {
+        path: "course-detail/:courseId",
+        element: <CourseDetailPage />
+      },
+      {
+        path: "course/:courseId/enroll-trainees",
+        element: <EnrollTraineesPage />
       },
       {
         path: "subject/:subjectId",

@@ -37,7 +37,7 @@ const MainLayout = ({ children }) => {
   };
 
   return (
-    <div className="d-flex" style={{ minHeight: '100vh' }}>
+    <div className="d-flex" style={{ height: '100vh', overflow: 'hidden' }}>
       {/* Desktop Sidebar */}
       <div className={`sidebar-desktop ${sidebarCollapsed ? 'sidebar-collapsed' : ''}`}>
         <Sidebar collapsed={sidebarCollapsed} />
@@ -59,7 +59,7 @@ const MainLayout = ({ children }) => {
       <div className={`flex-grow-1 d-flex flex-column ${isMobile ? 'main-content-mobile' : ''}`}>
         <Header onToggleSidebar={toggleSidebar} />
         
-        <main className="flex-grow-1 bg-light-custom">
+        <main className="flex-grow-1 bg-light-custom" style={{ overflow: 'hidden' }}>
           {children}
         </main>
       </div>

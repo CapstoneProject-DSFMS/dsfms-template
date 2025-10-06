@@ -7,8 +7,8 @@ const transformDepartmentData = (departmentsData) => {
   return departmentsData.map(dept => ({
     id: dept.id,
     name: dept.name,
-    code: dept.name.split(' ').map(word => word[0]).join('').toUpperCase(),
-    type: dept.name.split(' ').map(word => word[0]).join('').toUpperCase(),
+    code: dept.code,
+    type: dept.code,
     description: dept.description,
     departmentHeadId: dept.headUserId,
     departmentHead: dept.headUser ? {

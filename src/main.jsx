@@ -3,6 +3,7 @@ import { createRoot } from 'react-dom/client'
 import 'bootstrap/dist/css/bootstrap.min.css'
 import './styles/custom-bootstrap.css'
 import './styles/academic-department.css'
+import './styles/scrollable-table.css'
 import 'react-toastify/dist/ReactToastify.css'
 import App from './App.jsx'
 
