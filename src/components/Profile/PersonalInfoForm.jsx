@@ -7,40 +7,50 @@ import { toast } from 'react-toastify';
 const PersonalInfoForm = ({ profileData, user, onUpdate }) => {
   const [loading, setLoading] = useState(false);
   const [personalInfo, setPersonalInfo] = useState({
-    fullName: '',
+    firstName: '',
+    lastName: '',
+    middleName: '',
     email: '',
-    phone: '',
+    phoneNumber: '',
     address: '',
     gender: '',
     avatarUrl: ''
   });
+  
+  const [isInitialized, setIsInitialized] = useState(false);
 
   // Update form when profile data changes
   useEffect(() => {
-    if (profileData) {
-      const fullName = [profileData.firstName, profileData.middleName, profileData.lastName]
-        .filter(Boolean)
-        .join(' ');
-      
-      setPersonalInfo({
-        fullName: fullName || '',
+    if (profileData && profileData.firstName) {
+      const newPersonalInfo = {
+        firstName: profileData.firstName || '',
+        lastName: profileData.lastName || '',
+        middleName: profileData.middleName || '',
         email: profileData.email || '',
-        phone: profileData.phoneNumber || '',
+        phoneNumber: profileData.phoneNumber || '',
         address: profileData.address || '',
         gender: profileData.gender || '',
         avatarUrl: profileData.avatarUrl || ''
-      });
-    } else if (user) {
-      setPersonalInfo({
-        fullName: user.fullName || '',
+      };
+      setPersonalInfo(newPersonalInfo);
+      setIsInitialized(true);
+    } else if (user && !isInitialized) {
+      // Try to parse fullName if available
+      const nameParts = (user.fullName || '').split(' ');
+      const newPersonalInfo = {
+        firstName: nameParts[0] || '',
+        lastName: nameParts[nameParts.length - 1] || '',
+        middleName: nameParts.slice(1, -1).join(' ') || '',
         email: user.email || '',
-        phone: user.phone || '',
+        phoneNumber: user.phone || '',
         address: '',
         gender: '',
         avatarUrl: ''
-      });
+      };
+      setPersonalInfo(newPersonalInfo);
+      setIsInitialized(true);
     }
-  }, [profileData, user]);
+  }, [profileData, user, isInitialized]);
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
@@ -65,7 +75,10 @@ const PersonalInfoForm = ({ profileData, user, onUpdate }) => {
       }
     } catch (error) {
       console.error('Error updating personal info:', error);
-      toast.error('Failed to update personal information. Please try again.');
+      // Don't show toast here if onUpdate is provided (parent will handle it)
+      if (!onUpdate) {
+        toast.error('Failed to update personal information. Please try again.');
+      }
     } finally {
       setLoading(false);
     }
@@ -82,18 +95,44 @@ const PersonalInfoForm = ({ profileData, user, onUpdate }) => {
       <Card.Body>
         <Form onSubmit={handleSubmit}>
           <div className="row">
-            <div className="col-md-6 mb-3">
+            <div className="col-md-4 mb-3">
               <Form.Group>
-                <Form.Label>Full Name</Form.Label>
+                <Form.Label>First Name</Form.Label>
                 <Form.Control
                   type="text"
-                  name="fullName"
-                  value={personalInfo.fullName}
+                  name="firstName"
+                  value={personalInfo.firstName}
                   onChange={handleInputChange}
                   required
                 />
               </Form.Group>
             </div>
+            <div className="col-md-4 mb-3">
+              <Form.Group>
+                <Form.Label>Middle Name</Form.Label>
+                <Form.Control
+                  type="text"
+                  name="middleName"
+                  value={personalInfo.middleName}
+                  onChange={handleInputChange}
+                />
+              </Form.Group>
+            </div>
+            <div className="col-md-4 mb-3">
+              <Form.Group>
+                <Form.Label>Last Name</Form.Label>
+                <Form.Control
+                  type="text"
+                  name="lastName"
+                  value={personalInfo.lastName}
+                  onChange={handleInputChange}
+                  required
+                />
+              </Form.Group>
+            </div>
+          </div>
+          
+          <div className="row">
             <div className="col-md-6 mb-3">
               <Form.Group>
                 <Form.Label>Email</Form.Label>
@@ -106,20 +145,20 @@ const PersonalInfoForm = ({ profileData, user, onUpdate }) => {
                 />
               </Form.Group>
             </div>
-          </div>
-          
-          <div className="row">
             <div className="col-md-6 mb-3">
               <Form.Group>
                 <Form.Label>Phone Number</Form.Label>
                 <Form.Control
                   type="tel"
-                  name="phone"
-                  value={personalInfo.phone}
+                  name="phoneNumber"
+                  value={personalInfo.phoneNumber}
                   onChange={handleInputChange}
                 />
               </Form.Group>
             </div>
+          </div>
+          
+          <div className="row">
             <div className="col-md-6 mb-3">
               <Form.Group>
                 <Form.Label>Gender</Form.Label>
@@ -147,21 +186,6 @@ const PersonalInfoForm = ({ profileData, user, onUpdate }) => {
                   value={personalInfo.address}
                   onChange={handleInputChange}
                   placeholder="Enter your address"
-                />
-              </Form.Group>
-            </div>
-          </div>
-          
-          <div className="row">
-            <div className="col-md-12 mb-3">
-              <Form.Group>
-                <Form.Label>Avatar URL</Form.Label>
-                <Form.Control
-                  type="url"
-                  name="avatarUrl"
-                  value={personalInfo.avatarUrl}
-                  onChange={handleInputChange}
-                  placeholder="Enter avatar image URL"
                 />
               </Form.Group>
             </div>

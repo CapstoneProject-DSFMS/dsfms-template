@@ -13,24 +13,22 @@ const ProfilePage = () => {
   const [showResetPasswordModal, setShowResetPasswordModal] = useState(false);
   const [profileData, setProfileData] = useState(null);
   const [profileLoading, setProfileLoading] = useState(true);
+  const refreshProfile = async () => {
+    try {
+      setProfileLoading(true);
+      const response = await profileAPI.getProfile();
+      setProfileData(response);
+    } catch (error) {
+      console.error('Failed to refresh profile:', error);
+    } finally {
+      setProfileLoading(false);
+    }
+  };
 
 
   // Fetch profile data from API
   useEffect(() => {
-    const fetchProfile = async () => {
-      try {
-        setProfileLoading(true);
-        const response = await profileAPI.getProfile();
-        setProfileData(response);
-      } catch (error) {
-        console.error('Failed to fetch profile:', error);
-        toast.error('Failed to load profile data. Please refresh the page.');
-      } finally {
-        setProfileLoading(false);
-      }
-    };
-
-    fetchProfile();
+    refreshProfile();
   }, []);
 
   const handleUpdatePersonalInfo = async (personalInfo) => {
@@ -95,6 +93,7 @@ const ProfilePage = () => {
             profileData={profileData}
             user={user}
             onResetPassword={() => setShowResetPasswordModal(true)}
+            onAvatarUpdated={refreshProfile}
           />
         </Col>
 
