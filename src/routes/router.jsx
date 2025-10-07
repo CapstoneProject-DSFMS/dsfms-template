@@ -11,6 +11,7 @@ import DepartmentManagementPage from '../pages/Admin/DepartmentManagement/Depart
 import DepartmentDetailPage from '../pages/Admin/DepartmentManagement/DepartmentDetailPage'
 import ProfilePage from '../pages/Profile/ProfilePage'
 import { CourseSelectionView } from '../components/AcademicDepartment'
+import AcademicDashboard from '../pages/Academic/AcademicDashboard'
 import CourseDetailsWrapper from '../components/AcademicDepartment/CourseDetailsWrapper'
 import SubjectDetailsWrapper from '../components/AcademicDepartment/SubjectDetailsWrapper'
 import CourseDetailPage from '../components/AcademicDepartment/CourseDetailPage'
@@ -153,6 +154,14 @@ export const router = createBrowserRouter([
       },
       {
         path: "dashboard",
+        element: <AcademicDashboard />
+      },
+      {
+        path: "departments",
+        element: <CourseSelectionView />
+      },
+      {
+        path: "departments/:departmentId",
         element: <CourseSelectionView />
       },
       {

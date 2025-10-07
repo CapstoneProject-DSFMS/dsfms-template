@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Container, Row, Col, Card, Button, Table, Badge } from 'react-bootstrap';
+import { toast } from 'react-toastify';
 import { 
   FileTextFill, 
   Plus, 
@@ -8,144 +9,132 @@ import {
   People,
   Clock,
   PersonCheckFill,
-  Calendar
+  Calendar,
+  ArrowLeft
 } from 'react-bootstrap-icons';
+import { useNavigate } from 'react-router-dom';
 import { PermissionWrapper } from '../Common';
 import { API_PERMISSIONS } from '../../constants/apiPermissions';
-import { useAuth } from '../../hooks/useAuth';
+import { LoadingSkeleton, SortIcon } from '../Common';
+import useTableSort from '../../hooks/useTableSort';
+import TrainerActions from './TrainerActions';
+import DisableSubjectModal from './DisableSubjectModal';
+import EditSubjectModal from './EditSubjectModal';
+import EditTrainerModal from './EditTrainerModal';
 
 const SubjectDetailsView = ({ subjectId }) => {
-  const { user } = useAuth();
+  const navigate = useNavigate();
   const [subject, setSubject] = useState(null);
   const [trainers, setTrainers] = useState([]);
   const [loading, setLoading] = useState(true);
-
-  // Hardcoded subject data
-  const hardcodedSubjects = {
-    1: {
-      id: 1,
-      name: "Safety Procedures",
-      code: "SAF001",
-      description: "Comprehensive training on aircraft safety procedures, emergency protocols, and passenger safety measures.",
-      duration: "2 weeks",
-      status: "ACTIVE",
-      totalTrainers: 2,
-      courseId: 1,
-      courseName: "Cabin Crew Training"
-    },
-    2: {
-      id: 2,
-      name: "Emergency Response",
-      code: "EMR001",
-      description: "Training on emergency response procedures, evacuation protocols, and crisis management.",
-      duration: "3 weeks",
-      status: "ACTIVE",
-      totalTrainers: 3,
-      courseId: 1,
-      courseName: "Cabin Crew Training"
-    },
-    3: {
-      id: 3,
-      name: "First Aid",
-      code: "FAD001",
-      description: "Basic first aid training for cabin crew members including CPR and medical emergency response.",
-      duration: "1 week",
-      status: "ACTIVE",
-      totalTrainers: 1,
-      courseId: 1,
-      courseName: "Cabin Crew Training"
-    },
-    4: {
-      id: 4,
-      name: "Customer Service",
-      code: "CSV001",
-      description: "Customer service excellence training for cabin crew including communication skills and conflict resolution.",
-      duration: "2 weeks",
-      status: "ACTIVE",
-      totalTrainers: 2,
-      courseId: 1,
-      courseName: "Cabin Crew Training"
-    },
-    5: {
-      id: 5,
-      name: "Simulator Training",
-      code: "SIM001",
-      description: "Advanced simulator training for flight crew including various flight scenarios and emergency procedures.",
-      duration: "4 weeks",
-      status: "ACTIVE",
-      totalTrainers: 4,
-      courseId: 2,
-      courseName: "Flight Crew Training"
-    },
-    6: {
-      id: 6,
-      name: "Type Rating",
-      code: "TR001",
-      description: "Aircraft type rating certification training for specific aircraft models.",
-      duration: "6 weeks",
-      status: "ACTIVE",
-      totalTrainers: 5,
-      courseId: 2,
-      courseName: "Flight Crew Training"
-    },
-    7: {
-      id: 7,
-      name: "Recurrent Training",
-      code: "RT001",
-      description: "Recurrent training to maintain and update flight crew certifications and skills.",
-      duration: "2 weeks",
-      status: "ACTIVE",
-      totalTrainers: 3,
-      courseId: 2,
-      courseName: "Flight Crew Training"
-    }
-  };
-
-  // Hardcoded trainers data
-  const hardcodedTrainers = {
-    1: [
-      { id: 1, name: "John Smith", email: "john.smith@instructor.com", specialization: "Safety Procedures", status: "ACTIVE" },
-      { id: 2, name: "Sarah Johnson", email: "sarah.johnson@instructor.com", specialization: "Emergency Response", status: "ACTIVE" }
-    ],
-    2: [
-      { id: 3, name: "Mike Davis", email: "mike.davis@instructor.com", specialization: "Emergency Response", status: "ACTIVE" },
-      { id: 4, name: "Lisa Wilson", email: "lisa.wilson@instructor.com", specialization: "Crisis Management", status: "ACTIVE" },
-      { id: 5, name: "David Brown", email: "david.brown@instructor.com", specialization: "Evacuation Procedures", status: "ACTIVE" }
-    ],
-    3: [
-      { id: 6, name: "Emily Taylor", email: "emily.taylor@instructor.com", specialization: "First Aid", status: "ACTIVE" }
-    ],
-    4: [
-      { id: 7, name: "Robert Anderson", email: "robert.anderson@instructor.com", specialization: "Customer Service", status: "ACTIVE" },
-      { id: 8, name: "Jennifer Martinez", email: "jennifer.martinez@instructor.com", specialization: "Communication Skills", status: "ACTIVE" }
-    ],
-    5: [
-      { id: 9, name: "Captain James Wilson", email: "james.wilson@instructor.com", specialization: "Simulator Training", status: "ACTIVE" },
-      { id: 10, name: "Captain Maria Garcia", email: "maria.garcia@instructor.com", specialization: "Flight Procedures", status: "ACTIVE" },
-      { id: 11, name: "Captain Tom Lee", email: "tom.lee@instructor.com", specialization: "Emergency Scenarios", status: "ACTIVE" },
-      { id: 12, name: "Captain Anna Chen", email: "anna.chen@instructor.com", specialization: "Navigation", status: "ACTIVE" }
-    ],
-    6: [
-      { id: 13, name: "Captain Peter Johnson", email: "peter.johnson@instructor.com", specialization: "Boeing 737", status: "ACTIVE" },
-      { id: 14, name: "Captain Susan Davis", email: "susan.davis@instructor.com", specialization: "Airbus A320", status: "ACTIVE" },
-      { id: 15, name: "Captain Mark Thompson", email: "mark.thompson@instructor.com", specialization: "Boeing 777", status: "ACTIVE" },
-      { id: 16, name: "Captain Lisa Rodriguez", email: "lisa.rodriguez@instructor.com", specialization: "Airbus A350", status: "ACTIVE" },
-      { id: 17, name: "Captain Kevin Kim", email: "kevin.kim@instructor.com", specialization: "Boeing 787", status: "ACTIVE" }
-    ],
-    7: [
-      { id: 18, name: "Captain Alex Turner", email: "alex.turner@instructor.com", specialization: "Recurrent Training", status: "ACTIVE" },
-      { id: 19, name: "Captain Rachel Green", email: "rachel.green@instructor.com", specialization: "Certification Updates", status: "ACTIVE" },
-      { id: 20, name: "Captain Daniel White", email: "daniel.white@instructor.com", specialization: "Skill Assessment", status: "ACTIVE" }
-    ]
-  };
+  const [showDisableSubject, setShowDisableSubject] = useState(false);
+  const [showEditSubject, setShowEditSubject] = useState(false);
+  const [showEditTrainer, setShowEditTrainer] = useState(false);
+  const [selectedTrainer, setSelectedTrainer] = useState(null);
+  const [isDisabling, setIsDisabling] = useState(false);
+  const [isEditing, setIsEditing] = useState(false);
+  const [isEditingTrainer, setIsEditingTrainer] = useState(false);
+  
+  const { sortedData } = useTableSort(trainers);
 
   useEffect(() => {
+    // Hardcoded subject data - matching SubjectTable IDs
+    const hardcodedSubjects = {
+      's1': {
+        id: 's1',
+        name: "Safety Basics",
+        code: "SB01",
+        description: "Comprehensive training on basic safety procedures, emergency protocols, and safety equipment usage.",
+        duration: "2 weeks",
+        status: "ACTIVE",
+        totalTrainers: 2,
+        courseId: 1,
+        courseName: "Safety Procedures"
+      },
+      's2': {
+        id: 's2',
+        name: "Evacuation Drills",
+        code: "ED02",
+        description: "Training on evacuation procedures, emergency exits, and passenger safety during evacuations.",
+        duration: "1 week",
+        status: "ACTIVE",
+        totalTrainers: 3,
+        courseId: 1,
+        courseName: "Safety Procedures"
+      },
+      's3': {
+        id: 's3',
+        name: "CPR & First Aid",
+        code: "FA03",
+        description: "Basic first aid training including CPR, medical emergency response, and life-saving techniques.",
+        duration: "1 week",
+        status: "INACTIVE",
+        totalTrainers: 1,
+        courseId: 1,
+        courseName: "Safety Procedures"
+      },
+      's4': {
+        id: 's4',
+        name: "Fire Safety",
+        code: "FS04",
+        description: "Fire safety training covering fire prevention, detection, and emergency response procedures.",
+        duration: "1 week",
+        status: "ACTIVE",
+        totalTrainers: 2,
+        courseId: 1,
+        courseName: "Safety Procedures"
+      },
+      's5': {
+        id: 's5',
+        name: "Emergency Procedures",
+        code: "EP05",
+        description: "Comprehensive emergency procedures training for various crisis situations and protocols.",
+        duration: "2 weeks",
+        status: "ACTIVE",
+        totalTrainers: 4,
+        courseId: 1,
+        courseName: "Safety Procedures"
+      }
+    };
+
+    // Hardcoded trainers data - matching subject IDs
+    const hardcodedTrainers = {
+      's1': [
+        { id: 1, name: "John Smith", email: "john.smith@instructor.com", specialization: "Safety Basics", status: "ACTIVE" },
+        { id: 2, name: "Sarah Johnson", email: "sarah.johnson@instructor.com", specialization: "Safety Procedures", status: "ACTIVE" }
+      ],
+      's2': [
+        { id: 3, name: "Mike Davis", email: "mike.davis@instructor.com", specialization: "Evacuation Procedures", status: "ACTIVE" },
+        { id: 4, name: "Lisa Wilson", email: "lisa.wilson@instructor.com", specialization: "Emergency Exits", status: "ACTIVE" },
+        { id: 5, name: "David Brown", email: "david.brown@instructor.com", specialization: "Passenger Safety", status: "ACTIVE" }
+      ],
+      's3': [
+        { id: 6, name: "Emily Taylor", email: "emily.taylor@instructor.com", specialization: "CPR & First Aid", status: "ACTIVE" }
+      ],
+      's4': [
+        { id: 7, name: "Robert Anderson", email: "robert.anderson@instructor.com", specialization: "Fire Prevention", status: "ACTIVE" },
+        { id: 8, name: "Jennifer Martinez", email: "jennifer.martinez@instructor.com", specialization: "Fire Detection", status: "ACTIVE" }
+      ],
+      's5': [
+        { id: 9, name: "Captain James Wilson", email: "james.wilson@instructor.com", specialization: "Emergency Response", status: "ACTIVE" },
+        { id: 10, name: "Captain Maria Garcia", email: "maria.garcia@instructor.com", specialization: "Crisis Management", status: "ACTIVE" },
+        { id: 11, name: "Captain Tom Lee", email: "tom.lee@instructor.com", specialization: "Emergency Protocols", status: "ACTIVE" },
+        { id: 12, name: "Captain Anna Chen", email: "anna.chen@instructor.com", specialization: "Safety Procedures", status: "ACTIVE" }
+      ]
+    };
+
     // Simulate API call
     const loadSubjectData = () => {
       setLoading(true);
+      console.log('🔍 Loading subject data for subjectId:', subjectId);
+      console.log('🔍 Available subjects:', Object.keys(hardcodedSubjects));
+      
       setTimeout(() => {
         const subjectData = hardcodedSubjects[subjectId];
         const trainersData = hardcodedTrainers[subjectId] || [];
+        
+        console.log('🔍 Found subject data:', subjectData);
+        console.log('🔍 Found trainers data:', trainersData);
         
         setSubject(subjectData);
         setTrainers(trainersData);
@@ -158,34 +147,122 @@ const SubjectDetailsView = ({ subjectId }) => {
     }
   }, [subjectId]);
 
-  const handleCreateSubject = () => {
-    console.log('Create Subject clicked');
-    // TODO: Implement create subject functionality
-  };
-
   const handleEditSubject = () => {
     console.log('Edit Subject clicked');
-    // TODO: Implement edit subject functionality
+    setShowEditSubject(true);
+  };
+
+  const handleSaveSubject = async (subjectData) => {
+    console.log('Saving subject:', subjectData);
+    setIsEditing(true);
+    try {
+      // TODO: Implement save subject API call
+      // For now, simulate API call
+      await new Promise(resolve => setTimeout(resolve, 1000));
+      
+      // Update local state
+      setSubject(prev => ({
+        ...prev,
+        ...subjectData
+      }));
+      
+      toast.success('Subject updated successfully!');
+    } catch (error) {
+      console.error('Error saving subject:', error);
+      toast.error('Failed to save subject. Please try again.');
+    } finally {
+      setIsEditing(false);
+    }
   };
 
   const handleDeleteSubject = () => {
-    console.log('Delete Subject clicked');
-    // TODO: Implement delete subject functionality
+    setShowDisableSubject(true);
+  };
+
+  const handleConfirmDisableSubject = async (subjectId) => {
+    console.log('Disabling subject:', subjectId);
+    setIsDisabling(true);
+    try {
+      // TODO: Implement disable subject API call
+      // For now, simulate API call
+      await new Promise(resolve => setTimeout(resolve, 1000));
+      
+      // Show success message
+      toast.success('Subject disabled successfully!');
+      
+      // Navigate back to course details
+      if (subject?.courseId) {
+        navigate(`/academic/course-detail/${subject.courseId}`);
+      } else {
+        navigate(-1);
+      }
+    } catch (error) {
+      console.error('Error disabling subject:', error);
+      toast.error('Failed to disable subject. Please try again.');
+    } finally {
+      setIsDisabling(false);
+      setShowDisableSubject(false);
+    }
   };
 
   const handleCreateTrainer = () => {
     console.log('Create Trainer clicked');
-    // TODO: Implement create trainer functionality
+    toast.info('Navigating to add trainer page...');
+    // Navigate to add trainer page or open modal
+    navigate(`/academic/subject/${subjectId}/add-trainer`);
   };
 
   const handleEditTrainer = (trainerId) => {
     console.log('Edit Trainer clicked:', trainerId);
-    // TODO: Implement edit trainer functionality
+    const trainer = trainers.find(t => t.id === trainerId);
+    if (trainer) {
+      setSelectedTrainer(trainer);
+      setShowEditTrainer(true);
+    }
+  };
+
+  const handleSaveTrainer = async (trainerData) => {
+    console.log('Saving trainer:', trainerData);
+    setIsEditingTrainer(true);
+    try {
+      // TODO: Implement save trainer API call
+      // For now, simulate API call
+      await new Promise(resolve => setTimeout(resolve, 1000));
+      
+      // Update local state
+      setTrainers(prev => prev.map(trainer => 
+        trainer.id === selectedTrainer.id 
+          ? { ...trainer, ...trainerData }
+          : trainer
+      ));
+      
+      toast.success('Trainer updated successfully!');
+    } catch (error) {
+      console.error('Error saving trainer:', error);
+      toast.error('Failed to save trainer. Please try again.');
+    } finally {
+      setIsEditingTrainer(false);
+    }
   };
 
   const handleDeleteTrainer = (trainerId) => {
     console.log('Delete Trainer clicked:', trainerId);
-    // TODO: Implement delete trainer functionality
+    // Show confirmation dialog or implement delete functionality
+    if (window.confirm('Are you sure you want to remove this trainer from the subject?')) {
+      // TODO: Implement API call to remove trainer
+      console.log('Removing trainer:', trainerId);
+      // For now, just show a success message
+      toast.success('Trainer removed successfully!');
+    }
+  };
+
+  const handleBack = () => {
+    // Navigate back to course details
+    if (subject?.courseId) {
+      navigate(`/academic/course-detail/${subject.courseId}`);
+    } else {
+      navigate(-1);
+    }
   };
 
   if (loading) {
@@ -214,6 +291,25 @@ const SubjectDetailsView = ({ subjectId }) => {
 
   return (
     <Container className="py-4">
+      {/* Header với nút Back */}
+      <div className="d-flex align-items-center mb-3">
+        <Button 
+          variant="outline-secondary" 
+          size="sm" 
+          onClick={handleBack}
+          className="me-3"
+        >
+          <ArrowLeft size={16} className="me-1" />
+          Back
+        </Button>
+        <div>
+          <h4 className="mb-0 text-primary">
+            <strong>{subject.name}</strong> — {subject.code}
+          </h4>
+          <small className="text-muted">Subject Details</small>
+        </div>
+      </div>
+
       {/* Subject Header */}
       <Row className="mb-4">
         <Col>
@@ -229,12 +325,6 @@ const SubjectDetailsView = ({ subjectId }) => {
                   <p className="text-muted mb-0">Course: {subject.courseName}</p>
                 </div>
                 <div className="d-flex gap-2">
-                  <PermissionWrapper permission={API_PERMISSIONS.SUBJECTS.CREATE}>
-                    <Button variant="outline-primary" size="sm" onClick={handleCreateSubject}>
-                      <Plus size={16} className="me-1" />
-                      Create Subject
-                    </Button>
-                  </PermissionWrapper>
                   <PermissionWrapper permission={API_PERMISSIONS.SUBJECTS.UPDATE}>
                     <Button variant="outline-secondary" size="sm" onClick={handleEditSubject}>
                       <Pencil size={16} className="me-1" />
@@ -242,9 +332,9 @@ const SubjectDetailsView = ({ subjectId }) => {
                     </Button>
                   </PermissionWrapper>
                   <PermissionWrapper permission={API_PERMISSIONS.SUBJECTS.DELETE}>
-                    <Button variant="outline-danger" size="sm" onClick={handleDeleteSubject}>
+                    <Button variant="outline-warning" size="sm" onClick={handleDeleteSubject}>
                       <Trash size={16} className="me-1" />
-                      Delete Subject
+                      Disable Subject
                     </Button>
                   </PermissionWrapper>
                 </div>
@@ -288,7 +378,7 @@ const SubjectDetailsView = ({ subjectId }) => {
       <Row>
         <Col>
           <Card className="border-0 shadow-sm">
-            <Card.Header className="bg-white border-bottom">
+            <Card.Header className="bg-white border-bottom py-4 pb-3">
               <div className="d-flex justify-content-between align-items-center">
                 <h5 className="mb-0">
                   <PersonCheckFill className="me-2" />
@@ -304,53 +394,38 @@ const SubjectDetailsView = ({ subjectId }) => {
             </Card.Header>
             <Card.Body className="p-0">
               {trainers.length > 0 ? (
-                <Table responsive className="mb-0">
+                <Table hover className="mb-0">
                   <thead className="table-light">
                     <tr>
-                      <th>Trainer Name</th>
-                      <th>Email</th>
-                      <th>Specialization</th>
-                      <th>Status</th>
-                      <th>Actions</th>
+                      <th className="px-3 py-3">Trainer Name</th>
+                      <th className="px-3 py-3">Email</th>
+                      <th className="px-3 py-3">Specialization</th>
+                      <th className="px-3 py-3">Status</th>
+                      <th className="px-3 py-3 text-center">Actions</th>
                     </tr>
                   </thead>
                   <tbody>
-                    {trainers.map((trainer) => (
+                    {sortedData.map((trainer) => (
                       <tr key={trainer.id}>
-                        <td>
+                        <td className="px-3 py-3">
                           <div className="d-flex align-items-center">
                             <PersonCheckFill size={16} className="me-2 text-primary" />
                             <div className="fw-semibold">{trainer.name}</div>
                           </div>
                         </td>
-                        <td>{trainer.email}</td>
-                        <td>
+                        <td className="px-3 py-3">{trainer.email}</td>
+                        <td className="px-3 py-3">
                           <Badge bg="info">{trainer.specialization}</Badge>
                         </td>
-                        <td>
+                        <td className="px-3 py-3">
                           <Badge bg="success">{trainer.status}</Badge>
                         </td>
-                        <td>
-                          <div className="d-flex gap-1">
-                            <PermissionWrapper permission={API_PERMISSIONS.SUBJECTS.UPDATE}>
-                              <Button 
-                                variant="outline-secondary" 
-                                size="sm"
-                                onClick={() => handleEditTrainer(trainer.id)}
-                              >
-                                <Pencil size={14} />
-                              </Button>
-                            </PermissionWrapper>
-                            <PermissionWrapper permission={API_PERMISSIONS.SUBJECTS.REMOVE_INSTRUCTOR}>
-                              <Button 
-                                variant="outline-danger" 
-                                size="sm"
-                                onClick={() => handleDeleteTrainer(trainer.id)}
-                              >
-                                <Trash size={14} />
-                              </Button>
-                            </PermissionWrapper>
-                          </div>
+                        <td className="px-3 py-3 text-center">
+                          <TrainerActions 
+                            trainer={trainer}
+                            onEdit={handleEditTrainer}
+                            onDelete={handleDeleteTrainer}
+                          />
                         </td>
                       </tr>
                     ))}
@@ -373,6 +448,31 @@ const SubjectDetailsView = ({ subjectId }) => {
           </Card>
         </Col>
       </Row>
+
+      {/* Modals */}
+      <EditSubjectModal
+        show={showEditSubject}
+        onClose={() => setShowEditSubject(false)}
+        onSave={handleSaveSubject}
+        subject={subject}
+        loading={isEditing}
+      />
+      
+      <EditTrainerModal
+        show={showEditTrainer}
+        onClose={() => setShowEditTrainer(false)}
+        onSave={handleSaveTrainer}
+        trainer={selectedTrainer}
+        loading={isEditingTrainer}
+      />
+      
+      <DisableSubjectModal
+        show={showDisableSubject}
+        onClose={() => setShowDisableSubject(false)}
+        onDisable={handleConfirmDisableSubject}
+        subject={subject}
+        loading={isDisabling}
+      />
     </Container>
   );
 };

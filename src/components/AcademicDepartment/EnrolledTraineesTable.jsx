@@ -13,11 +13,11 @@ const mockSubjects = [
   { id: 's5', name: 'Emergency Procedures', code: 'EP05' }
 ];
 
-const EnrolledTraineesTable = ({ courseId, enrolledTrainees, onUpdate, loading = false }) => {
+const EnrolledTraineesTable = ({ enrolledTrainees, onUpdate, loading = false }) => {
   const [showSubjectModal, setShowSubjectModal] = useState(false);
   const [selectedTrainee, setSelectedTrainee] = useState(null);
   
-  const { sortedData, sortConfig, handleSort, getSortIcon, getSortClass } = useTableSort(enrolledTrainees);
+  const { sortedData, sortConfig, handleSort } = useTableSort(enrolledTrainees);
 
   const handleViewSubjects = (trainee) => {
     setSelectedTrainee(trainee);
@@ -151,12 +151,37 @@ const EnrolledTraineesTable = ({ courseId, enrolledTrainees, onUpdate, loading =
 
   return (
     <>
-      <Card className="d-flex flex-column">
-        <Card.Header className="bg-white border-bottom">
+      <Card 
+        className="d-flex flex-column" 
+        style={{ 
+          minHeight: 'auto', 
+          height: 'fit-content', 
+          maxHeight: 'none' 
+        }}
+      >
+        <Card.Header 
+          className="bg-white border-bottom" 
+          style={{ flexShrink: 0 }}
+        >
           <h6 className="mb-0">Enrolled Trainees ({enrolledTrainees.length})</h6>
         </Card.Header>
-        <Card.Body className="p-0">
-          <div className="department-table-container" style={{ maxHeight: '300px', overflowY: 'auto' }}>
+        <Card.Body 
+          className="p-0" 
+          style={{ 
+            height: 'fit-content', 
+            minHeight: 'auto', 
+            maxHeight: 'none',
+            flex: 'none'
+          }}
+        >
+          <div 
+            style={{ 
+              height: 'fit-content', 
+              minHeight: 'auto', 
+              maxHeight: 'none',
+              overflow: 'visible'
+            }}
+          >
             <Table hover className="mb-0 table-mobile-responsive">
               <thead className="sticky-header bg-gradient-primary-custom">
                 <tr>
@@ -175,7 +200,7 @@ const EnrolledTraineesTable = ({ courseId, enrolledTrainees, onUpdate, loading =
                 </tr>
               </thead>
               <tbody>
-                {sortedData.map((trainee, index) => (
+                {sortedData.map((trainee) => (
                   <tr key={trainee.id}>
                     <td className="show-mobile">
                       <div className="fw-semibold text-primary-custom">
@@ -228,7 +253,7 @@ const EnrolledTraineesTable = ({ courseId, enrolledTrainees, onUpdate, loading =
       <Modal show={showSubjectModal} onHide={() => setShowSubjectModal(false)} size="md">
         <Modal.Header closeButton>
           <Modal.Title>
-            Subjects for {selectedTrainee?.name}
+            {selectedTrainee?.name} Enrolled Subjects
           </Modal.Title>
         </Modal.Header>
         <Modal.Body>

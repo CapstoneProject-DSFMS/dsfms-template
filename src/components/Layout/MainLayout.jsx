@@ -1,11 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { Container, Row, Col } from 'react-bootstrap';
-import { useLocation } from 'react-router-dom';
 import Sidebar from './Sidebar';
 import Header from './Header';
 
 const MainLayout = ({ children }) => {
-  const location = useLocation();
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
   const [sidebarOpen, setSidebarOpen] = useState(false);
@@ -59,7 +57,7 @@ const MainLayout = ({ children }) => {
       <div className={`flex-grow-1 d-flex flex-column ${isMobile ? 'main-content-mobile' : ''}`}>
         <Header onToggleSidebar={toggleSidebar} />
         
-        <main className="flex-grow-1 bg-light-custom" style={{ overflow: 'hidden' }}>
+        <main className="flex-grow-1 bg-light-custom" style={{ overflowY: 'auto' }}>
           {children}
         </main>
       </div>

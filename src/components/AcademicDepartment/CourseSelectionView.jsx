@@ -23,7 +23,7 @@ const CourseSelectionView = () => {
   };
 
   return (
-    <div style={{ height: '100vh', overflowY: 'auto' }}>
+    <div style={{ paddingBottom: '2rem' }}>
       <Container className="py-4">
         <Row className="mb-4">
           <Col>
@@ -35,7 +35,7 @@ const CourseSelectionView = () => {
           </Col>
         </Row>
 
-        <Row>
+        <Row className="mb-5">
           {departmentsLoading ? (
             <Col className="text-center py-5">
               <Spinner animation="border" variant="primary" />
