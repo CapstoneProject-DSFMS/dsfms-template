@@ -26,14 +26,8 @@ const Sidebar = ({ collapsed, onClose }) => {
   const { user } = useAuth();
   const location = useLocation();
   const { departments, loading: departmentsLoading } = useDepartmentManagement();
-  const [showDepartmentDropdown, setShowDepartmentDropdown] = useState(
-    location.pathname.startsWith('/academic/course/')
-  );
+  const [isDepartmentDropdownOpen, setIsDepartmentDropdownOpen] = useState(false);
   
-  // Update dropdown state when location changes
-  useEffect(() => {
-    setShowDepartmentDropdown(location.pathname.startsWith('/academic/course/'));
-  }, [location.pathname]);
   
   // Debug log
   console.log('🔍 Sidebar - User role:', user?.role);
@@ -205,75 +199,97 @@ const Sidebar = ({ collapsed, onClose }) => {
         {/* Academic Department - Department dropdown */}
         {user?.role === 'ACADEMIC_DEPARTMENT' && (
           <Nav.Item className="mb-3">
-            <div
-              className={`sidebar-nav-link text-white d-flex align-items-center py-3 pe-1 rounded nav-link text-nowrap ${collapsed ? "justify-content-center" : ""} ${location.pathname.startsWith('/academic/course/') ? "active" : ""}`}
-              style={{
-                minHeight: collapsed ? "48px" : "auto",
-                cursor: "pointer",
-                backgroundColor: location.pathname.startsWith('/academic/course/') ? "rgba(255, 255, 255, 0.1)" : "transparent"
-              }}
-              onClick={() => !collapsed && setShowDepartmentDropdown(!showDepartmentDropdown)}
-            >
-              <Building
-                size={20}
-                className={collapsed ? "me-2" : "me-3"}
+            <div className="position-relative">
+              {/* Department dropdown trigger */}
+              <div
+                className={`sidebar-nav-link text-white d-flex align-items-center py-3 pe-1 rounded nav-link text-nowrap ${collapsed ? "justify-content-center" : ""} ${location.pathname.startsWith('/academic/departments') ? "active" : ""}`}
                 style={{
-                  display: "inline-block",
-                  flexShrink: 0,
-                  transition: "transform 0.3s cubic-bezier(.68,-0.55,.27,1.55)",
+                  minHeight: collapsed ? "48px" : "auto",
+                  backgroundColor: location.pathname.startsWith('/academic/departments') ? "rgba(255, 255, 255, 0.1)" : "transparent",
+                  cursor: "pointer"
                 }}
-              />
-              {!collapsed && (
-                <>
-                  <span className="sidebar-nav-label">Department</span>
-                  <ChevronDown
-                    size={16}
-                    className="ms-auto"
-                    style={{
-                      transform: showDepartmentDropdown ? "rotate(180deg)" : "rotate(0deg)",
-                      transition: "transform 0.3s ease"
-                    }}
-                  />
-                </>
+                onClick={() => {
+                  if (!collapsed) {
+                    setIsDepartmentDropdownOpen(!isDepartmentDropdownOpen);
+                  }
+                }}
+              >
+                <Building
+                  size={20}
+                  className={collapsed ? "me-2" : "me-3"}
+                  style={{
+                    display: "inline-block",
+                    flexShrink: 0,
+                    transition: "transform 0.3s cubic-bezier(.68,-0.55,.27,1.55)",
+                  }}
+                />
+                {!collapsed && (
+                  <>
+                    <span className="sidebar-nav-label flex-grow-1">Department</span>
+                    <ChevronDown
+                      size={16}
+                      className={`ms-auto transition-transform ${isDepartmentDropdownOpen ? "rotate-180" : ""}`}
+                      style={{
+                        transition: "transform 0.3s ease"
+                      }}
+                    />
+                  </>
+                )}
+              </div>
+
+              {/* Department dropdown menu */}
+              {!collapsed && isDepartmentDropdownOpen && (
+                <div 
+                  className="position-absolute start-0 end-0 mt-1"
+                  style={{
+                    zIndex: 1000,
+                    maxHeight: "300px",
+                    overflowY: "auto"
+                  }}
+                >
+                  {/* Individual departments */}
+                  {departmentsLoading ? (
+                    <div className="px-3 py-2 text-white-50">
+                      <small>Loading departments...</small>
+                    </div>
+                  ) : departments.length > 0 ? (
+                    departments.map((dept) => (
+                      <Link
+                        key={dept.id}
+                        to={`/academic/course/${dept.id}`}
+                        className="d-block px-3 py-2 text-white text-decoration-none d-flex align-items-center"
+                        style={{
+                          fontSize: "0.875rem",
+                          backgroundColor: location.pathname === `/academic/course/${dept.id}` ? "rgba(255, 255, 255, 0.1)" : "transparent",
+                          transition: "background-color 0.2s ease"
+                        }}
+                        onClick={() => {
+                          // Không đóng dropdown, chỉ đóng sidebar trên mobile
+                          onClose && onClose();
+                        }}
+                        onMouseEnter={(e) => {
+                          if (location.pathname !== `/academic/course/${dept.id}`) {
+                            e.target.style.backgroundColor = "rgba(255, 255, 255, 0.05)";
+                          }
+                        }}
+                        onMouseLeave={(e) => {
+                          if (location.pathname !== `/academic/course/${dept.id}`) {
+                            e.target.style.backgroundColor = "transparent";
+                          }
+                        }}
+                      >
+                        <ChevronRight size={12} className="me-2" />
+                        {dept.code}
+                      </Link>
+                    ))
+                  ) : (
+                    <div className="px-3 py-2 text-white-50">
+                      <small>No departments found</small>
+                    </div>
+                  )}
+                </div>
               )}
             </div>
-            
-            {/* Department dropdown items */}
-            {!collapsed && showDepartmentDropdown && (
-              <Nav className="flex-column ms-3 mt-2">
-                {departmentsLoading ? (
-                  <Nav.Item className="mb-2">
-                    <div className="sidebar-nav-link d-flex align-items-center py-2 pe-1 rounded nav-link text-white-50">
-                      <ChevronRightIcon size={14} className="me-1" />
-                      <span>Loading departments...</span>
-                    </div>
-                  </Nav.Item>
-                ) : (
-                  activeDepartments.map((department) => {
-                    const isDepartmentActive = location.pathname === `/academic/course/${department.id}`;
-                    return (
-                      <Nav.Item key={department.id} className="mb-1">
-                        <Link
-                          to={`/academic/course/${department.id}`}
-                          className={`sidebar-nav-link d-flex align-items-center py-1 pe-1 rounded nav-link ${isDepartmentActive ? "text-white" : "text-white-50"}`}
-                          style={{
-                            fontSize: "0.85rem",
-                            paddingLeft: "0.5rem",
-                            backgroundColor: isDepartmentActive ? "rgba(255, 255, 255, 0.1)" : "transparent",
-                            wordWrap: "break-word",
-                            overflowWrap: "break-word"
-                          }}
-                          onClick={onClose}
-                        >
-                          <ChevronRightIcon size={13} className="me-1" />
-                          <span>{department.name}</span>
-                        </Link>
-                      </Nav.Item>
-                    );
-                  })
-                )}
-              </Nav>
-            )}
           </Nav.Item>
         )}
       </Nav>

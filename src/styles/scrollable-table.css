@@ -613,7 +613,12 @@ table .department-table-container .badge {
 
 .card-header {
   margin-bottom: 0 !important;
-  padding-bottom: 0 !important;
+  /* padding-bottom: 0 !important; - Removed to allow Bootstrap padding classes */
+}
+
+/* Allow Bootstrap padding classes for course detail headers */
+.course-detail .card-header {
+  padding: 1.5rem 1rem 1rem 1rem !important;
 }
 
 .row {

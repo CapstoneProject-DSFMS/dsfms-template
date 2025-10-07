@@ -7,7 +7,7 @@ const SubjectDetailsWrapper = () => {
   
   console.log('🔍 SubjectDetailsWrapper - subjectId:', subjectId);
 
-  return <SubjectDetailsView subjectId={parseInt(subjectId)} />;
+  return <SubjectDetailsView subjectId={subjectId} />;
 };
 
 export default SubjectDetailsWrapper;

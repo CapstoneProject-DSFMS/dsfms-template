@@ -87,8 +87,8 @@ const EnrollTraineesPage = () => {
   };
 
   return (
-    <Container fluid className="py-1 enroll-page" style={{ height: '100vh', overflow: 'hidden' }}>
-      <div className="d-flex flex-column h-100">
+    <Container fluid className="py-1 enroll-page">
+      <div className="d-flex flex-column">
         {/* Header - Fixed */}
         <div className="flex-shrink-0 mb-2">
           <div className="d-flex align-items-center mb-2">
@@ -105,7 +105,6 @@ const EnrollTraineesPage = () => {
               <h5 className="mb-0 text-primary">
                 Enroll Trainees - <strong>{course.name}</strong> ({course.code})
               </h5>
-              <small className="text-muted">Manage trainee enrollment for this course</small>
             </div>
           </div>
 
@@ -134,11 +133,11 @@ const EnrollTraineesPage = () => {
           </Card>
         </div>
 
-        {/* Main Content - Compact Height */}
-        <div className="flex-grow-1" style={{ minHeight: 0 }}>
+        {/* Main Content */}
+        <div className="mb-4">
           <Row className="g-2">
             {/* Panel 1: Subject Selection */}
-            <Col lg={4}>
+            <Col lg={6}>
               <SubjectSelectionPanel 
                 courseId={courseId}
                 selectedSubjects={selectedSubjects}
@@ -147,36 +146,23 @@ const EnrollTraineesPage = () => {
             </Col>
 
             {/* Panel 2: Trainee Selection */}
-            <Col lg={4}>
+            <Col lg={6}>
               <TraineeSelectionPanel 
                 selectedTrainees={selectedTrainees}
                 onSelectionChange={setSelectedTrainees}
               />
             </Col>
-
-            {/* Panel 3: Enrolled Trainees */}
-            <Col lg={4}>
-              <EnrolledTraineesTable 
-                courseId={courseId}
-                enrolledTrainees={enrolledTrainees}
-                onUpdate={setEnrolledTrainees}
-                loading={false}
-              />
-            </Col>
           </Row>
         </div>
 
-        {/* Enroll Button - Fixed */}
-        <div className="flex-shrink-0 text-center mt-1 pb-1">
-          <Button 
-            variant="success" 
-            size="sm"
-            onClick={handleEnroll}
-            disabled={selectedSubjects.length === 0 || selectedTrainees.length === 0}
-          >
-            <Plus size={16} className="me-2" />
-            Enroll {selectedTrainees.length} Trainee(s) to {selectedSubjects.length} Subject(s)
-          </Button>
+
+        {/* Enrolled Trainees Table - Full Width at Bottom */}
+        <div className="mt-4">
+          <EnrolledTraineesTable 
+            enrolledTrainees={enrolledTrainees}
+            onUpdate={setEnrolledTrainees}
+            loading={false}
+          />
         </div>
       </div>
 

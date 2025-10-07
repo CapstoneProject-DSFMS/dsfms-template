@@ -12,12 +12,18 @@ const mockCourse = {
   code: 'SAF001'
 };
 
+const mockDepartment = {
+  id: 1,
+  name: 'Safety Department',
+  code: 'SAF'
+};
+
 const CourseDetailPage = () => {
   const { courseId } = useParams();
   const course = { ...mockCourse, id: courseId };
   return (
     <Container className="py-3">
-      <InPageCourseDetail course={course} />
+      <InPageCourseDetail course={course} department={mockDepartment} />
     </Container>
   );
 };

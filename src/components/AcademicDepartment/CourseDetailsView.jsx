@@ -8,8 +8,8 @@ import {
   Trash, 
   People,
   Calendar,
-  Clock,
-  FileText
+  FileText,
+  Person
 } from 'react-bootstrap-icons';
 import { PermissionWrapper } from '../Common';
 import { API_PERMISSIONS } from '../../constants/apiPermissions';
@@ -17,6 +17,9 @@ import { useAuth } from '../../hooks/useAuth';
 import { departmentAPI } from '../../api/department';
 import CourseTable from './CourseTable';
 import CourseActions from './CourseActions';
+import AddCourseModal from './AddCourseModal';
+import DisableCourseModal from './DisableCourseModal';
+import DepartmentHeadModal from './DepartmentHeadModal';
 
 const CourseDetailsView = ({ courseId }) => {
   const { user } = useAuth();
@@ -28,6 +31,10 @@ const CourseDetailsView = ({ courseId }) => {
   const [courseModalMode, setCourseModalMode] = useState('add');
   const [selectedCourse, setSelectedCourse] = useState(null);
   const [showInPageDetail, setShowInPageDetail] = useState(false);
+  const [showDisableCourse, setShowDisableCourse] = useState(false);
+  const [courseToDisable, setCourseToDisable] = useState(null);
+  const [departmentHead, setDepartmentHead] = useState(null);
+  const [showDepartmentHeadModal, setShowDepartmentHeadModal] = useState(false);
 
   // Hardcoded course data
   const hardcodedCourses = {
@@ -85,16 +92,16 @@ const CourseDetailsView = ({ courseId }) => {
 
   // Hardcoded courses data for the courses table
   const hardcodedCoursesList = [
-    { id: 1, name: "Safety Procedures", code: "SAF001", duration: "2 weeks", status: "ACTIVE", trainers: 2 },
-    { id: 2, name: "Emergency Response", code: "EMR001", duration: "3 weeks", status: "ACTIVE", trainers: 3 },
-    { id: 3, name: "First Aid", code: "FAD001", duration: "1 week", status: "ACTIVE", trainers: 1 },
-    { id: 4, name: "Customer Service", code: "CSV001", duration: "2 weeks", status: "ACTIVE", trainers: 2 },
-    { id: 5, name: "Simulator Training", code: "SIM001", duration: "4 weeks", status: "ACTIVE", trainers: 4 },
-    { id: 6, name: "Type Rating", code: "TR001", duration: "6 weeks", status: "ACTIVE", trainers: 5 },
-    { id: 7, name: "Recurrent Training", code: "RT001", duration: "2 weeks", status: "ACTIVE", trainers: 3 },
-    { id: 8, name: "Aircraft Marshalling", code: "AM001", duration: "1 week", status: "ACTIVE", trainers: 2 },
-    { id: 9, name: "Baggage Handling", code: "BH001", duration: "1 week", status: "ACTIVE", trainers: 2 },
-    { id: 10, name: "Check-in Procedures", code: "CIP001", duration: "1 week", status: "ACTIVE", trainers: 1 }
+    { id: 1, name: "Safety Procedures", code: "SAF001", startDate: "2024-01-15", endDate: "2024-01-29", venue: "Training Center A", note: "Basic safety protocols", status: "ACTIVE" },
+    { id: 2, name: "Emergency Response", code: "EMR001", startDate: "2024-02-01", endDate: "2024-02-22", venue: "Training Center B", note: "Emergency procedures training", status: "ACTIVE" },
+    { id: 3, name: "First Aid", code: "FAD001", startDate: "2024-01-20", endDate: "2024-01-27", venue: "Medical Center", note: "Basic first aid skills", status: "ACTIVE" },
+    { id: 4, name: "Customer Service", code: "CSV001", startDate: "2024-02-05", endDate: "2024-02-19", venue: "Training Center A", note: "Customer interaction skills", status: "ACTIVE" },
+    { id: 5, name: "Simulator Training", code: "SIM001", startDate: "2024-02-10", endDate: "2024-03-09", venue: "Simulator Complex", note: "Flight simulator training", status: "ACTIVE" },
+    { id: 6, name: "Type Rating", code: "TR001", startDate: "2024-03-01", endDate: "2024-04-12", venue: "Training Center C", note: "Aircraft type certification", status: "ACTIVE" },
+    { id: 7, name: "Recurrent Training", code: "RT001", startDate: "2024-01-25", endDate: "2024-02-08", venue: "Training Center A", note: "Refresher training", status: "ACTIVE" },
+    { id: 8, name: "Aircraft Marshalling", code: "AM001", startDate: "2024-02-15", endDate: "2024-02-22", venue: "Ramp Area", note: "Ground operations", status: "ACTIVE" },
+    { id: 9, name: "Baggage Handling", code: "BH001", startDate: "2024-02-20", endDate: "2024-02-27", venue: "Baggage Area", note: "Baggage operations", status: "ACTIVE" },
+    { id: 10, name: "Check-in Procedures", code: "CIP001", startDate: "2024-03-05", endDate: "2024-03-12", venue: "Terminal", note: "Passenger check-in", status: "ACTIVE" }
   ];
 
   useEffect(() => {
@@ -121,6 +128,12 @@ const CourseDetailsView = ({ courseId }) => {
         
         setCourse(courseData);
         setCourses(hardcodedCoursesList); // Use hardcoded courses for now
+        
+        // Set department head data
+        if (departmentData.headUser) {
+          setDepartmentHead(departmentData.headUser);
+        }
+        
         setLoading(false);
       } catch (error) {
         console.error('❌ Error loading department:', error);
@@ -158,9 +171,17 @@ const CourseDetailsView = ({ courseId }) => {
     setShowCourseModal(true);
   };
 
-  const handleDeleteCourse = (courseId) => {
-    console.log('Delete Course clicked:', courseId);
-    // TODO: Implement delete course functionality
+  const handleDisableCourse = (courseId) => {
+    const courseToDisable = courses.find(c => c.id === courseId);
+    setCourseToDisable(courseToDisable);
+    setShowDisableCourse(true);
+  };
+
+  const handleConfirmDisableCourse = async (courseId) => {
+    console.log('Disabling course:', courseId);
+    // TODO: Implement disable course API call
+    setShowDisableCourse(false);
+    setCourseToDisable(null);
   };
 
   const handleViewCourse = (courseId) => {
@@ -222,16 +243,7 @@ const CourseDetailsView = ({ courseId }) => {
               <p className="text-muted mb-1 small">{course.description}</p>
               
               <Row className="g-2">
-                <Col md={3}>
-                  <div className="d-flex align-items-center">
-                    <Clock className="me-2 text-primary" size={16} />
-                    <div>
-                      <small className="text-muted">Duration</small>
-                      <div className="fw-semibold small">{course.duration}</div>
-                    </div>
-                  </div>
-                </Col>
-                <Col md={3}>
+                <Col md={4}>
                   <div className="d-flex align-items-center">
                     <FileText className="me-2 text-primary" size={16} />
                     <div>
@@ -240,7 +252,7 @@ const CourseDetailsView = ({ courseId }) => {
                     </div>
                   </div>
                 </Col>
-                <Col md={3}>
+                <Col md={4}>
                   <div className="d-flex align-items-center">
                     <People className="me-2 text-primary" size={16} />
                     <div>
@@ -249,11 +261,30 @@ const CourseDetailsView = ({ courseId }) => {
                     </div>
                   </div>
                 </Col>
-                <Col md={3}>
+                <Col md={4}>
                   <div className="d-flex align-items-center">
-                    <Badge bg="success" className="me-2 small">
-                      {course.status}
-                    </Badge>
+                    <Person className="me-2 text-primary" size={16} />
+                    <div>
+                      <small className="text-muted">Department Head</small>
+                      <div className="fw-semibold small">
+                        {departmentHead ? (
+                          <Button 
+                            variant="link" 
+                            className="p-0 text-decoration-none"
+                            onClick={() => setShowDepartmentHeadModal(true)}
+                            style={{ 
+                              fontSize: 'inherit', 
+                              fontWeight: 'inherit',
+                              color: '#0d6efd' // Bootstrap primary color
+                            }}
+                          >
+                            {departmentHead.firstName} {departmentHead.lastName}
+                          </Button>
+                        ) : (
+                          'Not assigned'
+                        )}
+                      </div>
+                    </div>
                   </div>
                 </Col>
               </Row>
@@ -286,8 +317,7 @@ const CourseDetailsView = ({ courseId }) => {
                 loading={false}
                 actionsComponent={CourseActions}
                 onView={handleViewCourse}
-                onEdit={handleEditCourse}
-                onDelete={handleDeleteCourse}
+                onDisable={handleDisableCourse}
               />
             </div>
           </Card>
@@ -296,8 +326,28 @@ const CourseDetailsView = ({ courseId }) => {
 
       {/* in-page detail removed; navigation now opens dedicated screen */}
 
-  </Container>
-);
+      {/* Modals */}
+      <AddCourseModal
+        show={showCourseModal && courseModalMode === 'add'}
+        onClose={() => setShowCourseModal(false)}
+        onSave={handleSaveCourse}
+      />
+
+      <DisableCourseModal
+        show={showDisableCourse}
+        onClose={() => setShowDisableCourse(false)}
+        onDisable={handleConfirmDisableCourse}
+        course={courseToDisable}
+      />
+
+      <DepartmentHeadModal
+        show={showDepartmentHeadModal}
+        onClose={() => setShowDepartmentHeadModal(false)}
+        departmentHead={departmentHead}
+        department={course}
+      />
+    </Container>
+  );
 };
 
 export default CourseDetailsView;
