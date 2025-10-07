@@ -1,23 +1,23 @@
 import React from 'react';
 import { Dropdown } from 'react-bootstrap';
-import { Eye, XCircle, ThreeDotsVertical } from 'react-bootstrap-icons';
+import { Pencil, Trash, ThreeDotsVertical } from 'react-bootstrap-icons';
 import { PermissionWrapper } from '../Common';
 import { API_PERMISSIONS } from '../../constants/apiPermissions';
 
-const CourseActions = ({ course, onView, onDisable }) => (
+const TrainerActions = ({ trainer, onEdit, onDelete }) => (
   <Dropdown align="end">
     <Dropdown.Toggle 
       variant="light" 
       size="sm" 
-      id={`course-actions-${course.id}`} 
+      id={`trainer-actions-${trainer.id}`} 
       className="border-0"
     >
       <ThreeDotsVertical size={16} />
     </Dropdown.Toggle>
     <Dropdown.Menu className="shadow-sm">
-      <PermissionWrapper permission={API_PERMISSIONS.COURSES.VIEW_DETAIL}>
+      <PermissionWrapper permission={API_PERMISSIONS.SUBJECTS.UPDATE}>
         <Dropdown.Item 
-          onClick={() => onView(course.id)}
+          onClick={() => onEdit(trainer.id)}
           className="d-flex align-items-center transition-all"
           style={{
             transition: 'all 0.2s ease'
@@ -31,21 +31,20 @@ const CourseActions = ({ course, onView, onDisable }) => (
             e.target.style.paddingLeft = '1rem';
           }}
         >
-          <Eye className="me-2" size={16} />
-          View Details
+          <Pencil className="me-2" size={16} />
+          Edit Trainer
         </Dropdown.Item>
       </PermissionWrapper>
       
-      <PermissionWrapper permission={API_PERMISSIONS.COURSES.UPDATE}>
-        <Dropdown.Divider />
+      <PermissionWrapper permission={API_PERMISSIONS.SUBJECTS.REMOVE_INSTRUCTOR}>
         <Dropdown.Item 
-          onClick={() => onDisable(course.id)}
-          className="d-flex align-items-center transition-all text-warning"
+          onClick={() => onDelete(trainer.id)}
+          className="d-flex align-items-center transition-all text-danger"
           style={{
             transition: 'all 0.2s ease'
           }}
           onMouseEnter={(e) => {
-            e.target.style.backgroundColor = 'rgba(255, 193, 7, 0.1)';
+            e.target.style.backgroundColor = 'rgba(220, 53, 69, 0.1)';
             e.target.style.paddingLeft = '1.5rem';
           }}
           onMouseLeave={(e) => {
@@ -53,12 +52,13 @@ const CourseActions = ({ course, onView, onDisable }) => (
             e.target.style.paddingLeft = '1rem';
           }}
         >
-          <XCircle className="me-2" size={16} />
-          Disable Course
+          <Trash className="me-2" size={16} />
+          Remove Trainer
         </Dropdown.Item>
       </PermissionWrapper>
     </Dropdown.Menu>
   </Dropdown>
 );
 
-export default CourseActions;
+export default TrainerActions;
+

@@ -6,16 +6,71 @@ import useTableSort from '../../hooks/useTableSort';
 import SubjectActions from './SubjectActions';
 
 const mockSubjects = [
-  { id: 's1', name: 'Safety Basics', code: 'SB01', trainees: 24, status: 'ACTIVE' },
-  { id: 's2', name: 'Evacuation Drills', code: 'ED02', trainees: 18, status: 'ACTIVE' },
-  { id: 's3', name: 'CPR & First Aid', code: 'FA03', trainees: 12, status: 'INACTIVE' },
-  { id: 's4', name: 'Fire Safety', code: 'FS04', trainees: 15, status: 'ACTIVE' },
-  { id: 's5', name: 'Emergency Procedures', code: 'EP05', trainees: 20, status: 'ACTIVE' },
+  { 
+    id: 's1', 
+    name: 'Safety Basics', 
+    code: 'SB01', 
+    method: 'Classroom',
+    duration: '2 weeks',
+    startDate: '2024-01-15',
+    endDate: '2024-01-29',
+    roomName: 'Training Center A - Room 101',
+    trainees: 24, 
+    status: 'ACTIVE' 
+  },
+  { 
+    id: 's2', 
+    name: 'Evacuation Drills', 
+    code: 'ED02', 
+    method: 'Practical',
+    duration: '1 week',
+    startDate: '2024-02-01',
+    endDate: '2024-02-07',
+    roomName: 'Simulator Complex - Room 201',
+    trainees: 18, 
+    status: 'ACTIVE' 
+  },
+  { 
+    id: 's3', 
+    name: 'CPR & First Aid', 
+    code: 'FA03', 
+    method: 'Mixed',
+    duration: '3 days',
+    startDate: '2024-02-10',
+    endDate: '2024-02-12',
+    roomName: 'Medical Center - Room 301',
+    trainees: 12, 
+    status: 'INACTIVE' 
+  },
+  { 
+    id: 's4', 
+    name: 'Fire Safety', 
+    code: 'FS04', 
+    method: 'Classroom',
+    duration: '1 week',
+    startDate: '2024-02-15',
+    endDate: '2024-02-21',
+    roomName: 'Training Center B - Room 102',
+    trainees: 15, 
+    status: 'ACTIVE' 
+  },
+  { 
+    id: 's5', 
+    name: 'Emergency Procedures', 
+    code: 'EP05', 
+    method: 'Practical',
+    duration: '2 weeks',
+    startDate: '2024-03-01',
+    endDate: '2024-03-14',
+    roomName: 'Emergency Training Facility',
+    trainees: 20, 
+    status: 'ACTIVE' 
+  },
 ];
 
-const SubjectTable = ({ course, loading = false, onView, onEdit, onDelete }) => {
+const SubjectTable = ({ loading = false, onView, onEdit, onDelete }) => {
   const subjects = mockSubjects; // mock data (no API)
-  const { sortedData, sortConfig, handleSort, getSortIcon, getSortClass } = useTableSort(subjects);
+  const { sortedData, sortConfig, handleSort } = useTableSort(subjects);
 
   if (loading) {
     return <LoadingSkeleton rows={4} columns={5} />;
@@ -38,13 +93,15 @@ const SubjectTable = ({ course, loading = false, onView, onEdit, onDelete }) => 
 
     return (
       <th
-        className={`border-neutral-200 text-primary-custom fw-bold letter-spacing px-3 py-3 ${className} ${isActive ? 'text-primary' : 'text-muted'}`}
+        className={`border-neutral-200 text-primary-custom fw-bold letter-spacing px-3 py-3 text-start ${className} ${isActive ? 'text-primary' : 'text-muted'}`}
         style={{
           cursor: 'pointer',
           userSelect: 'none',
           transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
           position: 'relative',
-          overflow: 'hidden'
+          overflow: 'hidden',
+          minWidth: '80px',
+          maxWidth: '150px'
         }}
         onClick={() => handleSort(columnKey)}
         onMouseEnter={(e) => {
@@ -58,18 +115,23 @@ const SubjectTable = ({ course, loading = false, onView, onEdit, onDelete }) => 
           e.target.style.boxShadow = 'none';
         }}
       >
-        <div className="d-flex align-items-center justify-content-between position-relative">
+        <div className="d-flex align-items-center justify-content-between position-relative w-100">
           <span style={{
             transition: 'all 0.3s ease',
-            fontWeight: isActive ? '700' : '600'
+            fontWeight: isActive ? '700' : '600',
+            flex: '1',
+            whiteSpace: 'nowrap',
+            overflow: 'hidden',
+            textOverflow: 'ellipsis'
           }}>
             {children}
           </span>
           <div
-            className="ms-2 d-flex align-items-center"
+            className="d-flex align-items-center"
             style={{
               minWidth: '20px',
-              justifyContent: 'center'
+              justifyContent: 'center',
+              flexShrink: 0
             }}
           >
             <SortIcon
@@ -96,15 +158,30 @@ const SubjectTable = ({ course, loading = false, onView, onEdit, onDelete }) => 
   };
 
   return (
-    <div className="department-table-container">
-      <Table hover className="mb-0 table-mobile-responsive">
+    <div className="department-table-container" style={{ overflowX: 'hidden' }}>
+      <Table hover className="mb-0 table-mobile-responsive" style={{ tableLayout: 'fixed', width: '100%' }}>
         <thead className="sticky-header bg-gradient-primary-custom">
           <tr>
             <SortableHeader columnKey="name" className="show-mobile">
-              Subject Name
+              Name
             </SortableHeader>
             <SortableHeader columnKey="code" className="show-mobile">
               Code
+            </SortableHeader>
+            <SortableHeader columnKey="method" className="show-mobile">
+              Method
+            </SortableHeader>
+            <SortableHeader columnKey="duration" className="show-mobile">
+              Duration
+            </SortableHeader>
+            <SortableHeader columnKey="startDate" className="show-mobile">
+              Start Date
+            </SortableHeader>
+            <SortableHeader columnKey="endDate" className="show-mobile">
+              End Date
+            </SortableHeader>
+            <SortableHeader columnKey="roomName" className="show-mobile">
+              Room Name
             </SortableHeader>
             <SortableHeader columnKey="trainees" className="show-mobile">
               Trainees
@@ -112,13 +189,34 @@ const SubjectTable = ({ course, loading = false, onView, onEdit, onDelete }) => 
             <SortableHeader columnKey="status" className="show-mobile">
               Status
             </SortableHeader>
-            <th className="border-neutral-200 text-primary-custom fw-bold letter-spacing px-3 py-3 text-center show-mobile">
-              Actions
+            <th className="border-neutral-200 text-primary-custom fw-bold letter-spacing px-3 py-3 text-start show-mobile" style={{ minWidth: '80px', maxWidth: '150px' }}>
+              <div className="d-flex align-items-center justify-content-between position-relative w-100">
+                <span style={{
+                  transition: 'all 0.3s ease',
+                  fontWeight: '600',
+                  flex: '1',
+                  whiteSpace: 'nowrap',
+                  overflow: 'hidden',
+                  textOverflow: 'ellipsis'
+                }}>
+                  Actions
+                </span>
+                <div
+                  className="d-flex align-items-center"
+                  style={{
+                    minWidth: '20px',
+                    justifyContent: 'center',
+                    flexShrink: 0
+                  }}
+                >
+                  {/* Empty space to match other columns */}
+                </div>
+              </div>
             </th>
           </tr>
         </thead>
         <tbody>
-          {sortedData.map((subject, index) => (
+          {sortedData.map((subject) => (
             <tr key={subject.id}>
               <td className="show-mobile">
                 <div 
@@ -140,6 +238,38 @@ const SubjectTable = ({ course, loading = false, onView, onEdit, onDelete }) => 
                 >
                   {subject.code}
                 </Badge>
+              </td>
+              <td className="show-mobile">
+                <Badge 
+                  bg="info" 
+                  className="px-2 py-1"
+                  style={{ 
+                    fontSize: '0.75rem',
+                    width: 'fit-content'
+                  }}
+                >
+                  {subject.method}
+                </Badge>
+              </td>
+              <td className="show-mobile">
+                <span className="text-dark">
+                  {subject.duration}
+                </span>
+              </td>
+              <td className="show-mobile">
+                <span className="text-dark">
+                  {subject.startDate}
+                </span>
+              </td>
+              <td className="show-mobile">
+                <span className="text-dark">
+                  {subject.endDate}
+                </span>
+              </td>
+              <td className="show-mobile">
+                <span className="text-dark">
+                  {subject.roomName}
+                </span>
               </td>
               <td className="show-mobile">
                 <div className="d-flex align-items-center">

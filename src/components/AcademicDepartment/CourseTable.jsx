@@ -1,6 +1,6 @@
 import React from 'react';
 import { Table, Badge } from 'react-bootstrap';
-import { People } from 'react-bootstrap-icons';
+import { Calendar, GeoAlt, FileText } from 'react-bootstrap-icons';
 import { LoadingSkeleton, SortIcon } from '../Common';
 import useTableSort from '../../hooks/useTableSort';
 
@@ -9,8 +9,7 @@ const CourseTable = ({
   loading,
   actionsComponent: ActionsComponent,
   onView,
-  onEdit,
-  onDelete,
+  onDisable,
 }) => {
   const { sortedData, sortConfig, handleSort, getSortIcon, getSortClass } = useTableSort(courses);
 
@@ -103,11 +102,20 @@ const CourseTable = ({
             <SortableHeader columnKey="code" className="show-mobile">
               Code
             </SortableHeader>
-            <SortableHeader columnKey="duration" className="show-mobile">
-              Duration
+            <SortableHeader columnKey="startDate" className="show-mobile">
+              Start Date
             </SortableHeader>
-            <SortableHeader columnKey="trainers" className="show-mobile">
-              Trainers
+            <SortableHeader columnKey="endDate" className="show-mobile">
+              End Date
+            </SortableHeader>
+            <SortableHeader columnKey="venue" className="show-mobile">
+              Venue
+            </SortableHeader>
+            <SortableHeader columnKey="note" className="show-mobile">
+              Note
+            </SortableHeader>
+            <SortableHeader columnKey="status" className="show-mobile">
+              Status
             </SortableHeader>
             <th className="border-neutral-200 text-primary-custom fw-bold letter-spacing px-3 py-3 text-center show-mobile">
               Actions
@@ -139,24 +147,54 @@ const CourseTable = ({
                 </Badge>
               </td>
               <td className="show-mobile">
-                <span className="text-dark">
-                  {course.duration || 'N/A'}
-                </span>
+                <div className="d-flex align-items-center">
+                  <Calendar size={14} className="me-1 text-muted" />
+                  <span className="text-dark">
+                    {course.startDate || 'N/A'}
+                  </span>
+                </div>
               </td>
               <td className="show-mobile">
                 <div className="d-flex align-items-center">
-                  <People size={14} className="me-1 text-muted" />
+                  <Calendar size={14} className="me-1 text-muted" />
                   <span className="text-dark">
-                    {course.trainers || 0}
+                    {course.endDate || 'N/A'}
                   </span>
                 </div>
+              </td>
+              <td className="show-mobile">
+                <div className="d-flex align-items-center">
+                  <GeoAlt size={14} className="me-1 text-muted" />
+                  <span className="text-dark">
+                    {course.venue || 'N/A'}
+                  </span>
+                </div>
+              </td>
+              <td className="show-mobile">
+                <div className="d-flex align-items-center">
+                  <FileText size={14} className="me-1 text-muted" />
+                  <span className="text-dark" style={{ maxWidth: '150px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                    {course.note || 'N/A'}
+                  </span>
+                </div>
+              </td>
+              <td className="show-mobile">
+                <Badge 
+                  bg={course.status === 'ACTIVE' ? 'success' : course.status === 'INACTIVE' ? 'danger' : 'secondary'}
+                  className="px-2 py-1"
+                  style={{ 
+                    fontSize: '0.75rem',
+                    width: 'fit-content'
+                  }}
+                >
+                  {course.status || 'N/A'}
+                </Badge>
               </td>
               <td className="text-center show-mobile">
                 <ActionsComponent 
                   course={course} 
                   onView={onView}
-                  onEdit={onEdit}
-                  onDelete={onDelete}
+                  onDisable={onDisable}
                 />
               </td>
             </tr>
