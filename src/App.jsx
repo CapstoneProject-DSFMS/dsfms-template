@@ -1,6 +1,6 @@
 import { RouterProvider } from 'react-router-dom'
 import { router } from './routes/router.jsx'
-import { AuthProvider } from './context/AuthContext.jsx'
+import AuthWrapper from './components/Common/AuthWrapper.jsx'
 import { ToastContainer } from 'react-toastify'
 import { useEffect } from 'react'
 
@@ -33,7 +33,7 @@ function App() {
   }, []);
 
   return (
-    <AuthProvider>
+    <AuthWrapper>
       <RouterProvider router={router} />
       <ToastContainer
         position="top-right"
@@ -47,7 +47,7 @@ function App() {
         pauseOnHover
         theme="light"
       />
-    </AuthProvider>
+    </AuthWrapper>
   )
 } 
 

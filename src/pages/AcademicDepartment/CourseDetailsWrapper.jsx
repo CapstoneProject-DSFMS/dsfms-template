@@ -1,6 +1,6 @@
 import React from 'react';
 import { useParams } from 'react-router-dom';
-import CourseDetailsView from './CourseDetailsView';
+import CourseDetailsView from '../../components/AcademicDepartment/CourseDetailsView';
 
 const CourseDetailsWrapper = () => {
   const { courseId } = useParams();

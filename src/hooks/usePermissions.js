@@ -191,13 +191,32 @@ export const usePermissions = () => {
   // Check if user has specific permission - optimized with Set lookup
   const hasPermission = useCallback((permissionName) => {
     if (!userPermissions || userPermissions.length === 0) {
+      console.log('🔍 hasPermission: No user permissions available');
       return false;
     }
     
     // Check against name, path, or id using Set for O(1) lookup
-    return userPermissionNames.has(permissionName) || 
-           userPermissionPaths.has(permissionName) ||
-           userPermissionIds.has(permissionName);
+    const hasName = userPermissionNames.has(permissionName);
+    const hasPath = userPermissionPaths.has(permissionName);
+    const hasId = userPermissionIds.has(permissionName);
+    
+    const result = hasName || hasPath || hasId;
+    
+    // Debug log for role update permission
+    if (permissionName === 'PUT /roles/:roleId' || permissionName.includes('roles')) {
+      console.log('🔍 hasPermission check for role update:', {
+        permissionName,
+        hasName,
+        hasPath,
+        hasId,
+        result,
+        userPermissionNames: Array.from(userPermissionNames),
+        userPermissionPaths: Array.from(userPermissionPaths),
+        userPermissionIds: Array.from(userPermissionIds)
+      });
+    }
+    
+    return result;
   }, [userPermissions, userPermissionNames, userPermissionPaths, userPermissionIds]);
 
   // Check if user has any of the specified permissions

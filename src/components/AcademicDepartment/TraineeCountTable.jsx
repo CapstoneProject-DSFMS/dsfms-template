@@ -1,6 +1,6 @@
 import React from 'react';
 import { Card, Table, Badge } from 'react-bootstrap';
-import { People, Envelope, Phone } from 'react-bootstrap-icons';
+import { People, Envelope, Phone, ChevronDown, ChevronRight } from 'react-bootstrap-icons';
 
 // Mock trainees data - distinct trainees from all subjects in the course
 const mockTrainees = [
@@ -14,20 +14,31 @@ const mockTrainees = [
   { id: 8, name: 'Jennifer Martinez', eid: 'EMP008', email: 'jennifer.martinez@company.com', phone: '+1-555-0108', subjects: ['Safety Basics', 'Fire Safety', 'Emergency Procedures'] }
 ];
 
-const TraineeCountTable = ({ course }) => {
+const TraineeCountTable = ({ course, isCollapsed, onToggleCollapse }) => {
   return (
     <Card className="border-0 shadow-sm">
-      <Card.Header className="bg-white border-bottom py-4 pb-3">
-        <h5 className="mb-0">
-          <People className="me-2" />
-          Trainees Roster ({mockTrainees.length})
-        </h5>
+      <Card.Header 
+        className="border-bottom py-4 pb-3 collapsible-header"
+        onClick={onToggleCollapse}
+        style={{ cursor: 'pointer' }}
+      >
+        <div className="d-flex justify-content-between align-items-center">
+          <h5 className="mb-0">
+            <People className="me-2" />
+            Trainees Roster ({mockTrainees.length})
+          </h5>
+          <ChevronDown 
+            size={20} 
+            className={`text-muted chevron-icon ${isCollapsed ? 'rotated' : ''}`}
+          />
+        </div>
       </Card.Header>
-      <Card.Body className="p-0" style={{ maxHeight: '500px', overflowY: 'auto' }}>
-        <Table hover className="mb-0">
+      <Card.Body className={`p-0 collapsible-content ${isCollapsed ? 'collapsed' : 'expanded'}`}>
+        <div className="table-container">
+          <Table hover className="mb-0">
           <thead className="sticky-top bg-light">
             <tr>
-              <th className="border-0">Trainee</th>
+              <th className="border-0" style={{ paddingLeft: '1.5rem' }}>Trainee</th>
               <th className="border-0">EID</th>
               <th className="border-0">Subjects</th>
             </tr>
@@ -35,7 +46,7 @@ const TraineeCountTable = ({ course }) => {
           <tbody>
             {mockTrainees.map(trainee => (
               <tr key={trainee.id}>
-                <td className="border-0">
+                <td className="border-0" style={{ paddingLeft: '1.5rem' }}>
                   <div>
                     <div className="fw-semibold">{trainee.name}</div>
                     <div className="text-muted" style={{ fontSize: '0.85rem' }}>
@@ -70,7 +81,8 @@ const TraineeCountTable = ({ course }) => {
               </tr>
             ))}
           </tbody>
-        </Table>
+          </Table>
+        </div>
       </Card.Body>
     </Card>
   );

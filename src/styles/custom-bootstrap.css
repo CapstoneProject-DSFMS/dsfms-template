@@ -1188,6 +1188,11 @@ button,
     display: table-cell !important;
   }
 
+/* Search and Filter Section Spacing */
+.search-filter-section {
+  padding-bottom: 1rem !important;
+}
+
 /* Form responsive adjustments */
 @media (max-width: 768px) {
   /* Stack form elements vertically */

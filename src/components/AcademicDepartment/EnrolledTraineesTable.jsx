@@ -4,6 +4,7 @@ import { People, X } from 'react-bootstrap-icons';
 import { LoadingSkeleton, SortIcon } from '../Common';
 import useTableSort from '../../hooks/useTableSort';
 import EnrolledTraineeActions from './EnrolledTraineeActions';
+import RemoveTraineeModal from './RemoveTraineeModal';
 
 const mockSubjects = [
   { id: 's1', name: 'Safety Basics', code: 'SB01' },
@@ -16,6 +17,9 @@ const mockSubjects = [
 const EnrolledTraineesTable = ({ enrolledTrainees, onUpdate, loading = false }) => {
   const [showSubjectModal, setShowSubjectModal] = useState(false);
   const [selectedTrainee, setSelectedTrainee] = useState(null);
+  const [showRemoveModal, setShowRemoveModal] = useState(false);
+  const [traineeToRemove, setTraineeToRemove] = useState(null);
+  const [subjectToRemove, setSubjectToRemove] = useState(null);
   
   const { sortedData, sortConfig, handleSort } = useTableSort(enrolledTrainees);
 
@@ -25,16 +29,43 @@ const EnrolledTraineesTable = ({ enrolledTrainees, onUpdate, loading = false }) 
   };
 
   const handleRemoveTrainee = (traineeId) => {
-    console.log('Remove trainee from all subjects:', traineeId);
+    const trainee = enrolledTrainees.find(t => t.id === traineeId);
+    if (!trainee) return;
+
+    setTraineeToRemove(trainee);
+    setSubjectToRemove(null); // null means remove from all subjects
+    setShowRemoveModal(true);
+  };
+
+  const handleConfirmRemoveTrainee = () => {
+    if (!traineeToRemove) return;
+
+    console.log('Remove trainee from all subjects:', traineeToRemove.id);
     // TODO: Implement remove trainee from all subjects
-    onUpdate(enrolledTrainees.filter(t => t.id !== traineeId));
+    onUpdate(enrolledTrainees.filter(t => t.id !== traineeToRemove.id));
   };
 
   const handleRemoveSubject = (traineeId, subjectId) => {
-    console.log('Remove trainee from subject:', traineeId, subjectId);
+    const trainee = enrolledTrainees.find(t => t.id === traineeId);
+    const subjectName = getSubjectName(subjectId);
+    
+    if (!trainee) return;
+
+    setTraineeToRemove(trainee);
+    setSubjectToRemove(subjectName);
+    setShowRemoveModal(true);
+  };
+
+  const handleConfirmRemoveSubject = () => {
+    if (!traineeToRemove || !subjectToRemove) return;
+
+    const subjectId = mockSubjects.find(s => s.name === subjectToRemove)?.id;
+    if (!subjectId) return;
+
+    console.log('Remove trainee from subject:', traineeToRemove.id, subjectId);
     // TODO: Implement remove trainee from specific subject
     const updatedTrainees = enrolledTrainees.map(trainee => {
-      if (trainee.id === traineeId) {
+      if (trainee.id === traineeToRemove.id) {
         return {
           ...trainee,
           subjects: trainee.subjects.filter(s => s !== subjectId)
@@ -43,6 +74,9 @@ const EnrolledTraineesTable = ({ enrolledTrainees, onUpdate, loading = false }) 
       return trainee;
     });
     onUpdate(updatedTrainees);
+    
+    // Close the subject modal after successful removal
+    setShowSubjectModal(false);
   };
 
   const getSubjectName = (subjectId) => {
@@ -152,11 +186,10 @@ const EnrolledTraineesTable = ({ enrolledTrainees, onUpdate, loading = false }) 
   return (
     <>
       <Card 
-        className="d-flex flex-column" 
+        className="d-flex flex-column mb-5" 
         style={{ 
-          minHeight: 'auto', 
-          height: 'fit-content', 
-          maxHeight: 'none' 
+          height: '400px',
+          marginBottom: '3rem'
         }}
       >
         <Card.Header 
@@ -168,18 +201,15 @@ const EnrolledTraineesTable = ({ enrolledTrainees, onUpdate, loading = false }) 
         <Card.Body 
           className="p-0" 
           style={{ 
-            height: 'fit-content', 
-            minHeight: 'auto', 
-            maxHeight: 'none',
-            flex: 'none'
+            flex: 1,
+            minHeight: 0,
+            overflow: 'hidden'
           }}
         >
           <div 
             style={{ 
-              height: 'fit-content', 
-              minHeight: 'auto', 
-              maxHeight: 'none',
-              overflow: 'visible'
+              height: '100%',
+              overflowY: 'auto'
             }}
           >
             <Table hover className="mb-0 table-mobile-responsive">
@@ -277,7 +307,7 @@ const EnrolledTraineesTable = ({ enrolledTrainees, onUpdate, loading = false }) 
                       variant="outline-danger"
                       onClick={() => {
                         handleRemoveSubject(selectedTrainee.id, subjectId);
-                        setShowSubjectModal(false);
+                        // Don't close the subject modal immediately - let the confirmation modal handle it
                       }}
                     >
                       <X size={14} />
@@ -294,6 +324,22 @@ const EnrolledTraineesTable = ({ enrolledTrainees, onUpdate, loading = false }) 
           </Button>
         </Modal.Footer>
       </Modal>
+
+      {/* Remove Trainee Confirmation Modal */}
+      <RemoveTraineeModal
+        show={showRemoveModal}
+        onClose={() => {
+          setShowRemoveModal(false);
+          setTraineeToRemove(null);
+          setSubjectToRemove(null);
+          // If we were removing from a specific subject, keep the subject modal open
+          // If we were removing from all subjects, the subject modal should already be closed
+        }}
+        onConfirm={subjectToRemove ? handleConfirmRemoveSubject : handleConfirmRemoveTrainee}
+        trainee={traineeToRemove}
+        subjectName={subjectToRemove}
+        loading={false}
+      />
     </>
   );
 };

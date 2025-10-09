@@ -68,15 +68,38 @@ const mockSubjects = [
   },
 ];
 
-const SubjectTable = ({ loading = false, onView, onEdit, onDelete }) => {
-  const subjects = mockSubjects; // mock data (no API)
-  const { sortedData, sortConfig, handleSort } = useTableSort(subjects);
+const SubjectTable = ({ subjects = [], loading = false, onView, onEdit, onDelete }) => {
+  // Always merge mock data with props subjects to avoid losing hardcoded data
+  const allSubjects = [...mockSubjects, ...subjects];
+  
+  // Remove duplicates based on subject code (keep the first occurrence)
+  const uniqueSubjects = allSubjects.reduce((acc, current) => {
+    const existingIndex = acc.findIndex(subject => subject.code === current.code);
+    if (existingIndex === -1) {
+      // Add source info
+      acc.push({
+        ...current,
+        source: current.source || 'mock_data'
+      });
+    } else {
+      // If duplicate, prefer the one with source info (from props)
+      if (current.source && !acc[existingIndex].source) {
+        acc[existingIndex] = {
+          ...current,
+          source: current.source
+        };
+      }
+    }
+    return acc;
+  }, []);
+  
+  const { sortedData, sortConfig, handleSort } = useTableSort(uniqueSubjects);
 
   if (loading) {
     return <LoadingSkeleton rows={4} columns={5} />;
   }
 
-  if (subjects.length === 0) {
+  if (uniqueSubjects.length === 0) {
     return (
       <div className="text-center py-5">
         <div className="text-muted">

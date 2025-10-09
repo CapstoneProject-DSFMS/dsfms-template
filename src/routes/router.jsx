@@ -10,12 +10,12 @@ import RoleManagementPage from '../pages/Admin/RoleManagement/RoleManagementPage
 import DepartmentManagementPage from '../pages/Admin/DepartmentManagement/DepartmentManagementPage'
 import DepartmentDetailPage from '../pages/Admin/DepartmentManagement/DepartmentDetailPage'
 import ProfilePage from '../pages/Profile/ProfilePage'
-import { CourseSelectionView } from '../components/AcademicDepartment'
+import CourseSelectionView from '../pages/AcademicDepartment/CourseSelectionView'
 import AcademicDashboard from '../pages/Academic/AcademicDashboard'
-import CourseDetailsWrapper from '../components/AcademicDepartment/CourseDetailsWrapper'
-import SubjectDetailsWrapper from '../components/AcademicDepartment/SubjectDetailsWrapper'
-import CourseDetailPage from '../components/AcademicDepartment/CourseDetailPage'
-import EnrollTraineesPage from '../components/AcademicDepartment/EnrollTraineesPage'
+import CourseDetailsWrapper from '../pages/AcademicDepartment/CourseDetailsWrapper'
+import SubjectDetailsWrapper from '../pages/AcademicDepartment/SubjectDetailsWrapper'
+import CourseDetailPage from '../pages/AcademicDepartment/CourseDetailPage'
+import EnrollTraineesPage from '../pages/AcademicDepartment/EnrollTraineesPage'
 import { API_PERMISSIONS } from '../constants/apiPermissions'
 import { getCurrentBasename } from '../utils/navigation'
 
@@ -178,6 +178,10 @@ export const router = createBrowserRouter([
       },
       {
         path: "subject/:subjectId",
+        element: <SubjectDetailsWrapper />
+      },
+      {
+        path: "course/:courseId/subject/:subjectId",
         element: <SubjectDetailsWrapper />
       }
     ]

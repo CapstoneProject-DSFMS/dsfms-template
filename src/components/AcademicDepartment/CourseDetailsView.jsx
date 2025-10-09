@@ -11,10 +11,11 @@ import {
   FileText,
   Person
 } from 'react-bootstrap-icons';
+import { toast } from 'react-toastify';
 import { PermissionWrapper } from '../Common';
 import { API_PERMISSIONS } from '../../constants/apiPermissions';
-import { useAuth } from '../../hooks/useAuth';
-import { departmentAPI } from '../../api/department';
+import { usePermissions } from '../../hooks/usePermissions';
+import courseAPI from '../../api/course';
 import CourseTable from './CourseTable';
 import CourseActions from './CourseActions';
 import AddCourseModal from './AddCourseModal';
@@ -22,19 +23,18 @@ import DisableCourseModal from './DisableCourseModal';
 import DepartmentHeadModal from './DepartmentHeadModal';
 
 const CourseDetailsView = ({ courseId }) => {
-  const { user } = useAuth();
   const navigate = useNavigate();
+  const { hasPermission, userPermissions } = usePermissions();
   const [course, setCourse] = useState(null);
   const [courses, setCourses] = useState([]);
   const [loading, setLoading] = useState(true);
   const [showCourseModal, setShowCourseModal] = useState(false);
   const [courseModalMode, setCourseModalMode] = useState('add');
-  const [selectedCourse, setSelectedCourse] = useState(null);
-  const [showInPageDetail, setShowInPageDetail] = useState(false);
   const [showDisableCourse, setShowDisableCourse] = useState(false);
   const [courseToDisable, setCourseToDisable] = useState(null);
   const [departmentHead, setDepartmentHead] = useState(null);
   const [showDepartmentHeadModal, setShowDepartmentHeadModal] = useState(false);
+  const [isSavingCourse, setIsSavingCourse] = useState(false);
 
   // Hardcoded course data
   const hardcodedCourses = {
@@ -109,10 +109,19 @@ const CourseDetailsView = ({ courseId }) => {
       setLoading(true);
       try {
         console.log('🔍 CourseDetailsView - Loading department with ID:', courseId);
-        // Fetch department data from API
-        const response = await departmentAPI.getDepartmentById(courseId);
-        console.log('🔍 CourseDetailsView - API Response:', response);
+        
+        // Fetch combined department and courses data from API endpoint
+        const response = await courseAPI.getDepartmentWithCourses(courseId);
+        console.log('🔍 CourseDetailsView - Combined API Response:', response);
+        
+        // API returns the department object directly with courses array inside
         const departmentData = response;
+        const coursesData = { courses: response.courses || [] };
+        
+        // Validate department data
+        if (!departmentData) {
+          throw new Error('Department data not found in API response');
+        }
         
         // Transform department data to course format for compatibility
         const courseData = {
@@ -127,7 +136,29 @@ const CourseDetailsView = ({ courseId }) => {
         };
         
         setCourse(courseData);
-        setCourses(hardcodedCoursesList); // Use hardcoded courses for now
+        
+        // Transform API courses data to match expected format
+        const transformedCourses = coursesData.courses?.map(course => ({
+          id: course.id,
+          name: course.name,
+          code: course.code,
+          startDate: course.startDate ? new Date(course.startDate).toISOString().split('T')[0] : 'N/A',
+          endDate: course.endDate ? new Date(course.endDate).toISOString().split('T')[0] : 'N/A',
+          venue: course.venue || 'N/A',
+          note: course.note || 'N/A',
+          status: course.status,
+          description: course.description,
+          maxNumTrainee: course.maxNumTrainee,
+          passScore: course.passScore,
+          level: course.level,
+          department: course.department,
+          subjectCount: course.subjectCount || 0,
+          traineeCount: course.traineeCount || 0,
+          trainerCount: course.trainerCount || 0
+        })) || [];
+        
+        setCourses(transformedCourses);
+        console.log('🔍 CourseDetailsView - Set courses:', transformedCourses);
         
         // Set department head data
         if (departmentData.headUser) {
@@ -136,9 +167,10 @@ const CourseDetailsView = ({ courseId }) => {
         
         setLoading(false);
       } catch (error) {
-        console.error('❌ Error loading department:', error);
+        console.error('❌ Error loading department with courses:', error);
         console.error('❌ Error details:', error.response?.data);
         setLoading(false);
+        
         // Fallback to hardcoded data if API fails
         const courseData = hardcodedCourses[courseId];
         
@@ -155,24 +187,25 @@ const CourseDetailsView = ({ courseId }) => {
     if (courseId) {
       loadDepartmentData();
     }
-  }, [courseId]);
+  }, [courseId]); // eslint-disable-line react-hooks/exhaustive-deps
 
 
   const handleCreateCourse = () => {
-    setSelectedCourse(null);
+    // Debug permission checking
+    console.log('🔍 Debug Permission Check:');
+    console.log('- API_PERMISSIONS.COURSES.CREATE:', API_PERMISSIONS.COURSES.CREATE);
+    console.log('- hasPermission result:', hasPermission(API_PERMISSIONS.COURSES.CREATE));
+    console.log('- userPermissions count:', userPermissions?.length || 0);
+    console.log('- userPermissions:', userPermissions);
+    
     setCourseModalMode('add');
     setShowCourseModal(true);
   };
 
-  const handleEditCourse = (courseId) => {
-    const courseToEdit = courses.find(c => c.id === courseId);
-    setSelectedCourse(courseToEdit);
-    setCourseModalMode('edit');
-    setShowCourseModal(true);
-  };
-
   const handleDisableCourse = (courseId) => {
+    console.log('🔍 handleDisableCourse called with courseId:', courseId);
     const courseToDisable = courses.find(c => c.id === courseId);
+    console.log('🔍 Found course to disable:', courseToDisable);
     setCourseToDisable(courseToDisable);
     setShowDisableCourse(true);
   };
@@ -185,19 +218,78 @@ const CourseDetailsView = ({ courseId }) => {
   };
 
   const handleViewCourse = (courseId) => {
+    console.log('🔍 handleViewCourse called with courseId:', courseId);
     navigate(`/academic/course-detail/${courseId}`);
   };
 
+
   const handleSaveCourse = async (courseData) => {
-    console.log('Saving course:', courseData);
-    return Promise.resolve();
+    try {
+      setIsSavingCourse(true);
+      
+      // Debug permission before API call
+      console.log('🔍 Debug Before API Call:');
+      console.log('- Permission check:', hasPermission(API_PERMISSIONS.COURSES.CREATE));
+      console.log('- Auth token exists:', !!localStorage.getItem('authToken'));
+      
+      // Build payload expected by API
+      const payload = {
+        departmentId: course.id,
+        name: courseData.name,
+        description: courseData.description,
+        code: courseData.code,
+        maxNumTrainee: Number(courseData.maxNumTrainee),
+        venue: courseData.venue,
+        note: courseData.note,
+        passScore: Number(courseData.passScore),
+        startDate: courseData.startDate ? new Date(courseData.startDate).toISOString() : null,
+        endDate: courseData.endDate ? new Date(courseData.endDate).toISOString() : null,
+        level: courseData.level
+      };
+
+      console.log('📤 Sending payload:', payload);
+      const created = await courseAPI.createCourse(payload);
+
+      // Notify user
+      toast.success('Course created successfully');
+
+      // Transform for table and update list
+      const createdForTable = {
+        id: created.id,
+        name: created.name,
+        code: created.code,
+        startDate: created.startDate ? new Date(created.startDate).toISOString().split('T')[0] : 'N/A',
+        endDate: created.endDate ? new Date(created.endDate).toISOString().split('T')[0] : 'N/A',
+        venue: created.venue || 'N/A',
+        note: created.note || 'N/A',
+        status: created.status || 'PLANNED',
+        description: created.description,
+        maxNumTrainee: created.maxNumTrainee,
+        passScore: created.passScore,
+        level: created.level,
+        department: created.department
+      };
+      setCourses(prev => [createdForTable, ...prev]);
+    } catch (error) {
+      console.error('❌ Error creating course:', error);
+      console.error('❌ Error response:', error.response);
+      console.error('❌ Error status:', error.response?.status);
+      console.error('❌ Error data:', error.response?.data);
+      
+      // Check if it's a permission error
+      if (error.response?.status === 403) {
+        console.error('🚫 403 Forbidden - Permission denied');
+        console.error('🚫 User permissions:', userPermissions);
+        console.error('🚫 Required permission:', API_PERMISSIONS.COURSES.CREATE);
+      }
+      
+      toast.error(error.response?.data?.message || 'Failed to create course');
+      throw error;
+    } finally {
+      setIsSavingCourse(false);
+    }
   };
 
-  const handleCloseCourseModal = () => {
-    setShowCourseModal(false);
-    setSelectedCourse(null);
-    setCourseModalMode('add');
-  };
 
   if (loading) {
     return (
@@ -224,7 +316,7 @@ const CourseDetailsView = ({ courseId }) => {
   }
 
   return (
-    <Container className="d-flex flex-column" style={{ height: '100vh', overflow: 'hidden', padding: '0.5rem 0' }}>
+    <Container className="d-flex flex-column" style={{ padding: '0.5rem 0', overflowX: 'hidden' }}>
       {/* Department Header */}
       <Row className="mb-1 flex-shrink-0">
         <Col>
@@ -294,7 +386,7 @@ const CourseDetailsView = ({ courseId }) => {
       </Row>
 
       {/* Courses Section */}
-      <Row className="flex-grow-1" style={{ minHeight: 0 }}>
+      <Row>
         <Col>
           <Card className="border-0 shadow-sm">
             <Card.Header className="bg-white border-bottom flex-shrink-0">
@@ -331,7 +423,9 @@ const CourseDetailsView = ({ courseId }) => {
         show={showCourseModal && courseModalMode === 'add'}
         onClose={() => setShowCourseModal(false)}
         onSave={handleSaveCourse}
+        loading={isSavingCourse}
       />
+
 
       <DisableCourseModal
         show={showDisableCourse}
