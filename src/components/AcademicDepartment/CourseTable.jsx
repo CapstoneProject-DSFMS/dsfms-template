@@ -180,7 +180,7 @@ const CourseTable = ({
               </td>
               <td className="show-mobile">
                 <Badge 
-                  bg={course.status === 'ACTIVE' ? 'success' : course.status === 'INACTIVE' ? 'danger' : 'secondary'}
+                  bg={course.status === 'ACTIVE' ? 'success' : course.status === 'ARCHIVED' ? 'warning' : 'secondary'}
                   className="px-2 py-1"
                   style={{ 
                     fontSize: '0.75rem',

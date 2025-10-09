@@ -35,9 +35,22 @@ export const roleAPI = {
   // Update role
   updateRole: async (id, roleData) => {
     try {
+      console.log('🔍 API updateRole called with:', {
+        id: id,
+        roleData: roleData,
+        url: `/roles/${id}`,
+        method: 'PUT'
+      });
       const response = await apiClient.put(`/roles/${id}`, roleData);
+      console.log('✅ API updateRole success:', response.data);
       return response.data;
     } catch (error) {
+      console.error('❌ API updateRole error:', {
+        status: error.response?.status,
+        statusText: error.response?.statusText,
+        data: error.response?.data,
+        message: error.message
+      });
       throw error.response?.data || error.message;
     }
   },

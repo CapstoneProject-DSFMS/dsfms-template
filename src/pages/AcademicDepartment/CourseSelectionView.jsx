@@ -23,7 +23,7 @@ const CourseSelectionView = () => {
   };
 
   return (
-    <div style={{ paddingBottom: '2rem' }}>
+    <div className="course-selection" style={{ paddingBottom: '2rem' }}>
       <Container className="py-4">
         <Row className="mb-4">
           <Col>

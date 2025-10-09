@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Modal, Button, Alert } from 'react-bootstrap';
-import { ExclamationTriangle, X } from 'react-bootstrap-icons';
+import { ExclamationTriangle } from 'react-bootstrap-icons';
 
 const DisableSubjectModal = ({ show, onClose, onDisable, subject, loading = false }) => {
   const [confirmText, setConfirmText] = useState('');
@@ -41,9 +41,6 @@ const DisableSubjectModal = ({ show, onClose, onDisable, subject, loading = fals
           <ExclamationTriangle className="me-2" size={20} />
           Disable Subject
         </Modal.Title>
-        <Button variant="link" onClick={handleClose} className="text-dark p-0">
-          <X size={24} />
-        </Button>
       </Modal.Header>
 
       <Modal.Body className="p-4">
@@ -106,7 +103,6 @@ const DisableSubjectModal = ({ show, onClose, onDisable, subject, loading = fals
           onClick={handleClose} 
           disabled={loading}
         >
-          <X className="me-2" size={16} />
           Cancel
         </Button>
         

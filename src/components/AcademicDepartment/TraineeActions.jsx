@@ -4,12 +4,12 @@ import { Pencil, Trash, ThreeDotsVertical } from 'react-bootstrap-icons';
 import { PermissionWrapper } from '../Common';
 import { API_PERMISSIONS } from '../../constants/apiPermissions';
 
-const TrainerActions = ({ trainer, onEdit, onDelete }) => (
+const TraineeActions = ({ trainee, onEdit, onDelete }) => (
   <Dropdown align="end">
     <Dropdown.Toggle 
       variant="light" 
       size="sm" 
-      id={`trainer-actions-${trainer.trainer_user_id}`} 
+      id={`trainee-actions-${trainee.id}`} 
       className="border-0"
     >
       <ThreeDotsVertical size={16} />
@@ -17,7 +17,7 @@ const TrainerActions = ({ trainer, onEdit, onDelete }) => (
     <Dropdown.Menu className="shadow-sm">
       <PermissionWrapper permission={API_PERMISSIONS.SUBJECTS.UPDATE}>
         <Dropdown.Item 
-          onClick={() => onEdit(trainer.trainer_user_id)}
+          onClick={() => onEdit(trainee.id)}
           className="d-flex align-items-center transition-all"
           style={{
             transition: 'all 0.2s ease'
@@ -32,13 +32,13 @@ const TrainerActions = ({ trainer, onEdit, onDelete }) => (
           }}
         >
           <Pencil className="me-2" size={16} />
-          Edit Trainer
+          Edit Trainee
         </Dropdown.Item>
       </PermissionWrapper>
       
-      <PermissionWrapper permission={API_PERMISSIONS.SUBJECTS.REMOVE_INSTRUCTOR}>
+      <PermissionWrapper permission={API_PERMISSIONS.SUBJECTS.REMOVE_TRAINEE}>
         <Dropdown.Item 
-          onClick={() => onDelete(trainer.trainer_user_id)}
+          onClick={() => onDelete(trainee.id)}
           className="d-flex align-items-center transition-all text-danger"
           style={{
             transition: 'all 0.2s ease'
@@ -53,12 +53,12 @@ const TrainerActions = ({ trainer, onEdit, onDelete }) => (
           }}
         >
           <Trash className="me-2" size={16} />
-          Remove Trainer
+          Remove Trainee
         </Dropdown.Item>
       </PermissionWrapper>
     </Dropdown.Menu>
   </Dropdown>
 );
 
-export default TrainerActions;
+export default TraineeActions;
 

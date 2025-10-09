@@ -2,10 +2,10 @@ import React, { useState } from 'react';
 import { Container, Row, Col, Card, Button, Form } from 'react-bootstrap';
 import { ArrowLeft, Upload, Search, Plus } from 'react-bootstrap-icons';
 import { useNavigate, useParams } from 'react-router-dom';
-import SubjectSelectionPanel from './SubjectSelectionPanel';
-import TraineeSelectionPanel from './TraineeSelectionPanel';
-import EnrolledTraineesTable from './EnrolledTraineesTable';
-import BulkImportTraineesModal from './BulkImportTraineesModal';
+import SubjectSelectionPanel from '../../components/AcademicDepartment/SubjectSelectionPanel';
+import TraineeSelectionPanel from '../../components/AcademicDepartment/TraineeSelectionPanel';
+import EnrolledTraineesTable from '../../components/AcademicDepartment/EnrolledTraineesTable';
+import BulkImportTraineesModal from '../../components/AcademicDepartment/BulkImportTraineesModal';
 
 const EnrollTraineesPage = () => {
   const navigate = useNavigate();

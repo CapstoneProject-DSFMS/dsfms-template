@@ -22,7 +22,7 @@ import { useAuth } from "../../hooks/useAuth";
 import useDepartmentManagement from "../../hooks/useDepartmentManagement";
 
 const Sidebar = ({ collapsed, onClose }) => {
-  const { hasModuleAccess, hasPermission } = usePermissions();
+  const { hasModuleAccess, hasPermission, userPermissions } = usePermissions();
   const { user } = useAuth();
   const location = useLocation();
   const { departments, loading: departmentsLoading } = useDepartmentManagement();
@@ -32,6 +32,7 @@ const Sidebar = ({ collapsed, onClose }) => {
   // Debug log
   console.log('🔍 Sidebar - User role:', user?.role);
   console.log('🔍 Sidebar - User object:', user);
+  console.log('🔍 Sidebar - User permissions:', userPermissions);
   console.log('🔍 Sidebar - Departments:', departments);
   
   // Filter active departments for Academic Department
@@ -90,16 +91,31 @@ const Sidebar = ({ collapsed, onClose }) => {
 
   // Filter nav items based on user permissions and role
   const navItems = allNavItems.filter(item => {
-    // For ADMIN role, show all items based on permissions
-    if (user?.role === 'ADMIN') {
-      return hasModuleAccess(item.module) || hasPermission(item.permission);
+    // Debug logging
+    console.log(`🔍 Filtering item: ${item.id}`, {
+      userRole: user?.role,
+      itemModule: item.module,
+      itemPermission: item.permission,
+      hasModuleAccess: hasModuleAccess(item.module),
+      hasPermission: hasPermission(item.permission)
+    });
+    
+    // For ADMINISTRATOR role, show all items based on permissions
+    if (user?.role === 'ADMINISTRATOR') {
+      const hasAccess = hasModuleAccess(item.module) || hasPermission(item.permission);
+      console.log(`🔍 ADMINISTRATOR role - ${item.id}: ${hasAccess}`);
+      return hasAccess;
     }
     // For ACADEMIC_DEPARTMENT role, only show dashboard
     if (user?.role === 'ACADEMIC_DEPARTMENT') {
-      return item.id === 'dashboard';
+      const isDashboard = item.id === 'dashboard';
+      console.log(`🔍 ACADEMIC_DEPARTMENT role - ${item.id}: ${isDashboard}`);
+      return isDashboard;
     }
     // Default behavior for other roles
-    return hasModuleAccess(item.module) || hasPermission(item.permission);
+    const hasAccess = hasModuleAccess(item.module) || hasPermission(item.permission);
+    console.log(`🔍 Default role - ${item.id}: ${hasAccess}`);
+    return hasAccess;
   }).map(item => {
     // Override dashboard path and label for ACADEMIC_DEPARTMENT role
     if (user?.role === 'ACADEMIC_DEPARTMENT' && item.id === 'dashboard') {
@@ -114,6 +130,13 @@ const Sidebar = ({ collapsed, onClose }) => {
 
   // Debug log after navItems is initialized
   console.log('🔍 Sidebar - Filtered navItems:', navItems);
+  console.log('🔍 Sidebar - Dashboard permission check:', {
+    permission: API_PERMISSIONS.DASHBOARD.VIEW,
+    hasPermission: hasPermission(API_PERMISSIONS.DASHBOARD.VIEW),
+    hasModuleAccess: hasModuleAccess('DASHBOARD'),
+    userRole: user?.role,
+    userPermissions: userPermissions?.map(p => p.name).filter(name => name.includes('dashboard') || name.includes('DASHBOARD'))
+  });
 
   return (
     <div
