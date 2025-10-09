@@ -14,6 +14,7 @@ import {
   X,
   ChevronDown,
   ChevronRight as ChevronRightIcon,
+  PersonCheck,
 } from "react-bootstrap-icons";
 import logo from "../../assets/logo-light.png";
 import { usePermissions } from "../../hooks/usePermissions";
@@ -86,6 +87,14 @@ const Sidebar = ({ collapsed, onClose }) => {
       path: "/admin/system-config",
       permission: API_PERMISSIONS.GLOBAL_FIELDS.VIEW_ALL,
       module: "GLOBAL_FIELDS"
+    },
+    {
+      id: "trainees",
+      label: "Trainee Management",
+      icon: PersonCheck,
+      path: "/trainee",
+      permission: API_PERMISSIONS.TRAINEES.VIEW_ALL,
+      module: "TRAINEES"
     },
   ];
 

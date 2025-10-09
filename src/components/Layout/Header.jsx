@@ -10,6 +10,25 @@ import {
 import useProfile from '../../hooks/useProfile';
 import '../../styles/dropdown-clean.css';
 
+// Force remove box shadow from dropdown
+const dropdownStyle = {
+  position: 'absolute',
+  top: '100%',
+  right: '0',
+  zIndex: 9999,
+  minWidth: '200px',
+  backgroundColor: 'white',
+  border: '1px solid rgba(0,0,0,0.15)',
+  borderRadius: '0.375rem',
+  padding: '0.5rem 0',
+  width: '200px',
+  height: 'auto',
+  overflow: 'visible',
+  boxShadow: 'none !important',
+  WebkitBoxShadow: 'none !important',
+  MozBoxShadow: 'none !important'
+};
+
 const Header = ({ onToggleSidebar }) => {
   const location = useLocation();
   const navigate = useNavigate();
@@ -121,7 +140,10 @@ const Header = ({ onToggleSidebar }) => {
                   border: 'none', 
                   background: 'transparent', 
                   textDecoration: 'none',
-                  cursor: 'pointer'
+                  cursor: 'pointer',
+                  boxShadow: 'none',
+                  WebkitBoxShadow: 'none',
+                  MozBoxShadow: 'none'
                 }}
                 onClick={() => setShowDesktopDropdown(!showDesktopDropdown)}
               >
@@ -133,20 +155,7 @@ const Header = ({ onToggleSidebar }) => {
               {/* Real dropdown - use CSS classes */}
               <div
                 className={`custom-dropdown ${showDesktopDropdown ? 'show' : 'hide'}`}
-                style={{
-                  position: 'absolute',
-                  top: '100%',
-                  right: '0',
-                  zIndex: 9999,
-                  minWidth: '200px',
-                  backgroundColor: 'white',
-                  border: '1px solid rgba(0,0,0,0.15)',
-                  borderRadius: '0.375rem',
-                  padding: '0.5rem 0',
-                  width: '200px',
-                  height: 'auto',
-                  overflow: 'visible'
-                }}
+                style={dropdownStyle}
               >
                   <div className="dropdown-header">                  
                     <div className="fw-bold text-primary-custom">

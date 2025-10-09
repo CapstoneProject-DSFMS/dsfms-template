@@ -16,6 +16,13 @@ import CourseDetailsWrapper from '../pages/AcademicDepartment/CourseDetailsWrapp
 import SubjectDetailsWrapper from '../pages/AcademicDepartment/SubjectDetailsWrapper'
 import CourseDetailPage from '../pages/AcademicDepartment/CourseDetailPage'
 import EnrollTraineesPage from '../pages/AcademicDepartment/EnrollTraineesPage'
+import TraineeListPage from '../pages/Trainee/TraineeListPage'
+import TraineeDetailPage from '../pages/Trainee/TraineeDetailPage'
+import TraineeCourseDetailPage from '../pages/Trainee/TraineeCourseDetailPage'
+import TraineeSubjectDetailPage from '../pages/Trainee/TraineeSubjectDetailPage'
+import TraineeAssessmentPage from '../pages/Trainee/TraineeAssessmentPage'
+import SignaturePadPage from '../pages/Trainee/SignaturePadPage'
+import AssessmentSectionDetailsPage from '../pages/Trainee/AssessmentSectionDetailsPage'
 import { API_PERMISSIONS } from '../constants/apiPermissions'
 import { getCurrentBasename } from '../utils/navigation'
 
@@ -183,6 +190,94 @@ export const router = createBrowserRouter([
       {
         path: "course/:courseId/subject/:subjectId",
         element: <SubjectDetailsWrapper />
+      }
+    ]
+  },
+  {
+    path: "/trainee",
+    element: (
+      <ProtectedRoute>
+        <LayoutWrapper />
+      </ProtectedRoute>
+    ),
+    errorElement: <ErrorBoundary />,
+    children: [
+      {
+        path: "",
+        element: (
+          <PermissionRoute 
+            permission={API_PERMISSIONS.TRAINEES.VIEW_ALL}
+            fallback={<div className="p-4 text-center text-muted">You don't have permission to access trainee management.</div>}
+          >
+            <TraineeListPage />
+          </PermissionRoute>
+        )
+      },
+      {
+        path: ":traineeId",
+        element: (
+          <PermissionRoute 
+            permission={API_PERMISSIONS.TRAINEES.VIEW_DETAIL}
+            fallback={<div className="p-4 text-center text-muted">You don't have permission to view trainee details.</div>}
+          >
+            <TraineeDetailPage />
+          </PermissionRoute>
+        )
+      },
+      {
+        path: ":traineeId/course/:courseId",
+        element: (
+          <PermissionRoute 
+            permission={API_PERMISSIONS.TRAINEES.VIEW_COURSES}
+            fallback={<div className="p-4 text-center text-muted">You don't have permission to view trainee courses.</div>}
+          >
+            <TraineeCourseDetailPage />
+          </PermissionRoute>
+        )
+      },
+      {
+        path: ":traineeId/course/:courseId/subject/:subjectId",
+        element: (
+          <PermissionRoute 
+            permission={API_PERMISSIONS.TRAINEES.VIEW_SUBJECTS}
+            fallback={<div className="p-4 text-center text-muted">You don't have permission to view trainee subjects.</div>}
+          >
+            <TraineeSubjectDetailPage />
+          </PermissionRoute>
+        )
+      },
+      {
+        path: ":traineeId/assessments",
+        element: (
+          <PermissionRoute 
+            permission={API_PERMISSIONS.TRAINEES.VIEW_ASSESSMENTS}
+            fallback={<div className="p-4 text-center text-muted">You don't have permission to view trainee assessments.</div>}
+          >
+            <TraineeAssessmentPage />
+          </PermissionRoute>
+        )
+      },
+      {
+        path: ":traineeId/signature-pad/:documentId",
+        element: (
+          <PermissionRoute 
+            permission={API_PERMISSIONS.TRAINEES.VIEW_ASSESSMENTS}
+            fallback={<div className="p-4 text-center text-muted">You don't have permission to access signature pad.</div>}
+          >
+            <SignaturePadPage />
+          </PermissionRoute>
+        )
+      },
+      {
+        path: ":traineeId/assessment-section/:sectionId",
+        element: (
+          <PermissionRoute 
+            permission={API_PERMISSIONS.TRAINEES.VIEW_ASSESSMENTS}
+            fallback={<div className="p-4 text-center text-muted">You don't have permission to view assessment sections.</div>}
+          >
+            <AssessmentSectionDetailsPage />
+          </PermissionRoute>
+        )
       }
     ]
   },

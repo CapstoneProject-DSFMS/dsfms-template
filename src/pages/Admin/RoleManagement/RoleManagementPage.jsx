@@ -159,7 +159,7 @@ const RoleManagementPage = () => {
                   fallback={null}
                 >
                   <Button
-                    variant="primary"
+                    variant="primary-custom"
                     size="sm"
                     onClick={handleAdd}
                     className="d-flex align-items-center"

@@ -396,7 +396,7 @@ const CourseDetailsView = ({ courseId }) => {
                   Courses ({courses.length})
                 </h5>
                 <PermissionWrapper permission={API_PERMISSIONS.COURSES.CREATE}>
-                  <Button variant="primary" size="sm" onClick={handleCreateCourse}>
+                  <Button variant="primary-custom" size="sm" onClick={handleCreateCourse}>
                     <Plus size={16} className="me-1" />
                     Add New Course
                   </Button>

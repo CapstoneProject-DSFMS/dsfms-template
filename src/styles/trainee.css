@@ -1,0 +1,233 @@
+/* Trainee Management Styles */
+
+/* Trainee Table Styles */
+.trainee-table-container {
+  overflow-x: hidden;
+}
+
+.trainee-table-container .table {
+  table-layout: fixed;
+  width: 100%;
+}
+
+.trainee-table-container .sortable-header {
+  cursor: pointer;
+  user-select: none;
+  min-width: 120px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  transition: background-color 0.2s ease;
+}
+
+.trainee-table-container .sortable-header:hover {
+  background-color: rgba(0, 0, 0, 0.05);
+}
+
+.trainee-table-container .sort-icon {
+  font-size: 0.8rem;
+  color: #6c757d;
+}
+
+/* Avatar Styles */
+.avatar-sm {
+  width: 32px;
+  height: 32px;
+  font-size: 0.875rem;
+}
+
+.avatar-lg {
+  width: 80px;
+  height: 80px;
+  font-size: 2rem;
+}
+
+/* Trainee Detail Styles */
+.trainee-detail-container {
+  max-height: calc(100vh - 200px);
+  overflow-y: auto;
+}
+
+.trainee-info-card {
+  background: var(--bs-primary);
+  color: white;
+  border: none;
+}
+
+.trainee-info-card .card-header {
+  background: rgba(255, 255, 255, 0.1);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+/* Course and Assessment Tables */
+.trainee-courses-table,
+.trainee-assessments-table {
+  max-height: 400px;
+  overflow-y: auto;
+}
+
+.trainee-courses-table .table,
+.trainee-assessments-table .table {
+  margin-bottom: 0;
+}
+
+/* Progress Bar Styles */
+.progress {
+  height: 6px;
+  background-color: #e9ecef;
+  border-radius: 3px;
+}
+
+.progress-bar {
+  border-radius: 3px;
+  transition: width 0.3s ease;
+}
+
+/* Status Badge Styles */
+.badge {
+  font-size: 0.75rem;
+  font-weight: 500;
+}
+
+.badge.fs-6 {
+  font-size: 0.875rem !important;
+}
+
+/* Modal Styles - Removed gradient overrides to use custom palette */
+
+.modal-header.bg-primary-custom .btn-close {
+  filter: invert(1);
+}
+
+/* Form Styles */
+.form-control:focus,
+.form-select:focus {
+  border-color: #667eea;
+  box-shadow: 0 0 0 0.2rem rgba(102, 126, 234, 0.25);
+}
+
+/* Button Styles - Removed gradient overrides to use custom palette */
+
+.btn-outline-primary {
+  color: #667eea;
+  border-color: #667eea;
+}
+
+.btn-outline-primary:hover {
+  background-color: #667eea;
+  border-color: #667eea;
+}
+
+/* Card Styles */
+.card {
+  border: none;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  transition: box-shadow 0.3s ease;
+}
+
+.card:hover {
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+}
+
+/* Space utilities */
+.space-y-3 > * + * {
+  margin-top: 1rem;
+}
+
+/* Loading States */
+.loading-skeleton {
+  background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
+  background-size: 200% 100%;
+  animation: loading 1.5s infinite;
+}
+
+@keyframes loading {
+  0% {
+    background-position: 200% 0;
+  }
+  100% {
+    background-position: -200% 0;
+  }
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+  .trainee-table-container {
+    font-size: 0.875rem;
+  }
+  
+  .avatar-lg {
+    width: 60px;
+    height: 60px;
+    font-size: 1.5rem;
+  }
+  
+  .trainee-courses-table,
+  .trainee-assessments-table {
+    max-height: 300px;
+  }
+}
+
+/* Animation Classes */
+.fade-in {
+  animation: fadeIn 0.3s ease-in;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.slide-in {
+  animation: slideIn 0.3s ease-out;
+}
+
+@keyframes slideIn {
+  from {
+    transform: translateX(-20px);
+    opacity: 0;
+  }
+  to {
+    transform: translateX(0);
+    opacity: 1;
+  }
+}
+
+/* Hover Effects */
+.hover-lift {
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.hover-lift:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+/* Custom Scrollbar */
+.trainee-courses-table::-webkit-scrollbar,
+.trainee-assessments-table::-webkit-scrollbar {
+  width: 6px;
+}
+
+.trainee-courses-table::-webkit-scrollbar-track,
+.trainee-assessments-table::-webkit-scrollbar-track {
+  background: #f1f1f1;
+  border-radius: 3px;
+}
+
+.trainee-courses-table::-webkit-scrollbar-thumb,
+.trainee-assessments-table::-webkit-scrollbar-thumb {
+  background: #c1c1c1;
+  border-radius: 3px;
+}
+
+.trainee-courses-table::-webkit-scrollbar-thumb:hover,
+.trainee-assessments-table::-webkit-scrollbar-thumb:hover {
+  background: #a8a8a8;
+}
