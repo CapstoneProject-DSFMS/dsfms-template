@@ -718,7 +718,7 @@ const UserModal = ({ show, user, mode, onSave, onClose }) => {
           
           {mode !== 'view' && (
             <Button
-              variant="primary"
+              variant="primary-custom"
               type="submit"
               disabled={isSubmitting}
             >

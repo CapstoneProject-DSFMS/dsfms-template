@@ -16,7 +16,7 @@
   background-clip: padding-box;
   border: 1px solid rgba(0, 0, 0, 0.15);
   border-radius: 0.375rem;
-  box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.175);
+  box-shadow: none !important;
 }
 
 .dropdown-menu.show {
@@ -110,6 +110,7 @@
   display: block !important;
   visibility: visible !important;
   opacity: 1 !important;
+  box-shadow: none !important;
 }
 
 .custom-dropdown.hide {
@@ -122,4 +123,18 @@
   display: block !important;
   visibility: visible !important;
   opacity: 1 !important;
+  box-shadow: none !important;
+}
+
+/* Remove box shadow from custom dropdown in all states */
+.custom-dropdown:hover {
+  box-shadow: none !important;
+}
+
+.custom-dropdown:focus {
+  box-shadow: none !important;
+}
+
+.custom-dropdown:active {
+  box-shadow: none !important;
 }

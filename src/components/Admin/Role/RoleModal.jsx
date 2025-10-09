@@ -452,7 +452,7 @@ const RoleModal = ({ show, role, mode, onSave, onClose }) => {
           
           {mode !== 'view' && (
             <Button
-              variant="primary"
+              variant="primary-custom"
               type="submit"
               disabled={isSubmitting || (role && isBaseRole(role.name))}
             >

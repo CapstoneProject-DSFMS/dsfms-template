@@ -168,6 +168,22 @@ export const API_PERMISSIONS = {
     CREATE: "POST /enrollments",
     VIEW_ALL: "GET /enrollments",
     DELETE: "DELETE /enrollments/:enrollmentId"
+  },
+
+  // Trainee Management
+  TRAINEES: {
+    CREATE: "POST /trainees",
+    VIEW_ALL: "GET /trainees",
+    VIEW_DETAIL: "GET /trainees/:id",
+    UPDATE: "PUT /trainees/:id",
+    DELETE: "DELETE /trainees/:id",
+    ENABLE: "PATCH /trainees/:id/toggle-status",
+    VIEW_COURSES: "GET /trainees/:id/courses",
+    VIEW_SUBJECTS: "GET /trainees/:id/subjects",
+    VIEW_ASSESSMENTS: "GET /trainees/:id/assessments",
+    ENROLL: "POST /trainees/:id/enroll",
+    UNENROLL: "DELETE /trainees/:id/enroll/:courseId",
+    BULK_IMPORT: "POST /trainees/bulk-import"
   }
 };
 
