@@ -25,8 +25,31 @@ const TraineeDetailView = ({ traineeId }) => {
     try {
       setLoading(true);
       setError('');
-      const response = await traineeAPI.getTraineeById(traineeId);
-      setTrainee(response);
+      
+      // Hardcoded trainee data
+      const mockTrainee = {
+        id: traineeId,
+        firstName: 'John',
+        middleName: 'Michael',
+        lastName: 'Doe',
+        eid: 'EMP001',
+        email: 'john.doe@company.com',
+        phoneNumber: '+1 (555) 123-4567',
+        dateOfBirth: '1990-05-15',
+        address: '123 Main Street, New York, NY 10001',
+        status: 'ACTIVE',
+        department: {
+          id: 1,
+          name: 'Flight Operations',
+          code: 'FO'
+        },
+        createdAt: '2024-01-15T10:00:00.000Z',
+        updatedAt: '2024-02-01T14:30:00.000Z'
+      };
+      
+      // Simulate API delay
+      await new Promise(resolve => setTimeout(resolve, 500));
+      setTrainee(mockTrainee);
     } catch (error) {
       console.error('Error loading trainee details:', error);
       setError('Failed to load trainee details');
@@ -126,11 +149,6 @@ const TraineeDetailView = ({ traineeId }) => {
             </Card.Header>
             <Card.Body>
               <div className="text-center mb-4">
-                <div className="avatar-lg bg-primary text-white rounded-circle d-flex align-items-center justify-content-center mx-auto mb-3">
-                  <span className="fs-1 fw-bold">
-                    {trainee.firstName?.[0] || 'T'}
-                  </span>
-                </div>
                 <h4 className="mb-1">
                   {trainee.firstName} {trainee.middleName} {trainee.lastName}
                 </h4>

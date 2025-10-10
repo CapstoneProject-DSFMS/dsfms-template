@@ -19,8 +19,50 @@ const TraineeSubjectList = ({ traineeId, courseId }) => {
   const loadTraineeSubjects = async () => {
     try {
       setLoading(true);
-      const response = await traineeAPI.getTraineeSubjects(traineeId, courseId);
-      setSubjects(response.subjects || response.data || []);
+      
+      // Hardcoded subjects data
+      const mockSubjects = [
+        {
+          id: '1',
+          name: 'Basic Safety Protocols',
+          code: 'BSP',
+          description: 'Introduction to basic safety procedures and protocols',
+          status: 'COMPLETED',
+          progress: 100,
+          startDate: '2024-01-15T09:00:00.000Z',
+          endDate: '2024-01-30T17:00:00.000Z',
+          instructor: 'Sarah Johnson',
+          score: 95
+        },
+        {
+          id: '2',
+          name: 'Emergency Procedures',
+          code: 'EP',
+          description: 'Emergency response procedures and protocols',
+          status: 'IN_PROGRESS',
+          progress: 75,
+          startDate: '2024-02-01T09:00:00.000Z',
+          endDate: '2024-02-15T17:00:00.000Z',
+          instructor: 'Mike Chen',
+          score: null
+        },
+        {
+          id: '3',
+          name: 'Equipment Handling',
+          code: 'EH',
+          description: 'Proper handling and maintenance of safety equipment',
+          status: 'PENDING',
+          progress: 0,
+          startDate: '2024-02-16T09:00:00.000Z',
+          endDate: '2024-03-01T17:00:00.000Z',
+          instructor: 'Lisa Wang',
+          score: null
+        }
+      ];
+      
+      // Simulate API delay
+      await new Promise(resolve => setTimeout(resolve, 300));
+      setSubjects(mockSubjects);
     } catch (error) {
       console.error('Error loading trainee subjects:', error);
       toast.error('Failed to load subjects');

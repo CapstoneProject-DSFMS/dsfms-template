@@ -23,8 +23,14 @@ div.subject-details .row.mt-4.mb-4 {
 
 /* Subject Details Card Spacing */
 .subject-details .card {
-  margin-top: 2rem !important;
-  margin-bottom: 2rem !important;
+  margin-top: 1rem !important;
+  margin-bottom: 1rem !important;
+  border-radius: 8px !important;
+}
+
+/* Spacing between collapsible panels */
+.subject-details .row + .row {
+  margin-top: 1.5rem !important;
 }
 
 /* Force card spacing with highest specificity */
@@ -576,12 +582,15 @@ div.subject-details .card {
 .collapsible-header {
   transition: all 0.3s ease;
   user-select: none;
-  background-color: var(--bs-primary) !important;
-  color: var(--bs-primary-text) !important;
+  background-color: #2c3e50 !important; /* Dark blue-gray like in image */
+  color: #ffffff !important;
+  border: none !important;
+  padding: 1rem 1.5rem !important;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1) !important;
 }
 
 .collapsible-header:hover {
-  background-color: var(--bs-secondary) !important;
+  background-color: #34495e !important; /* Slightly lighter on hover */
 }
 
 .collapsible-header .chevron-icon {
@@ -607,6 +616,8 @@ div.subject-details .card {
 .collapsible-header span,
 .collapsible-header .text-muted {
   color: #ffffff !important;
+  font-weight: 700 !important;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3) !important;
 }
 
 .collapsible-header svg,
@@ -618,19 +629,22 @@ div.subject-details .card {
 .collapsible-content {
   transition: all 0.3s ease;
   overflow: hidden;
+  max-height: 1000px;
+  opacity: 1;
 }
 
 .collapsible-content.collapsed {
   max-height: 0 !important;
-  opacity: 0;
+  opacity: 0 !important;
   padding: 0 !important;
-  margin: 0;
-  overflow: hidden;
+  margin: 0 !important;
+  overflow: hidden !important;
+  border: none !important;
 }
 
 .collapsible-content.expanded {
-  max-height: 1000px;
-  opacity: 1;
+  max-height: 1000px !important;
+  opacity: 1 !important;
 }
 
 /* Specific styles for trainee table when expanded */
@@ -651,7 +665,7 @@ div.subject-details .card {
 }
 
 .chevron-icon.rotated {
-  transform: rotate(90deg);
+  transform: rotate(90deg) !important;
   color: #ffffff !important;
   opacity: 1;
 }

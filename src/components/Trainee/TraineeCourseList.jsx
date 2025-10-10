@@ -19,8 +19,78 @@ const TraineeCourseList = ({ traineeId }) => {
   const loadTraineeCourses = async () => {
     try {
       setLoading(true);
-      const response = await traineeAPI.getTraineeCourses(traineeId);
-      setCourses(response.courses || response.data || []);
+      
+      // Hardcoded courses data
+      const mockCourses = [
+        {
+          id: '1',
+          code: 'SAF001',
+          name: 'Safety Procedures Training',
+          description: 'Basic safety procedures and emergency protocols',
+          level: 'BEGINNER',
+          status: 'ACTIVE',
+          startDate: '2024-01-15T09:00:00.000Z',
+          endDate: '2024-03-15T17:00:00.000Z',
+          progress: 75,
+          department: {
+            id: 1,
+            name: 'Safety Department',
+            code: 'SAF'
+          }
+        },
+        {
+          id: '2',
+          code: 'FLT002',
+          name: 'Flight Operations',
+          description: 'Advanced flight operations and navigation',
+          level: 'INTERMEDIATE',
+          status: 'ACTIVE',
+          startDate: '2024-02-01T08:00:00.000Z',
+          endDate: '2024-04-01T16:00:00.000Z',
+          progress: 45,
+          department: {
+            id: 2,
+            name: 'Flight Operations',
+            code: 'FO'
+          }
+        },
+        {
+          id: '3',
+          code: 'EMG003',
+          name: 'Emergency Response',
+          description: 'Emergency response and crisis management',
+          level: 'ADVANCED',
+          status: 'COMPLETED',
+          startDate: '2023-11-01T09:00:00.000Z',
+          endDate: '2023-12-15T17:00:00.000Z',
+          progress: 100,
+          department: {
+            id: 3,
+            name: 'Emergency Services',
+            code: 'EMG'
+          }
+        },
+        {
+          id: '4',
+          code: 'TECH004',
+          name: 'Technical Systems',
+          description: 'Aircraft technical systems and maintenance',
+          level: 'INTERMEDIATE',
+          status: 'PLANNED',
+          startDate: '2024-03-01T09:00:00.000Z',
+          endDate: '2024-05-01T17:00:00.000Z',
+          progress: 0,
+          department: {
+            id: 4,
+            name: 'Technical Department',
+            code: 'TECH'
+          }
+        }
+      ];
+      
+      // Simulate API delay
+      await new Promise(resolve => setTimeout(resolve, 300));
+      setCourses(mockCourses);
     } catch (error) {
       console.error('Error loading trainee courses:', error);
       toast.error('Failed to load enrolled courses');
