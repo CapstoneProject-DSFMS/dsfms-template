@@ -1,19 +1,53 @@
-import React, { useState } from 'react';
-import { Card, Form, Button } from 'react-bootstrap';
+import React, { useState, useEffect } from 'react';
+import { Card, Form, Button, Spinner } from 'react-bootstrap';
 import { CheckSquare, Square } from 'react-bootstrap-icons';
+import { subjectAPI } from '../../api';
 
-const mockSubjects = [
-  { id: 's1', name: 'Safety Basics', code: 'SB01' },
-  { id: 's2', name: 'Evacuation Drills', code: 'ED02' },
-  { id: 's3', name: 'CPR & First Aid', code: 'FA03' },
-  { id: 's4', name: 'Fire Safety', code: 'FS04' },
-  { id: 's5', name: 'Emergency Procedures', code: 'EP05' }
-];
-
-const SubjectSelectionPanel = ({ courseId, selectedSubjects, onSelectionChange }) => {
+const SubjectSelectionPanel = ({ selectedSubjects, onSelectionChange }) => {
   const [searchTerm, setSearchTerm] = useState('');
+  const [subjects, setSubjects] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
 
-  const filteredSubjects = mockSubjects.filter(subject =>
+  // Load subjects from API
+  useEffect(() => {
+    const loadSubjects = async () => {
+      try {
+        setLoading(true);
+        setError(null);
+        console.log('🔍 SubjectSelectionPanel - Loading all subjects from API...');
+        
+        const response = await subjectAPI.getSubjects();
+        console.log('🔍 SubjectSelectionPanel - API Response:', response);
+        
+        if (response && response.subjects) {
+          // Only extract name field from each subject
+          const subjectsWithNameOnly = response.subjects.map(subject => ({
+            id: subject.id,
+            name: subject.name,
+            code: subject.code // Keep code for display
+          }));
+          
+          setSubjects(subjectsWithNameOnly);
+          console.log('✅ SubjectSelectionPanel - Loaded subjects:', subjectsWithNameOnly.length);
+          console.log('🔍 SubjectSelectionPanel - Subject names:', subjectsWithNameOnly.map(s => s.name));
+        } else {
+          setSubjects([]);
+          console.log('⚠️ SubjectSelectionPanel - No subjects found');
+        }
+      } catch (error) {
+        console.error('❌ SubjectSelectionPanel - Error loading subjects:', error);
+        setError('Failed to load subjects');
+        setSubjects([]);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    loadSubjects();
+  }, []); // Remove courseId dependency since we're getting all subjects
+
+  const filteredSubjects = subjects.filter(subject =>
     subject.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
     subject.code.toLowerCase().includes(searchTerm.toLowerCase())
   );
@@ -35,7 +69,6 @@ const SubjectSelectionPanel = ({ courseId, selectedSubjects, onSelectionChange }
   };
 
   const isAllSelected = filteredSubjects.length > 0 && selectedSubjects.length === filteredSubjects.length;
-  const isIndeterminate = selectedSubjects.length > 0 && selectedSubjects.length < filteredSubjects.length;
 
   return (
     <Card className="d-flex flex-column">
@@ -65,7 +98,16 @@ const SubjectSelectionPanel = ({ courseId, selectedSubjects, onSelectionChange }
 
         {/* Subject List */}
         <div style={{ maxHeight: '300px', overflowY: 'auto' }}>
-          {filteredSubjects.length === 0 ? (
+          {loading ? (
+            <div className="p-3 text-center">
+              <Spinner animation="border" size="sm" className="me-2" />
+              <span className="text-muted">Loading subjects...</span>
+            </div>
+          ) : error ? (
+            <div className="p-3 text-center text-danger">
+              <p className="mb-0">{error}</p>
+            </div>
+          ) : filteredSubjects.length === 0 ? (
             <div className="p-3 text-center text-muted">
               <p className="mb-0">No subjects found</p>
             </div>

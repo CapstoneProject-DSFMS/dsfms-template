@@ -20,7 +20,7 @@ const CourseActions = ({ course, onView, onDisable }) => {
   };
 
   return (
-    <div className="position-relative course-actions-dropdown">
+    <div className="position-relative course-actions-dropdown" style={{ zIndex: showDropdown ? 1060 : 'auto' }}>
       <Button
         variant="light"
         size="sm"
@@ -35,18 +35,29 @@ const CourseActions = ({ course, onView, onDisable }) => {
       
       {showDropdown && (
         <div 
-          className="position-absolute bg-white border rounded shadow-sm"
+          className="position-absolute bg-white border rounded shadow-lg"
           style={{
             top: '100%',
             right: 0,
-            zIndex: 1050,
-            minWidth: '150px'
+            zIndex: 1060,
+            minWidth: '150px',
+            boxShadow: '0 0.5rem 1rem rgba(0, 0, 0, 0.15)',
+            border: '1px solid rgba(0, 0, 0, 0.15)',
+            borderRadius: '0.375rem'
           }}
         >
           <div 
             className="dropdown-item border-bottom"
             onClick={handleViewClick}
-            style={{ cursor: 'pointer' }}
+            style={{ 
+              cursor: 'pointer',
+              padding: '0.5rem 1rem',
+              display: 'flex',
+              alignItems: 'center',
+              transition: 'background-color 0.15s ease-in-out'
+            }}
+            onMouseEnter={(e) => e.target.style.backgroundColor = '#f8f9fa'}
+            onMouseLeave={(e) => e.target.style.backgroundColor = 'transparent'}
           >
             <Eye className="me-2" size={16} />
             View Details
@@ -55,7 +66,15 @@ const CourseActions = ({ course, onView, onDisable }) => {
           <div 
             className="dropdown-item text-warning"
             onClick={handleDisableClick}
-            style={{ cursor: 'pointer' }}
+            style={{ 
+              cursor: 'pointer',
+              padding: '0.5rem 1rem',
+              display: 'flex',
+              alignItems: 'center',
+              transition: 'background-color 0.15s ease-in-out'
+            }}
+            onMouseEnter={(e) => e.target.style.backgroundColor = '#f8f9fa'}
+            onMouseLeave={(e) => e.target.style.backgroundColor = 'transparent'}
           >
             <XCircle className="me-2" size={16} />
             Disable Course
@@ -71,7 +90,7 @@ const CourseActions = ({ course, onView, onDisable }) => {
             left: 0,
             right: 0,
             bottom: 0,
-            zIndex: 999
+            zIndex: 1055
           }}
           onClick={() => setShowDropdown(false)}
         />

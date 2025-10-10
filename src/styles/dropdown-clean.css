@@ -70,7 +70,9 @@
   margin-bottom: 0;
   font-size: 0.875rem;
   color: #6c757d;
-  white-space: nowrap;
+  white-space: normal;
+  word-break: break-all;
+  line-height: 1.2;
 }
 
 /* Header dropdown specific */
