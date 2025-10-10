@@ -22,6 +22,7 @@ import TraineeSubjectDetailPage from '../pages/Trainee/TraineeSubjectDetailPage'
 import TraineeAssessmentPage from '../pages/Trainee/TraineeAssessmentPage'
 import SignaturePadPage from '../pages/Trainee/SignaturePadPage'
 import AssessmentSectionDetailsPage from '../pages/Trainee/AssessmentSectionDetailsPage'
+import TraineeDashboardPage from '../pages/Trainee/TraineeDashboardPage'
 import AcademicDetailsPage from '../pages/Trainee/AcademicDetailsPage'
 import EnrolledCoursesPage from '../pages/Trainee/EnrolledCoursesPage'
 import AssessmentPendingPage from '../pages/Trainee/AssessmentPendingPage'
@@ -209,7 +210,14 @@ export const router = createBrowserRouter([
     children: [
       {
         path: "",
-        element: <RoleBasedRedirect />
+        element: (
+          <PermissionRoute 
+            permission={API_PERMISSIONS.TRAINEES.VIEW_ALL}
+            fallback={<div className="p-4 text-center text-muted">You don't have permission to access trainee portal.</div>}
+          >
+            <TraineeDashboardPage />
+          </PermissionRoute>
+        )
       },
       {
         path: ":traineeId",

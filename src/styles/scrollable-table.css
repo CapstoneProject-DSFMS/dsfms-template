@@ -797,3 +797,38 @@ body, html {
   overflow-y: visible !important;
 }
 
+/* Fix course actions dropdown specifically */
+.course-actions-dropdown {
+  position: relative !important;
+  z-index: auto !important;
+}
+
+.course-actions-dropdown .dropdown-menu {
+  position: absolute !important;
+  z-index: 1060 !important;
+  top: 100% !important;
+  right: 0 !important;
+  left: auto !important;
+  transform: none !important;
+  max-height: none !important;
+  overflow: visible !important;
+  box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15) !important;
+  border: 1px solid rgba(0, 0, 0, 0.15) !important;
+  border-radius: 0.375rem !important;
+}
+
+/* Ensure table cells don't clip dropdown */
+.department-table-container .table tbody tr td:last-child {
+  overflow: visible !important;
+  position: relative !important;
+}
+
+/* Fix any overflow issues in table container */
+.department-table-container {
+  overflow: visible !important;
+}
+
+.department-table-container .table {
+  overflow: visible !important;
+}
+

@@ -108,19 +108,16 @@ const CourseDetailsView = ({ courseId }) => {
     const loadDepartmentData = async () => {
       setLoading(true);
       try {
-        console.log('🔍 CourseDetailsView - Loading department with ID:', courseId);
         
-        // Fetch combined department and courses data from API endpoint
-        const response = await courseAPI.getDepartmentWithCourses(courseId);
-        console.log('🔍 CourseDetailsView - Combined API Response:', response);
+        // Fetch department data from new API endpoint
+        const response = await courseAPI.getDepartmentById(courseId);
         
-        // API returns the department object directly with courses array inside
+        // API returns department object directly (not in departments array)
         const departmentData = response;
-        const coursesData = { courses: response.courses || [] };
         
         // Validate department data
         if (!departmentData) {
-          throw new Error('Department data not found in API response');
+          throw new Error(`Department with ID ${courseId} not found in API response`);
         }
         
         // Transform department data to course format for compatibility
@@ -131,14 +128,14 @@ const CourseDetailsView = ({ courseId }) => {
           description: departmentData.description,
           duration: "N/A", // Departments don't have duration
           status: departmentData.isActive,
-          totalSubjects: 0, // Will be updated when subjects API is available
-          totalTrainers: 0  // Will be updated when trainers API is available
+          totalSubjects: departmentData.courseCount || 0,
+          totalTrainers: departmentData.trainerCount || 0
         };
         
         setCourse(courseData);
         
         // Transform API courses data to match expected format
-        const transformedCourses = coursesData.courses?.map(course => ({
+        const transformedCourses = departmentData.courses?.map(course => ({
           id: course.id,
           name: course.name,
           code: course.code,
@@ -151,14 +148,10 @@ const CourseDetailsView = ({ courseId }) => {
           maxNumTrainee: course.maxNumTrainee,
           passScore: course.passScore,
           level: course.level,
-          department: course.department,
-          subjectCount: course.subjectCount || 0,
-          traineeCount: course.traineeCount || 0,
-          trainerCount: course.trainerCount || 0
+          subjectCount: course.subjectCount || 0
         })) || [];
         
         setCourses(transformedCourses);
-        console.log('🔍 CourseDetailsView - Set courses:', transformedCourses);
         
         // Set department head data
         if (departmentData.headUser) {
