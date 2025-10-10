@@ -32,6 +32,11 @@ export const ERROR_MAPPINGS = {
   'Email or password is incorrect': 'Email or password is incorrect.',
   'Wrong password or username': 'Wrong password or username. Please check your credentials and try again.',
   
+  // Permission errors
+  'Forbidden': 'You do not have permission to perform this action. Please contact your administrator.',
+  'Insufficient permissions': 'You do not have sufficient permissions to perform this action.',
+  'Access denied': 'Access denied. You do not have permission to access this resource.',
+  
   // User management errors
   'User not found': 'User not found.',
   'User already exists': 'User already exists.',
@@ -42,6 +47,7 @@ export const ERROR_MAPPINGS = {
   'Role not found': 'Role not found.',
   'Role already exists': 'Role already exists.',
   'Cannot delete role': 'Cannot delete this role.',
+  'Prohibited action on base role': 'Cannot modify base roles. Base roles are system-defined and cannot be edited.',
   
   // Department management errors
   'Department not found': 'Department not found.',
@@ -52,7 +58,6 @@ export const ERROR_MAPPINGS = {
   'Internal server error': 'System error. Please try again later.',
   'Network error': 'Connection error. Please check your network and try again.',
   'Request timeout': 'Request timeout. Please try again.',
-  'Forbidden': 'You do not have permission to perform this action.',
   'Not found': 'Data not found.',
   'Conflict': 'Data already exists or conflicts.',
   'Too many requests': 'Too many requests. Please try again later.'
@@ -60,6 +65,15 @@ export const ERROR_MAPPINGS = {
 
 // Function to map backend error to custom message
 export const mapError = (error, context = {}) => {
+  // Handle HTTP status codes
+  if (error?.response?.status === 403) {
+    return 'You do not have permission to perform this action. Please contact your administrator.';
+  }
+  
+  if (error?.response?.status === 401) {
+    return 'Your session has expired. Please login again.';
+  }
+  
   // If error is a string, try to map it directly
   if (typeof error === 'string') {
     return ERROR_MAPPINGS[error] || error;

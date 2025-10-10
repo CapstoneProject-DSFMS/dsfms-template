@@ -262,7 +262,7 @@ const DepartmentManagementPage = () => {
                   fallback={null}
                 >
                   <Button
-                    variant="primary"
+                    variant="primary-custom"
                     size="sm"
                     onClick={handleAddDepartment}
                     className="d-flex align-items-center"

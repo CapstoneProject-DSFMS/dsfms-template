@@ -10,136 +10,103 @@ import {
   Clock,
   PersonCheckFill,
   Calendar,
-  ArrowLeft
+  ArrowLeft,
+  ChevronDown
 } from 'react-bootstrap-icons';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { PermissionWrapper } from '../Common';
 import { API_PERMISSIONS } from '../../constants/apiPermissions';
 import { LoadingSkeleton, SortIcon } from '../Common';
 import useTableSort from '../../hooks/useTableSort';
 import TrainerActions from './TrainerActions';
+import TraineeActions from './TraineeActions';
 import DisableSubjectModal from './DisableSubjectModal';
 import EditSubjectModal from './EditSubjectModal';
 import EditTrainerModal from './EditTrainerModal';
+import AddTrainerModal from './AddTrainerModal';
+import subjectAPI from '../../api/subject';
 
-const SubjectDetailsView = ({ subjectId }) => {
+const SubjectDetailsView = ({ subjectId, courseId }) => {
   const navigate = useNavigate();
+  const location = useLocation();
   const [subject, setSubject] = useState(null);
   const [trainers, setTrainers] = useState([]);
+  const [trainees, setTrainees] = useState([]);
   const [loading, setLoading] = useState(true);
   const [showDisableSubject, setShowDisableSubject] = useState(false);
   const [showEditSubject, setShowEditSubject] = useState(false);
+  const [showAddTrainer, setShowAddTrainer] = useState(false);
   const [showEditTrainer, setShowEditTrainer] = useState(false);
   const [selectedTrainer, setSelectedTrainer] = useState(null);
   const [isDisabling, setIsDisabling] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
-  const [isEditingTrainer, setIsEditingTrainer] = useState(false);
+  const [isAddingTrainer] = useState(false);
+  const [isEditingTrainer] = useState(false);
+  
+  // Collapse states for tables
+  const [isSubjectInfoCollapsed, setIsSubjectInfoCollapsed] = useState(false);
+  const [isTrainersCollapsed, setIsTrainersCollapsed] = useState(false);
+  const [isTraineesCollapsed, setIsTraineesCollapsed] = useState(false);
   
   const { sortedData } = useTableSort(trainers);
+  const { sortedData: sortedTrainees } = useTableSort(trainees);
 
+  // Load subject data from API
   useEffect(() => {
-    // Hardcoded subject data - matching SubjectTable IDs
-    const hardcodedSubjects = {
-      's1': {
-        id: 's1',
-        name: "Safety Basics",
-        code: "SB01",
-        description: "Comprehensive training on basic safety procedures, emergency protocols, and safety equipment usage.",
-        duration: "2 weeks",
-        status: "ACTIVE",
-        totalTrainers: 2,
-        courseId: 1,
-        courseName: "Safety Procedures"
-      },
-      's2': {
-        id: 's2',
-        name: "Evacuation Drills",
-        code: "ED02",
-        description: "Training on evacuation procedures, emergency exits, and passenger safety during evacuations.",
-        duration: "1 week",
-        status: "ACTIVE",
-        totalTrainers: 3,
-        courseId: 1,
-        courseName: "Safety Procedures"
-      },
-      's3': {
-        id: 's3',
-        name: "CPR & First Aid",
-        code: "FA03",
-        description: "Basic first aid training including CPR, medical emergency response, and life-saving techniques.",
-        duration: "1 week",
-        status: "INACTIVE",
-        totalTrainers: 1,
-        courseId: 1,
-        courseName: "Safety Procedures"
-      },
-      's4': {
-        id: 's4',
-        name: "Fire Safety",
-        code: "FS04",
-        description: "Fire safety training covering fire prevention, detection, and emergency response procedures.",
-        duration: "1 week",
-        status: "ACTIVE",
-        totalTrainers: 2,
-        courseId: 1,
-        courseName: "Safety Procedures"
-      },
-      's5': {
-        id: 's5',
-        name: "Emergency Procedures",
-        code: "EP05",
-        description: "Comprehensive emergency procedures training for various crisis situations and protocols.",
-        duration: "2 weeks",
-        status: "ACTIVE",
-        totalTrainers: 4,
-        courseId: 1,
-        courseName: "Safety Procedures"
-      }
-    };
-
-    // Hardcoded trainers data - matching subject IDs
-    const hardcodedTrainers = {
-      's1': [
-        { id: 1, name: "John Smith", email: "john.smith@instructor.com", specialization: "Safety Basics", status: "ACTIVE" },
-        { id: 2, name: "Sarah Johnson", email: "sarah.johnson@instructor.com", specialization: "Safety Procedures", status: "ACTIVE" }
-      ],
-      's2': [
-        { id: 3, name: "Mike Davis", email: "mike.davis@instructor.com", specialization: "Evacuation Procedures", status: "ACTIVE" },
-        { id: 4, name: "Lisa Wilson", email: "lisa.wilson@instructor.com", specialization: "Emergency Exits", status: "ACTIVE" },
-        { id: 5, name: "David Brown", email: "david.brown@instructor.com", specialization: "Passenger Safety", status: "ACTIVE" }
-      ],
-      's3': [
-        { id: 6, name: "Emily Taylor", email: "emily.taylor@instructor.com", specialization: "CPR & First Aid", status: "ACTIVE" }
-      ],
-      's4': [
-        { id: 7, name: "Robert Anderson", email: "robert.anderson@instructor.com", specialization: "Fire Prevention", status: "ACTIVE" },
-        { id: 8, name: "Jennifer Martinez", email: "jennifer.martinez@instructor.com", specialization: "Fire Detection", status: "ACTIVE" }
-      ],
-      's5': [
-        { id: 9, name: "Captain James Wilson", email: "james.wilson@instructor.com", specialization: "Emergency Response", status: "ACTIVE" },
-        { id: 10, name: "Captain Maria Garcia", email: "maria.garcia@instructor.com", specialization: "Crisis Management", status: "ACTIVE" },
-        { id: 11, name: "Captain Tom Lee", email: "tom.lee@instructor.com", specialization: "Emergency Protocols", status: "ACTIVE" },
-        { id: 12, name: "Captain Anna Chen", email: "anna.chen@instructor.com", specialization: "Safety Procedures", status: "ACTIVE" }
-      ]
-    };
-
-    // Simulate API call
-    const loadSubjectData = () => {
-      setLoading(true);
-      console.log('🔍 Loading subject data for subjectId:', subjectId);
-      console.log('🔍 Available subjects:', Object.keys(hardcodedSubjects));
+    const loadSubjectData = async () => {
+      if (!subjectId) return;
       
-      setTimeout(() => {
-        const subjectData = hardcodedSubjects[subjectId];
-        const trainersData = hardcodedTrainers[subjectId] || [];
+      setLoading(true);
+      try {
+        console.log('🔍 SubjectDetailsView - Loading subject:', subjectId);
+        const response = await subjectAPI.getSubjectById(subjectId);
+        console.log('🔍 SubjectDetailsView - API Response:', response);
         
-        console.log('🔍 Found subject data:', subjectData);
-        console.log('🔍 Found trainers data:', trainersData);
-        
-        setSubject(subjectData);
-        setTrainers(trainersData);
+        if (response) {
+          setSubject(response);
+          // Set mock trainers and trainees for now
+          setTrainers([
+            {
+              id: 't1',
+              name: 'John Smith',
+              email: 'john.smith@example.com',
+              phone: '+1 234 567 8900',
+              status: 'ACTIVE',
+              specialization: 'Safety Training',
+              experience: '5 years'
+            },
+            {
+              id: 't2', 
+              name: 'Sarah Johnson',
+              email: 'sarah.johnson@example.com',
+              phone: '+1 234 567 8901',
+              status: 'ACTIVE',
+              specialization: 'Emergency Procedures',
+              experience: '3 years'
+            }
+          ]);
+          setTrainees([
+            {
+              id: 'tr1',
+              name: 'Mike Wilson',
+              email: 'mike.wilson@example.com',
+              phone: '+1 234 567 8902',
+              status: 'ENROLLED',
+              progress: '75%',
+              lastActivity: '2024-01-20'
+            }
+          ]);
+          console.log('✅ SubjectDetailsView - Loaded subject:', response.name);
+        } else {
+          console.log('❌ SubjectDetailsView - No subject found');
+          setSubject(null);
+        }
+      } catch (error) {
+        console.error('❌ SubjectDetailsView - Error loading subject:', error);
+        setSubject(null);
+      } finally {
         setLoading(false);
-      }, 500);
+      }
     };
 
     if (subjectId) {
@@ -147,10 +114,10 @@ const SubjectDetailsView = ({ subjectId }) => {
     }
   }, [subjectId]);
 
-  const handleEditSubject = () => {
-    console.log('Edit Subject clicked');
-    setShowEditSubject(true);
-  };
+  // const handleEditSubject = () => {
+  //   console.log('Edit Subject clicked');
+  //   setShowEditSubject(true);
+  // };
 
   const handleSaveSubject = async (subjectData) => {
     console.log('Saving subject:', subjectData);
@@ -167,17 +134,19 @@ const SubjectDetailsView = ({ subjectId }) => {
       }));
       
       toast.success('Subject updated successfully!');
+      setShowEditSubject(false);
     } catch (error) {
       console.error('Error saving subject:', error);
-      toast.error('Failed to save subject. Please try again.');
+      toast.error('Failed to update subject');
     } finally {
       setIsEditing(false);
     }
   };
 
-  const handleDeleteSubject = () => {
-    setShowDisableSubject(true);
-  };
+  // const handleDeleteSubject = () => {
+  //   console.log('Delete Subject clicked');
+  //   setShowDisableSubject(true);
+  // };
 
   const handleConfirmDisableSubject = async (subjectId) => {
     console.log('Disabling subject:', subjectId);
@@ -188,268 +157,269 @@ const SubjectDetailsView = ({ subjectId }) => {
       await new Promise(resolve => setTimeout(resolve, 1000));
       
       // Show success message
-      toast.success('Subject disabled successfully!');
+      console.log('Subject disabled successfully!');
       
-      // Navigate back to course details
-      if (subject?.courseId) {
-        navigate(`/academic/course-detail/${subject.courseId}`);
-      } else {
-        navigate(-1);
-      }
+      // Close modal
+      setShowDisableSubject(false);
     } catch (error) {
       console.error('Error disabling subject:', error);
-      toast.error('Failed to disable subject. Please try again.');
     } finally {
       setIsDisabling(false);
-      setShowDisableSubject(false);
-    }
-  };
-
-  const handleCreateTrainer = () => {
-    console.log('Create Trainer clicked');
-    toast.info('Navigating to add trainer page...');
-    // Navigate to add trainer page or open modal
-    navigate(`/academic/subject/${subjectId}/add-trainer`);
-  };
-
-  const handleEditTrainer = (trainerId) => {
-    console.log('Edit Trainer clicked:', trainerId);
-    const trainer = trainers.find(t => t.id === trainerId);
-    if (trainer) {
-      setSelectedTrainer(trainer);
-      setShowEditTrainer(true);
-    }
-  };
-
-  const handleSaveTrainer = async (trainerData) => {
-    console.log('Saving trainer:', trainerData);
-    setIsEditingTrainer(true);
-    try {
-      // TODO: Implement save trainer API call
-      // For now, simulate API call
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      
-      // Update local state
-      setTrainers(prev => prev.map(trainer => 
-        trainer.id === selectedTrainer.id 
-          ? { ...trainer, ...trainerData }
-          : trainer
-      ));
-      
-      toast.success('Trainer updated successfully!');
-    } catch (error) {
-      console.error('Error saving trainer:', error);
-      toast.error('Failed to save trainer. Please try again.');
-    } finally {
-      setIsEditingTrainer(false);
-    }
-  };
-
-  const handleDeleteTrainer = (trainerId) => {
-    console.log('Delete Trainer clicked:', trainerId);
-    // Show confirmation dialog or implement delete functionality
-    if (window.confirm('Are you sure you want to remove this trainer from the subject?')) {
-      // TODO: Implement API call to remove trainer
-      console.log('Removing trainer:', trainerId);
-      // For now, just show a success message
-      toast.success('Trainer removed successfully!');
     }
   };
 
   const handleBack = () => {
-    // Navigate back to course details
-    if (subject?.courseId) {
+    // Prioritize courseId prop, then location.state, then document.referrer, then subject.courseId
+    if (courseId) {
+      navigate(`/academic/course-detail/${courseId}`);
+    } else if (location.state?.courseId) {
+      navigate(`/academic/course-detail/${location.state.courseId}`);
+    } else if (document.referrer) {
+      // Extract course ID from referrer URL if possible
+      const referrerMatch = document.referrer.match(/\/course-detail\/([^/]+)/);
+      if (referrerMatch) {
+        navigate(`/academic/course-detail/${referrerMatch[1]}`);
+      } else {
+        navigate(-1);
+      }
+    } else if (subject?.courseId) {
       navigate(`/academic/course-detail/${subject.courseId}`);
     } else {
       navigate(-1);
     }
   };
 
+  // Show loading state
   if (loading) {
     return (
       <Container className="py-4">
-        <div className="text-center">
-          <div className="spinner-border text-primary" role="status">
-            <span className="visually-hidden">Loading...</span>
-          </div>
-        </div>
+        <LoadingSkeleton rows={4} columns={3} />
       </Container>
     );
   }
 
+  // Show not found state
   if (!subject) {
     return (
       <Container className="py-4">
-        <div className="text-center text-muted">
-          <FileTextFill size={48} className="mb-3" />
-          <h4>Subject not found</h4>
+        <div className="text-center">
+          <h3>Subject not found</h3>
           <p>The requested subject could not be found.</p>
+          <Button variant="primary" onClick={handleBack}>
+            <ArrowLeft className="me-2" size={16} />
+            Go Back
+          </Button>
         </div>
       </Container>
     );
   }
 
   return (
-    <Container className="py-4">
-      {/* Header với nút Back */}
-      <div className="d-flex align-items-center mb-3">
-        <Button 
-          variant="outline-secondary" 
-          size="sm" 
-          onClick={handleBack}
-          className="me-3"
-        >
-          <ArrowLeft size={16} className="me-1" />
-          Back
-        </Button>
+    <Container className="py-4 subject-details">
+      {/* Header */}
+      <div className="d-flex justify-content-between align-items-center mb-4">
         <div>
-          <h4 className="mb-0 text-primary">
-            <strong>{subject.name}</strong> — {subject.code}
-          </h4>
-          <small className="text-muted">Subject Details</small>
+          <h2 className="mb-1">{subject.name}</h2>
+          <p className="text-muted mb-0">Subject Code: {subject.code}</p>
         </div>
+        <Button variant="outline-secondary" onClick={handleBack}>
+          <ArrowLeft className="me-2" size={16} />
+          Back to Course
+        </Button>
       </div>
 
-      {/* Subject Header */}
+      {/* Subject Information */}
       <Row className="mb-4">
-        <Col>
+        <Col xs={12}>
           <Card className="border-0 shadow-sm">
-            <Card.Body className="p-4">
-              <div className="d-flex justify-content-between align-items-start mb-3">
-                <div>
-                  <h2 className="mb-2">
-                    <FileTextFill className="me-2 text-primary" />
-                    {subject.name}
-                  </h2>
-                  <p className="text-muted mb-0">Subject Code: {subject.code}</p>
-                  <p className="text-muted mb-0">Course: {subject.courseName}</p>
-                </div>
-                <div className="d-flex gap-2">
-                  <PermissionWrapper permission={API_PERMISSIONS.SUBJECTS.UPDATE}>
-                    <Button variant="outline-secondary" size="sm" onClick={handleEditSubject}>
-                      <Pencil size={16} className="me-1" />
-                      Edit Subject
-                    </Button>
-                  </PermissionWrapper>
-                  <PermissionWrapper permission={API_PERMISSIONS.SUBJECTS.DELETE}>
-                    <Button variant="outline-warning" size="sm" onClick={handleDeleteSubject}>
-                      <Trash size={16} className="me-1" />
-                      Disable Subject
-                    </Button>
-                  </PermissionWrapper>
-                </div>
-              </div>
-              
-              <p className="text-muted mb-3">{subject.description}</p>
-              
-              <Row>
-                <Col md={3}>
-                  <div className="d-flex align-items-center">
-                    <Clock className="me-2 text-primary" />
-                    <div>
-                      <small className="text-muted">Duration</small>
-                      <div className="fw-semibold">{subject.duration}</div>
-                    </div>
-                  </div>
-                </Col>
-                <Col md={3}>
-                  <div className="d-flex align-items-center">
-                    <PersonCheckFill className="me-2 text-primary" />
-                    <div>
-                      <small className="text-muted">Total Trainers</small>
-                      <div className="fw-semibold">{subject.totalTrainers}</div>
-                    </div>
-                  </div>
-                </Col>
-                <Col md={3}>
-                  <div className="d-flex align-items-center">
-                    <Badge bg="success" className="me-2">
-                      {subject.status}
-                    </Badge>
-                  </div>
-                </Col>
-              </Row>
-            </Card.Body>
-          </Card>
-        </Col>
-      </Row>
-
-      {/* Trainers Section */}
-      <Row>
-        <Col>
-          <Card className="border-0 shadow-sm">
-            <Card.Header className="bg-white border-bottom py-4 pb-3">
+            <Card.Header 
+              className="collapsible-header"
+              onClick={() => setIsSubjectInfoCollapsed(!isSubjectInfoCollapsed)}
+              style={{ cursor: 'pointer' }}
+            >
               <div className="d-flex justify-content-between align-items-center">
-                <h5 className="mb-0">
-                  <PersonCheckFill className="me-2" />
-                  Trainers ({trainers.length})
-                </h5>
-                <PermissionWrapper permission={API_PERMISSIONS.SUBJECTS.ADD_INSTRUCTOR}>
-                  <Button variant="primary" size="sm" onClick={handleCreateTrainer}>
-                    <Plus size={16} className="me-1" />
-                    Add Trainer
-                  </Button>
-                </PermissionWrapper>
+                <div className="d-flex align-items-center">
+                  <FileTextFill className="me-3" size={20} />
+                  <h5 className="mb-0 text-white">Subject Information</h5>
+                </div>
+                <ChevronDown 
+                  size={20} 
+                  className={`text-white chevron-icon ${isSubjectInfoCollapsed ? 'rotated' : ''}`}
+                />
               </div>
             </Card.Header>
-            <Card.Body className="p-0">
-              {trainers.length > 0 ? (
-                <Table hover className="mb-0">
-                  <thead className="table-light">
-                    <tr>
-                      <th className="px-3 py-3">Trainer Name</th>
-                      <th className="px-3 py-3">Email</th>
-                      <th className="px-3 py-3">Specialization</th>
-                      <th className="px-3 py-3">Status</th>
-                      <th className="px-3 py-3 text-center">Actions</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {sortedData.map((trainer) => (
-                      <tr key={trainer.id}>
-                        <td className="px-3 py-3">
-                          <div className="d-flex align-items-center">
-                            <PersonCheckFill size={16} className="me-2 text-primary" />
-                            <div className="fw-semibold">{trainer.name}</div>
-                          </div>
-                        </td>
-                        <td className="px-3 py-3">{trainer.email}</td>
-                        <td className="px-3 py-3">
-                          <Badge bg="info">{trainer.specialization}</Badge>
-                        </td>
-                        <td className="px-3 py-3">
-                          <Badge bg="success">{trainer.status}</Badge>
-                        </td>
-                        <td className="px-3 py-3 text-center">
-                          <TrainerActions 
-                            trainer={trainer}
-                            onEdit={handleEditTrainer}
-                            onDelete={handleDeleteTrainer}
-                          />
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </Table>
-              ) : (
-                <div className="text-center py-5">
-                  <PersonCheckFill size={48} className="text-muted mb-3" />
-                  <h5 className="text-muted">No trainers found</h5>
-                  <p className="text-muted">This subject doesn't have any trainers assigned yet.</p>
-                  <PermissionWrapper permission={API_PERMISSIONS.SUBJECTS.ADD_INSTRUCTOR}>
-                    <Button variant="primary" onClick={handleCreateTrainer}>
-                      <Plus size={16} className="me-1" />
-                      Add First Trainer
-                    </Button>
-                  </PermissionWrapper>
-                </div>
+            <Card.Body className={`collapsible-content ${isSubjectInfoCollapsed ? 'collapsed' : 'expanded'}`}>
+              <Row>
+                <Col md={6}>
+                  <p><strong>Name:</strong> {subject.name}</p>
+                  <p><strong>Code:</strong> {subject.code}</p>
+                  <p><strong>Description:</strong> {subject.description}</p>
+                  <p><strong>Method:</strong> {subject.method}</p>
+                  <p><strong>Duration:</strong> {subject.duration} days</p>
+                </Col>
+                <Col md={6}>
+                  <p><strong>Type:</strong> {subject.type}</p>
+                  <p><strong>Pass Score:</strong> {subject.passScore}%</p>
+                  <p><strong>Room:</strong> {subject.roomName}</p>
+                  <p><strong>Time Slot:</strong> {subject.timeSlot}</p>
+                  <p><strong>Start Date:</strong> {new Date(subject.startDate).toLocaleDateString()}</p>
+                  <p><strong>End Date:</strong> {new Date(subject.endDate).toLocaleDateString()}</p>
+                </Col>
+              </Row>
+              {subject.remarkNote && (
+                <Row>
+                  <Col xs={12}>
+                    <p><strong>Remark Note:</strong> {subject.remarkNote}</p>
+                  </Col>
+                </Row>
               )}
             </Card.Body>
           </Card>
         </Col>
       </Row>
 
+      {/* Trainers */}
+      <Row className="mb-4" style={{ marginTop: '2rem', marginBottom: '2rem' }}>
+        <Col xs={12}>
+          <Card className="border-0 shadow-sm">
+            <Card.Header 
+              className="collapsible-header"
+              onClick={() => {
+                console.log('🔍 Trainers header clicked, current state:', isTrainersCollapsed);
+                setIsTrainersCollapsed(!isTrainersCollapsed);
+              }}
+              style={{ cursor: 'pointer' }}
+            >
+              <div className="d-flex justify-content-between align-items-center">
+                <div className="d-flex align-items-center">
+                  <PersonCheckFill className="me-3" size={20} />
+                  <h5 className="mb-0 text-white">Trainers ({trainers.length})</h5>
+                </div>
+                <ChevronDown 
+                  size={20} 
+                  className={`text-white chevron-icon ${isTrainersCollapsed ? 'rotated' : ''}`}
+                />
+              </div>
+            </Card.Header>
+            <Card.Body className={`collapsible-content ${isTrainersCollapsed ? 'collapsed' : 'expanded'}`}>
+              <Table hover>
+                <thead>
+                  <tr>
+                    <th>Name</th>
+                    <th>Email</th>
+                    <th>Phone</th>
+                    <th>Status</th>
+                    <th>Specialization</th>
+                    <th>Experience</th>
+                    <th>Actions</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {sortedData.map((trainer) => (
+                    <tr key={trainer.id}>
+                      <td>{trainer.name}</td>
+                      <td>{trainer.email}</td>
+                      <td>{trainer.phone}</td>
+                      <td>
+                        <Badge bg={trainer.status === 'ACTIVE' ? 'success' : 'secondary'}>
+                          {trainer.status}
+                        </Badge>
+                      </td>
+                      <td>{trainer.specialization}</td>
+                      <td>{trainer.experience}</td>
+                      <td>
+                        <TrainerActions
+                          trainer={trainer}
+                          onEdit={() => {
+                            setSelectedTrainer(trainer);
+                            setShowEditTrainer(true);
+                          }}
+                          onDelete={() => console.log('Delete trainer:', trainer.id)}
+                        />
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </Table>
+            </Card.Body>
+          </Card>
+        </Col>
+      </Row>
+
+      {/* Trainees */}
+      <Row className="mb-4">
+        <Col xs={12}>
+          <Card className="border-0 shadow-sm">
+            <Card.Header 
+              className="collapsible-header"
+              onClick={() => {
+                console.log('🔍 Trainees header clicked, current state:', isTraineesCollapsed);
+                setIsTraineesCollapsed(!isTraineesCollapsed);
+              }}
+              style={{ cursor: 'pointer' }}
+            >
+              <div className="d-flex justify-content-between align-items-center">
+                <div className="d-flex align-items-center">
+                  <People className="me-3" size={20} />
+                  <h5 className="mb-0 text-white">Trainees ({trainees.length})</h5>
+                </div>
+                <ChevronDown 
+                  size={20} 
+                  className={`text-white chevron-icon ${isTraineesCollapsed ? 'rotated' : ''}`}
+                />
+              </div>
+            </Card.Header>
+            <Card.Body className={`collapsible-content ${isTraineesCollapsed ? 'collapsed' : 'expanded'}`}>
+              <Table hover>
+                <thead>
+                  <tr>
+                    <th>Name</th>
+                    <th>Email</th>
+                    <th>Phone</th>
+                    <th>Status</th>
+                    <th>Progress</th>
+                    <th>Last Activity</th>
+                    <th>Actions</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {sortedTrainees.map((trainee) => (
+                    <tr key={trainee.id}>
+                      <td>{trainee.name}</td>
+                      <td>{trainee.email}</td>
+                      <td>{trainee.phone}</td>
+                      <td>
+                        <Badge bg={trainee.status === 'ENROLLED' ? 'success' : 'secondary'}>
+                          {trainee.status}
+                        </Badge>
+                      </td>
+                      <td>{trainee.progress}</td>
+                      <td>{trainee.lastActivity}</td>
+                      <td>
+                        <TraineeActions
+                          trainee={trainee}
+                          onEdit={() => console.log('Edit trainee:', trainee.id)}
+                          onDelete={() => console.log('Delete trainee:', trainee.id)}
+                        />
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </Table>
+            </Card.Body>
+          </Card>
+        </Col>
+      </Row>
+
       {/* Modals */}
+      <DisableSubjectModal
+        show={showDisableSubject}
+        onClose={() => setShowDisableSubject(false)}
+        onConfirm={handleConfirmDisableSubject}
+        subject={subject}
+        loading={isDisabling}
+      />
+
       <EditSubjectModal
         show={showEditSubject}
         onClose={() => setShowEditSubject(false)}
@@ -457,21 +427,26 @@ const SubjectDetailsView = ({ subjectId }) => {
         subject={subject}
         loading={isEditing}
       />
-      
+
+      <AddTrainerModal
+        show={showAddTrainer}
+        onClose={() => setShowAddTrainer(false)}
+        onSave={() => {
+          console.log('Add trainer');
+          setShowAddTrainer(false);
+        }}
+        loading={isAddingTrainer}
+      />
+
       <EditTrainerModal
         show={showEditTrainer}
         onClose={() => setShowEditTrainer(false)}
-        onSave={handleSaveTrainer}
+        onSave={() => {
+          console.log('Edit trainer');
+          setShowEditTrainer(false);
+        }}
         trainer={selectedTrainer}
         loading={isEditingTrainer}
-      />
-      
-      <DisableSubjectModal
-        show={showDisableSubject}
-        onClose={() => setShowDisableSubject(false)}
-        onDisable={handleConfirmDisableSubject}
-        subject={subject}
-        loading={isDisabling}
       />
     </Container>
   );

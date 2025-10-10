@@ -4,6 +4,7 @@ import { People } from 'react-bootstrap-icons';
 import { LoadingSkeleton, SortIcon } from '../Common';
 import useTableSort from '../../hooks/useTableSort';
 import SubjectActions from './SubjectActions';
+import { mapApiSubjectsToTable, getStatusBadgeColor, getMethodBadgeColor } from '../../utils/subjectDataMapper';
 
 const mockSubjects = [
   { 
@@ -68,15 +69,28 @@ const mockSubjects = [
   },
 ];
 
-const SubjectTable = ({ loading = false, onView, onEdit, onDelete }) => {
-  const subjects = mockSubjects; // mock data (no API)
-  const { sortedData, sortConfig, handleSort } = useTableSort(subjects);
+const SubjectTable = ({ subjects = [], loading = false, onView, onEdit, onDelete }) => {
+  // Map API subjects to table format if they exist
+  const mappedApiSubjects = subjects.length > 0 ? mapApiSubjectsToTable(subjects) : [];
+  
+  // If we have API data, use it exclusively. Otherwise, use mock data
+  let finalSubjects;
+  if (mappedApiSubjects.length > 0) {
+    finalSubjects = mappedApiSubjects;
+  } else {
+    finalSubjects = mockSubjects.map(subject => ({
+      ...subject,
+      source: 'mock_data'
+    }));
+  }
+  
+  const { sortedData, sortConfig, handleSort } = useTableSort(finalSubjects);
 
   if (loading) {
     return <LoadingSkeleton rows={4} columns={5} />;
   }
 
-  if (subjects.length === 0) {
+  if (finalSubjects.length === 0) {
     return (
       <div className="text-center py-5">
         <div className="text-muted">
@@ -241,7 +255,7 @@ const SubjectTable = ({ loading = false, onView, onEdit, onDelete }) => {
               </td>
               <td className="show-mobile">
                 <Badge 
-                  bg="info" 
+                  bg={getMethodBadgeColor(subject.method)} 
                   className="px-2 py-1"
                   style={{ 
                     fontSize: '0.75rem',
@@ -281,7 +295,7 @@ const SubjectTable = ({ loading = false, onView, onEdit, onDelete }) => {
               </td>
               <td className="show-mobile">
                 <Badge 
-                  bg={subject.status === 'ACTIVE' ? 'success' : 'secondary'}
+                  bg={getStatusBadgeColor(subject.status)}
                   className="px-2 py-1"
                   style={{ 
                     fontSize: '0.75rem',

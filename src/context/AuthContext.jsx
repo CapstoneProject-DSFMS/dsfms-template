@@ -4,11 +4,25 @@ import { roleAPI } from '../api/role';
 import apiClient from '../api/config';
 import { mapError } from '../utils/errorMapping';
 
-// Create the context
-export const AuthContext = createContext();
+// Create the context with default value
+export const AuthContext = createContext({
+  user: null,
+  setUser: () => {},
+  userRole: null,
+  userPermissions: [],
+  isAuthenticated: false,
+  setIsAuthenticated: () => {},
+  isLoading: true,
+  login: async () => ({ success: false }),
+  logout: () => {},
+  refreshToken: async () => ({ success: false }),
+  fetchUserRoleAndPermissions: async () => ({ role: null, permissions: [] })
+});
 
 // Create the provider component
 export const AuthProvider = ({ children }) => {
+  console.log('🔍 AuthProvider initializing...');
+  
   const [user, setUser] = useState(null);
   const [userRole, setUserRole] = useState(null);
   const [userPermissions, setUserPermissions] = useState([]);
@@ -339,6 +353,12 @@ export const AuthProvider = ({ children }) => {
       setIsAuthenticated(true);
       
       console.log('Login successful:', { user: userInfo, role, permissions });
+      console.log('🔍 User permissions for RBAC check:', permissions.map(p => ({
+        id: p.id,
+        name: p.name,
+        path: p.path,
+        method: p.method
+      })));
       return { success: true, user: userInfo, role, permissions };
     } catch (error) {
       return { success: false, error: mapError(error) || 'Login failed' };
@@ -390,15 +410,31 @@ export const AuthProvider = ({ children }) => {
     fetchUserRoleAndPermissions
   };
 
-  // Ensure value is never undefined
-  if (!value) {
-    console.error('AuthContext value is undefined');
-    return null;
-  }
+  console.log('🔍 AuthProvider rendering with value:', {
+    user: !!user,
+    userRole: !!userRole,
+    userPermissions: userPermissions.length,
+    isAuthenticated,
+    isLoading
+  });
 
-  return (
-    <AuthContext.Provider value={value}>
-      {children}
-    </AuthContext.Provider>
-  );
+  try {
+    return (
+      <AuthContext.Provider value={value}>
+        {children}
+      </AuthContext.Provider>
+    );
+  } catch (error) {
+    console.error('❌ AuthProvider error:', error);
+    return (
+      <div style={{ padding: '20px', color: 'red' }}>
+        <h3>Authentication Error</h3>
+        <p>There was an error initializing the authentication system.</p>
+        <details>
+          <summary>Error Details</summary>
+          <pre>{error.message}</pre>
+        </details>
+      </div>
+    );
+  }
 };

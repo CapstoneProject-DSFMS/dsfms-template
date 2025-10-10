@@ -1,5 +1,6 @@
 // Common reusable components
 export { default as ActionDropdown } from './ActionDropdown';
+export { default as AuthWrapper } from './AuthWrapper';
 export { default as ErrorBoundary } from './ErrorBoundary';
 export { default as FilterDropdown } from './FilterDropdown';
 export { default as LoadingSkeleton } from './LoadingSkeleton';

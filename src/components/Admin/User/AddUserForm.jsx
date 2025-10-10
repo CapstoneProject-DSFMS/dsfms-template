@@ -274,7 +274,7 @@ const AddUserForm = ({ onSave, onCancel, loading = false }) => {
           </Button>
           
           <Button
-            variant="primary"
+            variant="primary-custom"
             type="submit"
             disabled={loading}
           >

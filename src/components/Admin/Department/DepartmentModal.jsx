@@ -324,7 +324,7 @@ const DepartmentModal = ({ show, department, mode, onSave, onClose, availableUse
           
           {mode !== 'view' && (
             <Button
-              variant="primary"
+              variant="primary-custom"
               type="submit"
               disabled={isSubmitting}
             >

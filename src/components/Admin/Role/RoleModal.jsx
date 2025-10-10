@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
-import { Modal, Form, Button, Row, Col, ListGroup, Badge, Spinner } from 'react-bootstrap';
-import { X, Save, Eye, Shield, ChevronDown, ChevronRight } from 'react-bootstrap-icons';
+import { Modal, Form, Button, Row, Col, ListGroup, Badge, Spinner, Alert } from 'react-bootstrap';
+import { X, Save, Eye, Shield, ChevronDown, ChevronRight, ExclamationTriangle } from 'react-bootstrap-icons';
 import { usePermissions } from '../../../hooks/usePermissions';
+import { isBaseRole, canModifyRole, getBaseRoleDescription } from '../../../utils/roleUtils';
 
 const RoleModal = ({ show, role, mode, onSave, onClose }) => {
   const [formData, setFormData] = useState({
@@ -194,6 +195,16 @@ const RoleModal = ({ show, role, mode, onSave, onClose }) => {
 
       <Form onSubmit={handleSubmit}>
         <Modal.Body className="p-4" style={{ maxHeight: '70vh', overflowY: 'auto' }}>
+          {/* Base role warning */}
+          {role && isBaseRole(role.name) && mode === 'edit' && (
+            <Alert variant="warning" className="mb-3">
+              <ExclamationTriangle className="me-2" />
+              <strong>Base Role Warning:</strong> This is a system-defined base role ({role.name}). 
+              Base roles cannot be modified as they are essential for system functionality. 
+              {getBaseRoleDescription(role.name)}
+            </Alert>
+          )}
+
           {Object.keys(errors).length > 0 && (
             <div className="alert alert-danger mb-3">
               <strong>Please fix the following errors:</strong>
@@ -441,9 +452,9 @@ const RoleModal = ({ show, role, mode, onSave, onClose }) => {
           
           {mode !== 'view' && (
             <Button
-              variant="primary"
+              variant="primary-custom"
               type="submit"
-              disabled={isSubmitting}
+              disabled={isSubmitting || (role && isBaseRole(role.name))}
             >
               {isSubmitting ? (
                 <>
