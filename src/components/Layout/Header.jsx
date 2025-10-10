@@ -16,12 +16,13 @@ const dropdownStyle = {
   top: '100%',
   right: '0',
   zIndex: 9999,
-  minWidth: '200px',
+  minWidth: '250px',
+  maxWidth: '300px',
   backgroundColor: 'white',
   border: '1px solid rgba(0,0,0,0.15)',
   borderRadius: '0.375rem',
   padding: '0.5rem 0',
-  width: '200px',
+  width: 'auto',
   height: 'auto',
   overflow: 'visible',
   boxShadow: 'none !important',
@@ -65,7 +66,16 @@ const Header = ({ onToggleSidebar }) => {
       '/academic': 'Academic Dashboard',
       '/academic/dashboard': 'Academic Dashboard',
       '/academic/departments': 'Department Selection',
-      '/academic/profile': 'Profile'
+      '/academic/profile': 'Profile',
+      
+      // Trainee routes
+      '/trainee': 'Trainee Portal',
+      '/trainee/academic-details': 'Academic Details',
+      '/trainee/enrolled-courses': 'Enrolled Course List',
+      '/trainee/assessment-pending': 'Assessment Pending List',
+      '/trainee/create-issue': 'Create Issue Report/Feedback',
+      '/trainee/assessment-pending/signature-required': 'Signature Required List',
+      '/trainee/assessment-pending/section-completion': 'Section Completion Required List'
     };
     
     // Check for department detail page (pattern: /admin/departments/:id)
@@ -96,6 +106,40 @@ const Header = ({ onToggleSidebar }) => {
     // Check for enroll trainees page (pattern: /academic/course/:id/enroll-trainees)
     if (path.includes('/enroll-trainees')) {
       return 'Enroll Trainees';
+    }
+    
+    // Check for trainee detail pages (pattern: /trainee/:traineeId)
+    if (path.startsWith('/trainee/') && path !== '/trainee' && 
+        !path.startsWith('/trainee/academic-details') &&
+        !path.startsWith('/trainee/enrolled-courses') &&
+        !path.startsWith('/trainee/assessment-pending') &&
+        !path.startsWith('/trainee/create-issue')) {
+      return 'Trainee Details';
+    }
+    
+    // Check for trainee course detail (pattern: /trainee/:traineeId/course/:courseId)
+    if (path.match(/^\/trainee\/[^\/]+\/course\/[^\/]+$/)) {
+      return 'Course Details';
+    }
+    
+    // Check for trainee subject detail (pattern: /trainee/:traineeId/course/:courseId/subject/:subjectId)
+    if (path.match(/^\/trainee\/[^\/]+\/course\/[^\/]+\/subject\/[^\/]+$/)) {
+      return 'Subject Details';
+    }
+    
+    // Check for trainee assessments (pattern: /trainee/:traineeId/assessments)
+    if (path.match(/^\/trainee\/[^\/]+\/assessments$/)) {
+      return 'Assessment Details';
+    }
+    
+    // Check for signature pad (pattern: /trainee/:traineeId/signature-pad/:documentId)
+    if (path.match(/^\/trainee\/[^\/]+\/signature-pad\/[^\/]+$/)) {
+      return 'Digital Signature';
+    }
+    
+    // Check for assessment section (pattern: /trainee/:traineeId/assessment-section/:sectionId)
+    if (path.match(/^\/trainee\/[^\/]+\/assessment-section\/[^\/]+$/)) {
+      return 'Assessment Section';
     }
     
     return routes[path] || 'Dashboard';
@@ -200,11 +244,15 @@ const Header = ({ onToggleSidebar }) => {
                 className={`custom-dropdown ${showDesktopDropdown ? 'show' : 'hide'}`}
                 style={dropdownStyle}
               >
-                  <div className="dropdown-header">                  
+                  <div className="dropdown-header" style={{ padding: '0.5rem 1rem', wordBreak: 'break-all' }}>                  
                     <div className="fw-bold text-primary-custom">
                       {isLoading ? 'Loading...' : getDisplayName()}
                     </div>
-                    <small className="text-muted">
+                    <small className="text-muted" style={{ 
+                      wordBreak: 'break-all', 
+                      whiteSpace: 'normal',
+                      lineHeight: '1.2'
+                    }}>
                       {isLoading ? 'Loading...' : getEmail()}
                     </small>
                   </div>
