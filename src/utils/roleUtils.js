@@ -5,8 +5,7 @@ export const BASE_ROLES = [
   'ADMINISTRATOR',
   'ADMIN', 
   'ACADEMIC_DEPARTMENT',
-  'TRAINEE',
-  'INSTRUCTOR'
+  'TRAINEE'
 ];
 
 // Check if a role is a base role
@@ -25,8 +24,7 @@ export const getBaseRoleDescription = (roleName) => {
     'ADMINISTRATOR': 'System administrator with full access',
     'ADMIN': 'System administrator with full access', 
     'ACADEMIC_DEPARTMENT': 'Academic department role for course management',
-    'TRAINEE': 'Trainee role for course participants',
-    'INSTRUCTOR': 'Instructor role for course teaching'
+    'TRAINEE': 'Trainee role for course participants'
   };
   
   return descriptions[roleName?.toUpperCase()] || 'System-defined role';

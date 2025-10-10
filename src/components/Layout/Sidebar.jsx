@@ -26,8 +26,10 @@ const Sidebar = ({ collapsed, onClose }) => {
   const { hasModuleAccess, hasPermission, userPermissions } = usePermissions();
   const { user } = useAuth();
   const location = useLocation();
-  const { departments, loading: departmentsLoading } = useDepartmentManagement();
+  // Only load departments for ACADEMIC_DEPARTMENT role
+  const { departments, loading: departmentsLoading } = useDepartmentManagement(user?.role === 'ACADEMIC_DEPARTMENT');
   const [isDepartmentDropdownOpen, setIsDepartmentDropdownOpen] = useState(false);
+  const [isAssessmentDropdownOpen, setIsAssessmentDropdownOpen] = useState(false);
   
   
   // Debug log
@@ -89,10 +91,34 @@ const Sidebar = ({ collapsed, onClose }) => {
       module: "GLOBAL_FIELDS"
     },
     {
-      id: "trainees",
-      label: "Trainee Management",
+      id: "academic-details",
+      label: "Academic Details",
       icon: PersonCheck,
-      path: "/trainee",
+      path: "/trainee/academic-details",
+      permission: API_PERMISSIONS.TRAINEES.VIEW_DETAIL,
+      module: "TRAINEES"
+    },
+    {
+      id: "enrolled-courses",
+      label: "Enrolled Course List",
+      icon: PersonCheck,
+      path: "/trainee/enrolled-courses",
+      permission: API_PERMISSIONS.TRAINEES.VIEW_COURSES,
+      module: "TRAINEES"
+    },
+    {
+      id: "assessment-pending",
+      label: "Assessment Pending List",
+      icon: PersonCheck,
+      path: "/trainee/assessment-pending",
+      permission: API_PERMISSIONS.TRAINEES.VIEW_ASSESSMENTS,
+      module: "TRAINEES"
+    },
+    {
+      id: "create-issue",
+      label: "Create Issue Report/Feedback",
+      icon: PersonCheck,
+      path: "/trainee/create-issue",
       permission: API_PERMISSIONS.TRAINEES.VIEW_ALL,
       module: "TRAINEES"
     },
@@ -121,6 +147,12 @@ const Sidebar = ({ collapsed, onClose }) => {
       console.log(`🔍 ACADEMIC_DEPARTMENT role - ${item.id}: ${isDashboard}`);
       return isDashboard;
     }
+    // For TRAINEE role, show all trainee-related items
+    if (user?.role === 'TRAINEE') {
+      const isTraineeItem = ['academic-details', 'enrolled-courses', 'assessment-pending', 'create-issue'].includes(item.id);
+      console.log(`🔍 TRAINEE role - ${item.id}: ${isTraineeItem}`);
+      return isTraineeItem;
+    }
     // Default behavior for other roles
     const hasAccess = hasModuleAccess(item.module) || hasPermission(item.permission);
     console.log(`🔍 Default role - ${item.id}: ${hasAccess}`);
@@ -146,6 +178,28 @@ const Sidebar = ({ collapsed, onClose }) => {
     userRole: user?.role,
     userPermissions: userPermissions?.map(p => p.name).filter(name => name.includes('dashboard') || name.includes('DASHBOARD'))
   });
+  
+  // Debug TRAINEE permissions
+  console.log('🔍 Sidebar - TRAINEE permissions check:', {
+    userRole: user?.role,
+    TRAINEES_VIEW_DETAIL: {
+      permission: API_PERMISSIONS.TRAINEES.VIEW_DETAIL,
+      hasPermission: hasPermission(API_PERMISSIONS.TRAINEES.VIEW_DETAIL)
+    },
+    TRAINEES_VIEW_COURSES: {
+      permission: API_PERMISSIONS.TRAINEES.VIEW_COURSES,
+      hasPermission: hasPermission(API_PERMISSIONS.TRAINEES.VIEW_COURSES)
+    },
+    TRAINEES_VIEW_ASSESSMENTS: {
+      permission: API_PERMISSIONS.TRAINEES.VIEW_ASSESSMENTS,
+      hasPermission: hasPermission(API_PERMISSIONS.TRAINEES.VIEW_ASSESSMENTS)
+    },
+    TRAINEES_VIEW_ALL: {
+      permission: API_PERMISSIONS.TRAINEES.VIEW_ALL,
+      hasPermission: hasPermission(API_PERMISSIONS.TRAINEES.VIEW_ALL)
+    },
+    allUserPermissions: userPermissions?.map(p => p.name)
+  });
 
   return (
     <div
@@ -153,7 +207,7 @@ const Sidebar = ({ collapsed, onClose }) => {
         collapsed ? "sidebar-collapsed" : ""
       }`}
       style={{
-        width: collapsed ? "60px" : "280px",
+        width: collapsed ? "60px" : "320px",
         minHeight: "100vh",
         transition: "width 0.3s ease",
         position: "sticky",
@@ -202,16 +256,103 @@ const Sidebar = ({ collapsed, onClose }) => {
           const IconComponent = item.icon;
           const isActive = location.pathname === item.path;
           
+          // Debug logging
+          console.log(`🔍 Sidebar - Item: ${item.id}, Path: ${item.path}, Current: ${location.pathname}, Active: ${isActive}`);
+          
+          // Special handling for Assessment Pending List dropdown
+          if (item.id === 'assessment-pending' && user?.role === 'TRAINEE') {
+            return (
+              <Nav.Item key={item.id} className="mb-3">
+                <div className="position-relative">
+                  {/* Assessment dropdown trigger */}
+                  <div
+                    className={`sidebar-nav-link text-white d-flex align-items-center py-3 pe-1 rounded nav-link text-nowrap ${collapsed ? "justify-content-center" : ""} ${location.pathname.startsWith('/trainee/assessment') ? "active" : ""}`}
+                    style={{
+                      minHeight: collapsed ? "48px" : "auto",
+                      backgroundColor: location.pathname.startsWith('/trainee/assessment') ? "rgba(255, 255, 255, 0.1)" : "transparent",
+                      cursor: "pointer"
+                    }}
+                    onClick={() => {
+                      if (!collapsed) {
+                        setIsAssessmentDropdownOpen(!isAssessmentDropdownOpen);
+                      }
+                    }}
+                  >
+                    <IconComponent
+                      size={20}
+                      className={collapsed ? "me-2" : "me-3"}
+                      style={{
+                        display: "inline-block",
+                        flexShrink: 0,
+                        transition: "transform 0.3s cubic-bezier(.68,-0.55,.27,1.55)",
+                      }}
+                    />
+                    {!collapsed && (
+                      <>
+                        <span className="sidebar-nav-label flex-grow-1">{item.label}</span>
+                        <ChevronDown
+                          size={16}
+                          className={`ms-auto transition-transform ${isAssessmentDropdownOpen ? "rotate-180" : ""}`}
+                          style={{
+                            transition: "transform 0.3s ease"
+                          }}
+                        />
+                      </>
+                    )}
+                  </div>
+
+                  {/* Assessment dropdown menu */}
+                  {!collapsed && isAssessmentDropdownOpen && (
+                    <div className="mt-2 ms-4">
+                      <Link
+                        to="/trainee/assessment-pending/signature-required"
+                        className="sidebar-nav-link text-white d-flex align-items-center py-2 pe-1 rounded nav-link"
+                        style={{
+                          backgroundColor: location.pathname === '/trainee/assessment-pending/signature-required' ? "rgba(255, 255, 255, 0.1)" : "transparent",
+                          whiteSpace: 'normal',
+                          wordWrap: 'break-word'
+                        }}
+                        onClick={onClose}
+                      >
+                        <span className="sidebar-nav-label">Signature Required List</span>
+                      </Link>
+                      <Link
+                        to="/trainee/assessment-pending/section-completion"
+                        className="sidebar-nav-link text-white d-flex align-items-center py-2 pe-1 rounded nav-link"
+                        style={{
+                          backgroundColor: location.pathname === '/trainee/assessment-pending/section-completion' ? "rgba(255, 255, 255, 0.1)" : "transparent",
+                          whiteSpace: 'normal',
+                          wordWrap: 'break-word'
+                        }}
+                        onClick={onClose}
+                      >
+                        <span className="sidebar-nav-label">Section Completion Required List</span>
+                      </Link>
+                    </div>
+                  )}
+                </div>
+              </Nav.Item>
+            );
+          }
+          
+          // Regular nav items
           return (
             <Nav.Item key={item.id} className="mb-3">
               <Link
                 to={item.path}
-                className={`sidebar-nav-link text-white d-flex align-items-center py-3 pe-1 rounded nav-link text-nowrap ${collapsed ? "justify-content-center" : ""} ${isActive ? "active" : ""}`}
+                className={`sidebar-nav-link text-white d-flex align-items-center py-3 pe-1 rounded nav-link ${collapsed ? "justify-content-center text-nowrap" : ""} ${isActive ? "active" : ""}`}
                 style={{
                   minHeight: collapsed ? "48px" : "auto",
                   backgroundColor: isActive ? "rgba(255, 255, 255, 0.1)" : "transparent",
+                  whiteSpace: collapsed ? 'nowrap' : 'normal',
+                  wordWrap: collapsed ? 'normal' : 'break-word'
                 }}
-                onClick={onClose} // Close sidebar on mobile when link is clicked
+                onClick={(e) => {
+                  console.log(`🔍 Sidebar - Clicked on: ${item.id}, navigating to: ${item.path}`);
+                  console.log(`🔍 Sidebar - Current location:`, window.location.href);
+                  console.log(`🔍 Sidebar - Current pathname:`, window.location.pathname);
+                  onClose(); // Close sidebar on mobile when link is clicked
+                }}
               >
                 <IconComponent
                   size={20}

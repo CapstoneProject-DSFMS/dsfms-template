@@ -24,9 +24,15 @@ const TraineeCourseDetailView = ({ traineeId, courseId }) => {
       setLoading(true);
       setError('');
       
-      // Load trainee details
-      const traineeResponse = await traineeAPI.getTraineeById(traineeId);
-      setTrainee(traineeResponse);
+      // Hardcoded trainee details
+      const mockTrainee = {
+        id: traineeId,
+        firstName: 'John',
+        lastName: 'Doe',
+        eid: 'EMP001',
+        email: 'john.doe@company.com'
+      };
+      setTrainee(mockTrainee);
       
       // Load course details (assuming we have a course API)
       // For now, we'll use mock data

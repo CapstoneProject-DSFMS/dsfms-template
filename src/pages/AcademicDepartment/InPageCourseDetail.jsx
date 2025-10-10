@@ -3,6 +3,7 @@ import { Card, Button, Row, Col, Container, Badge } from 'react-bootstrap';
 import { Plus, Upload, Pencil, ArrowLeft, People, Calendar, GeoAlt, FileText, Award, PersonCheck, Book, ChevronDown, ChevronRight } from 'react-bootstrap-icons';
 import { useNavigate, useParams } from 'react-router-dom';
 import courseAPI from '../../api/course';
+import subjectAPI from '../../api/subject';
 import SubjectTable from '../../components/AcademicDepartment/SubjectTable';
 import TraineeCountTable from '../../components/AcademicDepartment/TraineeCountTable';
 import AddSubjectModal from '../../components/AcademicDepartment/AddSubjectModal';
@@ -33,6 +34,25 @@ const InPageCourseDetail = ({ course, department, onClose, onEdit }) => {
   const [isSubjectsCollapsed, setIsSubjectsCollapsed] = useState(false);
   const [isTraineesCollapsed, setIsTraineesCollapsed] = useState(false);
   
+  // Load subjects from API
+  const loadSubjects = async () => {
+    try {
+      console.log('🔍 InPageCourseDetail - Loading subjects from API...');
+      const response = await subjectAPI.getSubjects();
+      console.log('🔍 InPageCourseDetail - Subjects API Response:', response);
+      
+      if (response && response.subjects) {
+        setSubjects(response.subjects);
+        setHasApiData(true);
+        console.log('✅ InPageCourseDetail - Loaded subjects:', response.subjects.length);
+      }
+    } catch (error) {
+      console.error('❌ InPageCourseDetail - Error loading subjects:', error);
+      console.error('❌ Error details:', error.response?.data);
+      // Keep existing subjects (mock data) if API fails
+    }
+  };
+
   // Fetch course details from API
   useEffect(() => {
     const loadCourseDetails = async () => {
@@ -90,6 +110,7 @@ const InPageCourseDetail = ({ course, department, onClose, onEdit }) => {
     };
 
     loadCourseDetails();
+    loadSubjects(); // Load subjects from API
   }, [courseId, course]);
   
   const handleBack = () => {
@@ -133,7 +154,8 @@ const InPageCourseDetail = ({ course, department, onClose, onEdit }) => {
   }
 
   const handleViewSubject = (subjectId) => {
-    navigate(`/academic/course/${course.id}/subject/${subjectId}`);
+    console.log('🔍 handleViewSubject - courseId:', courseId, 'subjectId:', subjectId);
+    navigate(`/academic/course/${courseId}/subject/${subjectId}`);
   };
 
   const handleEditSubject = (subjectId) => {
@@ -192,11 +214,23 @@ const InPageCourseDetail = ({ course, department, onClose, onEdit }) => {
   };
 
   const handleBulkImportSubjects = async (subjectsData) => {
-    console.log('Bulk importing subjects:', subjectsData);
+    console.log('🔍 InPageCourseDetail - Bulk importing subjects:', subjectsData);
+    console.log('🔍 InPageCourseDetail - Number of subjects:', subjectsData.length);
+    console.log('🔍 InPageCourseDetail - First subject sample:', subjectsData[0]);
     
     try {
-      // TODO: Implement bulk import API call
-      // For now, add to local state
+      // Call bulk import API
+      const response = await subjectAPI.bulkImportSubjects(subjectsData);
+      console.log('✅ InPageCourseDetail - Bulk import API response:', response);
+      
+      // Reload subjects from API to get updated data
+      await loadSubjects();
+      
+      setShowBulkImport(false);
+      console.log('✅ Bulk import completed successfully');
+    } catch (error) {
+      console.error('❌ Error during bulk import:', error);
+      // Fallback to local state if API fails
       const newSubjects = subjectsData.map((subject, index) => ({
         id: `imported_${Date.now()}_${index}`,
         name: subject.name,
@@ -216,13 +250,10 @@ const InPageCourseDetail = ({ course, department, onClose, onEdit }) => {
         const existingCodes = new Set(prevSubjects.map(s => s.code));
         const uniqueNewSubjects = newSubjects.filter(s => !existingCodes.has(s.code));
         
-        
         return [...prevSubjects, ...uniqueNewSubjects];
       });
       
       setShowBulkImport(false);
-    } catch (error) {
-      console.error('❌ Error importing subjects:', error);
     }
   };
 
@@ -442,6 +473,7 @@ const InPageCourseDetail = ({ course, department, onClose, onEdit }) => {
         show={showBulkImport}
         onClose={() => setShowBulkImport(false)}
         onImport={handleBulkImportSubjects}
+        courseId={courseId}
       />
 
       <EditCourseModal

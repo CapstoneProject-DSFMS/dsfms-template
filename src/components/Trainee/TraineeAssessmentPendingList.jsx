@@ -5,7 +5,7 @@ import { useNavigate } from 'react-router-dom';
 import { toast } from 'react-toastify';
 import traineeAPI from '../../api/trainee';
 
-const TraineeAssessmentPendingList = ({ traineeId }) => {
+const TraineeAssessmentPendingList = ({ traineeId, defaultActiveTab = "pending" }) => {
   const navigate = useNavigate();
   const [assessments, setAssessments] = useState([]);
   const [signatureRequired, setSignatureRequired] = useState([]);
@@ -22,26 +22,91 @@ const TraineeAssessmentPendingList = ({ traineeId }) => {
     try {
       setLoading(true);
       
-      // Load assessments
-      const assessmentsResponse = await traineeAPI.getTraineeAssessments(traineeId);
-      setAssessments(assessmentsResponse.assessments || assessmentsResponse.data || []);
+      // Hardcoded assessments data
+      const mockAssessments = [
+        {
+          id: '1',
+          name: 'Safety Procedures Assessment',
+          description: 'Comprehensive assessment of safety procedures knowledge',
+          course: {
+            id: '1',
+            name: 'Safety Procedures Training',
+            code: 'SAF001'
+          },
+          subject: {
+            id: '1',
+            name: 'Basic Safety Protocols',
+            code: 'BSP'
+          },
+          type: 'Written Test',
+          priority: 'HIGH',
+          dueDate: '2024-02-15T14:00:00.000Z',
+          status: 'PENDING'
+        },
+        {
+          id: '2',
+          name: 'Flight Operations Practical',
+          description: 'Practical demonstration of flight operations skills',
+          course: {
+            id: '2',
+            name: 'Flight Operations',
+            code: 'FLT002'
+          },
+          subject: {
+            id: '2',
+            name: 'Navigation Systems',
+            code: 'NAV'
+          },
+          type: 'Practical Assessment',
+          priority: 'MEDIUM',
+          dueDate: '2024-02-20T10:00:00.000Z',
+          status: 'IN_PROGRESS'
+        },
+        {
+          id: '3',
+          name: 'Emergency Response Simulation',
+          description: 'Simulated emergency response scenario',
+          course: {
+            id: '3',
+            name: 'Emergency Response',
+            code: 'EMG003'
+          },
+          subject: {
+            id: '3',
+            name: 'Crisis Management',
+            code: 'CRM'
+          },
+          type: 'Simulation',
+          priority: 'HIGH',
+          dueDate: '2024-02-18T16:00:00.000Z',
+          status: 'PENDING'
+        }
+      ];
       
       // Mock data for signature required and section completion
       const mockSignatureRequired = [
         {
           id: '1',
           name: 'Safety Protocol Agreement',
-          course: 'Emergency Procedures',
-          subject: 'Safety Protocols',
+          course: 'Safety Procedures Training',
+          subject: 'Basic Safety Protocols',
           dueDate: '2024-02-15T17:00:00.000Z',
           status: 'PENDING'
         },
         {
           id: '2',
           name: 'Training Completion Certificate',
-          course: 'Advanced Flight Training',
-          subject: 'Flight Operations',
+          course: 'Flight Operations',
+          subject: 'Navigation Systems',
           dueDate: '2024-02-20T17:00:00.000Z',
+          status: 'PENDING'
+        },
+        {
+          id: '3',
+          name: 'Emergency Procedures Acknowledgment',
+          course: 'Emergency Response',
+          subject: 'Crisis Management',
+          dueDate: '2024-02-18T17:00:00.000Z',
           status: 'PENDING'
         }
       ];
@@ -50,8 +115,8 @@ const TraineeAssessmentPendingList = ({ traineeId }) => {
         {
           id: '1',
           name: 'Emergency Evacuation Procedures',
-          course: 'Emergency Procedures',
-          subject: 'Safety Protocols',
+          course: 'Safety Procedures Training',
+          subject: 'Basic Safety Protocols',
           section: 'Practical Assessment',
           dueDate: '2024-02-12T14:00:00.000Z',
           status: 'IN_PROGRESS',
@@ -60,15 +125,28 @@ const TraineeAssessmentPendingList = ({ traineeId }) => {
         {
           id: '2',
           name: 'Flight Navigation Systems',
-          course: 'Advanced Flight Training',
-          subject: 'Navigation',
+          course: 'Flight Operations',
+          subject: 'Navigation Systems',
           section: 'Written Test',
           dueDate: '2024-02-18T10:00:00.000Z',
           status: 'PENDING',
           progress: 0
+        },
+        {
+          id: '3',
+          name: 'Crisis Communication',
+          course: 'Emergency Response',
+          subject: 'Crisis Management',
+          section: 'Role Play',
+          dueDate: '2024-02-16T15:00:00.000Z',
+          status: 'COMPLETED',
+          progress: 100
         }
       ];
       
+      // Simulate API delay
+      await new Promise(resolve => setTimeout(resolve, 400));
+      setAssessments(mockAssessments);
       setSignatureRequired(mockSignatureRequired);
       setSectionCompletion(mockSectionCompletion);
     } catch (error) {
@@ -138,7 +216,7 @@ const TraineeAssessmentPendingList = ({ traineeId }) => {
 
   return (
     <div className="trainee-assessment-pending-list">
-      <Tabs defaultActiveKey="pending" className="border-bottom">
+      <Tabs defaultActiveKey={defaultActiveTab} className="border-bottom">
         <Tab eventKey="pending" title="Pending Assessments">
           <div className="p-3">
             {assessments.length === 0 ? (

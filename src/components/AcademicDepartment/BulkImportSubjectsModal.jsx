@@ -3,7 +3,7 @@ import { Modal, Button, Table, Card, Alert } from 'react-bootstrap';
 import { X, Upload, FileEarmarkExcel, CheckCircle, XCircle, Download } from 'react-bootstrap-icons';
 import * as XLSX from 'xlsx';
 
-const BulkImportSubjectsModal = ({ show, onClose, onImport, loading = false }) => {
+const BulkImportSubjectsModal = ({ show, onClose, onImport, loading = false, courseId }) => {
   const [dragActive, setDragActive] = useState(false);
   const [uploadedFile, setUploadedFile] = useState(null);
   const [previewData, setPreviewData] = useState([]);
@@ -24,9 +24,9 @@ const BulkImportSubjectsModal = ({ show, onClose, onImport, loading = false }) =
     'name',           // varchar - Subject Name
     'course_id',      // uuid (FK) - Course ID
     'description',    // text - Description
-    'method',         // enum - Training Method
+    'method',         // enum - Training Method (E_LEARNING|CLASSROOM|ERO)
     'duration',       // integer - Duration in days
-    'type',           // enum - Subject Type
+    'type',           // enum - Subject Type (UNLIMIT|RECURRENT)
     'room_name',      // varchar - Room Name
     'remark_note',    // varchar - Remark Note
     'time_slot',      // varchar - Time Slot
@@ -138,6 +138,13 @@ const BulkImportSubjectsModal = ({ show, onClose, onImport, loading = false }) =
           if (!subject.course_id) {
             subject.hasError = true;
             subject.errors.push('Course ID is required');
+          } else {
+            // Validate UUID format
+            const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+            if (!uuidRegex.test(subject.course_id)) {
+              subject.hasError = true;
+              subject.errors.push('Course ID must be a valid UUID format');
+            }
           }
 
           // Validate duration
@@ -152,35 +159,43 @@ const BulkImportSubjectsModal = ({ show, onClose, onImport, loading = false }) =
             subject.errors.push('Pass score must be between 0 and 100');
           }
 
-          // Validate method enum
-          if (subject.method && !['THEORY', 'PRACTICAL', 'MIXED'].includes(subject.method.toUpperCase())) {
+          // Validate method enum - BE expects E_LEARNING|CLASSROOM|ERO
+          if (subject.method && !['E_LEARNING', 'CLASSROOM', 'ERO'].includes(subject.method.toUpperCase())) {
             subject.hasError = true;
-            subject.errors.push('Method must be THEORY, PRACTICAL, or MIXED');
+            subject.errors.push('Method must be E_LEARNING, CLASSROOM, or ERO');
           }
 
-          // Validate type enum
-          if (subject.type && !['MANDATORY', 'OPTIONAL'].includes(subject.type.toUpperCase())) {
+          // Validate type enum - BE expects UNLIMIT|RECURRENT
+          if (subject.type && !['UNLIMIT', 'RECURRENT'].includes(subject.type.toUpperCase())) {
             subject.hasError = true;
-            subject.errors.push('Type must be MANDATORY or OPTIONAL');
+            subject.errors.push('Type must be UNLIMIT or RECURRENT');
           }
 
           // Validate dates - handle Excel serial numbers and AM/PM format
           if (subject.start_date) {
             let normalizedStartDate;
             
-            // Check if it's an Excel serial number (numeric)
-            if (typeof subject.start_date === 'number' || !isNaN(parseFloat(subject.start_date))) {
+            // Check if it's an Excel serial number (numeric and large number)
+            if (typeof subject.start_date === 'number' && subject.start_date > 10000) {
               // Convert Excel serial number to JavaScript Date
               // Excel serial number: days since 1900-01-01 (with leap year bug)
               const excelSerial = parseFloat(subject.start_date);
               const jsDate = new Date((excelSerial - 25569) * 86400 * 1000); // 25569 = days from 1900-01-01 to 1970-01-01
               normalizedStartDate = jsDate.toISOString().replace('T', ' ').replace('Z', '');
             } else {
-              // Handle string format - remove AM/PM and normalize
-              normalizedStartDate = subject.start_date
-                .replace(/\s+(AM|PM)/gi, '') // Remove AM/PM
-                .replace(/\s+/g, ' ') // Normalize multiple spaces to single space
-                .replace(/(\d{1,2})\/(\d{1,2})\/(\d{4})\s+(\d{1,2}):(\d{2}):(\d{2})/, '$3-$1-$2 $4:$5:$6'); // Convert MM/DD/YYYY to YYYY-MM-DD
+              // Handle string format - keep as is if already in correct format
+              const dateStr = String(subject.start_date).trim();
+              
+              // If it's already in YYYY-MM-DD format, keep it
+              if (/^\d{4}-\d{2}-\d{2}/.test(dateStr)) {
+                normalizedStartDate = dateStr;
+              } else {
+                // Handle other formats - remove AM/PM and normalize
+                normalizedStartDate = dateStr
+                  .replace(/\s+(AM|PM)/gi, '') // Remove AM/PM
+                  .replace(/\s+/g, ' ') // Normalize multiple spaces to single space
+                  .replace(/(\d{1,2})\/(\d{1,2})\/(\d{4})\s+(\d{1,2}):(\d{2}):(\d{2})/, '$3-$1-$2 $4:$5:$6'); // Convert MM/DD/YYYY to YYYY-MM-DD
+              }
             }
             
             console.log('🔍 Original start_date:', subject.start_date);
@@ -198,18 +213,26 @@ const BulkImportSubjectsModal = ({ show, onClose, onImport, loading = false }) =
           if (subject.end_date) {
             let normalizedEndDate;
             
-            // Check if it's an Excel serial number (numeric)
-            if (typeof subject.end_date === 'number' || !isNaN(parseFloat(subject.end_date))) {
+            // Check if it's an Excel serial number (numeric and large number)
+            if (typeof subject.end_date === 'number' && subject.end_date > 10000) {
               // Convert Excel serial number to JavaScript Date
               const excelSerial = parseFloat(subject.end_date);
               const jsDate = new Date((excelSerial - 25569) * 86400 * 1000);
               normalizedEndDate = jsDate.toISOString().replace('T', ' ').replace('Z', '');
             } else {
-              // Handle string format - remove AM/PM and normalize
-              normalizedEndDate = subject.end_date
-                .replace(/\s+(AM|PM)/gi, '') // Remove AM/PM
-                .replace(/\s+/g, ' ') // Normalize multiple spaces to single space
-                .replace(/(\d{1,2})\/(\d{1,2})\/(\d{4})\s+(\d{1,2}):(\d{2}):(\d{2})/, '$3-$1-$2 $4:$5:$6'); // Convert MM/DD/YYYY to YYYY-MM-DD
+              // Handle string format - keep as is if already in correct format
+              const dateStr = String(subject.end_date).trim();
+              
+              // If it's already in YYYY-MM-DD format, keep it
+              if (/^\d{4}-\d{2}-\d{2}/.test(dateStr)) {
+                normalizedEndDate = dateStr;
+              } else {
+                // Handle other formats - remove AM/PM and normalize
+                normalizedEndDate = dateStr
+                  .replace(/\s+(AM|PM)/gi, '') // Remove AM/PM
+                  .replace(/\s+/g, ' ') // Normalize multiple spaces to single space
+                  .replace(/(\d{1,2})\/(\d{1,2})\/(\d{4})\s+(\d{1,2}):(\d{2}):(\d{2})/, '$3-$1-$2 $4:$5:$6'); // Convert MM/DD/YYYY to YYYY-MM-DD
+              }
             }
             
             console.log('🔍 Original end_date:', subject.end_date);
@@ -246,8 +269,41 @@ const BulkImportSubjectsModal = ({ show, onClose, onImport, loading = false }) =
       return;
     }
 
+    // Format data for API
+    const formattedSubjects = subjectsToImport.map(subject => ({
+      code: subject.code,
+      name: subject.name,
+      courseId: String(courseId || subject.course_id), // Use real courseId from props
+      description: subject.description || '',
+      method: subject.method ? subject.method.toUpperCase() : 'CLASSROOM', // BE expects E_LEARNING|CLASSROOM|ERO
+      duration: subject.duration ? parseInt(subject.duration) : 1,
+      type: subject.type ? subject.type.toUpperCase() : 'UNLIMIT', // BE expects UNLIMIT|RECURRENT
+      room_name: subject.room_name || '',
+      remark_note: subject.remark_note || '',
+      time_slot: subject.time_slot || '',
+      pass_score: subject.pass_score ? parseFloat(subject.pass_score) : 70,
+      start_date: subject.start_date || null,
+      end_date: subject.end_date || null
+    }));
+
+    console.log('🔍 Formatted subjects for API:', formattedSubjects);
+    console.log('🔍 Data types check:', {
+      courseId_type: typeof formattedSubjects[0]?.courseId,
+      courseId_value: formattedSubjects[0]?.courseId,
+      courseId_constructor: formattedSubjects[0]?.courseId?.constructor?.name,
+      method_type: typeof formattedSubjects[0]?.method,
+      method_value: formattedSubjects[0]?.method,
+      type_type: typeof formattedSubjects[0]?.type,
+      type_value: formattedSubjects[0]?.type,
+      all_keys: Object.keys(formattedSubjects[0] || {}),
+      all_types: Object.keys(formattedSubjects[0] || {}).reduce((acc, key) => {
+        acc[key] = typeof formattedSubjects[0][key];
+        return acc;
+      }, {})
+    });
+
     try {
-      await onImport(subjectsToImport);
+      await onImport(formattedSubjects);
       handleClose();
     } catch (error) {
       setErrors([error.message || 'Failed to import subjects. Please try again.']);
@@ -278,11 +334,11 @@ const BulkImportSubjectsModal = ({ show, onClose, onImport, loading = false }) =
       [
         'MATH101', // code
         'Mathematics', // name
-        'c1', // course_id
+        courseId || '550e8400-e29b-41d4-a716-446655440000', // course_id (UUID format)
         'Basic mathematics course covering algebra and geometry', // description
-        'THEORY', // method
+        'CLASSROOM', // method (BE expects E_LEARNING|CLASSROOM|ERO)
         '14', // duration
-        'MANDATORY', // type
+        'UNLIMIT', // type (BE expects UNLIMIT|RECURRENT)
         'Room A101', // room_name
         'This is a required course for all students', // remark_note
         '09:00-17:00', // time_slot
@@ -293,17 +349,32 @@ const BulkImportSubjectsModal = ({ show, onClose, onImport, loading = false }) =
       [
         'PHYS101', // code
         'Physics', // name
-        'c1', // course_id
+        courseId || '550e8400-e29b-41d4-a716-446655440000', // course_id (UUID format)
         'Introduction to physics concepts and principles', // description
-        'PRACTICAL', // method
+        'E_LEARNING', // method (BE expects E_LEARNING|CLASSROOM|ERO)
         '7', // duration
-        'OPTIONAL', // type
+        'RECURRENT', // type (BE expects UNLIMIT|RECURRENT)
         'Lab B201', // room_name
         'Hands-on experiments and demonstrations', // remark_note
         '14:00-18:00', // time_slot
         '75.0', // pass_score
         '2025-02-01 14:00:00', // start_date
         '2025-02-08 18:00:00' // end_date
+      ],
+      [
+        'SAFETY301', // code
+        'Safety Procedures', // name
+        courseId || '550e8400-e29b-41d4-a716-446655440000', // course_id (UUID format)
+        'Emergency response and safety protocols training', // description
+        'ERO', // method (BE expects E_LEARNING|CLASSROOM|ERO)
+        '5', // duration
+        'UNLIMIT', // type (BE expects UNLIMIT|RECURRENT)
+        'Training Hall B', // room_name
+        'Hands-on practical training required', // remark_note
+        '08:00-16:00', // time_slot
+        '80.0', // pass_score
+        '2025-03-01 08:00:00', // start_date
+        '2025-03-06 16:00:00' // end_date
       ]
     ];
 
@@ -374,11 +445,11 @@ const BulkImportSubjectsModal = ({ show, onClose, onImport, loading = false }) =
             <div className="mt-3 d-flex justify-content-between align-items-center">
               <div>
                 <small className="text-muted">
-                  <strong>Required columns:</strong> Code, Name, Course ID
+                  <strong>Required columns:</strong> Code, Name, Course ID (UUID format)
                 </small>
                 <br />
                 <small className="text-muted">
-                  <strong>Optional columns:</strong> Description, Method, Duration, Type, Room Name, Remark Note, Time Slot, Pass Score, Start Date, End Date
+                  <strong>Optional columns:</strong> Description, Method (E_LEARNING|CLASSROOM|ERO), Duration, Type (UNLIMIT|RECURRENT), Room Name, Remark Note, Time Slot, Pass Score, Start Date, End Date
                 </small>
               </div>
               <div className="d-flex align-items-center gap-2">

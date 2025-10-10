@@ -7,7 +7,7 @@ import {
   List,
   X
 } from 'react-bootstrap-icons';
-import useProfile from '../../hooks/useProfile';
+import { useAuth } from '../../hooks/useAuth';
 import '../../styles/dropdown-clean.css';
 
 // Force remove box shadow from dropdown
@@ -35,11 +35,23 @@ const Header = ({ onToggleSidebar }) => {
   const [showProfileMenu, setShowProfileMenu] = useState(false);
   const [showDesktopDropdown, setShowDesktopDropdown] = useState(false);
   const dropdownRef = useRef(null);
-  const { profile, loading, getDisplayName, getRoleName } = useProfile();
+  const { user, isLoading } = useAuth();
+  
+  // Helper functions
+  const getDisplayName = () => {
+    if (!user) return 'Loading...';
+    return user.fullName || user.name || 'User';
+  };
+  
+  const getEmail = () => {
+    if (!user) return 'No email';
+    return user.email || 'No email';
+  };
   
   // Map routes to titles
   const getTitleFromPath = (path) => {
     const routes = {
+      // Admin routes
       '/admin': 'Dashboard',
       '/admin/dashboard': 'Dashboard',
       '/admin/users': 'User Management',
@@ -47,12 +59,43 @@ const Header = ({ onToggleSidebar }) => {
       '/admin/departments': 'Department Management',
       '/admin/profile': 'Profile',
       '/admin/forms': 'Form Templates',
-      '/admin/system-config': 'System Configuration'
+      '/admin/system-config': 'System Configuration',
+      
+      // Academic routes
+      '/academic': 'Academic Dashboard',
+      '/academic/dashboard': 'Academic Dashboard',
+      '/academic/departments': 'Department Selection',
+      '/academic/profile': 'Profile'
     };
     
     // Check for department detail page (pattern: /admin/departments/:id)
     if (path.startsWith('/admin/departments/') && path !== '/admin/departments') {
       return 'Edit Department Detail';
+    }
+    
+    // Check for academic department pages (pattern: /academic/departments/:id)
+    if (path.startsWith('/academic/departments/') && path !== '/academic/departments') {
+      return 'Department Courses';
+    }
+    
+    // Check for course detail page (pattern: /academic/course/:id)
+    if (path.startsWith('/academic/course/') && !path.includes('/subject/')) {
+      return 'Course Details';
+    }
+    
+    // Check for course detail page (pattern: /academic/course-detail/:id)
+    if (path.startsWith('/academic/course-detail/')) {
+      return 'Course Details';
+    }
+    
+    // Check for subject detail page (pattern: /academic/course/:courseId/subject/:subjectId)
+    if (path.includes('/subject/')) {
+      return 'Subject Details';
+    }
+    
+    // Check for enroll trainees page (pattern: /academic/course/:id/enroll-trainees)
+    if (path.includes('/enroll-trainees')) {
+      return 'Enroll Trainees';
     }
     
     return routes[path] || 'Dashboard';
@@ -148,7 +191,7 @@ const Header = ({ onToggleSidebar }) => {
                 onClick={() => setShowDesktopDropdown(!showDesktopDropdown)}
               >
                 <PersonCircle size={32} className="me-2" />
-                <span>{loading ? 'Loading...' : getDisplayName()}</span>
+                <span>{isLoading ? 'Loading...' : getDisplayName()}</span>
               </button>
               
               
@@ -159,10 +202,10 @@ const Header = ({ onToggleSidebar }) => {
               >
                   <div className="dropdown-header">                  
                     <div className="fw-bold text-primary-custom">
-                      {loading ? 'Loading...' : getDisplayName()}
+                      {isLoading ? 'Loading...' : getDisplayName()}
                     </div>
                     <small className="text-muted">
-                      {loading ? 'Loading...' : profile?.email || 'No email'}
+                      {isLoading ? 'Loading...' : getEmail()}
                     </small>
                   </div>
                   <div className="dropdown-divider"></div>
@@ -247,10 +290,10 @@ const Header = ({ onToggleSidebar }) => {
           </div>
           
           <div className="profile-name">
-            {loading ? 'Loading...' : getDisplayName()}
+            {isLoading ? 'Loading...' : getDisplayName()}
           </div>
           <div className="profile-email">
-            {loading ? 'Loading...' : profile?.email || 'No email'}
+            {isLoading ? 'Loading...' : getEmail()}
           </div>
         </div>
 
