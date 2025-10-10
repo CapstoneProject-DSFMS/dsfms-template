@@ -139,7 +139,6 @@ const EnrollTraineesPage = () => {
             {/* Panel 1: Subject Selection */}
             <Col lg={6}>
               <SubjectSelectionPanel 
-                courseId={courseId}
                 selectedSubjects={selectedSubjects}
                 onSelectionChange={setSelectedSubjects}
               />
