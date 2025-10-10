@@ -9,7 +9,7 @@ const TrainerActions = ({ trainer, onEdit, onDelete }) => (
     <Dropdown.Toggle 
       variant="light" 
       size="sm" 
-      id={`trainer-actions-${trainer.id}`} 
+      id={`trainer-actions-${trainer.trainer_user_id}`} 
       className="border-0"
     >
       <ThreeDotsVertical size={16} />
@@ -17,7 +17,7 @@ const TrainerActions = ({ trainer, onEdit, onDelete }) => (
     <Dropdown.Menu className="shadow-sm">
       <PermissionWrapper permission={API_PERMISSIONS.SUBJECTS.UPDATE}>
         <Dropdown.Item 
-          onClick={() => onEdit(trainer.id)}
+          onClick={() => onEdit(trainer.trainer_user_id)}
           className="d-flex align-items-center transition-all"
           style={{
             transition: 'all 0.2s ease'
@@ -38,7 +38,7 @@ const TrainerActions = ({ trainer, onEdit, onDelete }) => (
       
       <PermissionWrapper permission={API_PERMISSIONS.SUBJECTS.REMOVE_INSTRUCTOR}>
         <Dropdown.Item 
-          onClick={() => onDelete(trainer.id)}
+          onClick={() => onDelete(trainer.trainer_user_id)}
           className="d-flex align-items-center transition-all text-danger"
           style={{
             transition: 'all 0.2s ease'

@@ -1188,6 +1188,11 @@ button,
     display: table-cell !important;
   }
 
+/* Search and Filter Section Spacing */
+.search-filter-section {
+  padding-bottom: 1rem !important;
+}
+
 /* Form responsive adjustments */
 @media (max-width: 768px) {
   /* Stack form elements vertically */
@@ -1518,6 +1523,124 @@ button,
     font-size: 1.3rem !important;
     margin-right: 1.25rem !important;
   }
+}
+
+/* ===== TOAST NOTIFICATIONS CUSTOMIZATION ===== */
+
+/* Remove box shadow from toast close button */
+.Toastify__close-button {
+  box-shadow: none !important;
+}
+
+/* Remove box shadow from toast close button on hover */
+.Toastify__close-button:hover {
+  box-shadow: none !important;
+}
+
+/* Remove box shadow from toast close button on focus */
+.Toastify__close-button:focus {
+  box-shadow: none !important;
+}
+
+/* Remove box shadow from toast close button on active */
+.Toastify__close-button:active {
+  box-shadow: none !important;
+}
+
+/* Additional toast close button styling */
+.Toastify__close-button {
+  background: none !important;
+  border: none !important;
+  outline: none !important;
+  box-shadow: none !important;
+  transition: none !important;
+}
+
+/* Toast close button hover effect without shadow */
+.Toastify__close-button:hover {
+  background: rgba(0, 0, 0, 0.1) !important;
+  box-shadow: none !important;
+}
+
+/* Toast close button focus effect without shadow */
+.Toastify__close-button:focus {
+  background: rgba(0, 0, 0, 0.1) !important;
+  box-shadow: none !important;
+  outline: none !important;
+}
+
+/* ===== PROFILE DROPDOWN MENU CUSTOMIZATION ===== */
+
+/* Remove drop shadow from profile dropdown menu */
+.custom-dropdown {
+  box-shadow: none !important;
+}
+
+/* Remove drop shadow from profile dropdown menu on hover */
+.custom-dropdown:hover {
+  box-shadow: none !important;
+}
+
+/* Remove drop shadow from profile dropdown menu on focus */
+.custom-dropdown:focus {
+  box-shadow: none !important;
+}
+
+/* Remove drop shadow from profile dropdown menu on active */
+.custom-dropdown:active {
+  box-shadow: none !important;
+}
+
+/* Additional profile dropdown styling */
+.custom-dropdown {
+  background: white !important;
+  border: 1px solid rgba(0, 0, 0, 0.15) !important;
+  box-shadow: none !important;
+  transition: none !important;
+}
+
+/* Force remove all shadows from dropdown menu */
+.custom-dropdown,
+.custom-dropdown *,
+.custom-dropdown::before,
+.custom-dropdown::after {
+  box-shadow: none !important;
+  -webkit-box-shadow: none !important;
+  -moz-box-shadow: none !important;
+}
+
+/* Profile dropdown hover effect without shadow */
+.custom-dropdown:hover {
+  box-shadow: none !important;
+}
+
+/* Remove shadow from all possible dropdown states */
+.custom-dropdown.show,
+.custom-dropdown.hide,
+.custom-dropdown:focus,
+.custom-dropdown:active,
+.custom-dropdown:focus-within,
+.custom-dropdown:target {
+  box-shadow: none !important;
+  -webkit-box-shadow: none !important;
+  -moz-box-shadow: none !important;
+}
+
+/* Remove shadow from profile button */
+button.text-primary-custom,
+button.text-primary-custom:hover,
+button.text-primary-custom:focus,
+button.text-primary-custom:active,
+button.text-primary-custom:focus-within {
+  box-shadow: none !important;
+  -webkit-box-shadow: none !important;
+  -moz-box-shadow: none !important;
+}
+
+/* Profile dropdown focus effect without shadow */
+.custom-dropdown:focus {
+  box-shadow: none !important;
+  outline: none !important;
 }
 
 @media (min-width: 577px) and (max-width: 768px) {

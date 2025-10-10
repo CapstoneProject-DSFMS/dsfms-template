@@ -27,7 +27,7 @@ const transformDepartmentData = (departmentsData) => {
   }));
 };
 
-const useDepartmentManagement = () => {
+const useDepartmentManagement = (shouldLoad = true) => {
   const [departments, setDepartments] = useState([]);
   const [filteredDepartments, setFilteredDepartments] = useState([]);
   const [loading, setLoading] = useState(false);
@@ -42,6 +42,11 @@ const useDepartmentManagement = () => {
 
   // Load departments from API
   useEffect(() => {
+    if (!shouldLoad) {
+      console.log('🔍 useDepartmentManagement - Skipping department load for non-ACADEMIC_DEPARTMENT role');
+      return;
+    }
+
     const loadDepartments = async () => {
       setLoading(true);
       setError(null);
@@ -63,7 +68,7 @@ const useDepartmentManagement = () => {
     };
 
     loadDepartments();
-  }, []);
+  }, [shouldLoad]);
 
   // Filter and search departments
   useEffect(() => {

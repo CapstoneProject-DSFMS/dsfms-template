@@ -4,20 +4,14 @@ import { X, Pencil } from 'react-bootstrap-icons';
 
 const EditTrainerModal = ({ show, onClose, onSave, trainer, loading = false }) => {
   const [formData, setFormData] = useState({
-    name: '',
-    email: '',
-    specialization: '',
-    status: 'ACTIVE'
+    role_in_subject: 'ASSISTANT_INSTRUCTOR'
   });
   const [errors, setErrors] = useState([]);
 
   useEffect(() => {
     if (trainer && show) {
       setFormData({
-        name: trainer.name || '',
-        email: trainer.email || '',
-        specialization: trainer.specialization || '',
-        status: trainer.status || 'ACTIVE'
+        role_in_subject: trainer.role_in_subject || 'ASSISTANT_INSTRUCTOR'
       });
       setErrors([]);
     }
@@ -34,18 +28,8 @@ const EditTrainerModal = ({ show, onClose, onSave, trainer, loading = false }) =
   const validateForm = () => {
     const newErrors = [];
     
-    if (!formData.name.trim()) {
-      newErrors.push('Trainer name is required');
-    }
-    
-    if (!formData.email.trim()) {
-      newErrors.push('Email is required');
-    } else if (!/\S+@\S+\.\S+/.test(formData.email)) {
-      newErrors.push('Please enter a valid email address');
-    }
-    
-    if (!formData.specialization.trim()) {
-      newErrors.push('Specialization is required');
+    if (!formData.role_in_subject) {
+      newErrors.push('Role in subject is required');
     }
     
     setErrors(newErrors);
@@ -69,10 +53,7 @@ const EditTrainerModal = ({ show, onClose, onSave, trainer, loading = false }) =
 
   const handleClose = () => {
     setFormData({
-      name: '',
-      email: '',
-      specialization: '',
-      status: 'ACTIVE'
+      role_in_subject: 'ASSISTANT_INSTRUCTOR'
     });
     setErrors([]);
     onClose();
@@ -102,30 +83,27 @@ const EditTrainerModal = ({ show, onClose, onSave, trainer, loading = false }) =
         )}
 
         <Form onSubmit={handleSubmit}>
+          {/* Trainer Information (Read-only) */}
           <Row>
             <Col md={6}>
               <Form.Group className="mb-3">
-                <Form.Label>Trainer Name *</Form.Label>
+                <Form.Label>Trainer Name</Form.Label>
                 <Form.Control
                   type="text"
-                  name="name"
-                  value={formData.name}
-                  onChange={handleInputChange}
-                  placeholder="Enter trainer name"
-                  disabled={loading}
+                  value={trainer?.name || ''}
+                  disabled={true}
+                  className="bg-light"
                 />
               </Form.Group>
             </Col>
             <Col md={6}>
               <Form.Group className="mb-3">
-                <Form.Label>Email *</Form.Label>
+                <Form.Label>Email</Form.Label>
                 <Form.Control
                   type="email"
-                  name="email"
-                  value={formData.email}
-                  onChange={handleInputChange}
-                  placeholder="Enter email address"
-                  disabled={loading}
+                  value={trainer?.email || ''}
+                  disabled={true}
+                  className="bg-light"
                 />
               </Form.Group>
             </Col>
@@ -134,29 +112,27 @@ const EditTrainerModal = ({ show, onClose, onSave, trainer, loading = false }) =
           <Row>
             <Col md={6}>
               <Form.Group className="mb-3">
-                <Form.Label>Specialization *</Form.Label>
+                <Form.Label>Specialization</Form.Label>
                 <Form.Control
                   type="text"
-                  name="specialization"
-                  value={formData.specialization}
-                  onChange={handleInputChange}
-                  placeholder="e.g., Fire Prevention, CPR & First Aid"
-                  disabled={loading}
+                  value={trainer?.specialization || ''}
+                  disabled={true}
+                  className="bg-light"
                 />
               </Form.Group>
             </Col>
             <Col md={6}>
               <Form.Group className="mb-3">
-                <Form.Label>Status</Form.Label>
+                <Form.Label>Role in Subject *</Form.Label>
                 <Form.Select
-                  name="status"
-                  value={formData.status}
+                  name="role_in_subject"
+                  value={formData.role_in_subject}
                   onChange={handleInputChange}
                   disabled={loading}
                 >
-                  <option value="ACTIVE">Active</option>
-                  <option value="INACTIVE">Inactive</option>
-                  <option value="SUSPENDED">Suspended</option>
+                  <option value="LEAD_INSTRUCTOR">Lead Instructor</option>
+                  <option value="ASSISTANT_INSTRUCTOR">Assistant Instructor</option>
+                  <option value="SUPPORT_INSTRUCTOR">Support Instructor</option>
                 </Form.Select>
               </Form.Group>
             </Col>

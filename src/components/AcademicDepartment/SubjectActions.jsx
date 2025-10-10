@@ -36,15 +36,15 @@ const SubjectActions = ({ subject, onView, onEdit, onDelete }) => (
         </Dropdown.Item>
       </PermissionWrapper>
       
-      <PermissionWrapper permission={API_PERMISSIONS.SUBJECTS.UPDATE}>
+      <PermissionWrapper permission={API_PERMISSIONS.SUBJECTS.DELETE}>
         <Dropdown.Item 
-          onClick={() => onEdit && onEdit(subject.id)}
-          className="d-flex align-items-center transition-all"
+          onClick={() => onDelete && onDelete(subject.id)}
+          className="d-flex align-items-center transition-all text-warning"
           style={{
             transition: 'all 0.2s ease'
           }}
           onMouseEnter={(e) => {
-            e.target.style.backgroundColor = 'rgba(0, 0, 0, 0.05)';
+            e.target.style.backgroundColor = 'rgba(255, 193, 7, 0.1)';
             e.target.style.paddingLeft = '1.5rem';
           }}
           onMouseLeave={(e) => {

@@ -105,7 +105,7 @@ const UserManagementPage = () => {
                   fallback={null}
                 >
                   <Button
-                    variant="primary"
+                    variant="primary-custom"
                     size="sm"
                     onClick={handleAdd}
                     className="d-flex align-items-center"
@@ -121,7 +121,7 @@ const UserManagementPage = () => {
 
         <Card.Body>
           {/* Search and Filters */}
-          <Row className="mb-3 form-mobile-stack">
+          <Row className="mb-3 form-mobile-stack search-filter-section">
             <Col xs={12} lg={6} md={5} className="mb-2 mb-lg-0">
               <SearchBar
                 placeholder="Search users by name, EID, or email..."

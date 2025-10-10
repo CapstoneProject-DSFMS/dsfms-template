@@ -24,13 +24,13 @@ const EditCourseModal = ({ show, onClose, onSave, course, loading = false }) => 
         name: course.name || '',
         code: course.code || '',
         description: course.description || '',
-        maxTrainees: course.maxTrainees || '',
+        maxTrainees: course.maxNumTrainee || course.maxTrainees || '',
         venue: course.venue || '',
         note: course.note || '',
         passScore: course.passScore || '',
         startDate: course.startDate || '',
         endDate: course.endDate || '',
-        level: course.level || 'Beginner',
+        level: course.level || 'BEGINNER',
         status: course.status || 'ACTIVE'
       });
     }
@@ -227,9 +227,9 @@ const EditCourseModal = ({ show, onClose, onSave, course, loading = false }) => 
                   onChange={handleInputChange}
                   disabled={loading}
                 >
-                  <option value="Beginner">Beginner</option>
-                  <option value="Intermediate">Intermediate</option>
-                  <option value="Advanced">Advanced</option>
+                  <option value="BEGINNER">Beginner</option>
+                  <option value="INTERMEDIATE">Intermediate</option>
+                  <option value="ADVANCED">Advanced</option>
                 </Form.Select>
               </Form.Group>
             </Col>
@@ -243,8 +243,8 @@ const EditCourseModal = ({ show, onClose, onSave, course, loading = false }) => 
                   disabled={loading}
                 >
                   <option value="ACTIVE">Active</option>
-                  <option value="INACTIVE">Inactive</option>
-                  <option value="DRAFT">Draft</option>
+                  <option value="ARCHIVED">Archived</option>
+                  <option value="PLANNED">Planned</option>
                 </Form.Select>
               </Form.Group>
             </Col>

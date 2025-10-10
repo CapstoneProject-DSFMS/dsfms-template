@@ -69,6 +69,18 @@ apiClient.interceptors.request.use(
       }
       
       config.headers.Authorization = `Bearer ${token}`;
+      
+      // Debug log for role update requests
+      if (config.url?.includes('/roles/') && config.method === 'put') {
+        console.log('🔍 Role update request:', {
+          url: config.url,
+          method: config.method,
+          data: config.data,
+          headers: {
+            Authorization: config.headers.Authorization ? 'Bearer [TOKEN]' : 'No token'
+          }
+        });
+      }
     }
     return config;
   },
@@ -84,15 +96,15 @@ apiClient.interceptors.response.use(
   },
   async (error) => {
     const originalRequest = error.config;
+    const status = error.response?.status;
     
-    // Xử lý cả 401 Unauthorized và 403 Forbidden (token hết hạn hoặc không hợp lệ)
-    // Chỉ retry tối đa MAX_REFRESH_ATTEMPTS lần để tránh infinite loop
-    if ((error.response?.status === 401 || error.response?.status === 403) && 
+    // Chỉ xử lý 401 Unauthorized (token hết hạn), KHÔNG xử lý 403 Forbidden (thiếu quyền)
+    if (status === 401 && 
         !originalRequest._retry && 
         !originalRequest.url?.includes('/auth/') &&
         refreshAttempts < MAX_REFRESH_ATTEMPTS) {
       
-      console.log(`🔄 API call failed with ${error.response?.status}, attempting token refresh...`);
+      console.log('🔄 API call failed with 401 (token expired), attempting token refresh...');
       
       // Nếu đang refresh token, thêm request vào queue
       if (isRefreshing) {
@@ -114,7 +126,7 @@ apiClient.interceptors.response.use(
       
       if (refreshToken) {
         try {
-          console.log('🔄 Token hết hạn hoặc không hợp lệ (401/403), đang refresh token...');
+          console.log('🔄 Token hết hạn (401), đang refresh token...');
           
           // Validate refresh token before using it
           if (isTokenExpired(refreshToken)) {
@@ -146,20 +158,7 @@ apiClient.interceptors.response.use(
           processQueue(null, access_token);
           originalRequest.headers.Authorization = `Bearer ${access_token}`;
           
-          try {
-            return await apiClient(originalRequest);
-          } catch (retryError) {
-            // Nếu retry vẫn thất bại với 403, có thể token mới vẫn không hợp lệ
-            if (retryError.response?.status === 403) {
-              console.error('❌ Retry request vẫn trả về 403 - token mới có thể không hợp lệ');
-              // Clear storage và logout
-              localStorage.removeItem('authToken');
-              localStorage.removeItem('refreshToken');
-              localStorage.removeItem('user');
-              redirectToLogin();
-            }
-            throw retryError;
-          }
+          return await apiClient(originalRequest);
           
         } catch (refreshError) {
           console.error('❌ Refresh token thất bại:', refreshError);
@@ -187,6 +186,11 @@ apiClient.interceptors.response.use(
         localStorage.removeItem('user');
         redirectToLogin();
       }
+    } else if (status === 403) {
+      // 403 Forbidden - thiếu quyền thực sự, KHÔNG logout user
+      console.log('🚫 API call failed with 403 (insufficient permissions) - user remains logged in');
+      // Chỉ throw error để UI xử lý, không logout
+      return Promise.reject(error);
     } else if (refreshAttempts >= MAX_REFRESH_ATTEMPTS) {
       // Đã vượt quá số lần refresh cho phép - logout user
       console.error('❌ Đã vượt quá số lần refresh cho phép, logout user');

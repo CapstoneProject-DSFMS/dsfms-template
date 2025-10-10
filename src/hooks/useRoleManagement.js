@@ -145,6 +145,11 @@ export const useRoleManagement = () => {
         await roleAPI.createRole(roleData);
         toast.success('Role created successfully!');
       } else {
+        console.log('🔍 Updating role with data:', {
+          roleId: selectedRole.id,
+          roleData: roleData,
+          selectedRole: selectedRole
+        });
         await roleAPI.updateRole(selectedRole.id, roleData);
         toast.success('Role updated successfully!');
       }
