@@ -87,10 +87,10 @@ const EnrollTraineesPage = () => {
   };
 
   return (
-    <Container fluid className="py-1 enroll-page">
+    <Container fluid className="py-4 px-4 enroll-page">
       <div className="d-flex flex-column">
         {/* Header - Fixed */}
-        <div className="flex-shrink-0 mb-2">
+        <div className="flex-shrink-0 mb-3">
           <div className="d-flex align-items-center mb-2">
             <Button 
               variant="outline-secondary" 
@@ -135,21 +135,25 @@ const EnrollTraineesPage = () => {
 
         {/* Main Content */}
         <div className="mb-4">
-          <Row className="g-2">
+          <Row className="g-3">
             {/* Panel 1: Subject Selection */}
             <Col lg={6}>
-              <SubjectSelectionPanel 
-                selectedSubjects={selectedSubjects}
-                onSelectionChange={setSelectedSubjects}
-              />
+              <div style={{ height: '500px' }}>
+                <SubjectSelectionPanel 
+                  selectedSubjects={selectedSubjects}
+                  onSelectionChange={setSelectedSubjects}
+                />
+              </div>
             </Col>
 
             {/* Panel 2: Trainee Selection */}
             <Col lg={6}>
-              <TraineeSelectionPanel 
-                selectedTrainees={selectedTrainees}
-                onSelectionChange={setSelectedTrainees}
-              />
+              <div style={{ height: '500px' }}>
+                <TraineeSelectionPanel 
+                  selectedTrainees={selectedTrainees}
+                  onSelectionChange={setSelectedTrainees}
+                />
+              </div>
             </Col>
           </Row>
         </div>

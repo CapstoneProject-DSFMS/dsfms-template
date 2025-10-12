@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { Card, Button, Row, Col, Container, Badge } from 'react-bootstrap';
-import { Plus, Upload, Pencil, ArrowLeft, People, Calendar, GeoAlt, FileText, Award, PersonCheck, Book, ChevronDown, ChevronRight } from 'react-bootstrap-icons';
+import { Card, Button, Row, Col, Container, Badge, Nav, Tab } from 'react-bootstrap';
+import { Plus, Upload, Pencil, ArrowLeft, People, Calendar, GeoAlt, FileText, Award, PersonCheck, Book } from 'react-bootstrap-icons';
 import { useNavigate, useParams } from 'react-router-dom';
 import courseAPI from '../../api/course';
 import subjectAPI from '../../api/subject';
@@ -28,11 +28,10 @@ const InPageCourseDetail = ({ course, department, onClose, onEdit }) => {
   const [subjects, setSubjects] = useState([]);
   const [loading, setLoading] = useState(true);
   const [hasApiData, setHasApiData] = useState(false); // Track if we have API data
+  const [courses, setCourses] = useState([]);
   
-  // Collapse states for tables
-  const [isCourseInfoCollapsed, setIsCourseInfoCollapsed] = useState(false);
-  const [isSubjectsCollapsed, setIsSubjectsCollapsed] = useState(false);
-  const [isTraineesCollapsed, setIsTraineesCollapsed] = useState(false);
+  // Active tab state
+  const [activeTab, setActiveTab] = useState('course-info');
   
   // Load subjects from API
   const loadSubjects = async () => {
@@ -52,6 +51,41 @@ const InPageCourseDetail = ({ course, department, onClose, onEdit }) => {
       // Keep existing subjects (mock data) if API fails
     }
   };
+
+  // Load courses from API
+  const loadCourses = async () => {
+    try {
+      console.log('🔍 InPageCourseDetail - Loading courses from API...');
+      const response = await courseAPI.getDepartmentById(courseId);
+      console.log('🔍 InPageCourseDetail - Courses API Response:', response);
+      
+      if (response && response.courses) {
+        const transformedCourses = response.courses.map(course => ({
+          id: course.id,
+          name: course.name,
+          code: course.code,
+          startDate: course.startDate ? new Date(course.startDate).toISOString().split('T')[0] : 'N/A',
+          endDate: course.endDate ? new Date(course.endDate).toISOString().split('T')[0] : 'N/A',
+          venue: course.venue || 'N/A',
+          note: course.note || 'N/A',
+          status: course.status,
+          description: course.description,
+          maxNumTrainee: course.maxNumTrainee,
+          passScore: course.passScore,
+          level: course.level
+        }));
+        setCourses(transformedCourses);
+        console.log('✅ InPageCourseDetail - Loaded courses:', transformedCourses.length);
+      }
+    } catch (error) {
+      console.error('❌ InPageCourseDetail - Error loading courses:', error);
+    }
+  };
+
+  // Load courses when component mounts
+  useEffect(() => {
+    loadCourses();
+  }, [courseId]);
 
   // Fetch course details from API
   useEffect(() => {
@@ -98,7 +132,7 @@ const InPageCourseDetail = ({ course, department, onClose, onEdit }) => {
           description: "Comprehensive safety procedures training covering emergency protocols, evacuation procedures, and safety equipment usage. This course ensures all personnel are equipped with essential safety knowledge and skills required for aviation operations.",
           maxTrainees: 50,
           venue: "Training Center A - Room 101",
-          note: "This course is mandatory for all new employees and requires annual recertification.",
+          note: "",
           passScore: 80,
           startDate: "2024-01-15",
           endDate: "2024-01-29",
@@ -257,16 +291,54 @@ const InPageCourseDetail = ({ course, department, onClose, onEdit }) => {
     }
   };
 
-  const handleEditCourse = async (courseData) => {
-    console.log('Editing course:', courseData);
-    // TODO: Implement edit course API call
+  const handleEditCourse = async (updatedCourseData) => {
+    console.log('Course updated successfully:', updatedCourseData);
+    
+    // Update the course in the courses list
+    setCourses(prevCourses => 
+      prevCourses.map(c => 
+        c.id === updatedCourseData.id 
+          ? {
+              ...c,
+              name: updatedCourseData.name,
+              code: updatedCourseData.code,
+              description: updatedCourseData.description,
+              maxNumTrainee: updatedCourseData.maxNumTrainee,
+              venue: updatedCourseData.venue,
+              note: updatedCourseData.note,
+              passScore: updatedCourseData.passScore,
+              startDate: updatedCourseData.startDate ? new Date(updatedCourseData.startDate).toISOString().split('T')[0] : 'N/A',
+              endDate: updatedCourseData.endDate ? new Date(updatedCourseData.endDate).toISOString().split('T')[0] : 'N/A',
+              level: updatedCourseData.level
+            }
+          : c
+      )
+    );
+    
+    // Also update courseDetails if it matches
+    if (courseDetails && courseDetails.id === updatedCourseData.id) {
+      setCourseDetails(prev => ({
+        ...prev,
+        name: updatedCourseData.name,
+        code: updatedCourseData.code,
+        description: updatedCourseData.description,
+        maxTrainees: updatedCourseData.maxNumTrainee,
+        venue: updatedCourseData.venue,
+        note: updatedCourseData.note,
+        passScore: updatedCourseData.passScore,
+        startDate: updatedCourseData.startDate ? new Date(updatedCourseData.startDate).toISOString().split('T')[0] : 'N/A',
+        endDate: updatedCourseData.endDate ? new Date(updatedCourseData.endDate).toISOString().split('T')[0] : 'N/A',
+        level: updatedCourseData.level
+      }));
+    }
+    
     setShowEditCourse(false);
   };
 
   return (
-    <Container fluid className="py-3 course-detail">
+    <Container fluid className="py-2 course-detail" style={{ height: '100vh', overflow: 'hidden' }}>
       {/* Header với nút Back */}
-      <div className="d-flex align-items-center mb-4">
+      <div className="d-flex align-items-center mb-2">
         <Button 
           variant="outline-secondary" 
           size="sm" 
@@ -285,7 +357,7 @@ const InPageCourseDetail = ({ course, department, onClose, onEdit }) => {
       </div>
 
       {/* Action Buttons */}
-      <div className="d-flex justify-content-between align-items-center mb-5">
+      <div className="d-flex justify-content-between align-items-center mb-2">
         {/* Left Group - Enroll Trainees */}
         <div className="d-flex">
           <Button size="sm" variant="primary" onClick={handleEnrollTrainees}>
@@ -308,137 +380,146 @@ const InPageCourseDetail = ({ course, department, onClose, onEdit }) => {
         </div>
       </div>
 
-      {/* Course Details Section */}
-      <Card className="border-0 shadow-sm mb-5">
-        <Card.Header 
-          className="border-bottom py-3 collapsible-header"
-          onClick={() => setIsCourseInfoCollapsed(!isCourseInfoCollapsed)}
-          style={{ cursor: 'pointer' }}
-        >
-          <div className="d-flex justify-content-between align-items-center">
-            <h5 className="mb-0">
-              <Book className="me-2" />
-              Course Information
-            </h5>
-            <ChevronDown 
-              size={20} 
-              className={`text-muted chevron-icon ${isCourseInfoCollapsed ? 'rotated' : ''}`}
-            />
-          </div>
-        </Card.Header>
-        <Card.Body className={`py-4 collapsible-content ${isCourseInfoCollapsed ? 'collapsed' : 'expanded'}`}>
-          <Row className="g-4">
-            {/* Basic Information */}
-            <Col md={6}>
-              <div className="mb-4">
-                <h6 className="text-muted mb-2">Course Name</h6>
-                <p className="mb-0 fw-semibold">{courseDetails.name}</p>
-              </div>
-              <div className="mb-4">
-                <h6 className="text-muted mb-2">Course Code</h6>
-                <Badge bg="secondary" className="px-2 py-1">
-                  {courseDetails.code}
-                </Badge>
-              </div>
-              <div className="mb-4">
-                <h6 className="text-muted mb-2">Description</h6>
-                <p className="mb-0 text-muted small">{courseDetails.description}</p>
-              </div>
-              <div className="mb-4">
-                <h6 className="text-muted mb-2">Level</h6>
-                <Badge bg="info" className="px-2 py-1">
-                  {courseDetails.level}
-                </Badge>
-              </div>
-            </Col>
-
-            {/* Training Details */}
-            <Col md={6}>
-              <div className="mb-4">
-                <h6 className="text-muted mb-2">Max Number of Trainees</h6>
-                <div className="d-flex align-items-center">
-                  <PersonCheck size={16} className="me-2 text-primary" />
-                  <span className="fw-semibold">{courseDetails.maxTrainees}</span>
-                </div>
-              </div>
-              <div className="mb-4">
-                <h6 className="text-muted mb-2">Venue</h6>
-                <div className="d-flex align-items-center">
-                  <GeoAlt size={16} className="me-2 text-primary" />
-                  <span className="fw-semibold">{courseDetails.venue}</span>
-                </div>
-              </div>
-              <div className="mb-4">
-                <h6 className="text-muted mb-2">Pass Score</h6>
-                <div className="d-flex align-items-center">
-                  <Award size={16} className="me-2 text-primary" />
-                  <span className="fw-semibold">{courseDetails.passScore}%</span>
-                </div>
-              </div>
-              <div className="mb-4">
-                <h6 className="text-muted mb-2">Status</h6>
-                <Badge 
-                  bg={courseDetails.status === 'ACTIVE' ? 'success' : courseDetails.status === 'ARCHIVED' ? 'warning' : 'secondary'}
-                  className="px-2 py-1"
+      {/* Tab Interface */}
+      <Card className="border-0 shadow-sm mb-2" style={{ height: 'calc(100vh - 150px)' }}>
+        <Tab.Container activeKey={activeTab} onSelect={setActiveTab}>
+          <Card.Header className="border-bottom py-2">
+            <Nav variant="tabs" className="border-0">
+              <Nav.Item>
+                <Nav.Link 
+                  eventKey="course-info" 
+                  className="d-flex align-items-center"
+                  style={{ 
+                    border: 'none',
+                    color: activeTab === 'course-info' ? '#0d6efd' : '#6c757d',
+                    fontWeight: activeTab === 'course-info' ? '600' : '400'
+                  }}
                 >
-                  {courseDetails.status}
-                </Badge>
-              </div>
-            </Col>
+                  <Book className="me-2" size={16} />
+                  Course Information
+                </Nav.Link>
+              </Nav.Item>
+              <Nav.Item>
+                <Nav.Link 
+                  eventKey="subjects" 
+                  className="d-flex align-items-center"
+                  style={{ 
+                    border: 'none',
+                    color: activeTab === 'subjects' ? '#0d6efd' : '#6c757d',
+                    fontWeight: activeTab === 'subjects' ? '600' : '400'
+                  }}
+                >
+                  <FileText className="me-2" size={16} />
+                  Subjects
+                </Nav.Link>
+              </Nav.Item>
+              <Nav.Item>
+                <Nav.Link 
+                  eventKey="trainees" 
+                  className="d-flex align-items-center"
+                  style={{ 
+                    border: 'none',
+                    color: activeTab === 'trainees' ? '#0d6efd' : '#6c757d',
+                    fontWeight: activeTab === 'trainees' ? '600' : '400'
+                  }}
+                >
+                  <People className="me-2" size={16} />
+                  Trainees Roster
+                </Nav.Link>
+              </Nav.Item>
+            </Nav>
+          </Card.Header>
+          
+          <Card.Body className="p-0" style={{ height: 'calc(100% - 50px)', overflowY: 'auto' }}>
+            <Tab.Content>
+              {/* Course Information Tab */}
+              <Tab.Pane eventKey="course-info">
+                <div className="p-4">
+                  <Row className="g-4">
+                    {/* Basic Information */}
+                    <Col md={6}>
+                      <div className="mb-4">
+                        <h6 className="text-muted mb-2">Course Name</h6>
+                        <p className="mb-0 fw-semibold">{courseDetails.name}</p>
+                      </div>
+                      <div className="mb-4">
+                        <h6 className="text-muted mb-2">Course Code</h6>
+                        <Badge bg="secondary" className="px-2 py-1">
+                          {courseDetails.code}
+                        </Badge>
+                      </div>
+                      <div className="mb-4">
+                        <h6 className="text-muted mb-2">Description</h6>
+                        <p className="mb-0 text-muted small">{courseDetails.description}</p>
+                      </div>
+                      <div className="mb-4">
+                        <h6 className="text-muted mb-2">Level</h6>
+                        <Badge bg="info" className="px-2 py-1">
+                          {courseDetails.level}
+                        </Badge>
+                      </div>
+                    </Col>
 
-            {/* Date Information */}
-            <Col md={6}>
-              <div className="mb-4">
-                <h6 className="text-muted mb-2">Start Date</h6>
-                <div className="d-flex align-items-center">
-                  <Calendar size={16} className="me-2 text-primary" />
-                  <span className="fw-semibold">{courseDetails.startDate}</span>
-                </div>
-              </div>
-            </Col>
-            <Col md={6}>
-              <div className="mb-4">
-                <h6 className="text-muted mb-2">End Date</h6>
-                <div className="d-flex align-items-center">
-                  <Calendar size={16} className="me-2 text-primary" />
-                  <span className="fw-semibold">{courseDetails.endDate}</span>
-                </div>
-              </div>
-            </Col>
+                    {/* Training Details */}
+                    <Col md={6}>
+                      <div className="mb-4">
+                        <h6 className="text-muted mb-2">Max Number of Trainees</h6>
+                        <div className="d-flex align-items-center">
+                          <PersonCheck size={16} className="me-2 text-primary" />
+                          <span className="fw-semibold">{courseDetails.maxTrainees}</span>
+                        </div>
+                      </div>
+                      <div className="mb-4">
+                        <h6 className="text-muted mb-2">Venue</h6>
+                        <div className="d-flex align-items-center">
+                          <GeoAlt size={16} className="me-2 text-primary" />
+                          <span className="fw-semibold">{courseDetails.venue}</span>
+                        </div>
+                      </div>
+                      <div className="mb-4">
+                        <h6 className="text-muted mb-2">Pass Score</h6>
+                        <div className="d-flex align-items-center">
+                          <Award size={16} className="me-2 text-primary" />
+                          <span className="fw-semibold">{courseDetails.passScore}%</span>
+                        </div>
+                      </div>
+                      <div className="mb-4">
+                        <h6 className="text-muted mb-2">Status</h6>
+                        <Badge 
+                          bg={courseDetails.status === 'ACTIVE' ? 'success' : courseDetails.status === 'ARCHIVED' ? 'warning' : 'secondary'}
+                          className="px-2 py-1"
+                        >
+                          {courseDetails.status}
+                        </Badge>
+                      </div>
+                    </Col>
 
-            {/* Note */}
-            <Col md={12}>
-              <div className="mb-0">
-                <h6 className="text-muted mb-2">Note</h6>
-                <div className="d-flex align-items-start">
-                  <FileText size={16} className="me-2 text-primary mt-1" />
-                  <p className="mb-0 text-muted small">{courseDetails.note}</p>
-                </div>
-              </div>
-            </Col>
-          </Row>
-        </Card.Body>
-      </Card>
+                    {/* Date Information */}
+                    <Col md={6}>
+                      <div className="mb-4">
+                        <h6 className="text-muted mb-2">Start Date</h6>
+                        <div className="d-flex align-items-center">
+                          <Calendar size={16} className="me-2 text-primary" />
+                          <span className="fw-semibold">{courseDetails.startDate}</span>
+                        </div>
+                      </div>
+                    </Col>
+                    <Col md={6}>
+                      <div className="mb-4">
+                        <h6 className="text-muted mb-2">End Date</h6>
+                        <div className="d-flex align-items-center">
+                          <Calendar size={16} className="me-2 text-primary" />
+                          <span className="fw-semibold">{courseDetails.endDate}</span>
+                        </div>
+                      </div>
+                    </Col>
 
-      {/* Main Content */}
-      <Row className="g-4 mt-4">
-        {/* Subjects Table - Full Width */}
-        <Col xs={12}>
-          <Card className="border-0 shadow-sm mb-5">
-            <Card.Header 
-              className="border-bottom py-4 pb-3 collapsible-header"
-              onClick={() => setIsSubjectsCollapsed(!isSubjectsCollapsed)}
-              style={{ cursor: 'pointer' }}
-            >
-              <div className="d-flex justify-content-between align-items-center">
-                <h5 className="mb-0">Subjects</h5>
-                <ChevronDown 
-                  size={20} 
-                  className={`text-muted chevron-icon ${isSubjectsCollapsed ? 'rotated' : ''}`}
-                />
-              </div>
-            </Card.Header>
-            <Card.Body className={`p-0 collapsible-content ${isSubjectsCollapsed ? 'collapsed' : 'expanded'}`}>
+                  </Row>
+                </div>
+              </Tab.Pane>
+
+              {/* Subjects Tab */}
+              <Tab.Pane eventKey="subjects" style={{ height: '100%' }}>
                 <SubjectTable 
                   subjects={subjects}
                   loading={false}
@@ -446,27 +527,25 @@ const InPageCourseDetail = ({ course, department, onClose, onEdit }) => {
                   onEdit={handleEditSubject}
                   onDelete={handleDeleteSubject}
                 />
-            </Card.Body>
-          </Card>
-        </Col>
-        
-        {/* Trainees Roster - Full Width */}
-        <Col xs={12}>
-          <div className="mb-5">
-            <TraineeCountTable 
-              course={course} 
-              isCollapsed={isTraineesCollapsed}
-              onToggleCollapse={() => setIsTraineesCollapsed(!isTraineesCollapsed)}
-            />
-          </div>
-        </Col>
-      </Row>
+              </Tab.Pane>
+
+              {/* Trainees Tab */}
+              <Tab.Pane eventKey="trainees" style={{ height: '100%' }}>
+                <TraineeCountTable 
+                  course={course} 
+                />
+              </Tab.Pane>
+            </Tab.Content>
+          </Card.Body>
+        </Tab.Container>
+      </Card>
 
       {/* Modals */}
       <AddSubjectModal
         show={showAddSubject}
         onClose={() => setShowAddSubject(false)}
         onSave={handleAddSubject}
+        courseId={courseId}
       />
 
       <BulkImportSubjectsModal
