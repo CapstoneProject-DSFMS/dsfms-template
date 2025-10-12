@@ -123,6 +123,22 @@ export const traineeAPI = {
     } catch (error) {
       throw error.response?.data || error.message;
     }
+  },
+
+  // Get all trainees with role filter (for enrollment)
+  getTraineesForEnrollment: async (params = {}) => {
+    try {
+      const response = await apiClient.get('/users', { 
+        params: {
+          includeDeleted: true,
+          roleName: 'TRAINEE',
+          ...params
+        }
+      });
+      return response.data;
+    } catch (error) {
+      throw error.response?.data || error.message;
+    }
   }
 };
 

@@ -758,20 +758,20 @@ body, html {
   margin-bottom: 0 !important;
 }
 
-/* Ensure table fills container properly */
+/* Ensure table fills container properly - removed flex to prevent white space */
 .department-table-container {
-  display: flex;
-  flex-direction: column;
+  display: block;
 }
 
 .department-table-container .table {
-  flex: 1;
+  width: 100%;
 }
 
-/* Fix scroll container overflow */
+/* Fix scroll container overflow - only scroll table content, not dropdown */
 .department-table-container {
   overflow-y: auto !important;
-  overflow-x: visible !important;
+  overflow-x: hidden !important;
+  position: relative !important;
 }
 
 .department-table-container .table {
@@ -795,6 +795,21 @@ body, html {
   transform: none !important;
   max-height: none !important;
   overflow-y: visible !important;
+}
+
+/* Ensure parent containers don't clip dropdown */
+.card {
+  overflow: visible !important;
+}
+
+.card-body {
+  overflow: visible !important;
+}
+
+/* Table content should be visible for dropdown */
+.department-table-container .table {
+  overflow: visible !important;
+  margin-bottom: 0 !important;
 }
 
 /* Fix course actions dropdown specifically */
@@ -823,12 +838,72 @@ body, html {
   position: relative !important;
 }
 
-/* Fix any overflow issues in table container */
-.department-table-container {
+/* Fix any overflow issues in table container - removed conflicting rules */
+
+/* Ensure table container allows dropdown to show */
+.department-table-container .table tbody tr td {
+  overflow: visible !important;
+  position: static !important;
+}
+
+/* Remove last row specific positioning - handled by JS now */
+
+/* Ensure dropdown is always visible */
+.course-actions-dropdown .dropdown-menu {
+  position: fixed !important;
+  z-index: 1060 !important;
+  transform: none !important;
+  max-height: none !important;
   overflow: visible !important;
 }
 
-.department-table-container .table {
-  overflow: visible !important;
+/* Specific scroll styles for Subject and Trainee tables in tabs */
+.subject-table-scroll {
+  height: 100% !important;
+  overflow-y: auto !important;
+}
+
+.trainee-table-scroll {
+  height: 100% !important;
+  overflow-y: auto !important;
+}
+
+/* Subject table column width fixes */
+.subject-table-scroll .table th:nth-child(2),
+.subject-table-scroll .table td:nth-child(2) {
+  width: 120px !important;
+  min-width: 120px !important;
+  max-width: 120px !important;
+}
+
+.subject-table-scroll .table th:nth-child(3),
+.subject-table-scroll .table td:nth-child(3) {
+  width: 120px !important;
+  min-width: 120px !important;
+  max-width: 120px !important;
+}
+
+/* Add Subject Modal scroll fixes */
+.modal-body {
+  scrollbar-width: thin;
+  scrollbar-color: #6c757d #f8f9fa;
+}
+
+.modal-body::-webkit-scrollbar {
+  width: 8px;
+}
+
+.modal-body::-webkit-scrollbar-track {
+  background: #f8f9fa;
+  border-radius: 4px;
+}
+
+.modal-body::-webkit-scrollbar-thumb {
+  background: #6c757d;
+  border-radius: 4px;
+}
+
+.modal-body::-webkit-scrollbar-thumb:hover {
+  background: #495057;
 }
 

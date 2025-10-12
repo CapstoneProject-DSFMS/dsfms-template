@@ -8,6 +8,7 @@ import {
   X
 } from 'react-bootstrap-icons';
 import { useAuth } from '../../hooks/useAuth';
+import useProfile from '../../hooks/useProfile';
 import '../../styles/dropdown-clean.css';
 
 // Force remove box shadow from dropdown
@@ -37,11 +38,29 @@ const Header = ({ onToggleSidebar }) => {
   const [showDesktopDropdown, setShowDesktopDropdown] = useState(false);
   const dropdownRef = useRef(null);
   const { user, isLoading } = useAuth();
+  const { profile, getDisplayName: getProfileDisplayName } = useProfile();
   
   // Helper functions
   const getDisplayName = () => {
     if (!user) return 'Loading...';
-    return user.fullName || user.name || 'User';
+    
+    // Try to get fullName from profile first (most accurate)
+    if (profile && getProfileDisplayName() && getProfileDisplayName() !== 'Loading...') {
+      return getProfileDisplayName();
+    }
+    
+    // Try to get fullName from user object
+    if (user.fullName && user.fullName !== 'User') {
+      return user.fullName;
+    }
+    
+    // If user has firstName and lastName, construct full name
+    if (user.firstName && user.lastName) {
+      return `${user.firstName} ${user.lastName}`;
+    }
+    
+    // Fallback to name or default
+    return user.name || 'User';
   };
   
   const getEmail = () => {
@@ -86,6 +105,11 @@ const Header = ({ onToggleSidebar }) => {
     // Check for academic department pages (pattern: /academic/departments/:id)
     if (path.startsWith('/academic/departments/') && path !== '/academic/departments') {
       return 'Department Courses';
+    }
+    
+    // Check for enroll trainees page (pattern: /academic/course/:id/enroll-trainees)
+    if (path.includes('/enroll-trainees')) {
+      return 'Trainee Enrollments';
     }
     
     // Check for course detail page (pattern: /academic/course/:id)

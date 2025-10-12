@@ -71,12 +71,12 @@ const SubjectSelectionPanel = ({ selectedSubjects, onSelectionChange }) => {
   const isAllSelected = filteredSubjects.length > 0 && selectedSubjects.length === filteredSubjects.length;
 
   return (
-    <Card className="d-flex flex-column">
-      <Card.Header className="bg-white border-bottom">
+    <Card className="d-flex flex-column h-100" style={{ border: '1px solid #e9ecef', boxShadow: '0 2px 4px rgba(0,0,0,0.1)', overflow: 'hidden' }}>
+      <Card.Header className="bg-gradient-primary-custom text-white border-0">
         <div className="d-flex justify-content-between align-items-center">
-          <h6 className="mb-0">Select Subjects</h6>
+          <h6 className="mb-0 text-white">Select Subjects</h6>
           <Button 
-            variant="outline-primary" 
+            variant="outline-light" 
             size="sm"
             onClick={handleSelectAll}
           >
@@ -84,7 +84,7 @@ const SubjectSelectionPanel = ({ selectedSubjects, onSelectionChange }) => {
           </Button>
         </div>
       </Card.Header>
-      <Card.Body className="p-0">
+      <Card.Body className="p-0 d-flex flex-column" style={{ height: '500px' }}>
         {/* Search */}
         <div className="p-2 border-bottom">
           <Form.Control
@@ -97,7 +97,7 @@ const SubjectSelectionPanel = ({ selectedSubjects, onSelectionChange }) => {
         </div>
 
         {/* Subject List */}
-        <div style={{ maxHeight: '300px', overflowY: 'auto' }}>
+        <div style={{ flex: 1, overflowY: 'auto', minHeight: 0 }}>
           {loading ? (
             <div className="p-3 text-center">
               <Spinner animation="border" size="sm" className="me-2" />
@@ -116,7 +116,7 @@ const SubjectSelectionPanel = ({ selectedSubjects, onSelectionChange }) => {
               <div 
                 key={subject.id}
                 className="p-2 border-bottom d-flex align-items-center hover-bg-light"
-                style={{ cursor: 'pointer' }}
+                style={{ cursor: 'pointer', minWidth: 0 }}
                 onClick={() => handleSelectSubject(subject.id)}
               >
                 <div className="me-3">
@@ -126,9 +126,9 @@ const SubjectSelectionPanel = ({ selectedSubjects, onSelectionChange }) => {
                     <Square size={20} className="text-muted" />
                   )}
                 </div>
-                <div className="flex-grow-1">
-                  <div className="fw-semibold">{subject.name}</div>
-                  <small className="text-muted">{subject.code}</small>
+                <div className="flex-grow-1" style={{ minWidth: 0, overflow: 'hidden' }}>
+                  <div className="fw-semibold text-truncate" title={subject.name}>{subject.name}</div>
+                  <small className="text-muted text-truncate d-block" title={subject.code}>{subject.code}</small>
                 </div>
               </div>
             ))
@@ -136,7 +136,7 @@ const SubjectSelectionPanel = ({ selectedSubjects, onSelectionChange }) => {
         </div>
 
         {/* Summary */}
-        <div className="p-2 bg-light border-top">
+        <div className="p-2 bg-light border-top flex-shrink-0">
           <small className="text-muted">
             {selectedSubjects.length} of {filteredSubjects.length} subjects selected
           </small>

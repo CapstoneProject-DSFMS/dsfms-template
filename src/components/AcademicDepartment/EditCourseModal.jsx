@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { Modal, Button, Form, Row, Col, Alert } from 'react-bootstrap';
 import { Pencil, X, Save } from 'react-bootstrap-icons';
+import { toast } from 'react-toastify';
+import apiClient from '../../api/config';
 
 const EditCourseModal = ({ show, onClose, onSave, course, loading = false }) => {
   const [formData, setFormData] = useState({
@@ -99,6 +101,15 @@ const EditCourseModal = ({ show, onClose, onSave, course, loading = false }) => 
 
     if (!formData.startDate) {
       newErrors.startDate = 'Start date is required';
+    } else {
+      // Check if start date is not in the past
+      const today = new Date();
+      today.setHours(0, 0, 0, 0); // Reset time to start of day
+      const startDate = new Date(formData.startDate);
+      
+      if (startDate < today) {
+        newErrors.startDate = 'Start date cannot be in the past';
+      }
     }
 
     if (!formData.endDate) {
@@ -121,10 +132,38 @@ const EditCourseModal = ({ show, onClose, onSave, course, loading = false }) => 
     }
 
     try {
-      await onSave(formData);
+      // Prepare data for API call
+      const courseData = {
+        name: formData.name.trim(),
+        description: formData.description.trim(),
+        code: formData.code.trim(),
+        maxNumTrainee: parseInt(formData.maxTrainees),
+        venue: formData.venue.trim(),
+        note: formData.note.trim(),
+        passScore: parseInt(formData.passScore),
+        startDate: new Date(formData.startDate).toISOString(),
+        endDate: new Date(formData.endDate).toISOString(),
+        level: formData.level
+      };
+
+      // Call API to update course
+      const response = await apiClient.put(`/courses/${course.id}`, courseData);
+      
+      // Show success toast
+      toast.success('Course updated successfully!');
+      
+      // Call onSave callback with updated data from API response
+      if (onSave) {
+        await onSave(response.data || courseData);
+      }
+      
       handleClose();
     } catch (error) {
-      console.error('Error saving course:', error);
+      console.error('Error updating course:', error);
+      
+      // Show error toast
+      const errorMessage = error.response?.data?.message || error.message || 'Failed to update course';
+      toast.error(`Error: ${errorMessage}`);
     }
   };
 
@@ -230,21 +269,6 @@ const EditCourseModal = ({ show, onClose, onSave, course, loading = false }) => 
                   <option value="BEGINNER">Beginner</option>
                   <option value="INTERMEDIATE">Intermediate</option>
                   <option value="ADVANCED">Advanced</option>
-                </Form.Select>
-              </Form.Group>
-            </Col>
-            <Col md={6}>
-              <Form.Group>
-                <Form.Label>Status</Form.Label>
-                <Form.Select
-                  name="status"
-                  value={formData.status}
-                  onChange={handleInputChange}
-                  disabled={loading}
-                >
-                  <option value="ACTIVE">Active</option>
-                  <option value="ARCHIVED">Archived</option>
-                  <option value="PLANNED">Planned</option>
                 </Form.Select>
               </Form.Group>
             </Col>

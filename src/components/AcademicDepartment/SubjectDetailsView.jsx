@@ -1,17 +1,15 @@
 import React, { useState, useEffect } from 'react';
-import { Container, Row, Col, Card, Button, Table, Badge } from 'react-bootstrap';
+import { Container, Row, Col, Card, Button, Table, Badge, Nav, Tab } from 'react-bootstrap';
 import { toast } from 'react-toastify';
 import { 
   FileTextFill, 
   Plus, 
   Pencil, 
   Trash, 
-  People,
   Clock,
   PersonCheckFill,
   Calendar,
-  ArrowLeft,
-  ChevronDown
+  ArrowLeft
 } from 'react-bootstrap-icons';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { PermissionWrapper } from '../Common';
@@ -19,7 +17,6 @@ import { API_PERMISSIONS } from '../../constants/apiPermissions';
 import { LoadingSkeleton, SortIcon } from '../Common';
 import useTableSort from '../../hooks/useTableSort';
 import TrainerActions from './TrainerActions';
-import TraineeActions from './TraineeActions';
 import DisableSubjectModal from './DisableSubjectModal';
 import EditSubjectModal from './EditSubjectModal';
 import EditTrainerModal from './EditTrainerModal';
@@ -31,7 +28,6 @@ const SubjectDetailsView = ({ subjectId, courseId }) => {
   const location = useLocation();
   const [subject, setSubject] = useState(null);
   const [trainers, setTrainers] = useState([]);
-  const [trainees, setTrainees] = useState([]);
   const [loading, setLoading] = useState(true);
   const [showDisableSubject, setShowDisableSubject] = useState(false);
   const [showEditSubject, setShowEditSubject] = useState(false);
@@ -43,13 +39,10 @@ const SubjectDetailsView = ({ subjectId, courseId }) => {
   const [isAddingTrainer] = useState(false);
   const [isEditingTrainer] = useState(false);
   
-  // Collapse states for tables
-  const [isSubjectInfoCollapsed, setIsSubjectInfoCollapsed] = useState(false);
-  const [isTrainersCollapsed, setIsTrainersCollapsed] = useState(false);
-  const [isTraineesCollapsed, setIsTraineesCollapsed] = useState(false);
+  // Tab state
+  const [activeTab, setActiveTab] = useState('subject-info');
   
   const { sortedData } = useTableSort(trainers);
-  const { sortedData: sortedTrainees } = useTableSort(trainees);
 
   // Load subject data from API
   useEffect(() => {
@@ -83,17 +76,6 @@ const SubjectDetailsView = ({ subjectId, courseId }) => {
               status: 'ACTIVE',
               specialization: 'Emergency Procedures',
               experience: '3 years'
-            }
-          ]);
-          setTrainees([
-            {
-              id: 'tr1',
-              name: 'Mike Wilson',
-              email: 'mike.wilson@example.com',
-              phone: '+1 234 567 8902',
-              status: 'ENROLLED',
-              progress: '75%',
-              lastActivity: '2024-01-20'
             }
           ]);
           console.log('✅ SubjectDetailsView - Loaded subject:', response.name);
@@ -217,199 +199,132 @@ const SubjectDetailsView = ({ subjectId, courseId }) => {
   return (
     <Container className="py-4 subject-details">
       {/* Header */}
-      <div className="d-flex justify-content-between align-items-center mb-4">
-        <div>
-          <h2 className="mb-1">{subject.name}</h2>
-          <p className="text-muted mb-0">Subject Code: {subject.code}</p>
+      <div className="d-flex justify-content-between align-items-start mb-4">
+        <div className="d-flex align-items-center">
+          <Button variant="outline-secondary" onClick={handleBack} className="me-3">
+            <ArrowLeft className="me-2" size={16} />
+            Back to Course
+          </Button>
+          <div>
+            <h2 className="mb-1">{subject.name}</h2>
+            <p className="text-muted mb-0">Subject Code: {subject.code}</p>
+          </div>
         </div>
-        <Button variant="outline-secondary" onClick={handleBack}>
-          <ArrowLeft className="me-2" size={16} />
-          Back to Course
-        </Button>
       </div>
 
-      {/* Subject Information */}
-      <Row className="mb-4">
-        <Col xs={12}>
-          <Card className="border-0 shadow-sm">
-            <Card.Header 
-              className="collapsible-header"
-              onClick={() => setIsSubjectInfoCollapsed(!isSubjectInfoCollapsed)}
-              style={{ cursor: 'pointer' }}
-            >
-              <div className="d-flex justify-content-between align-items-center">
-                <div className="d-flex align-items-center">
-                  <FileTextFill className="me-3" size={20} />
-                  <h5 className="mb-0 text-white">Subject Information</h5>
-                </div>
-                <ChevronDown 
-                  size={20} 
-                  className={`text-white chevron-icon ${isSubjectInfoCollapsed ? 'rotated' : ''}`}
-                />
-              </div>
-            </Card.Header>
-            <Card.Body className={`collapsible-content ${isSubjectInfoCollapsed ? 'collapsed' : 'expanded'}`}>
-              <Row>
-                <Col md={6}>
-                  <p><strong>Name:</strong> {subject.name}</p>
-                  <p><strong>Code:</strong> {subject.code}</p>
-                  <p><strong>Description:</strong> {subject.description}</p>
-                  <p><strong>Method:</strong> {subject.method}</p>
-                  <p><strong>Duration:</strong> {subject.duration} days</p>
-                </Col>
-                <Col md={6}>
-                  <p><strong>Type:</strong> {subject.type}</p>
-                  <p><strong>Pass Score:</strong> {subject.passScore}%</p>
-                  <p><strong>Room:</strong> {subject.roomName}</p>
-                  <p><strong>Time Slot:</strong> {subject.timeSlot}</p>
-                  <p><strong>Start Date:</strong> {new Date(subject.startDate).toLocaleDateString()}</p>
-                  <p><strong>End Date:</strong> {new Date(subject.endDate).toLocaleDateString()}</p>
-                </Col>
-              </Row>
-              {subject.remarkNote && (
+      {/* Tab Interface */}
+      <Card className="border-0 shadow-sm">
+        <Tab.Container activeKey={activeTab} onSelect={setActiveTab}>
+          <Card.Header className="border-bottom py-2">
+            <Nav variant="tabs" className="border-0">
+              <Nav.Item>
+                <Nav.Link 
+                  eventKey="subject-info" 
+                  className="d-flex align-items-center"
+                  style={{ 
+                    border: 'none',
+                    color: activeTab === 'subject-info' ? '#0d6efd' : '#6c757d',
+                    fontWeight: activeTab === 'subject-info' ? '600' : '400'
+                  }}
+                >
+                  <FileTextFill className="me-2" size={16} />
+                  Subject Information
+                </Nav.Link>
+              </Nav.Item>
+              <Nav.Item>
+                <Nav.Link 
+                  eventKey="trainers" 
+                  className="d-flex align-items-center"
+                  style={{ 
+                    border: 'none',
+                    color: activeTab === 'trainers' ? '#0d6efd' : '#6c757d',
+                    fontWeight: activeTab === 'trainers' ? '600' : '400'
+                  }}
+                >
+                  <PersonCheckFill className="me-2" size={16} />
+                  Trainers ({trainers.length})
+                </Nav.Link>
+              </Nav.Item>
+            </Nav>
+          </Card.Header>
+          
+          <Card.Body className="p-4">
+            <Tab.Content>
+              {/* Subject Information Tab */}
+              <Tab.Pane eventKey="subject-info">
                 <Row>
-                  <Col xs={12}>
-                    <p><strong>Remark Note:</strong> {subject.remarkNote}</p>
+                  <Col md={6}>
+                    <p><strong>Name:</strong> {subject.name}</p>
+                    <p><strong>Code:</strong> {subject.code}</p>
+                    <p><strong>Description:</strong> {subject.description}</p>
+                    <p><strong>Method:</strong> {subject.method}</p>
+                    <p><strong>Duration:</strong> {subject.duration} days</p>
+                  </Col>
+                  <Col md={6}>
+                    <p><strong>Type:</strong> {subject.type}</p>
+                    <p><strong>Pass Score:</strong> {subject.passScore}%</p>
+                    <p><strong>Room:</strong> {subject.roomName}</p>
+                    <p><strong>Time Slot:</strong> {subject.timeSlot}</p>
+                    <p><strong>Start Date:</strong> {new Date(subject.startDate).toLocaleDateString()}</p>
+                    <p><strong>End Date:</strong> {new Date(subject.endDate).toLocaleDateString()}</p>
                   </Col>
                 </Row>
-              )}
-            </Card.Body>
-          </Card>
-        </Col>
-      </Row>
+                {subject.remarkNote && (
+                  <Row>
+                    <Col xs={12}>
+                      <p><strong>Remark Note:</strong> {subject.remarkNote}</p>
+                    </Col>
+                  </Row>
+                )}
+              </Tab.Pane>
 
-      {/* Trainers */}
-      <Row className="mb-4" style={{ marginTop: '2rem', marginBottom: '2rem' }}>
-        <Col xs={12}>
-          <Card className="border-0 shadow-sm">
-            <Card.Header 
-              className="collapsible-header"
-              onClick={() => {
-                console.log('🔍 Trainers header clicked, current state:', isTrainersCollapsed);
-                setIsTrainersCollapsed(!isTrainersCollapsed);
-              }}
-              style={{ cursor: 'pointer' }}
-            >
-              <div className="d-flex justify-content-between align-items-center">
-                <div className="d-flex align-items-center">
-                  <PersonCheckFill className="me-3" size={20} />
-                  <h5 className="mb-0 text-white">Trainers ({trainers.length})</h5>
-                </div>
-                <ChevronDown 
-                  size={20} 
-                  className={`text-white chevron-icon ${isTrainersCollapsed ? 'rotated' : ''}`}
-                />
-              </div>
-            </Card.Header>
-            <Card.Body className={`collapsible-content ${isTrainersCollapsed ? 'collapsed' : 'expanded'}`}>
-              <Table hover>
-                <thead>
-                  <tr>
-                    <th>Name</th>
-                    <th>Email</th>
-                    <th>Phone</th>
-                    <th>Status</th>
-                    <th>Specialization</th>
-                    <th>Experience</th>
-                    <th>Actions</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {sortedData.map((trainer) => (
-                    <tr key={trainer.id}>
-                      <td>{trainer.name}</td>
-                      <td>{trainer.email}</td>
-                      <td>{trainer.phone}</td>
-                      <td>
-                        <Badge bg={trainer.status === 'ACTIVE' ? 'success' : 'secondary'}>
-                          {trainer.status}
-                        </Badge>
-                      </td>
-                      <td>{trainer.specialization}</td>
-                      <td>{trainer.experience}</td>
-                      <td>
-                        <TrainerActions
-                          trainer={trainer}
-                          onEdit={() => {
-                            setSelectedTrainer(trainer);
-                            setShowEditTrainer(true);
-                          }}
-                          onDelete={() => console.log('Delete trainer:', trainer.id)}
-                        />
-                      </td>
+              {/* Trainers Tab */}
+              <Tab.Pane eventKey="trainers">
+                <Table hover>
+                  <thead>
+                    <tr>
+                      <th>Name</th>
+                      <th>Email</th>
+                      <th>Phone</th>
+                      <th>Status</th>
+                      <th>Specialization</th>
+                      <th>Experience</th>
+                      <th>Actions</th>
                     </tr>
-                  ))}
-                </tbody>
-              </Table>
-            </Card.Body>
-          </Card>
-        </Col>
-      </Row>
+                  </thead>
+                  <tbody>
+                    {sortedData.map((trainer) => (
+                      <tr key={trainer.id}>
+                        <td>{trainer.name}</td>
+                        <td>{trainer.email}</td>
+                        <td>{trainer.phone}</td>
+                        <td>
+                          <Badge bg={trainer.status === 'ACTIVE' ? 'success' : 'secondary'}>
+                            {trainer.status}
+                          </Badge>
+                        </td>
+                        <td>{trainer.specialization}</td>
+                        <td>{trainer.experience}</td>
+                        <td>
+                          <TrainerActions
+                            trainer={trainer}
+                            onEdit={() => {
+                              setSelectedTrainer(trainer);
+                              setShowEditTrainer(true);
+                            }}
+                            onDelete={() => console.log('Delete trainer:', trainer.id)}
+                          />
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </Table>
+              </Tab.Pane>
 
-      {/* Trainees */}
-      <Row className="mb-4">
-        <Col xs={12}>
-          <Card className="border-0 shadow-sm">
-            <Card.Header 
-              className="collapsible-header"
-              onClick={() => {
-                console.log('🔍 Trainees header clicked, current state:', isTraineesCollapsed);
-                setIsTraineesCollapsed(!isTraineesCollapsed);
-              }}
-              style={{ cursor: 'pointer' }}
-            >
-              <div className="d-flex justify-content-between align-items-center">
-                <div className="d-flex align-items-center">
-                  <People className="me-3" size={20} />
-                  <h5 className="mb-0 text-white">Trainees ({trainees.length})</h5>
-                </div>
-                <ChevronDown 
-                  size={20} 
-                  className={`text-white chevron-icon ${isTraineesCollapsed ? 'rotated' : ''}`}
-                />
-              </div>
-            </Card.Header>
-            <Card.Body className={`collapsible-content ${isTraineesCollapsed ? 'collapsed' : 'expanded'}`}>
-              <Table hover>
-                <thead>
-                  <tr>
-                    <th>Name</th>
-                    <th>Email</th>
-                    <th>Phone</th>
-                    <th>Status</th>
-                    <th>Progress</th>
-                    <th>Last Activity</th>
-                    <th>Actions</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {sortedTrainees.map((trainee) => (
-                    <tr key={trainee.id}>
-                      <td>{trainee.name}</td>
-                      <td>{trainee.email}</td>
-                      <td>{trainee.phone}</td>
-                      <td>
-                        <Badge bg={trainee.status === 'ENROLLED' ? 'success' : 'secondary'}>
-                          {trainee.status}
-                        </Badge>
-                      </td>
-                      <td>{trainee.progress}</td>
-                      <td>{trainee.lastActivity}</td>
-                      <td>
-                        <TraineeActions
-                          trainee={trainee}
-                          onEdit={() => console.log('Edit trainee:', trainee.id)}
-                          onDelete={() => console.log('Delete trainee:', trainee.id)}
-                        />
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </Table>
-            </Card.Body>
-          </Card>
-        </Col>
-      </Row>
+            </Tab.Content>
+          </Card.Body>
+        </Tab.Container>
+      </Card>
 
       {/* Modals */}
       <DisableSubjectModal

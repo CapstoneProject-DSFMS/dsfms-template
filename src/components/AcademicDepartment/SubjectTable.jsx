@@ -172,7 +172,7 @@ const SubjectTable = ({ subjects = [], loading = false, onView, onEdit, onDelete
   };
 
   return (
-    <div className="department-table-container" style={{ overflowX: 'hidden' }}>
+    <div className="department-table-container subject-table-scroll" style={{ overflowX: 'hidden' }}>
       <Table hover className="mb-0 table-mobile-responsive" style={{ tableLayout: 'fixed', width: '100%' }}>
         <thead className="sticky-header bg-gradient-primary-custom">
           <tr>
@@ -241,26 +241,36 @@ const SubjectTable = ({ subjects = [], loading = false, onView, onEdit, onDelete
                   {subject.name}
                 </div>
               </td>
-              <td className="show-mobile">
+              <td className="show-mobile" style={{ maxWidth: '120px', overflow: 'hidden' }}>
                 <Badge 
                   bg="secondary" 
                   className="px-2 py-1"
                   style={{ 
                     fontSize: '0.75rem',
-                    width: 'fit-content'
+                    maxWidth: '100%',
+                    overflow: 'hidden',
+                    textOverflow: 'ellipsis',
+                    whiteSpace: 'nowrap',
+                    display: 'inline-block'
                   }}
+                  title={subject.code}
                 >
                   {subject.code}
                 </Badge>
               </td>
-              <td className="show-mobile">
+              <td className="show-mobile" style={{ maxWidth: '120px', overflow: 'hidden' }}>
                 <Badge 
                   bg={getMethodBadgeColor(subject.method)} 
                   className="px-2 py-1"
                   style={{ 
                     fontSize: '0.75rem',
-                    width: 'fit-content'
+                    maxWidth: '100%',
+                    overflow: 'hidden',
+                    textOverflow: 'ellipsis',
+                    whiteSpace: 'nowrap',
+                    display: 'inline-block'
                   }}
+                  title={subject.method}
                 >
                   {subject.method}
                 </Badge>
