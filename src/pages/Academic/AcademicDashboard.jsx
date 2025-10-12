@@ -88,9 +88,6 @@ const AcademicDashboard = () => {
               <div>
                 <h2 className="mb-1">Academic Dashboard</h2>
               </div>
-              <Badge bg="success" className="fs-6 px-3 py-2">
-                Academic Department
-              </Badge>
             </div>
           </Col>
         </Row>

@@ -68,12 +68,13 @@ const DepartmentModal = ({ show, department, mode, onSave, onClose, availableUse
     setIsSubmitting(true);
     try {
       const departmentData = {
-        ...formData,
         name: formData.name.trim(),
         code: formData.code.trim(),
-        departmentHead: availableUsers.find(user => user.id === formData.departmentHeadId)
+        description: formData.description.trim(),
+        headUserId: formData.departmentHeadId
       };
       
+      console.log('🔍 Department data being sent:', departmentData);
       await onSave(departmentData);
     } catch (error) {
       console.error('Error saving department:', error);
@@ -330,7 +331,7 @@ const DepartmentModal = ({ show, department, mode, onSave, onClose, availableUse
             >
               {isSubmitting ? (
                 <>
-                  <span className="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
+                  <span className="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true" style={{ width: '1rem', height: '1rem' }}></span>
                   Saving...
                 </>
               ) : (

@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { Nav, Button } from "react-bootstrap";
-import { Link, useLocation } from "react-router-dom";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 import {
   House,
   People,
@@ -26,6 +26,7 @@ const Sidebar = ({ collapsed, onClose }) => {
   const { hasModuleAccess, hasPermission, userPermissions } = usePermissions();
   const { user } = useAuth();
   const location = useLocation();
+  const navigate = useNavigate();
   // Only load departments for ACADEMIC_DEPARTMENT role
   const { departments, loading: departmentsLoading } = useDepartmentManagement(user?.role === 'ACADEMIC_DEPARTMENT');
   const [isDepartmentDropdownOpen, setIsDepartmentDropdownOpen] = useState(false);
@@ -38,7 +39,7 @@ const Sidebar = ({ collapsed, onClose }) => {
   console.log('🔍 Sidebar - User permissions:', userPermissions);
   console.log('🔍 Sidebar - Departments:', departments);
   
-  // Filter active departments for Academic Department
+  // Filter active departments
   const activeDepartments = departments.filter(dept => dept.status === 'ACTIVE');
 
   const allNavItems = [
@@ -207,7 +208,7 @@ const Sidebar = ({ collapsed, onClose }) => {
         collapsed ? "sidebar-collapsed" : ""
       }`}
       style={{
-        width: collapsed ? "60px" : "320px",
+        width: collapsed ? "60px" : "260px",
         minHeight: "100vh",
         transition: "width 0.3s ease",
         position: "sticky",
@@ -369,7 +370,7 @@ const Sidebar = ({ collapsed, onClose }) => {
           );
         })}
 
-        {/* Academic Department - Department dropdown */}
+        {/* Department dropdown */}
         {user?.role === 'ACADEMIC_DEPARTMENT' && (
           <Nav.Item className="mb-3">
             <div className="position-relative">
@@ -379,12 +380,6 @@ const Sidebar = ({ collapsed, onClose }) => {
                 style={{
                   minHeight: collapsed ? "48px" : "auto",
                   backgroundColor: location.pathname.startsWith('/academic/departments') ? "rgba(255, 255, 255, 0.1)" : "transparent",
-                  cursor: "pointer"
-                }}
-                onClick={() => {
-                  if (!collapsed) {
-                    setIsDepartmentDropdownOpen(!isDepartmentDropdownOpen);
-                  }
                 }}
               >
                 <Building
@@ -398,12 +393,26 @@ const Sidebar = ({ collapsed, onClose }) => {
                 />
                 {!collapsed && (
                   <>
-                    <span className="sidebar-nav-label flex-grow-1">Department</span>
+                    <span 
+                      className="sidebar-nav-label flex-grow-1"
+                      style={{ cursor: "pointer" }}
+                      onClick={() => {
+                        setIsDepartmentDropdownOpen(!isDepartmentDropdownOpen);
+                        navigate('/academic/departments');
+                      }}
+                    >
+                      Department
+                    </span>
                     <ChevronDown
                       size={16}
-                      className={`ms-auto transition-transform ${isDepartmentDropdownOpen ? "rotate-180" : ""}`}
+                      className="ms-auto"
                       style={{
-                        transition: "transform 0.3s ease"
+                        transition: "transform 0.3s ease",
+                        cursor: "pointer",
+                        transform: isDepartmentDropdownOpen ? "rotate(180deg)" : "rotate(0deg)"
+                      }}
+                      onClick={() => {
+                        setIsDepartmentDropdownOpen(!isDepartmentDropdownOpen);
                       }}
                     />
                   </>
