@@ -65,7 +65,7 @@ const Header = ({ onToggleSidebar }) => {
       // Academic routes
       '/academic': 'Academic Dashboard',
       '/academic/dashboard': 'Academic Dashboard',
-      '/academic/departments': 'Department Selection',
+      '/academic/departments': 'Department Management',
       '/academic/profile': 'Profile',
       
       // Trainee routes
@@ -90,7 +90,7 @@ const Header = ({ onToggleSidebar }) => {
     
     // Check for course detail page (pattern: /academic/course/:id)
     if (path.startsWith('/academic/course/') && !path.includes('/subject/')) {
-      return 'Course Details';
+      return 'Department Details';
     }
     
     // Check for course detail page (pattern: /academic/course-detail/:id)

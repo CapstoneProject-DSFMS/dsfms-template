@@ -92,16 +92,32 @@ const AddCourseModal = ({ show, onClose, onSave, loading = false }) => {
       newErrors.venue = 'Venue is required';
     }
 
-    if (!formData.passScore || isNaN(formData.passScore) || parseInt(formData.passScore) < 0 || parseInt(formData.passScore) > 100) {
-      newErrors.passScore = 'Pass score must be between 0 and 100';
+    if (!formData.passScore || isNaN(formData.passScore) || !Number.isInteger(parseFloat(formData.passScore)) || parseInt(formData.passScore) < 0 || parseInt(formData.passScore) > 100) {
+      newErrors.passScore = 'Pass score must be an integer between 0 and 100';
     }
 
     if (!formData.startDate) {
       newErrors.startDate = 'Start date is required';
+    } else {
+      // Check if start date is in the past
+      const today = new Date();
+      today.setHours(0, 0, 0, 0); // Reset time to start of day
+      const startDate = new Date(formData.startDate);
+      if (startDate < today) {
+        newErrors.startDate = 'Start date cannot be in the past';
+      }
     }
 
     if (!formData.endDate) {
       newErrors.endDate = 'End date is required';
+    } else {
+      // Check if end date is in the past
+      const today = new Date();
+      today.setHours(0, 0, 0, 0); // Reset time to start of day
+      const endDate = new Date(formData.endDate);
+      if (endDate < today) {
+        newErrors.endDate = 'End date cannot be in the past';
+      }
     }
 
     if (formData.startDate && formData.endDate && new Date(formData.startDate) >= new Date(formData.endDate)) {
@@ -198,7 +214,7 @@ const AddCourseModal = ({ show, onClose, onSave, loading = false }) => {
             </Col>
             <Col md={6}>
               <Form.Group>
-                <Form.Label>Pass Score (%) *</Form.Label>
+                <Form.Label>Pass Score *</Form.Label>
                 <Form.Control
                   type="number"
                   name="passScore"
@@ -208,6 +224,7 @@ const AddCourseModal = ({ show, onClose, onSave, loading = false }) => {
                   disabled={loading}
                   min="0"
                   max="100"
+                  step="1"
                 />
                 <Form.Control.Feedback type="invalid">
                   {errors.passScore}
