@@ -31,6 +31,9 @@ const CourseSelectionView = () => {
               <Building size={48} className="text-primary mb-3" />
               <h2 className="mb-2">Academic Department Management</h2>
               <p className="text-muted">Select a department to view its details, including list of courses and related subjects</p>
+              <p className="text-muted small">
+                Total Departments: <strong>{activeDepartments.length}</strong>
+              </p>
             </div>
           </Col>
         </Row>
@@ -62,7 +65,20 @@ const CourseSelectionView = () => {
                       </div>
                     </div>
                     
-                    <p className="text-muted mb-3 flex-grow-1">{department.description}</p>
+                    <p 
+                      className="text-muted mb-3 flex-grow-1" 
+                      style={{
+                        display: '-webkit-box',
+                        WebkitLineClamp: 3,
+                        WebkitBoxOrient: 'vertical',
+                        overflow: 'hidden',
+                        textOverflow: 'ellipsis',
+                        lineHeight: '1.4',
+                        maxHeight: '4.2em' // 3 lines * 1.4 line-height
+                      }}
+                    >
+                      {department.description}
+                    </p>
                     
                     <Button 
                       variant="outline-primary" 

@@ -333,7 +333,8 @@ const useDepartmentManagement = (shouldLoad = true) => {
   const getAvailableUsers = async () => {
     try {
       const response = await departmentAPI.getDepartmentHeads();
-      return response || [];
+      // API returns { users: [...], totalItems: 7 }
+      return response?.users || [];
     } catch (error) {
       console.error('Error fetching department heads:', error);
       toast.error('Failed to load department heads');
