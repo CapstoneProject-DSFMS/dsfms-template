@@ -4,6 +4,7 @@ import { X, Save, Eye } from 'react-bootstrap-icons';
 import { toast } from 'react-toastify';
 import { departmentAPI } from '../../../api/department';
 import { roleAPI } from '../../../api/role';
+import { userAPI } from '../../../api/user';
 
 const UserModal = ({ show, user, mode, onSave, onClose }) => {
   const [formData, setFormData] = useState({
@@ -30,6 +31,7 @@ const UserModal = ({ show, user, mode, onSave, onClose }) => {
   const [departmentsLoading, setDepartmentsLoading] = useState(false);
   const [roles, setRoles] = useState([]);
   const [rolesLoading, setRolesLoading] = useState(false);
+  const [existingDepartmentHeads, setExistingDepartmentHeads] = useState([]);
 
   // Fetch departments from API
   const fetchDepartments = async () => {
@@ -82,11 +84,27 @@ const UserModal = ({ show, user, mode, onSave, onClose }) => {
     'Vietnam', 'Yemen'
   ];
 
+  // Fetch existing department heads - use departments API
+  const fetchExistingDepartmentHeads = async () => {
+    try {
+      // Use departments API to get all departments with headUser info
+      const response = await departmentAPI.getDepartments({ includeDeleted: true });
+      
+      // Extract departments that have headUser
+      const departmentsWithHeads = response?.departments?.filter(dept => dept.headUser) || [];
+      setExistingDepartmentHeads(departmentsWithHeads);
+    } catch (error) {
+      console.error('Error fetching departments with heads:', error);
+      setExistingDepartmentHeads([]);
+    }
+  };
+
   // Fetch departments and roles when modal opens
   useEffect(() => {
     if (show) {
       fetchDepartments();
       fetchRoles();
+      fetchExistingDepartmentHeads();
     }
   }, [show]);
 
@@ -137,18 +155,18 @@ const UserModal = ({ show, user, mode, onSave, onClose }) => {
 
     if (!formData.firstName.trim()) {
       newErrors.firstName = 'First name is required';
-    } else if (!/^[a-zA-Z\s]+$/.test(formData.firstName.trim())) {
-      newErrors.firstName = 'First name cannot contain special characters';
+    } else if (!/^[a-zA-ZÀÁÂÃÈÉÊÌÍÒÓÔÕÙÚĂĐĨŨƠàáâãèéêìíòóôõùúăđĩũơƯĂÂÊÔưăâêô\s]+$/.test(formData.firstName.trim())) {
+      newErrors.firstName = 'First name can only contain letters and spaces';
     }
 
     if (!formData.lastName.trim()) {
       newErrors.lastName = 'Last name is required';
-    } else if (!/^[a-zA-Z\s]+$/.test(formData.lastName.trim())) {
-      newErrors.lastName = 'Last name cannot contain special characters';
+    } else if (!/^[a-zA-ZÀÁÂÃÈÉÊÌÍÒÓÔÕÙÚĂĐĨŨƠàáâãèéêìíòóôõùúăđĩũơƯĂÂÊÔưăâêô\s]+$/.test(formData.lastName.trim())) {
+      newErrors.lastName = 'Last name can only contain letters and spaces';
     }
 
-    if (formData.middleName.trim() && !/^[a-zA-Z\s]+$/.test(formData.middleName.trim())) {
-      newErrors.middleName = 'Middle name cannot contain special characters';
+    if (formData.middleName.trim() && !/^[a-zA-ZÀÁÂÃÈÉÊÌÍÒÓÔÕÙÚĂĐĨŨƠàáâãèéêìíòóôõùúăđĩũơƯĂÂÊÔưăâêô\s]+$/.test(formData.middleName.trim())) {
+      newErrors.middleName = 'Middle name can only contain letters and spaces';
     }
 
     if (!formData.email.trim()) {
@@ -173,7 +191,32 @@ const UserModal = ({ show, user, mode, onSave, onClose }) => {
       newErrors.role = 'Role is required';
     }
 
-    // Department is not required for any role
+    // Department head validation
+    if (formData.role === 'DEPARTMENT_HEAD') {
+      // First check if department is provided
+      if (!formData.department.trim()) {
+        newErrors.department = 'Department is required for department heads';
+      } else {
+        // Then check if this department already has a head (excluding current user in edit mode)
+        const existingHead = existingDepartmentHeads.find(dept => {
+          // From departments API, department name is in dept.name
+          const deptName = dept.name;
+          const selectedDeptName = formData.department;
+          const headUserId = dept.headUser?.id;
+          
+          const isSameDepartment = deptName && selectedDeptName && 
+                 deptName.toLowerCase() === selectedDeptName.toLowerCase();
+          const isNotCurrentUser = mode !== 'edit' || headUserId !== user?.id;
+          
+          return isSameDepartment && isNotCurrentUser;
+        });
+        
+        if (existingHead) {
+          const headName = `${existingHead.headUser?.firstName || ''} ${existingHead.headUser?.lastName || ''}`.trim();
+          newErrors.department = `Department "${formData.department}" already has a head: ${headName}`;
+        }
+      }
+    }
 
     // Role-specific validation
     if (formData.role === 'TRAINER') {
@@ -256,6 +299,35 @@ const UserModal = ({ show, user, mode, onSave, onClose }) => {
         delete newErrors.trainingBatch;
         delete newErrors.passportNo;
         delete newErrors.dateOfBirth;
+        delete newErrors.department;
+      }
+      
+      // Clear department error when department changes
+      if (field === 'department') {
+        delete newErrors.department;
+        
+        // Real-time validation for department head
+        if (formData.role === 'DEPARTMENT_HEAD') {
+          if (!value.trim()) {
+            newErrors.department = 'Department is required for department heads';
+          } else {
+            const existingHead = existingDepartmentHeads.find(dept => {
+              // From departments API, department name is in dept.name
+              const deptName = dept.name;
+              const selectedDeptName = value;
+              const headUserId = dept.headUser?.id;
+              
+              return deptName && selectedDeptName && 
+                     deptName.toLowerCase() === selectedDeptName.toLowerCase() && 
+                     (mode !== 'edit' || headUserId !== user?.id);
+            });
+            
+            if (existingHead) {
+              const headName = `${existingHead.headUser?.firstName || ''} ${existingHead.headUser?.lastName || ''}`.trim();
+              newErrors.department = `Department "${value}" already has a head: ${headName}`;
+            }
+          }
+        }
       }
       
       return newErrors;
@@ -724,7 +796,7 @@ const UserModal = ({ show, user, mode, onSave, onClose }) => {
             >
               {isSubmitting ? (
                 <>
-                  <span className="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
+                  <span className="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true" style={{ width: '1rem', height: '1rem' }}></span>
                   Saving...
                 </>
               ) : (

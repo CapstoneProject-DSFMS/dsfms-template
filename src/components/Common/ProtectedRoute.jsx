@@ -13,7 +13,7 @@ const ProtectedRoute = ({ children }) => {
       <div className="d-flex justify-content-center align-items-center min-vh-100">
         <div className="text-center">
           <Spinner animation="border" variant="primary" />
-          <div className="mt-3">Đang kiểm tra xác thực...</div>
+          <div className="mt-3">Checking authentication...</div>
         </div>
       </div>
     );
