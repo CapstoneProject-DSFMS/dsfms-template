@@ -309,7 +309,7 @@ const CourseDetailsView = ({ courseId }) => {
   }
 
   return (
-    <Container className="d-flex flex-column" style={{ padding: '0.5rem 0', overflowX: 'hidden' }}>
+    <Container className="d-flex flex-column" style={{ padding: '0.5rem 1rem', overflowX: 'hidden' }}>
       {/* Department Header */}
       <Row className="mb-1 flex-shrink-0">
         <Col>
@@ -379,7 +379,7 @@ const CourseDetailsView = ({ courseId }) => {
       </Row>
 
       {/* Courses Section */}
-      <Row>
+      <Row className="mt-3">
         <Col>
           <Card className="border-0 shadow-sm">
             <Card.Header className="bg-white border-bottom flex-shrink-0">
