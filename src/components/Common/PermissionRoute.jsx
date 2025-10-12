@@ -1,5 +1,4 @@
 import React from 'react';
-import { Navigate } from 'react-router-dom';
 import { usePermissions } from '../../hooks/usePermissions';
 import { useAuth } from '../../hooks/useAuth';
 
@@ -16,20 +15,17 @@ const PermissionRoute = ({
   const canAccess = () => {
     // If no permissions specified, allow access
     if (!permission && (!permissions || permissions.length === 0)) {
-      console.log('🔍 PermissionRoute - No permissions specified, allowing access');
       return true;
     }
 
     // Temporary bypass for TRAINEE role to test UI
     if (user?.role === 'TRAINEE') {
-      console.log('🔍 PermissionRoute - TRAINEE role bypass, allowing access');
       return true;
     }
 
     // Single permission check
     if (permission) {
       const hasAccess = hasPermission(permission);
-      console.log(`🔍 PermissionRoute - Permission check: ${permission}, Result: ${hasAccess}`);
       return hasAccess;
     }
 
@@ -37,38 +33,30 @@ const PermissionRoute = ({
     if (permissions && permissions.length > 0) {
       if (requireAll) {
         const hasAccess = hasAllPermissions(permissions);
-        console.log(`🔍 PermissionRoute - All permissions check: ${permissions.join(', ')}, Result: ${hasAccess}`);
         return hasAccess;
       } else {
         const hasAccess = hasAnyPermission(permissions);
-        console.log(`🔍 PermissionRoute - Any permission check: ${permissions.join(', ')}, Result: ${hasAccess}`);
         return hasAccess;
       }
     }
 
-    console.log('🔍 PermissionRoute - No valid permission check, denying access');
     return false;
   };
 
   if (!canAccess()) {
-    // Determine redirect path based on user role
-    let defaultRedirect = "/admin/dashboard";
-    if (user?.role === 'TRAINEE') {
-      defaultRedirect = "/trainee";
-    } else if (user?.role === 'ACADEMIC_DEPARTMENT') {
-      defaultRedirect = "/academic/dashboard";
-    }
-    
-    const finalRedirect = redirectTo || defaultRedirect;
-    console.log('🚫 PermissionRoute - Access denied, redirecting to:', finalRedirect, 'for role:', user?.role);
-    console.log('🚫 PermissionRoute - Permission check details:', {
-      permission,
-      permissions,
-      requireAll,
-      userRole: user?.role,
-      userPermissions: user?.permissions?.map(p => p.name)
-    });
-    return <Navigate to={finalRedirect} replace />;
+    // Show fallback message instead of redirecting
+    return (
+      <div className="p-4 text-center text-muted">
+        <h4>Access Denied</h4>
+        <p>You don't have permission to access this page.</p>
+        <p className="small text-muted">
+          Required permission: {permission || permissions.join(', ')}
+        </p>
+        <p className="small text-muted">
+          Your role: {user?.role || 'Unknown'}
+        </p>
+      </div>
+    );
   }
 
   return children;

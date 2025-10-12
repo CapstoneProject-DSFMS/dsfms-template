@@ -199,9 +199,7 @@ const RoleModal = ({ show, role, mode, onSave, onClose }) => {
           {role && isBaseRole(role.name) && mode === 'edit' && (
             <Alert variant="warning" className="mb-3">
               <ExclamationTriangle className="me-2" />
-              <strong>Base Role Warning:</strong> This is a system-defined base role ({role.name}). 
-              Base roles cannot be modified as they are essential for system functionality. 
-              {getBaseRoleDescription(role.name)}
+              <strong>Base Role Warning:</strong> This role cannot be modified.
             </Alert>
           )}
 
@@ -310,16 +308,6 @@ const RoleModal = ({ show, role, mode, onSave, onClose }) => {
                     </div>
                   ) : (
                     <>
-                      {/* Debug info */}
-                      {mode === 'edit' && (
-                        <div className="mb-2 p-2 bg-light rounded">
-                          <small className="text-muted">
-                            Debug: Total permissions = {permissionGroups.reduce((total, group) => total + group.permissions.length, 0)} | 
-                            Selected = {formData.permissionIds.length} | 
-                            Groups = {permissionGroups.length}
-                          </small>
-                        </div>
-                      )}
                       
                       {permissionGroups.map((group) => {
                     const isExpanded = expandedGroups[group.id];
@@ -458,7 +446,7 @@ const RoleModal = ({ show, role, mode, onSave, onClose }) => {
             >
               {isSubmitting ? (
                 <>
-                  <span className="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
+                  <span className="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true" style={{ width: '1rem', height: '1rem' }}></span>
                   Saving...
                 </>
               ) : (

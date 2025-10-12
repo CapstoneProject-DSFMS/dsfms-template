@@ -32,10 +32,14 @@ export const departmentAPI = {
   // Create new department
   createDepartment: async (departmentData) => {
     try {
+      console.log('🔍 API - Creating department with data:', departmentData);
       const response = await apiClient.post('/departments', departmentData);
+      console.log('✅ API - Department created successfully:', response.data);
       return response.data;
     } catch (error) {
-      console.error('Error creating department:', error);
+      console.error('❌ API - Error creating department:', error);
+      console.error('❌ API - Error response:', error.response?.data);
+      console.error('❌ API - Error status:', error.response?.status);
       throw error;
     }
   },
@@ -125,7 +129,7 @@ export const departmentAPI = {
   getDepartmentHeads: async () => {
     try {
       const response = await apiClient.get('/departments/helpers/department-heads');
-      return response.data.users; // Return just the users array
+      return response.data; // Return the full response { users: [...], totalItems: 7 }
     } catch (error) {
       console.error('Error fetching department heads:', error);
       throw error;

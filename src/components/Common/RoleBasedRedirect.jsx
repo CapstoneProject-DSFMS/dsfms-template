@@ -7,9 +7,6 @@ const RoleBasedRedirect = () => {
   const navigate = useNavigate();
 
   useEffect(() => {
-    console.log('🔍 RoleBasedRedirect - User:', user);
-    console.log('🔍 RoleBasedRedirect - User role:', user?.role);
-    
     if (user?.role) {
       let redirectPath = '/admin/dashboard'; // default
       
@@ -27,13 +24,8 @@ const RoleBasedRedirect = () => {
           break;
       }
       
-      console.log('🔄 RoleBasedRedirect - Redirecting to:', redirectPath, 'for role:', user.role);
-      console.log('🔄 RoleBasedRedirect - Current pathname:', window.location.pathname);
-      
       // Force redirect with replace
       navigate(redirectPath, { replace: true });
-    } else {
-      console.log('🔍 RoleBasedRedirect - No user role found, user:', user);
     }
   }, [user, navigate]);
 
