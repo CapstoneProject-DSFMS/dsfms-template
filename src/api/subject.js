@@ -103,6 +103,62 @@ const subjectAPI = {
       console.error('❌ Full error response:', JSON.stringify(error.response?.data, null, 2));
       throw error;
     }
+  },
+
+  // Assign trainees to subject
+  assignTrainees: async (subjectId, traineeData) => {
+    try {
+      console.log('🔍 Assigning trainees to subject:', subjectId);
+      console.log('🔍 Trainee data being sent:', JSON.stringify(traineeData, null, 2));
+      console.log('🔍 Data validation:', {
+        subjectId: subjectId,
+        subjectIdType: typeof subjectId,
+        traineeDataKeys: Object.keys(traineeData),
+        enrolledCount: traineeData.enrolledCount,
+        enrolledArray: traineeData.enrolled,
+        enrolledLength: traineeData.enrolled?.length,
+        firstTrainee: traineeData.enrolled?.[0],
+        firstTraineeKeys: traineeData.enrolled?.[0] ? Object.keys(traineeData.enrolled[0]) : null
+      });
+      
+      const response = await apiClient.post(`/subjects/${subjectId}/assign-trainees`, traineeData);
+      console.log('✅ Assign trainees API response:', response.data);
+      return response.data;
+    } catch (error) {
+      console.error('❌ Error assigning trainees to subject:', error);
+      console.error('❌ Error status:', error.response?.status);
+      console.error('❌ Error details:', error.response?.data);
+      console.error('❌ Error message:', error.response?.data?.message);
+      console.error('❌ Validation errors:', error.response?.data?.errors);
+      console.error('❌ Full error response:', JSON.stringify(error.response?.data, null, 2));
+      throw error;
+    }
+  },
+
+  // Remove trainee from subject
+  removeTraineeFromSubject: async (subjectId, traineeId, batchCode) => {
+    try {
+      console.log('🔍 Removing trainee from subject:', { subjectId, traineeId, batchCode });
+      
+      const requestData = {
+        batchCode: batchCode
+      };
+      
+      console.log('🔍 Request data:', JSON.stringify(requestData, null, 2));
+      
+      const response = await apiClient.delete(`/subjects/${subjectId}/trainees/${traineeId}`, {
+        data: requestData
+      });
+      
+      console.log('✅ Remove trainee from subject API response:', response.data);
+      return response.data;
+    } catch (error) {
+      console.error('❌ Error removing trainee from subject:', error);
+      console.error('❌ Error status:', error.response?.status);
+      console.error('❌ Error details:', error.response?.data);
+      console.error('❌ Error message:', error.response?.data?.message);
+      throw error;
+    }
   }
 };
 

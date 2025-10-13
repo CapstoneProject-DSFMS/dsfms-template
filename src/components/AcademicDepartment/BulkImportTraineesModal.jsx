@@ -1,7 +1,8 @@
 import React, { useState, useRef } from 'react';
 import { Modal, Button, Table, Card, Alert } from 'react-bootstrap';
-import { X, Upload, FileEarmarkExcel, CheckCircle, XCircle } from 'react-bootstrap-icons';
+import { X, Upload, FileEarmarkExcel, CheckCircle, XCircle, Download } from 'react-bootstrap-icons';
 import * as XLSX from 'xlsx';
+import { userAPI } from '../../api/user';
 
 const BulkImportTraineesModal = ({ show, onClose, onImport, loading = false }) => {
   const [dragActive, setDragActive] = useState(false);
@@ -11,16 +12,34 @@ const BulkImportTraineesModal = ({ show, onClose, onImport, loading = false }) =
   const [validationErrors, setValidationErrors] = useState([]);
   const fileInputRef = useRef(null);
 
-  // Required columns for trainee import (simplified)
+  // Required columns for trainee import (based on UserModal structure)
   const requiredColumns = [
     'eid',
-    'full_name'
+    'first_name',
+    'last_name',
+    'email',
+    'phone_number',
+    'role'
   ];
 
-  // All possible columns
+  // All possible columns (based on UserModal structure)
   const allColumns = [
     'eid',
-    'full_name'
+    'first_name',
+    'last_name',
+    'middle_name',
+    'email',
+    'phone_number',
+    'address',
+    'gender',
+    'role',
+    'certification_number',
+    'specialization',
+    'years_of_experience',
+    'date_of_birth',
+    'training_batch',
+    'passport_no',
+    'nation'
   ];
 
   const handleDrag = (e) => {
@@ -96,7 +115,21 @@ const BulkImportTraineesModal = ({ show, onClose, onImport, loading = false }) =
             id: `temp_${index}`,
             rowNumber: index + 2,
             eid: row[headers.indexOf('eid')]?.toString().trim() || '',
-            full_name: row[headers.indexOf('full_name')]?.toString().trim() || '',
+            firstName: row[headers.indexOf('first_name')]?.toString().trim() || '',
+            lastName: row[headers.indexOf('last_name')]?.toString().trim() || '',
+            middleName: row[headers.indexOf('middle_name')]?.toString().trim() || '',
+            email: row[headers.indexOf('email')]?.toString().trim() || '',
+            phoneNumber: row[headers.indexOf('phone_number')]?.toString().trim() || '',
+            address: row[headers.indexOf('address')]?.toString().trim() || '',
+            gender: row[headers.indexOf('gender')]?.toString().trim() || 'MALE',
+            role: row[headers.indexOf('role')]?.toString().trim() || 'TRAINEE',
+            certificationNumber: row[headers.indexOf('certification_number')]?.toString().trim() || '',
+            specialization: row[headers.indexOf('specialization')]?.toString().trim() || '',
+            yearsOfExperience: row[headers.indexOf('years_of_experience')]?.toString().trim() || '',
+            dateOfBirth: row[headers.indexOf('date_of_birth')]?.toString().trim() || '',
+            trainingBatch: row[headers.indexOf('training_batch')]?.toString().trim() || '',
+            passportNo: row[headers.indexOf('passport_no')]?.toString().trim() || '',
+            nation: row[headers.indexOf('nation')]?.toString().trim() || '',
             hasError: false,
             errors: []
           };
@@ -107,13 +140,36 @@ const BulkImportTraineesModal = ({ show, onClose, onImport, loading = false }) =
             trainee.errors.push('EID is required');
           }
 
-          if (!trainee.full_name) {
+          if (!trainee.firstName) {
             trainee.hasError = true;
-            trainee.errors.push('Full name is required');
+            trainee.errors.push('First name is required');
+          }
+
+          if (!trainee.lastName) {
+            trainee.hasError = true;
+            trainee.errors.push('Last name is required');
+          }
+
+          if (!trainee.email) {
+            trainee.hasError = true;
+            trainee.errors.push('Email is required');
+          } else if (!/\S+@\S+\.\S+/.test(trainee.email)) {
+            trainee.hasError = true;
+            trainee.errors.push('Email format is invalid');
+          }
+
+          if (!trainee.phoneNumber) {
+            trainee.hasError = true;
+            trainee.errors.push('Phone number is required');
+          }
+
+          if (!trainee.role) {
+            trainee.hasError = true;
+            trainee.errors.push('Role is required');
           }
 
           return trainee;
-        }).filter(trainee => trainee.eid || trainee.full_name); // Remove completely empty rows
+        }).filter(trainee => trainee.eid || trainee.firstName || trainee.lastName); // Remove completely empty rows
 
         setPreviewData(trainees);
         setValidationErrors([]);
@@ -135,9 +191,40 @@ const BulkImportTraineesModal = ({ show, onClose, onImport, loading = false }) =
     }
 
     try {
-      await onImport(traineesToImport);
+      // Transform data to match user API format
+      const usersData = traineesToImport.map(trainee => ({
+        eid: trainee.eid,
+        firstName: trainee.firstName,
+        lastName: trainee.lastName,
+        middleName: trainee.middleName || '',
+        email: trainee.email,
+        phoneNumber: trainee.phoneNumber || '',
+        address: trainee.address || '',
+        gender: trainee.gender || 'MALE',
+        role: trainee.role || 'TRAINEE',
+        certificationNumber: trainee.certificationNumber || '',
+        specialization: trainee.specialization || '',
+        yearsOfExperience: trainee.yearsOfExperience || '',
+        dateOfBirth: trainee.dateOfBirth || '',
+        trainingBatch: trainee.trainingBatch || '',
+        passportNo: trainee.passportNo || '',
+        nation: trainee.nation || ''
+      }));
+
+      console.log('🔍 Bulk importing trainees as users:', usersData);
+      
+      // Call user API bulk import
+      const response = await userAPI.bulkImportUsers(usersData);
+      console.log('✅ Bulk import response:', response);
+      
+      // Call parent onImport callback if provided
+      if (onImport) {
+        await onImport(traineesToImport);
+      }
+      
       handleClose();
     } catch (error) {
+      console.error('❌ Error bulk importing trainees:', error);
       setErrors([error.message || 'Failed to import trainees. Please try again.']);
     }
   };
@@ -157,6 +244,49 @@ const BulkImportTraineesModal = ({ show, onClose, onImport, loading = false }) =
     } else {
       return <XCircle className="text-danger" size={16} />;
     }
+  };
+
+  const downloadTemplate = () => {
+    // Create sample data for template (based on UserModal structure)
+    const templateData = [
+      ['eid', 'first_name', 'last_name', 'middle_name', 'email', 'phone_number', 'address', 'gender', 'role', 'certification_number', 'specialization', 'years_of_experience', 'date_of_birth', 'training_batch', 'passport_no', 'nation'], // Header row
+      ['TE000001', 'John', 'Doe', 'Michael', 'john.doe@example.com', '0934980926', '221B Baker Street, London', 'MALE', 'TRAINEE', '', '', '', '1990-01-15', 'BATCH2023-01', 'P123456789', 'Vietnam'], // Sample data row 1
+      ['TE000002', 'Jane', 'Smith', 'Elizabeth', 'jane.smith@example.com', '0934980927', '221B Baker Street, London', 'FEMALE', 'TRAINEE', '', '', '', '1992-05-20', 'BATCH2023-01', 'P123456790', 'Vietnam'], // Sample data row 2
+      ['TE000003', 'Bob', 'Johnson', 'Robert', 'bob.johnson@example.com', '0934980928', '221B Baker Street, London', 'MALE', 'TRAINEE', '', '', '', '1988-12-10', 'BATCH2023-02', 'P123456791', 'Vietnam'], // Sample data row 3
+      ['TE000004', 'Alice', 'Brown', 'Marie', 'alice.brown@example.com', '0934980929', '221B Baker Street, London', 'FEMALE', 'TRAINEE', '', '', '', '1995-08-25', 'BATCH2023-02', 'P123456792', 'Vietnam'], // Sample data row 4
+      ['TE000005', 'Charlie', 'Wilson', 'David', 'charlie.wilson@example.com', '0934980930', '221B Baker Street, London', 'MALE', 'TRAINEE', '', '', '', '1991-03-18', 'BATCH2023-03', 'P123456793', 'Vietnam'] // Sample data row 5
+    ];
+
+    // Create workbook and worksheet
+    const workbook = XLSX.utils.book_new();
+    const worksheet = XLSX.utils.aoa_to_sheet(templateData);
+
+    // Set column widths
+    worksheet['!cols'] = [
+      { wch: 15 }, // eid column width
+      { wch: 15 }, // first_name column width
+      { wch: 15 }, // last_name column width
+      { wch: 15 }, // middle_name column width
+      { wch: 30 }, // email column width
+      { wch: 15 }, // phone_number column width
+      { wch: 40 }, // address column width
+      { wch: 10 }, // gender column width
+      { wch: 15 }, // role column width
+      { wch: 20 }, // certification_number column width
+      { wch: 20 }, // specialization column width
+      { wch: 15 }, // years_of_experience column width
+      { wch: 15 }, // date_of_birth column width
+      { wch: 15 }, // training_batch column width
+      { wch: 15 }, // passport_no column width
+      { wch: 15 }  // nation column width
+    ];
+
+    // Add worksheet to workbook
+    XLSX.utils.book_append_sheet(workbook, worksheet, 'Trainees Template');
+
+    // Generate and download file
+    const fileName = 'Trainees_Import_Template.xlsx';
+    XLSX.writeFile(workbook, fileName);
   };
 
   return (
@@ -219,8 +349,19 @@ const BulkImportTraineesModal = ({ show, onClose, onImport, loading = false }) =
             <div className="mt-3 d-flex justify-content-between align-items-center">
               <div>
                 <small className="text-muted">
-                  <strong>Required columns:</strong> EID, Full Name
+                  <strong>Required columns:</strong> eid, first_name, last_name, email, phone_number, role
                 </small>
+                <div className="mt-1">
+                  <Button 
+                    variant="outline-primary" 
+                    size="sm"
+                    onClick={downloadTemplate}
+                    className="d-flex align-items-center"
+                  >
+                    <Download className="me-1" size={14} />
+                    Download Template
+                  </Button>
+                </div>
               </div>
               {uploadedFile && (
                 <div className="d-flex align-items-center">
@@ -253,7 +394,13 @@ const BulkImportTraineesModal = ({ show, onClose, onImport, loading = false }) =
                     <tr>
                       <th>Status</th>
                       <th>EID</th>
-                      <th>Full Name</th>
+                      <th>First Name</th>
+                      <th>Last Name</th>
+                      <th>Email</th>
+                      <th>Phone</th>
+                      <th>Role</th>
+                      <th>Training Batch</th>
+                      <th>Passport No</th>
                       <th>Errors</th>
                     </tr>
                   </thead>
@@ -264,7 +411,13 @@ const BulkImportTraineesModal = ({ show, onClose, onImport, loading = false }) =
                           {getStatusIcon(trainee.hasError ? 'invalid' : 'valid')}
                         </td>
                         <td>{trainee.eid}</td>
-                        <td>{trainee.full_name}</td>
+                        <td>{trainee.firstName}</td>
+                        <td>{trainee.lastName}</td>
+                        <td>{trainee.email}</td>
+                        <td>{trainee.phoneNumber}</td>
+                        <td>{trainee.role}</td>
+                        <td>{trainee.trainingBatch}</td>
+                        <td>{trainee.passportNo}</td>
                         <td>
                           {trainee.errors.length > 0 && (
                             <small className="text-danger">

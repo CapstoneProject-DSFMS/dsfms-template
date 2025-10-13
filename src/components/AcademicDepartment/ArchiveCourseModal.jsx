@@ -41,9 +41,6 @@ const ArchiveCourseModal = ({ show, onClose, onArchive, course, loading = false 
           <ExclamationTriangle className="me-2" size={20} />
           Archive Course
         </Modal.Title>
-        <Button variant="link" onClick={handleClose} className="text-dark p-0">
-          <X size={24} />
-        </Button>
       </Modal.Header>
 
       <Modal.Body className="p-4">

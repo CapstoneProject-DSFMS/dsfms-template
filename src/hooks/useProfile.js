@@ -39,18 +39,16 @@ const useProfile = () => {
   const getDisplayName = () => {
     if (!profile) return 'Loading...';
     
+    // Handle profile data from /profile API
     const { firstName, lastName, middleName } = profile;
-    const nameParts = [firstName];
     
-    if (middleName) {
-      nameParts.push(middleName);
-    }
+    // Construct name from parts
+    const nameParts = [];
+    if (firstName) nameParts.push(firstName);
+    if (middleName) nameParts.push(middleName);
+    if (lastName) nameParts.push(lastName);
     
-    if (lastName) {
-      nameParts.push(lastName);
-    }
-    
-    return nameParts.join(' ');
+    return nameParts.join(' ') || 'User';
   };
 
   const getRoleName = () => {

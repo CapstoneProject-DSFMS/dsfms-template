@@ -336,7 +336,7 @@ const InPageCourseDetail = ({ course, department, onClose, onEdit }) => {
   };
 
   return (
-    <Container fluid className="py-2 course-detail" style={{ height: '100vh', overflow: 'hidden' }}>
+    <Container fluid className="py-2 course-detail">
       {/* Header với nút Back */}
       <div className="d-flex align-items-center mb-2">
         <Button 
@@ -381,7 +381,7 @@ const InPageCourseDetail = ({ course, department, onClose, onEdit }) => {
       </div>
 
       {/* Tab Interface */}
-      <Card className="border-0 shadow-sm mb-2" style={{ height: 'calc(100vh - 150px)' }}>
+      <Card className="border-0 shadow-sm mb-2">
         <Tab.Container activeKey={activeTab} onSelect={setActiveTab}>
           <Card.Header className="border-bottom py-2">
             <Nav variant="tabs" className="border-0">
@@ -430,7 +430,7 @@ const InPageCourseDetail = ({ course, department, onClose, onEdit }) => {
             </Nav>
           </Card.Header>
           
-          <Card.Body className="p-0" style={{ height: 'calc(100% - 50px)', overflowY: 'auto' }}>
+          <Card.Body className="p-0">
             <Tab.Content>
               {/* Course Information Tab */}
               <Tab.Pane eventKey="course-info">
@@ -519,7 +519,7 @@ const InPageCourseDetail = ({ course, department, onClose, onEdit }) => {
               </Tab.Pane>
 
               {/* Subjects Tab */}
-              <Tab.Pane eventKey="subjects" style={{ height: '100%' }}>
+              <Tab.Pane eventKey="subjects">
                 <SubjectTable 
                   subjects={subjects}
                   loading={false}

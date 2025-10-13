@@ -1,6 +1,6 @@
 import React from 'react';
 import { Badge } from 'react-bootstrap';
-import { Dropdown } from 'react-bootstrap';
+import PortalUnifiedDropdown from '../../Common/PortalUnifiedDropdown';
 import { Eye, PersonX, ThreeDotsVertical } from 'react-bootstrap-icons';
 
 const DepartmentRow = ({ department, index, onView, onToggleStatus }) => {
@@ -85,60 +85,31 @@ const DepartmentRow = ({ department, index, onView, onToggleStatus }) => {
       </td>
       
       <td className="border-neutral-200 align-middle text-center show-mobile">
-        <Dropdown align="end">
-          <Dropdown.Toggle 
-            variant="light" 
-            size="sm" 
-            id={`department-actions-${department.id}`} 
-            className="border-0"
-          >
-            <ThreeDotsVertical size={16} />
-          </Dropdown.Toggle>
-          <Dropdown.Menu className="shadow-sm">
-            <Dropdown.Item 
-              onClick={() => onView(department)}
-              className="d-flex align-items-center transition-all"
-              style={{
-                transition: 'all 0.2s ease'
-              }}
-              onMouseEnter={(e) => {
-                e.target.style.backgroundColor = 'rgba(0, 0, 0, 0.05)';
-                e.target.style.paddingLeft = '1.5rem';
-              }}
-              onMouseLeave={(e) => {
-                e.target.style.backgroundColor = 'transparent';
-                e.target.style.paddingLeft = '1rem';
-              }}
-            >
-              <Eye className="me-2" size={16} />
-              View Details
-            </Dropdown.Item>
-            <Dropdown.Divider />
-            <Dropdown.Item 
-              onClick={() => onToggleStatus(department)}
-              className={`d-flex align-items-center transition-all ${
-                department.status === 'ACTIVE' ? 'text-danger' : 'text-success'
-              }`}
-              style={{
-                transition: 'all 0.2s ease'
-              }}
-              onMouseEnter={(e) => {
-                const bgColor = department.status === 'ACTIVE' 
-                  ? 'rgba(220, 53, 69, 0.1)' 
-                  : 'rgba(25, 135, 84, 0.1)';
-                e.target.style.backgroundColor = bgColor;
-                e.target.style.paddingLeft = '1.5rem';
-              }}
-              onMouseLeave={(e) => {
-                e.target.style.backgroundColor = 'transparent';
-                e.target.style.paddingLeft = '1rem';
-              }}
-            >
-              <PersonX className="me-2" size={16} />
-              {department.status === 'ACTIVE' ? 'Deactivate' : 'Activate'}
-            </Dropdown.Item>
-          </Dropdown.Menu>
-        </Dropdown>
+        <PortalUnifiedDropdown
+          align="end"
+          className="table-dropdown"
+          placement="bottom-end"
+          trigger={{
+            variant: 'link',
+            className: 'btn btn-link p-0 text-primary-custom',
+            style: { border: 'none', background: 'transparent' },
+            children: <ThreeDotsVertical size={16} />
+          }}
+          items={[
+            {
+              label: 'View Details',
+              icon: <Eye />,
+              onClick: () => onView(department)
+            },
+            { type: 'divider' },
+            {
+              label: department.status === 'ACTIVE' ? 'Deactivate' : 'Activate',
+              icon: <PersonX />,
+              className: department.status === 'ACTIVE' ? 'text-danger' : 'text-success',
+              onClick: () => onToggleStatus(department)
+            }
+          ]}
+        />
       </td>
     </tr>
   );

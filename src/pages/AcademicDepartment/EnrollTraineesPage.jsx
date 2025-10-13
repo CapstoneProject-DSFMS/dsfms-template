@@ -2,10 +2,12 @@ import React, { useState } from 'react';
 import { Container, Row, Col, Card, Button, Form } from 'react-bootstrap';
 import { ArrowLeft, Upload, Search, Plus } from 'react-bootstrap-icons';
 import { useNavigate, useParams } from 'react-router-dom';
+import { toast } from 'react-toastify';
 import SubjectSelectionPanel from '../../components/AcademicDepartment/SubjectSelectionPanel';
 import TraineeSelectionPanel from '../../components/AcademicDepartment/TraineeSelectionPanel';
 import EnrolledTraineesTable from '../../components/AcademicDepartment/EnrolledTraineesTable';
 import BulkImportTraineesModal from '../../components/AcademicDepartment/BulkImportTraineesModal';
+import subjectAPI from '../../api/subject';
 
 const EnrollTraineesPage = () => {
   const navigate = useNavigate();
@@ -21,13 +23,10 @@ const EnrollTraineesPage = () => {
 
   const [selectedSubjects, setSelectedSubjects] = useState([]);
   const [selectedTrainees, setSelectedTrainees] = useState([]);
-  const [enrolledTrainees, setEnrolledTrainees] = useState([
-    { id: 't1', eid: 'EMP001', name: 'John Doe', subjects: ['s1', 's2'] },
-    { id: 't2', eid: 'EMP002', name: 'Jane Smith', subjects: ['s1', 's3'] },
-    { id: 't3', eid: 'EMP003', name: 'Bob Johnson', subjects: ['s2', 's3'] }
-  ]);
   const [showBulkImport, setShowBulkImport] = useState(false);
   const [bulkImportLoading, setBulkImportLoading] = useState(false);
+  const [enrollLoading, setEnrollLoading] = useState(false);
+  const [tableRefreshKey, setTableRefreshKey] = useState(0);
 
   const handleBack = () => {
     navigate(`/academic/course-detail/${courseId}`);
@@ -64,26 +63,84 @@ const EnrollTraineesPage = () => {
     }
   };
 
-  const handleEnroll = () => {
-    console.log('Enrolling trainees:', selectedTrainees, 'to subjects:', selectedSubjects);
+  const handleEnroll = async () => {
+    if (selectedSubjects.length === 0 || selectedTrainees.length === 0) {
+      toast.warning('Please select both subjects and trainees to enroll');
+      return;
+    }
+
+    setEnrollLoading(true);
     
-    // TODO: Implement actual API call to enroll trainees
-    // For now, simulate enrollment by updating state
-    
-    // Add selected trainees to enrolled list with selected subjects
-    const newEnrolledTrainees = selectedTrainees.map(trainee => ({
-      ...trainee,
-      subjects: selectedSubjects // Assign selected subjects to each trainee
-    }));
-    
-    // Update enrolled trainees state
-    setEnrolledTrainees(prev => [...prev, ...newEnrolledTrainees]);
-    
-    // Clear selected trainees and subjects
-    setSelectedTrainees([]);
-    setSelectedSubjects([]);
-    
-    console.log('Enrollment completed! Added', newEnrolledTrainees.length, 'trainees');
+    try {
+      console.log('🔍 Starting enrollment process...');
+      console.log('Selected subjects (IDs):', selectedSubjects);
+      console.log('Selected subjects type:', typeof selectedSubjects, Array.isArray(selectedSubjects));
+      console.log('Selected trainees:', selectedTrainees);
+
+      // Prepare data for API call - Backend expects batchCode and traineeUserIds
+      const traineeData = {
+        batchCode: "TEST0012025", // Fixed batch code
+        traineeUserIds: selectedTrainees.map(trainee => {
+          console.log('🔍 Processing trainee:', trainee);
+          return trainee.id; // Just the user IDs as array
+        })
+      };
+
+      console.log('🔍 Prepared trainee data:', traineeData);
+
+      // Call API for each selected subject
+      const enrollmentPromises = selectedSubjects.map(async (subjectId) => {
+        console.log(`🔍 Enrolling trainees to subject ID: ${subjectId}`);
+        console.log(`🔍 Subject ID validation:`, {
+          subjectId: subjectId,
+          subjectIdType: typeof subjectId
+        });
+        
+        if (!subjectId) {
+          throw new Error(`Invalid subject ID: ${subjectId}`);
+        }
+        
+        const response = await subjectAPI.assignTrainees(subjectId, traineeData);
+        console.log(`✅ Enrollment response for subject ${subjectId}:`, response);
+        return { subjectId, response };
+      });
+
+      // Wait for all enrollments to complete
+      const enrollmentResults = await Promise.all(enrollmentPromises);
+      
+      console.log('✅ All enrollments completed:', enrollmentResults);
+
+      // Refresh the enrolled trainees table
+      setTableRefreshKey(prev => prev + 1);
+      
+      // Clear selected trainees and subjects
+      setSelectedTrainees([]);
+      setSelectedSubjects([]);
+      
+      toast.success(`Successfully enrolled ${selectedTrainees.length} trainees to ${selectedSubjects.length} subject(s)`);
+      console.log('🎉 Enrollment completed successfully!');
+      
+    } catch (error) {
+      console.error('❌ Error during enrollment:', error);
+      console.error('❌ Error type:', typeof error);
+      console.error('❌ Error message:', error.message);
+      console.error('❌ Error response:', error.response);
+      console.error('❌ Error config:', error.config);
+      
+      // Show more specific error message
+      let errorMessage = 'Failed to enroll trainees. Please try again.';
+      if (error.response?.data?.message) {
+        errorMessage = error.response.data.message;
+      } else if (error.response?.data?.errors) {
+        errorMessage = `Validation errors: ${JSON.stringify(error.response.data.errors)}`;
+      } else if (error.message) {
+        errorMessage = error.message;
+      }
+      
+      toast.error(errorMessage);
+    } finally {
+      setEnrollLoading(false);
+    }
   };
 
   return (
@@ -120,12 +177,27 @@ const EnrollTraineesPage = () => {
                     size="sm" 
                     variant="primary"
                     onClick={handleEnroll}
-                    disabled={selectedSubjects.length === 0 || selectedTrainees.length === 0}
+                    disabled={selectedSubjects.length === 0 || selectedTrainees.length === 0 || enrollLoading}
+                    style={{ fontSize: '0.75rem', padding: '0.25rem 0.5rem' }}
                   >
-                    <Plus size={14} className="me-1" /> Enroll
+                    {enrollLoading ? (
+                      <>
+                        <span className="spinner-border spinner-border-sm me-1" role="status" aria-hidden="true" style={{ width: '0.75rem', height: '0.75rem' }}></span>
+                        Enrolling...
+                      </>
+                    ) : (
+                      <>
+                        <Plus size={12} className="me-1" /> Enroll
+                      </>
+                    )}
                   </Button>
-                  <Button size="sm" variant="outline-primary" onClick={handleBulkImport}>
-                    <Upload size={14} className="me-1" /> Bulk Import Trainees
+                  <Button 
+                    size="sm" 
+                    variant="outline-primary" 
+                    onClick={handleBulkImport}
+                    style={{ fontSize: '0.75rem', padding: '0.25rem 0.5rem' }}
+                  >
+                    <Upload size={12} className="me-1" /> Bulk Import Trainees
                   </Button>
                 </Col>
               </Row>
@@ -162,8 +234,8 @@ const EnrollTraineesPage = () => {
         {/* Enrolled Trainees Table - Full Width at Bottom */}
         <div className="mt-4">
           <EnrolledTraineesTable 
-            enrolledTrainees={enrolledTrainees}
-            onUpdate={setEnrolledTrainees}
+            key={tableRefreshKey}
+            courseId={courseId}
             loading={false}
           />
         </div>

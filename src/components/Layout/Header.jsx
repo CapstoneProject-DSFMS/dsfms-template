@@ -9,7 +9,7 @@ import {
 } from 'react-bootstrap-icons';
 import { useAuth } from '../../hooks/useAuth';
 import useProfile from '../../hooks/useProfile';
-import '../../styles/dropdown-clean.css';
+// import '../../styles/dropdown-clean.css'; // Moved to dropdown-unified.css in App.jsx
 
 // Force remove box shadow from dropdown
 const dropdownStyle = {
@@ -38,25 +38,84 @@ const Header = ({ onToggleSidebar }) => {
   const [showDesktopDropdown, setShowDesktopDropdown] = useState(false);
   const dropdownRef = useRef(null);
   const { user, isLoading } = useAuth();
-  const { profile, getDisplayName: getProfileDisplayName } = useProfile();
+  const { profile, getDisplayName: getProfileDisplayName, loading: profileLoading } = useProfile();
+  
+  // Debug logging
+  useEffect(() => {
+    console.log('Header - User data:', user);
+    console.log('Header - Profile data:', profile);
+    console.log('Header - Profile loading:', profileLoading);
+    if (profile && getProfileDisplayName) {
+      console.log('Header - Profile display name:', getProfileDisplayName());
+    }
+    
+    // Debug JWT token payload
+    try {
+      const token = localStorage.getItem('authToken');
+      if (token) {
+        const tokenPayload = JSON.parse(atob(token.split('.')[1]));
+        console.log('Header - JWT token payload:', tokenPayload);
+      }
+    } catch (error) {
+      console.error('Header - Error parsing JWT token:', error);
+    }
+  }, [user, profile, profileLoading, getProfileDisplayName]);
   
   // Helper functions
   const getDisplayName = () => {
     if (!user) return 'Loading...';
     
-    // Try to get fullName from profile first (most accurate)
-    if (profile && getProfileDisplayName() && getProfileDisplayName() !== 'Loading...') {
-      return getProfileDisplayName();
+    // If profile is still loading, show loading state
+    if (profileLoading) {
+      return 'Loading...';
     }
     
-    // Try to get fullName from user object
-    if (user.fullName && user.fullName !== 'User') {
+    // Try to get fullName from profile first (most accurate)
+    if (profile && getProfileDisplayName && getProfileDisplayName() && getProfileDisplayName() !== 'Loading...') {
+      const profileName = getProfileDisplayName();
+      if (profileName && profileName.trim() !== '') {
+        return profileName;
+      }
+    }
+    
+    // Try to get name from profile if available (direct access)
+    if (profile && profile.firstName) {
+      const nameParts = [profile.firstName];
+      if (profile.middleName) nameParts.push(profile.middleName);
+      if (profile.lastName) nameParts.push(profile.lastName);
+      const fullName = nameParts.join(' ').trim();
+      if (fullName) {
+        return fullName;
+      }
+    }
+    
+    // Try to get fullName from user object (from JWT token)
+    if (user.fullName && user.fullName !== 'User' && user.fullName.trim() !== '') {
       return user.fullName;
     }
     
     // If user has firstName and lastName, construct full name
     if (user.firstName && user.lastName) {
       return `${user.firstName} ${user.lastName}`;
+    }
+    
+    // Try to get name from JWT token payload directly
+    try {
+      const token = localStorage.getItem('authToken');
+      if (token) {
+        const tokenPayload = JSON.parse(atob(token.split('.')[1]));
+        if (tokenPayload.fullName && tokenPayload.fullName !== 'User') {
+          return tokenPayload.fullName;
+        }
+        if (tokenPayload.name && tokenPayload.name !== 'User') {
+          return tokenPayload.name;
+        }
+        if (tokenPayload.firstName && tokenPayload.lastName) {
+          return `${tokenPayload.firstName} ${tokenPayload.lastName}`;
+        }
+      }
+    } catch (error) {
+      console.error('Error parsing JWT token for display name:', error);
     }
     
     // Fallback to name or default
@@ -259,7 +318,7 @@ const Header = ({ onToggleSidebar }) => {
                 onClick={() => setShowDesktopDropdown(!showDesktopDropdown)}
               >
                 <PersonCircle size={32} className="me-2" />
-                <span>{isLoading ? 'Loading...' : getDisplayName()}</span>
+                <span>{isLoading || profileLoading ? 'Loading...' : getDisplayName()}</span>
               </button>
               
               
@@ -270,7 +329,7 @@ const Header = ({ onToggleSidebar }) => {
               >
                   <div className="dropdown-header" style={{ padding: '0.5rem 1rem', wordBreak: 'break-all' }}>                  
                     <div className="fw-bold text-primary-custom">
-                      {isLoading ? 'Loading...' : getDisplayName()}
+                      {isLoading || profileLoading ? 'Loading...' : getDisplayName()}
                     </div>
                     <small className="text-muted" style={{ 
                       wordBreak: 'break-all', 
@@ -362,7 +421,7 @@ const Header = ({ onToggleSidebar }) => {
           </div>
           
           <div className="profile-name">
-            {isLoading ? 'Loading...' : getDisplayName()}
+            {isLoading || profileLoading ? 'Loading...' : getDisplayName()}
           </div>
           <div className="profile-email">
             {isLoading ? 'Loading...' : getEmail()}

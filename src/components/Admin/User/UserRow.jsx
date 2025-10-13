@@ -2,7 +2,7 @@ import React from 'react';
 import { Badge } from 'react-bootstrap';
 import { useAuth } from '../../../hooks/useAuth';
 import PermissionWrapper from '../../Common/PermissionWrapper';
-import { Dropdown } from 'react-bootstrap';
+import PortalUnifiedDropdown from '../../Common/PortalUnifiedDropdown';
 import { Eye, Pencil, PersonX, ThreeDotsVertical } from 'react-bootstrap-icons';
 import { API_PERMISSIONS } from '../../../constants/apiPermissions';
 
@@ -87,88 +87,39 @@ const UserRow = ({ user, index, onView, onEdit, onDisable }) => {
           permissions={[API_PERMISSIONS.USERS.VIEW_DETAIL, API_PERMISSIONS.USERS.UPDATE]}
           fallback={null}
         >
-          <Dropdown align="end">
-            <Dropdown.Toggle 
-              variant="light" 
-              size="sm" 
-              id={`user-actions-${user.id}`} 
-              className="border-0"
-            >
-              <ThreeDotsVertical size={16} />
-            </Dropdown.Toggle>
-            <Dropdown.Menu className="shadow-sm">
-              <PermissionWrapper 
-                permission={API_PERMISSIONS.USERS.VIEW_DETAIL}
-                fallback={null}
-              >
-                <Dropdown.Item 
-                  onClick={() => onView(user)}
-                  className="d-flex align-items-center transition-all"
-                  style={{
-                    transition: 'all 0.2s ease'
-                  }}
-                  onMouseEnter={(e) => {
-                    e.target.style.backgroundColor = 'rgba(0, 0, 0, 0.05)';
-                    e.target.style.paddingLeft = '1.5rem';
-                  }}
-                  onMouseLeave={(e) => {
-                    e.target.style.backgroundColor = 'transparent';
-                    e.target.style.paddingLeft = '1rem';
-                  }}
-                >
-                  <Eye className="me-2" size={16} />
-                  View Details
-                </Dropdown.Item>
-              </PermissionWrapper>
-              <PermissionWrapper 
-                permission={API_PERMISSIONS.USERS.UPDATE}
-                fallback={null}
-              >
-                <Dropdown.Item 
-                  onClick={() => onEdit(user)}
-                  className="d-flex align-items-center transition-all"
-                  style={{
-                    transition: 'all 0.2s ease'
-                  }}
-                  onMouseEnter={(e) => {
-                    e.target.style.backgroundColor = 'rgba(0, 0, 0, 0.05)';
-                    e.target.style.paddingLeft = '1.5rem';
-                  }}
-                  onMouseLeave={(e) => {
-                    e.target.style.backgroundColor = 'transparent';
-                    e.target.style.paddingLeft = '1rem';
-                  }}
-                >
-                  <Pencil className="me-2" size={16} />
-                  Edit User
-                </Dropdown.Item>
-              </PermissionWrapper>
-              <PermissionWrapper 
-                permission={API_PERMISSIONS.USERS.UPDATE}
-                fallback={null}
-              >
-                <Dropdown.Divider />
-                <Dropdown.Item 
-                  onClick={() => onDisable(user)}
-                  className="d-flex align-items-center transition-all text-danger"
-                  style={{
-                    transition: 'all 0.2s ease'
-                  }}
-                  onMouseEnter={(e) => {
-                    e.target.style.backgroundColor = 'rgba(220, 53, 69, 0.1)';
-                    e.target.style.paddingLeft = '1.5rem';
-                  }}
-                  onMouseLeave={(e) => {
-                    e.target.style.backgroundColor = 'transparent';
-                    e.target.style.paddingLeft = '1rem';
-                  }}
-                >
-                  <PersonX className="me-2" size={16} />
-                  {user.status === 'ACTIVE' ? 'Disable User' : 'Enable User'}
-                </Dropdown.Item>
-              </PermissionWrapper>
-            </Dropdown.Menu>
-          </Dropdown>
+          <PortalUnifiedDropdown
+            align="end"
+            className="table-dropdown"
+            placement="bottom-end"
+            trigger={{
+              variant: 'link',
+              className: 'btn btn-link p-0 text-primary-custom',
+              style: { border: 'none', background: 'transparent' },
+              children: <ThreeDotsVertical size={16} />
+            }}
+            items={[
+              {
+                label: 'View Details',
+                icon: <Eye />,
+                onClick: () => onView(user),
+                permission: API_PERMISSIONS.USERS.VIEW_DETAIL
+              },
+              {
+                label: 'Edit User',
+                icon: <Pencil />,
+                onClick: () => onEdit(user),
+                permission: API_PERMISSIONS.USERS.UPDATE
+              },
+              { type: 'divider' },
+              {
+                label: user.status === 'ACTIVE' ? 'Disable User' : 'Enable User',
+                icon: <PersonX />,
+                className: 'text-danger',
+                onClick: () => onDisable(user),
+                permission: API_PERMISSIONS.USERS.UPDATE
+              }
+            ]}
+          />
         </PermissionWrapper>
       </td>
     </tr>

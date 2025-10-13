@@ -1,0 +1,635 @@
+/* ===== UNIFIED DROPDOWN STYLES ===== */
+/* Single source of truth for all dropdown components */
+
+/* ===== BASE DROPDOWN STYLES ===== */
+.dropdown-menu {
+  position: absolute !important;
+  z-index: 1050 !important;
+  background-color: #fff !important;
+  border: 1px solid rgba(0, 0, 0, 0.15) !important;
+  border-radius: 0.375rem !important;
+  box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15) !important;
+  min-width: 10rem !important;
+  padding: 0.5rem 0 !important;
+  display: none !important;
+}
+
+.dropdown-menu.show {
+  display: block !important;
+}
+
+.dropdown-item {
+  display: block !important;
+  width: 100% !important;
+  padding: 0.5rem 1rem !important;
+  color: #212529 !important;
+  background-color: transparent !important;
+  text-decoration: none !important;
+  cursor: pointer !important;
+  border: 0 !important;
+  transition: all 0.2s ease !important;
+  visibility: visible !important;
+  opacity: 1 !important;
+  font-size: 0.875rem !important;
+  line-height: 1.5 !important;
+  text-align: left !important;
+  white-space: nowrap !important;
+}
+
+.dropdown-item:hover,
+.dropdown-item:focus {
+  color: #1e2125 !important;
+  background-color: #e9ecef !important;
+}
+
+.dropdown-item.active,
+.dropdown-item:active {
+  color: #fff !important;
+  background-color: #0d6efd !important;
+}
+
+.dropdown-item.disabled,
+.dropdown-item:disabled {
+  color: #adb5bd !important;
+  pointer-events: none !important;
+  background-color: transparent !important;
+}
+
+/* ===== TABLE DROPDOWN STYLES ===== */
+/* Apply to all table containers - Support both absolute and portal positioning */
+.scrollable-table-container .dropdown-menu,
+.department-table-container .dropdown-menu,
+.admin-table .dropdown-menu,
+.subject-table-scroll .dropdown-menu {
+  position: absolute !important;
+  z-index: 1070 !important;
+  background-color: #fff !important;
+  border: 1px solid rgba(0, 0, 0, 0.15) !important;
+  border-radius: 0.375rem !important;
+  box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15) !important;
+  min-width: 10rem !important;
+  padding: 0.5rem 0 !important;
+  display: none !important;
+  transform: none !important;
+  max-height: none !important;
+  overflow-y: visible !important;
+}
+
+/* Portal dropdown styles - for dropdowns rendered outside container */
+.dropdown-menu.show.portal-dropdown {
+  position: fixed !important;
+  z-index: 1070 !important;
+  background-color: #fff !important;
+  border: 1px solid rgba(0, 0, 0, 0.15) !important;
+  border-radius: 0.375rem !important;
+  box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15) !important;
+  min-width: 10rem !important;
+  padding: 0.5rem 0 !important;
+  display: block !important;
+  transform: none !important;
+  max-height: none !important;
+  overflow-y: visible !important;
+}
+
+.scrollable-table-container .dropdown-menu.show,
+.department-table-container .dropdown-menu.show,
+.admin-table .dropdown-menu.show,
+.subject-table-scroll .dropdown-menu.show {
+  display: block !important;
+}
+
+/* Fix dropdown positioning for table rows */
+.table tbody tr .dropdown-menu {
+  position: absolute !important;
+  z-index: 1070 !important;
+  transform: none !important;
+  max-height: none !important;
+  overflow-y: visible !important;
+  right: 0 !important;
+  left: auto !important;
+}
+
+/* Department table specific dropdown positioning */
+.department-table-container .dropdown {
+  position: relative;
+}
+
+.department-table-container .dropdown-menu {
+  position: absolute !important;
+  z-index: 1070 !important;
+  transform: none !important;
+  max-height: none !important;
+  overflow-y: visible !important;
+  right: 0 !important;
+  left: auto !important;
+  top: 100% !important;
+  margin-top: 0.125rem !important;
+}
+
+.department-table-container .dropdown-menu.show {
+  display: block !important;
+  position: absolute !important;
+}
+
+/* Course actions dropdown specifically */
+.course-actions-dropdown {
+  position: relative !important;
+  z-index: auto !important;
+}
+
+.course-actions-dropdown .dropdown-menu {
+  position: absolute !important;
+  z-index: 1070 !important;
+  top: 100% !important;
+  right: 0 !important;
+  left: auto !important;
+  transform: none !important;
+  max-height: none !important;
+  overflow: visible !important;
+  box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15) !important;
+  border: 1px solid rgba(0, 0, 0, 0.15) !important;
+  border-radius: 0.375rem !important;
+}
+
+/* Subject table dropdown */
+.subject-table-scroll .dropdown {
+  position: relative !important;
+}
+
+.subject-table-scroll .dropdown-menu {
+  position: absolute !important;
+  z-index: 1070 !important;
+  top: 100% !important;
+  right: 0 !important;
+  left: auto !important;
+  transform: none !important;
+  max-height: none !important;
+  overflow: visible !important;
+  background-color: #fff !important;
+  box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15) !important;
+  border: 1px solid rgba(0, 0, 0, 0.15) !important;
+  border-radius: 0.375rem !important;
+  min-width: 10rem !important;
+  padding: 0.5rem 0 !important;
+}
+
+/* Ensure table cells don't clip dropdown */
+.department-table-container .table tbody tr td:last-child,
+.subject-table-scroll .table tbody tr td:last-child {
+  overflow: visible !important;
+  position: relative !important;
+}
+
+/* Ensure table container allows dropdown to show */
+.department-table-container .table tbody tr td {
+  overflow: visible !important;
+  position: static !important;
+}
+
+/* Ensure parent containers don't clip dropdown */
+.card {
+  overflow: visible !important;
+}
+
+.card-body {
+  overflow: visible !important;
+}
+
+/* Table content should be visible for dropdown */
+.department-table-container .table {
+  overflow: visible !important;
+  margin-bottom: 0 !important;
+}
+
+/* Fix scrollable table container overflow for dropdown - Keep scroll but allow dropdown */
+.scrollable-table-container {
+  overflow-y: auto !important; /* Keep vertical scroll */
+  overflow-x: visible !important; /* Allow dropdown to show horizontally */
+}
+
+.scrollable-table-container .table {
+  overflow: visible !important;
+}
+
+/* Ensure table rows don't clip dropdown */
+.scrollable-table-container .table tbody tr {
+  overflow: visible !important;
+}
+
+.scrollable-table-container .table tbody tr td {
+  overflow: visible !important;
+}
+
+/* Special fix for last row dropdown - adjust positioning */
+.scrollable-table-container tbody tr:last-child .dropdown-menu {
+  position: absolute !important;
+  z-index: 1070 !important;
+  transform: none !important;
+  max-height: none !important;
+  overflow-y: visible !important;
+  right: 0 !important;
+  left: auto !important;
+  top: 100% !important;
+  margin-top: 0.125rem !important;
+}
+
+/* Fix for single item table - when there's only one row */
+.scrollable-table-container tbody tr:only-child .dropdown-menu {
+  position: absolute !important;
+  z-index: 1070 !important;
+  transform: none !important;
+  max-height: none !important;
+  overflow-y: visible !important;
+  right: 0 !important;
+  left: auto !important;
+  top: 100% !important;
+  margin-top: 0.125rem !important;
+}
+
+/* Fix for Bootstrap Dropdown in scrollable containers - Render outside table */
+.scrollable-table-container .dropdown-menu {
+  position: fixed !important;
+  z-index: 1070 !important;
+  transform: none !important;
+  max-height: none !important;
+  overflow-y: visible !important;
+  background-color: #fff !important;
+  border: none !important;
+  border-radius: 0.25rem !important;
+  box-shadow: none !important;
+  min-width: 10rem !important;
+  padding: 0.5rem 0 !important;
+  /* Override Bootstrap's default positioning */
+  top: auto !important;
+  left: auto !important;
+  right: auto !important;
+  bottom: auto !important;
+  margin: 0 !important;
+}
+
+/* Fix for UnifiedDropdown in scrollable containers - Render outside table */
+.scrollable-table-container .table-dropdown .dropdown-menu {
+  position: fixed !important;
+  z-index: 1070 !important;
+  transform: none !important;
+  max-height: none !important;
+  overflow-y: visible !important;
+  background-color: #fff !important;
+  border: none !important;
+  border-radius: 0.25rem !important;
+  box-shadow: none !important;
+  min-width: 10rem !important;
+  padding: 0.5rem 0 !important;
+  /* Override Bootstrap's default positioning */
+  top: auto !important;
+  left: auto !important;
+  right: auto !important;
+  bottom: auto !important;
+  margin: 0 !important;
+}
+
+/* ===== HEADER DROPDOWN STYLES ===== */
+.header-dropdown .dropdown-menu {
+  position: absolute !important;
+  z-index: 1050 !important;
+  right: 0 !important;
+  left: auto !important;
+  top: 100% !important;
+  margin-top: 0.125rem !important;
+}
+
+/* ===== FILTER DROPDOWN STYLES ===== */
+.filter-dropdown .dropdown-menu,
+.filter-panel-dropdown .dropdown-menu {
+  position: absolute !important;
+  z-index: 1050 !important;
+  left: 0 !important;
+  right: auto !important;
+  top: 100% !important;
+  margin-top: 0.125rem !important;
+  border: 1px solid #dee2e6 !important;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1) !important;
+  border-radius: 0.5rem !important;
+  max-height: 70vh !important;
+  overflow-y: auto !important;
+}
+
+/* Filter Panel Dropdown - Specific styling only for FilterPanel */
+.filter-panel-dropdown .dropdown-menu {
+  border: 1px solid #dee2e6;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  border-radius: 0.5rem;
+  z-index: 1050 !important;
+  max-height: 70vh !important;
+  overflow-y: auto !important;
+}
+
+/* Department Management specific filter positioning */
+.department-management-page .filter-panel-dropdown .dropdown-menu {
+  position: absolute !important;
+  top: 100% !important;
+  left: 0 !important;
+  right: auto !important;
+  transform: none !important;
+}
+
+/* User Management specific filter positioning */
+.user-management-page .filter-panel-dropdown .dropdown-menu {
+  position: absolute !important;
+  top: 100% !important;
+  left: 0 !important;
+  right: auto !important;
+  transform: none !important;
+}
+
+/* Role Management specific filter positioning */
+.role-management-page .filter-panel-dropdown .dropdown-menu {
+  position: absolute !important;
+  top: 100% !important;
+  left: 0 !important;
+  right: auto !important;
+  transform: none !important;
+}
+
+.filter-panel-dropdown .dropdown-toggle {
+  border: 1px solid #dee2e6;
+  transition: all 0.2s ease;
+  background-color: #fff !important;
+}
+
+.filter-panel-dropdown .dropdown-toggle:hover {
+  border-color: #007bff !important;
+  background-color: #f8f9fa !important;
+}
+
+.filter-panel-dropdown .dropdown-toggle:focus {
+  border-color: #007bff !important;
+  background-color: #f8f9fa !important;
+  box-shadow: 0 0 0 0.2rem rgba(0, 123, 255, 0.25) !important;
+}
+
+.filter-panel-dropdown .dropdown-toggle:active {
+  border-color: #007bff !important;
+  background-color: #e9ecef !important;
+}
+
+.filter-panel-dropdown .dropdown-toggle.show {
+  border-color: #007bff !important;
+  background-color: #e9ecef !important;
+}
+
+/* Fix for when dropdown is open but not focused */
+.filter-panel-dropdown .dropdown-toggle:not(:focus):not(:hover):not(.show) {
+  background-color: #fff !important;
+  border-color: #dee2e6 !important;
+}
+
+/* Ensure consistent styling for all filter dropdowns */
+.filter-panel-dropdown .dropdown-toggle {
+  background-color: #fff !important;
+  color: #495057 !important;
+}
+
+.filter-panel-dropdown .dropdown-toggle:hover {
+  background-color: #f8f9fa !important;
+  color: #495057 !important;
+}
+
+.filter-panel-dropdown .dropdown-toggle:focus {
+  background-color: #f8f9fa !important;
+  color: #495057 !important;
+}
+
+.filter-panel-dropdown .dropdown-toggle.show {
+  background-color: #e9ecef !important;
+  color: #495057 !important;
+}
+
+/* ===== CUSTOM DROPDOWN STYLES ===== */
+.custom-dropdown {
+  position: absolute !important;
+  z-index: 9999 !important;
+  display: block !important;
+  visibility: visible !important;
+  opacity: 1 !important;
+  box-shadow: none !important;
+  background: white !important;
+  border: 1px solid rgba(0, 0, 0, 0.15) !important;
+}
+
+.custom-dropdown.hide {
+  display: none !important;
+  visibility: hidden !important;
+  opacity: 0 !important;
+}
+
+.custom-dropdown.show {
+  display: block !important;
+  visibility: visible !important;
+  opacity: 1 !important;
+  box-shadow: none !important;
+}
+
+/* Remove box shadow from custom dropdown in all states */
+.custom-dropdown:hover,
+.custom-dropdown:focus,
+.custom-dropdown:active {
+  box-shadow: none !important;
+}
+
+/* ===== DROPDOWN DIVIDER ===== */
+.dropdown-divider {
+  height: 0 !important;
+  margin: 0.5rem 0 !important;
+  overflow: hidden !important;
+  border-top: 1px solid rgba(0, 0, 0, 0.15) !important;
+}
+
+/* ===== DROPDOWN HEADER ===== */
+.dropdown-header {
+  display: block !important;
+  padding: 0.5rem 1rem !important;
+  margin-bottom: 0 !important;
+  font-size: 0.875rem !important;
+  color: #6c757d !important;
+  white-space: normal !important;
+  word-break: break-all !important;
+  line-height: 1.2 !important;
+}
+
+/* ===== ADDITIONAL DROPDOWN STYLES ===== */
+/* Filter Badge */
+.filter-badge {
+  font-size: 0.75rem;
+  padding: 0.25rem 0.5rem;
+  border-radius: 0.375rem;
+}
+
+/* Filter Summary */
+.filter-summary {
+  background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+  border: 1px solid #dee2e6;
+  border-radius: 0.375rem;
+  padding: 0.75rem;
+}
+
+.filter-summary .badge {
+  font-size: 0.7rem;
+  padding: 0.25rem 0.5rem;
+}
+
+/* Checkbox Styling */
+.form-check-input:checked {
+  background-color: #007bff;
+  border-color: #007bff;
+}
+
+.form-check-input:focus {
+  border-color: #007bff;
+  box-shadow: 0 0 0 0.2rem rgba(0, 123, 255, 0.25);
+}
+
+.form-check-label {
+  font-size: 0.875rem;
+  color: #495057;
+  cursor: pointer;
+  transition: color 0.2s ease;
+}
+
+.form-check-label:hover {
+  color: #007bff;
+}
+
+/* Clear Button */
+.btn-link.text-danger {
+  text-decoration: none;
+  transition: all 0.2s ease;
+}
+
+.btn-link.text-danger:hover {
+  color: #dc3545 !important;
+  transform: scale(1.1);
+}
+
+/* ===== RESPONSIVE DROPDOWN STYLES ===== */
+@media (max-width: 768px) {
+  .filter-panel-dropdown .dropdown-menu {
+    width: 320px !important;
+    max-width: calc(100vw - 2rem) !important;
+    max-height: 60vh !important;
+  }
+}
+
+@media (max-width: 576px) {
+  .filter-panel-dropdown .dropdown-menu {
+    width: calc(100vw - 2rem) !important;
+    max-width: calc(100vw - 2rem) !important;
+    max-height: 50vh !important;
+  }
+}
+
+/* ===== SPECIAL FIX FOR SINGLE ITEM DROPDOWN ===== */
+/* Ensure dropdown is above sticky header */
+.scrollable-table-container .dropdown-menu,
+.admin-table .dropdown-menu {
+  z-index: 1070 !important;
+}
+
+/* ===== DROPDOWN CONTAINER FIX ===== */
+/* Ensure dropdown container allows overflow */
+.scrollable-table-container .dropdown {
+  position: static !important;
+}
+
+/* Fix for table cells containing dropdown */
+.scrollable-table-container .table tbody tr td:last-child {
+  position: relative !important;
+  overflow: visible !important;
+}
+
+/* Ensure dropdown shows above sticky header with fixed positioning */
+.scrollable-table-container .dropdown-menu.show {
+  display: block !important;
+  position: fixed !important;
+  z-index: 1070 !important;
+  background-color: #fff !important;
+  border: none !important;
+  border-radius: 0.25rem !important;
+  box-shadow: none !important;
+  min-width: 10rem !important;
+  padding: 0.5rem 0 !important;
+  transform: none !important;
+  max-height: none !important;
+  overflow-y: visible !important;
+  /* Override Bootstrap's default positioning */
+  top: auto !important;
+  left: auto !important;
+  right: auto !important;
+  bottom: auto !important;
+  margin: 0 !important;
+}
+
+/* ===== PORTAL DROPDOWN STYLES ===== */
+/* Basic clean styling for portal dropdowns */
+.portal-dropdown {
+  background-color: #fff !important;
+  border: none !important;
+  border-radius: 0.25rem !important;
+  box-shadow: none !important;
+  padding: 0.5rem 0 !important;
+}
+
+/* Override any shadow classes */
+.portal-dropdown.shadow,
+.portal-dropdown.shadow-sm,
+.portal-dropdown.shadow-lg {
+  box-shadow: none !important;
+}
+
+/* Clean dropdown items - no borders or frames */
+.portal-dropdown .dropdown-item {
+  background-color: transparent !important;
+  border: none !important;
+  border-radius: 0 !important;
+  box-shadow: none !important;
+  padding: 0.5rem 1rem !important;
+  margin: 0 !important;
+  transition: background-color 0.15s ease-in-out !important;
+}
+
+.portal-dropdown .dropdown-item:hover {
+  background-color: rgba(0, 0, 0, 0.05) !important;
+  border: none !important;
+  box-shadow: none !important;
+}
+
+.portal-dropdown .dropdown-item:focus {
+  background-color: rgba(0, 0, 0, 0.05) !important;
+  border: none !important;
+  box-shadow: none !important;
+  outline: none !important;
+}
+
+/* Clean divider */
+.portal-dropdown .dropdown-divider {
+  margin: 0.5rem 0 !important;
+  border-top: 1px solid #dee2e6 !important;
+  border-bottom: none !important;
+  border-left: none !important;
+  border-right: none !important;
+}
+
+/* ===== JAVASCRIPT POSITIONING SUPPORT ===== */
+/* Add data attributes for JavaScript positioning */
+.scrollable-table-container .dropdown-menu[data-bs-popper] {
+  position: fixed !important;
+  z-index: 1070 !important;
+  transform: none !important;
+  max-height: none !important;
+  overflow-y: visible !important;
+}
+
+/* ===== PREVENT BODY SCROLL WHEN DROPDOWN IS OPEN ===== */
+body.dropdown-open {
+  overflow: hidden !important;
+}

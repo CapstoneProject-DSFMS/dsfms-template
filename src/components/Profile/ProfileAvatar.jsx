@@ -31,10 +31,6 @@ const ProfileAvatar = ({
         .filter(Boolean)
         .join(' ') || 'User Name';
     }
-    // Try to parse fullName if available
-    if (user?.fullName) {
-      return user.fullName;
-    }
     return 'User Name';
   };
 
@@ -46,9 +42,6 @@ const ProfileAvatar = ({
     return profileData?.role?.name || user?.role || 'USER';
   };
 
-  const getEmployeeId = () => {
-    return profileData?.eid || user?.eid || 'N/A';
-  };
 
   const currentAvatarUrl = previewUrl || profileData?.avatarUrl || '';
 
@@ -195,38 +188,30 @@ const ProfileAvatar = ({
         </Badge>
         
         <div className="text-start">
-          <div className="mb-2 d-flex align-items-center justify-content-between">
-            <div>
-              <strong>Employee ID:</strong>
-              <br />
-              <span className="text-muted">{getEmployeeId()}</span>
-            </div>
-            <div>
-              <Button
-                variant="outline-secondary"
-                size="sm"
-                onClick={onResetPassword}
-                className="d-flex align-items-center"
-              >
-                <Key size={14} className="me-1" />
-                Reset Password
-              </Button>
-            </div>
-          </div>
-          <div className="mb-2">
-            <strong>Status:</strong>
-            <br />
-            <Badge bg="success">
-              Active
-            </Badge>
-          </div>
           {profileData?.address && (
-            <div className="mb-2">
+            <div className="mb-3">
               <strong>Address:</strong>
               <br />
               <span className="text-muted">{profileData.address}</span>
             </div>
           )}
+          
+          <div className="d-flex justify-content-center">
+            <Button
+              variant="outline-primary"
+              size="sm"
+              onClick={onResetPassword}
+              className="d-flex align-items-center"
+              style={{ 
+                minWidth: '140px',
+                borderRadius: '20px',
+                fontWeight: '500'
+              }}
+            >
+              <Key size={14} className="me-2" />
+              Reset Password
+            </Button>
+          </div>
         </div>
       </Card.Body>
     </Card>
