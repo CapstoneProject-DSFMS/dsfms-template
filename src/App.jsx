@@ -3,6 +3,7 @@ import { router } from './routes/router.jsx'
 import AuthWrapper from './components/Common/AuthWrapper.jsx'
 import { ToastContainer } from 'react-toastify'
 import { useEffect } from 'react'
+import './styles/dropdown-unified.css' // Unified dropdown styles to prevent conflicts
 // import './styles/trainee.css' // Removed to prevent color overrides
 
 function App() {

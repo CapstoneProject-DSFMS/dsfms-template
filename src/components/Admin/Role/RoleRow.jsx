@@ -2,10 +2,11 @@ import React from 'react';
 import { Badge } from 'react-bootstrap';
 import { useAuth } from '../../../hooks/useAuth';
 import PermissionWrapper from '../../Common/PermissionWrapper';
-import { UnifiedDropdown } from '../../Common';
+import PortalUnifiedDropdown from '../../Common/PortalUnifiedDropdown';
+import DisableRoleButton from './DisableRoleButton';
 import { Eye, Pencil, Trash, ShieldX } from 'react-bootstrap-icons';
 import { API_PERMISSIONS } from '../../../constants/apiPermissions';
-import '../../../styles/dropdown-clean.css';
+// import '../../../styles/dropdown-clean.css'; // Moved to dropdown-unified.css in App.jsx
 
 const RoleRow = ({ role, index, onView, onEdit, onDelete, onDisable }) => {
   const { hasPermission } = useAuth();
@@ -106,9 +107,10 @@ const RoleRow = ({ role, index, onView, onEdit, onDelete, onDisable }) => {
               permissions={[API_PERMISSIONS.ROLES.VIEW_DETAIL, API_PERMISSIONS.ROLES.UPDATE]}
               fallback={null}
             >
-              <UnifiedDropdown
+              <PortalUnifiedDropdown
                 align="end"
                 className="table-dropdown"
+                placement="bottom-end"
                 trigger={{
                   variant: 'link',
                   className: 'btn btn-link p-0 text-primary-custom',

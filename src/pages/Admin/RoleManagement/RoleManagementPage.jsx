@@ -1,9 +1,9 @@
 import React, { useState } from 'react';
-import { Container, Card, Row, Col, Button, Dropdown } from 'react-bootstrap';
+import { Container, Card, Row, Col, Button } from 'react-bootstrap';
 import { toast } from 'react-toastify';
 import { Plus, ThreeDotsVertical, Eye, Pencil, PersonX } from 'react-bootstrap-icons';
 import { RoleTable, RoleModal, RoleFilterPanel, DisableRoleModal } from '../../../components/Admin/Role';
-import { SearchBar, PermissionWrapper } from '../../../components/Common';
+import { SearchBar, PermissionWrapper, PortalUnifiedDropdown } from '../../../components/Common';
 import { useRoleManagement } from '../../../hooks/useRoleManagement';
 import { API_PERMISSIONS } from '../../../constants/apiPermissions';
 
@@ -60,82 +60,38 @@ const RoleManagementPage = () => {
   };
 
   const RoleActions = ({ role }) => (
-    <Dropdown align="end">
-      <Dropdown.Toggle 
-        variant="light" 
-        size="sm" 
-        id={`role-actions-${role.id}`} 
-        className="border-0"
-      >
-        <ThreeDotsVertical size={16} />
-      </Dropdown.Toggle>
-      <Dropdown.Menu className="shadow-sm">
-        <Dropdown.Item 
-          onClick={() => handleView(role)}
-          className="d-flex align-items-center transition-all"
-          style={{
-            transition: 'all 0.2s ease'
-          }}
-          onMouseEnter={(e) => {
-            e.target.style.backgroundColor = 'rgba(0, 0, 0, 0.05)';
-            e.target.style.paddingLeft = '1.5rem';
-          }}
-          onMouseLeave={(e) => {
-            e.target.style.backgroundColor = 'transparent';
-            e.target.style.paddingLeft = '1rem';
-          }}
-        >
-          <Eye className="me-2" size={16} />
-          View Details
-        </Dropdown.Item>
-        <Dropdown.Item 
-          onClick={() => handleEdit(role)}
-          className="d-flex align-items-center transition-all"
-          style={{
-            transition: 'all 0.2s ease'
-          }}
-          onMouseEnter={(e) => {
-            e.target.style.backgroundColor = 'rgba(0, 0, 0, 0.05)';
-            e.target.style.paddingLeft = '1.5rem';
-          }}
-          onMouseLeave={(e) => {
-            e.target.style.backgroundColor = 'transparent';
-            e.target.style.paddingLeft = '1rem';
-          }}
-        >
-          <Pencil className="me-2" size={16} />
-          Edit Role
-        </Dropdown.Item>
-        {/* Only show disable/enable option if role is not administrator */}
-        {role.name.toLowerCase() !== 'administrator' && (
-          <>
-            <Dropdown.Divider />
-            <Dropdown.Item 
-              onClick={() => handleDisableClick(role)}
-              className={`d-flex align-items-center transition-all ${
-                role.status === 'Active' ? 'text-warning' : 'text-success'
-              }`}
-              style={{
-                transition: 'all 0.2s ease'
-              }}
-              onMouseEnter={(e) => {
-                e.target.style.backgroundColor = role.status === 'Active' 
-                  ? 'rgba(255, 193, 7, 0.1)' 
-                  : 'rgba(40, 167, 69, 0.1)';
-                e.target.style.paddingLeft = '1.5rem';
-              }}
-              onMouseLeave={(e) => {
-                e.target.style.backgroundColor = 'transparent';
-                e.target.style.paddingLeft = '1rem';
-              }}
-            >
-              <PersonX className="me-2" size={16} />
-              {role.status === 'Active' ? 'Disable Role' : 'Enable Role'}
-            </Dropdown.Item>
-          </>
-        )}
-      </Dropdown.Menu>
-    </Dropdown>
+    <PortalUnifiedDropdown
+      align="end"
+      className="table-dropdown"
+      placement="bottom-end"
+      trigger={{
+        variant: 'light',
+        className: 'btn btn-light btn-sm border-0',
+        children: <ThreeDotsVertical size={16} />
+      }}
+      items={[
+        {
+          label: 'View Details',
+          icon: <Eye />,
+          onClick: () => handleView(role)
+        },
+        {
+          label: 'Edit Role',
+          icon: <Pencil />,
+          onClick: () => handleEdit(role)
+        },
+        // Only show disable/enable option if role is not administrator
+        ...(role.name.toLowerCase() !== 'administrator' ? [
+          { type: 'divider' },
+          {
+            label: role.status === 'Active' ? 'Disable Role' : 'Enable Role',
+            icon: <PersonX />,
+            className: role.status === 'Active' ? 'text-warning' : 'text-success',
+            onClick: () => handleDisableClick(role)
+          }
+        ] : [])
+      ]}
+    />
   );
 
   // Show error toast when error state changes
@@ -203,14 +159,14 @@ const RoleManagementPage = () => {
           </Row>
 
           {/* Role Table with updated actions */}
-          <RoleTable
-            roles={filteredRoles}
-            loading={loading}
-            actionsComponent={RoleActions}
-            onView={handleView}
-            onEdit={handleEdit}
-            onDisable={handleDisable}
-          />
+        <RoleTable
+          roles={filteredRoles}
+          loading={loading}
+          actionsComponent={RoleActions}
+          onView={handleView}
+          onEdit={handleEdit}
+          onDisable={handleDisable}
+        />
 
           {/* Role Modal */}
           <RoleModal

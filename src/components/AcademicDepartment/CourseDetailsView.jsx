@@ -19,7 +19,7 @@ import courseAPI from '../../api/course';
 import CourseTable from './CourseTable';
 import CourseActions from './CourseActions';
 import AddCourseModal from './AddCourseModal';
-import DisableCourseModal from './DisableCourseModal';
+import ArchiveCourseModal from './ArchiveCourseModal';
 import DepartmentHeadModal from './DepartmentHeadModal';
 
 const CourseDetailsView = ({ courseId }) => {
@@ -30,8 +30,8 @@ const CourseDetailsView = ({ courseId }) => {
   const [loading, setLoading] = useState(true);
   const [showCourseModal, setShowCourseModal] = useState(false);
   const [courseModalMode, setCourseModalMode] = useState('add');
-  const [showDisableCourse, setShowDisableCourse] = useState(false);
-  const [courseToDisable, setCourseToDisable] = useState(null);
+  const [showArchiveCourse, setShowArchiveCourse] = useState(false);
+  const [courseToArchive, setCourseToArchive] = useState(null);
   const [departmentHead, setDepartmentHead] = useState(null);
   const [showDepartmentHeadModal, setShowDepartmentHeadModal] = useState(false);
   const [isSavingCourse, setIsSavingCourse] = useState(false);
@@ -195,19 +195,32 @@ const CourseDetailsView = ({ courseId }) => {
     setShowCourseModal(true);
   };
 
-  const handleDisableCourse = (courseId) => {
-    console.log('🔍 handleDisableCourse called with courseId:', courseId);
-    const courseToDisable = courses.find(c => c.id === courseId);
-    console.log('🔍 Found course to disable:', courseToDisable);
-    setCourseToDisable(courseToDisable);
-    setShowDisableCourse(true);
+  const handleArchiveCourse = (courseId) => {
+    console.log('🔍 handleArchiveCourse called with courseId:', courseId);
+    const courseToArchive = courses.find(c => c.id === courseId);
+    console.log('🔍 Found course to archive:', courseToArchive);
+    setCourseToArchive(courseToArchive);
+    setShowArchiveCourse(true);
   };
 
-  const handleConfirmDisableCourse = async (courseId) => {
-    console.log('Disabling course:', courseId);
-    // TODO: Implement disable course API call
-    setShowDisableCourse(false);
-    setCourseToDisable(null);
+  const handleConfirmArchiveCourse = async (courseId) => {
+    console.log('Archiving course:', courseId);
+    try {
+      await courseAPI.archiveCourse(courseId);
+      toast.success('Course archived successfully');
+      
+      // Update course status in the list
+      setCourses(prev => prev.map(c => 
+        c.id === courseId ? { ...c, status: 'ARCHIVED' } : c
+      ));
+      
+      setShowArchiveCourse(false);
+      setCourseToArchive(null);
+    } catch (error) {
+      console.error('Error archiving course:', error);
+      toast.error('Failed to archive course. Please try again.');
+      throw error;
+    }
   };
 
   const handleViewCourse = (courseId) => {
@@ -402,7 +415,7 @@ const CourseDetailsView = ({ courseId }) => {
                 loading={false}
                 actionsComponent={CourseActions}
                 onView={handleViewCourse}
-                onDisable={handleDisableCourse}
+                onDisable={handleArchiveCourse}
               />
             </div>
           </Card>
@@ -420,11 +433,11 @@ const CourseDetailsView = ({ courseId }) => {
       />
 
 
-      <DisableCourseModal
-        show={showDisableCourse}
-        onClose={() => setShowDisableCourse(false)}
-        onDisable={handleConfirmDisableCourse}
-        course={courseToDisable}
+      <ArchiveCourseModal
+        show={showArchiveCourse}
+        onClose={() => setShowArchiveCourse(false)}
+        onArchive={handleConfirmArchiveCourse}
+        course={courseToArchive}
       />
 
       <DepartmentHeadModal
