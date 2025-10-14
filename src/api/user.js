@@ -125,5 +125,21 @@ export const userAPI = {
     } catch (error) {
       throw error.response?.data || error.message;
     }
+  },
+
+  // Get trainers only
+  getTrainers: async (params = {}) => {
+    try {
+      const response = await apiClient.get('/users', { 
+        params: {
+          includeDeleted: true,
+          roleName: 'TRAINER',
+          ...params
+        }
+      });
+      return response.data;
+    } catch (error) {
+      throw error.response?.data || error.message;
+    }
   }
 };

@@ -36,18 +36,13 @@ const InPageCourseDetail = ({ course, department, onClose, onEdit }) => {
   // Load subjects from API
   const loadSubjects = async () => {
     try {
-      console.log('🔍 InPageCourseDetail - Loading subjects from API...');
       const response = await subjectAPI.getSubjects();
-      console.log('🔍 InPageCourseDetail - Subjects API Response:', response);
       
       if (response && response.subjects) {
         setSubjects(response.subjects);
         setHasApiData(true);
-        console.log('✅ InPageCourseDetail - Loaded subjects:', response.subjects.length);
       }
     } catch (error) {
-      console.error('❌ InPageCourseDetail - Error loading subjects:', error);
-      console.error('❌ Error details:', error.response?.data);
       // Keep existing subjects (mock data) if API fails
     }
   };
@@ -55,9 +50,7 @@ const InPageCourseDetail = ({ course, department, onClose, onEdit }) => {
   // Load courses from API
   const loadCourses = async () => {
     try {
-      console.log('🔍 InPageCourseDetail - Loading courses from API...');
       const response = await courseAPI.getDepartmentById(courseId);
-      console.log('🔍 InPageCourseDetail - Courses API Response:', response);
       
       if (response && response.courses) {
         const transformedCourses = response.courses.map(course => ({
@@ -75,10 +68,8 @@ const InPageCourseDetail = ({ course, department, onClose, onEdit }) => {
           level: course.level
         }));
         setCourses(transformedCourses);
-        console.log('✅ InPageCourseDetail - Loaded courses:', transformedCourses.length);
       }
     } catch (error) {
-      console.error('❌ InPageCourseDetail - Error loading courses:', error);
     }
   };
 
@@ -94,9 +85,7 @@ const InPageCourseDetail = ({ course, department, onClose, onEdit }) => {
       
       setLoading(true);
       try {
-        console.log('🔍 InPageCourseDetail - Loading course with ID:', courseId);
         const response = await courseAPI.getCourseById(courseId);
-        console.log('🔍 InPageCourseDetail - API Response:', response);
         
         // Transform API data to match component format
         const transformedCourseDetails = {
@@ -121,8 +110,6 @@ const InPageCourseDetail = ({ course, department, onClose, onEdit }) => {
         setCourseDetails(transformedCourseDetails);
         setLoading(false);
       } catch (error) {
-        console.error('❌ Error loading course details:', error);
-        console.error('❌ Error details:', error.response?.data);
         setLoading(false);
         
         // Fallback to hardcoded data if API fails
@@ -188,17 +175,14 @@ const InPageCourseDetail = ({ course, department, onClose, onEdit }) => {
   }
 
   const handleViewSubject = (subjectId) => {
-    console.log('🔍 handleViewSubject - courseId:', courseId, 'subjectId:', subjectId);
     navigate(`/academic/course/${courseId}/subject/${subjectId}`);
   };
 
   const handleEditSubject = (subjectId) => {
-    console.log('Edit subject:', subjectId);
     // TODO: Implement edit subject functionality
   };
 
   const handleDeleteSubject = (subjectId) => {
-    console.log('Delete subject:', subjectId);
     // Find the subject from mock data
     const mockSubjects = [
       { id: 's1', name: 'Safety Basics', code: 'SB01', description: 'Basic safety procedures training' },
@@ -216,7 +200,6 @@ const InPageCourseDetail = ({ course, department, onClose, onEdit }) => {
   };
 
   const handleConfirmDisableSubject = async (subjectId) => {
-    console.log('Disabling subject:', subjectId);
     setIsDisabling(true);
     try {
       // TODO: Implement disable subject API call
@@ -224,13 +207,11 @@ const InPageCourseDetail = ({ course, department, onClose, onEdit }) => {
       await new Promise(resolve => setTimeout(resolve, 1000));
       
       // Show success message
-      console.log('Subject disabled successfully!');
       
       // Close modal
       setShowDisableSubject(false);
       setSelectedSubject(null);
     } catch (error) {
-      console.error('Error disabling subject:', error);
     } finally {
       setIsDisabling(false);
     }
@@ -242,28 +223,21 @@ const InPageCourseDetail = ({ course, department, onClose, onEdit }) => {
 
   // Modal handlers
   const handleAddSubject = async (subjectData) => {
-    console.log('Adding subject:', subjectData);
     // TODO: Implement add subject API call
     setShowAddSubject(false);
   };
 
   const handleBulkImportSubjects = async (subjectsData) => {
-    console.log('🔍 InPageCourseDetail - Bulk importing subjects:', subjectsData);
-    console.log('🔍 InPageCourseDetail - Number of subjects:', subjectsData.length);
-    console.log('🔍 InPageCourseDetail - First subject sample:', subjectsData[0]);
     
     try {
       // Call bulk import API
       const response = await subjectAPI.bulkImportSubjects(subjectsData);
-      console.log('✅ InPageCourseDetail - Bulk import API response:', response);
       
       // Reload subjects from API to get updated data
       await loadSubjects();
       
       setShowBulkImport(false);
-      console.log('✅ Bulk import completed successfully');
     } catch (error) {
-      console.error('❌ Error during bulk import:', error);
       // Fallback to local state if API fails
       const newSubjects = subjectsData.map((subject, index) => ({
         id: `imported_${Date.now()}_${index}`,
@@ -292,7 +266,6 @@ const InPageCourseDetail = ({ course, department, onClose, onEdit }) => {
   };
 
   const handleEditCourse = async (updatedCourseData) => {
-    console.log('Course updated successfully:', updatedCourseData);
     
     // Update the course in the courses list
     setCourses(prevCourses => 

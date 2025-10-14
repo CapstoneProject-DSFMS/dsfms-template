@@ -6,12 +6,10 @@ import { API_PERMISSIONS } from '../../constants/apiPermissions';
 
 const SubjectActions = ({ subject, onView, onEdit, onDelete }) => {
   const handleViewClick = () => {
-    console.log('🔍 SubjectActions - View Details clicked for subject:', subject.id);
     onView && onView(subject.id);
   };
 
   const handleDeleteClick = () => {
-    console.log('🔍 SubjectActions - Delete Subject clicked for subject:', subject.id);
     onDelete && onDelete(subject.id);
   };
 

@@ -37,11 +37,9 @@ const TraineeSelectionPanel = ({ selectedTrainees, onSelectionChange }) => {
     setLoadingTrainees(true);
     setError(null);
     try {
-      console.log('🔍 TraineeSelectionPanel - Loading trainees from API...');
       
       const response = await traineeAPI.getTraineesForEnrollment();
       
-      console.log('🔍 TraineeSelectionPanel - API Response:', response);
       
       if (response && response.data) {
         // Transform API data to match component format
@@ -56,13 +54,10 @@ const TraineeSelectionPanel = ({ selectedTrainees, onSelectionChange }) => {
         }));
         
         setAllTrainees(transformedTrainees);
-        console.log('✅ TraineeSelectionPanel - Loaded trainees:', transformedTrainees.length);
       } else {
         setAllTrainees([]);
-        console.log('⚠️ TraineeSelectionPanel - No trainees found');
       }
-    } catch (error) {
-      console.error('❌ TraineeSelectionPanel - Error loading trainees:', error);
+    } catch {
       setError('Failed to load trainees');
       setAllTrainees([]);
     } finally {

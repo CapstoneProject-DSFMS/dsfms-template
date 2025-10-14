@@ -5,8 +5,6 @@ import SubjectDetailsView from '../../components/AcademicDepartment/SubjectDetai
 const SubjectDetailsWrapper = () => {
   const { subjectId, courseId } = useParams();
   
-  console.log('🔍 SubjectDetailsWrapper - subjectId:', subjectId);
-  console.log('🔍 SubjectDetailsWrapper - courseId:', courseId);
 
   return <SubjectDetailsView subjectId={subjectId} courseId={courseId} />;
 };

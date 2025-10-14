@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { Container, Row, Col, Card, Button, Table, Badge, Nav, Tab } from 'react-bootstrap';
 import { toast } from 'react-toastify';
 import { 
@@ -36,13 +36,50 @@ const SubjectDetailsView = ({ subjectId, courseId }) => {
   const [selectedTrainer, setSelectedTrainer] = useState(null);
   const [isDisabling, setIsDisabling] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
-  const [isAddingTrainer] = useState(false);
-  const [isEditingTrainer] = useState(false);
+  const [isAddingTrainer, setIsAddingTrainer] = useState(false);
+  const [isEditingTrainer, setIsEditingTrainer] = useState(false);
   
   // Tab state
   const [activeTab, setActiveTab] = useState('subject-info');
   
   const { sortedData } = useTableSort(trainers);
+
+  // Function to format role display
+  const formatRoleDisplay = (role) => {
+    const roleMap = {
+      'PRIMARY_INSTRUCTOR': { text: 'Primary Instructor', variant: 'primary' },
+      'EXAMINER': { text: 'Examiner', variant: 'warning' },
+      'ASSESSMENT_REVIEWER': { text: 'Assessment Reviewer', variant: 'info' },
+      'ASSISTANT_INSTRUCTOR': { text: 'Assistant Instructor', variant: 'secondary' }
+    };
+    
+    const roleInfo = roleMap[role] || { text: role, variant: 'light' };
+    return roleInfo;
+  };
+
+  // Load trainers from subject data (instructors field)
+  const loadSubjectTrainers = useCallback((subjectData) => {
+    console.log('🆕 NEW CODE: Loading trainers from subject data:', subjectData);
+    
+    if (subjectData && subjectData.instructors) {
+      console.log('📋 Raw instructors data:', subjectData.instructors);
+      
+      // Transform instructor data to match our UI format
+      const transformedTrainers = subjectData.instructors.map(trainer => ({
+        id: trainer.id,
+        eid: trainer.eid,
+        name: `${trainer.firstName} ${trainer.lastName}`,
+        role: trainer.roleInSubject,
+        assignedAt: trainer.assignedAt
+      }));
+      
+      console.log('✨ Transformed trainers:', transformedTrainers);
+      setTrainers(transformedTrainers);
+    } else {
+      console.log('❌ No instructors data in subject');
+      setTrainers([]);
+    }
+  }, []);
 
   // Load subject data from API
   useEffect(() => {
@@ -51,40 +88,16 @@ const SubjectDetailsView = ({ subjectId, courseId }) => {
       
       setLoading(true);
       try {
-        console.log('🔍 SubjectDetailsView - Loading subject:', subjectId);
         const response = await subjectAPI.getSubjectById(subjectId);
-        console.log('🔍 SubjectDetailsView - API Response:', response);
         
         if (response) {
           setSubject(response);
-          // Set mock trainers and trainees for now
-          setTrainers([
-            {
-              id: 't1',
-              name: 'John Smith',
-              email: 'john.smith@example.com',
-              phone: '+1 234 567 8900',
-              status: 'ACTIVE',
-              specialization: 'Safety Training',
-              experience: '5 years'
-            },
-            {
-              id: 't2', 
-              name: 'Sarah Johnson',
-              email: 'sarah.johnson@example.com',
-              phone: '+1 234 567 8901',
-              status: 'ACTIVE',
-              specialization: 'Emergency Procedures',
-              experience: '3 years'
-            }
-          ]);
-          console.log('✅ SubjectDetailsView - Loaded subject:', response.name);
+          // Load trainers from subject data (instructors field)
+          loadSubjectTrainers(response);
         } else {
-          console.log('❌ SubjectDetailsView - No subject found');
           setSubject(null);
         }
-      } catch (error) {
-        console.error('❌ SubjectDetailsView - Error loading subject:', error);
+      } catch {
         setSubject(null);
       } finally {
         setLoading(false);
@@ -94,7 +107,7 @@ const SubjectDetailsView = ({ subjectId, courseId }) => {
     if (subjectId) {
       loadSubjectData();
     }
-  }, [subjectId]);
+  }, [subjectId, loadSubjectTrainers]);
 
   // const handleEditSubject = () => {
   //   console.log('Edit Subject clicked');
@@ -102,7 +115,6 @@ const SubjectDetailsView = ({ subjectId, courseId }) => {
   // };
 
   const handleSaveSubject = async (subjectData) => {
-    console.log('Saving subject:', subjectData);
     setIsEditing(true);
     try {
       // TODO: Implement save subject API call
@@ -117,8 +129,7 @@ const SubjectDetailsView = ({ subjectId, courseId }) => {
       
       toast.success('Subject updated successfully!');
       setShowEditSubject(false);
-    } catch (error) {
-      console.error('Error saving subject:', error);
+    } catch {
       toast.error('Failed to update subject');
     } finally {
       setIsEditing(false);
@@ -130,8 +141,7 @@ const SubjectDetailsView = ({ subjectId, courseId }) => {
   //   setShowDisableSubject(true);
   // };
 
-  const handleConfirmDisableSubject = async (subjectId) => {
-    console.log('Disabling subject:', subjectId);
+  const handleConfirmDisableSubject = async () => {
     setIsDisabling(true);
     try {
       // TODO: Implement disable subject API call
@@ -139,14 +149,91 @@ const SubjectDetailsView = ({ subjectId, courseId }) => {
       await new Promise(resolve => setTimeout(resolve, 1000));
       
       // Show success message
-      console.log('Subject disabled successfully!');
       
       // Close modal
       setShowDisableSubject(false);
-    } catch (error) {
-      console.error('Error disabling subject:', error);
+    } catch {
+      // Handle error silently
     } finally {
       setIsDisabling(false);
+    }
+  };
+
+  const handleAddTrainer = async (trainerData) => {
+    setIsAddingTrainer(true);
+    try {
+      // Call API to add trainer to subject
+      await subjectAPI.addTrainerToSubject(subjectId, trainerData);
+      
+      // Reload subject data to get updated trainers list
+      const updatedSubject = await subjectAPI.getSubjectById(subjectId);
+      if (updatedSubject) {
+        setSubject(updatedSubject);
+        loadSubjectTrainers(updatedSubject);
+      }
+      
+      toast.success('Trainer added successfully!');
+      setShowAddTrainer(false);
+    } catch (error) {
+      console.error('Error adding trainer:', error);
+      
+      // Display specific error message from API response
+      const errorMessage = error?.message || error?.error || 'Failed to add trainer';
+      toast.error(errorMessage);
+    } finally {
+      setIsAddingTrainer(false);
+    }
+  };
+
+  const handleEditTrainer = async (roleData) => {
+    if (!selectedTrainer) return;
+    
+    setIsEditingTrainer(true);
+    try {
+      // Call API to update trainer role
+      await subjectAPI.updateTrainerRole(subjectId, selectedTrainer.id, roleData);
+      
+      // Reload subject data to get updated trainers list
+      const updatedSubject = await subjectAPI.getSubjectById(subjectId);
+      if (updatedSubject) {
+        setSubject(updatedSubject);
+        loadSubjectTrainers(updatedSubject);
+      }
+      
+      toast.success('Trainer role updated successfully!');
+      setShowEditTrainer(false);
+    } catch (error) {
+      console.error('Error updating trainer role:', error);
+      
+      // Display specific error message from API response
+      const errorMessage = error?.message || error?.error || 'Failed to update trainer role';
+      toast.error(errorMessage);
+    } finally {
+      setIsEditingTrainer(false);
+    }
+  };
+
+  const handleRemoveTrainer = async (trainerId) => {
+    if (!trainerId) return;
+    
+    try {
+      // Call API to remove trainer from subject
+      await subjectAPI.removeTrainerFromSubject(subjectId, trainerId);
+      
+      // Reload subject data to get updated trainers list
+      const updatedSubject = await subjectAPI.getSubjectById(subjectId);
+      if (updatedSubject) {
+        setSubject(updatedSubject);
+        loadSubjectTrainers(updatedSubject);
+      }
+      
+      toast.success('Trainer removed successfully!');
+    } catch (error) {
+      console.error('Error removing trainer:', error);
+      
+      // Display specific error message from API response
+      const errorMessage = error?.message || error?.error || 'Failed to remove trainer';
+      toast.error(errorMessage);
     }
   };
 
@@ -280,43 +367,61 @@ const SubjectDetailsView = ({ subjectId, courseId }) => {
 
               {/* Trainers Tab */}
               <Tab.Pane eventKey="trainers">
+                {/* Add Trainer Button */}
+                <div className="d-flex justify-content-between align-items-center mb-3">
+                  <h6 className="mb-0">Trainers ({trainers.length})</h6>
+                  <Button 
+                    variant="primary" 
+                    size="sm"
+                    onClick={() => setShowAddTrainer(true)}
+                  >
+                    <Plus size={14} className="me-1" />
+                    Add Trainer
+                  </Button>
+                </div>
+                
                 <Table hover>
                   <thead>
                     <tr>
+                      <th>EID</th>
                       <th>Name</th>
-                      <th>Email</th>
-                      <th>Phone</th>
-                      <th>Status</th>
-                      <th>Specialization</th>
-                      <th>Experience</th>
+                      <th>Role</th>
+                      <th>Assigned Date</th>
                       <th>Actions</th>
                     </tr>
                   </thead>
                   <tbody>
-                    {sortedData.map((trainer) => (
-                      <tr key={trainer.id}>
-                        <td>{trainer.name}</td>
-                        <td>{trainer.email}</td>
-                        <td>{trainer.phone}</td>
-                        <td>
-                          <Badge bg={trainer.status === 'ACTIVE' ? 'success' : 'secondary'}>
-                            {trainer.status}
-                          </Badge>
-                        </td>
-                        <td>{trainer.specialization}</td>
-                        <td>{trainer.experience}</td>
-                        <td>
-                          <TrainerActions
-                            trainer={trainer}
-                            onEdit={() => {
-                              setSelectedTrainer(trainer);
-                              setShowEditTrainer(true);
-                            }}
-                            onDelete={() => console.log('Delete trainer:', trainer.id)}
-                          />
-                        </td>
-                      </tr>
-                    ))}
+                    {sortedData.map((trainer) => {
+                      const roleInfo = formatRoleDisplay(trainer.role);
+                      return (
+                        <tr key={trainer.id}>
+                          <td>
+                            <Badge bg="secondary" className="text-white">
+                              {trainer.eid}
+                            </Badge>
+                          </td>
+                          <td>{trainer.name}</td>
+                          <td>
+                            <Badge bg={roleInfo.variant}>
+                              {roleInfo.text}
+                            </Badge>
+                          </td>
+                          <td>
+                            {new Date(trainer.assignedAt).toLocaleDateString()}
+                          </td>
+                          <td>
+                            <TrainerActions
+                              trainer={trainer}
+                              onEdit={() => {
+                                setSelectedTrainer(trainer);
+                                setShowEditTrainer(true);
+                              }}
+                              onDelete={handleRemoveTrainer}
+                            />
+                          </td>
+                        </tr>
+                      );
+                    })}
                   </tbody>
                 </Table>
               </Tab.Pane>
@@ -346,20 +451,14 @@ const SubjectDetailsView = ({ subjectId, courseId }) => {
       <AddTrainerModal
         show={showAddTrainer}
         onClose={() => setShowAddTrainer(false)}
-        onSave={() => {
-          console.log('Add trainer');
-          setShowAddTrainer(false);
-        }}
+        onSave={handleAddTrainer}
         loading={isAddingTrainer}
       />
 
       <EditTrainerModal
         show={showEditTrainer}
         onClose={() => setShowEditTrainer(false)}
-        onSave={() => {
-          console.log('Edit trainer');
-          setShowEditTrainer(false);
-        }}
+        onSave={handleEditTrainer}
         trainer={selectedTrainer}
         loading={isEditingTrainer}
       />

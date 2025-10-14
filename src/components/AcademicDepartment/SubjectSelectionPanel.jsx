@@ -15,10 +15,8 @@ const SubjectSelectionPanel = ({ selectedSubjects, onSelectionChange }) => {
       try {
         setLoading(true);
         setError(null);
-        console.log('🔍 SubjectSelectionPanel - Loading all subjects from API...');
         
         const response = await subjectAPI.getSubjects();
-        console.log('🔍 SubjectSelectionPanel - API Response:', response);
         
         if (response && response.subjects) {
           // Only extract name field from each subject
@@ -29,14 +27,10 @@ const SubjectSelectionPanel = ({ selectedSubjects, onSelectionChange }) => {
           }));
           
           setSubjects(subjectsWithNameOnly);
-          console.log('✅ SubjectSelectionPanel - Loaded subjects:', subjectsWithNameOnly.length);
-          console.log('🔍 SubjectSelectionPanel - Subject names:', subjectsWithNameOnly.map(s => s.name));
         } else {
           setSubjects([]);
-          console.log('⚠️ SubjectSelectionPanel - No subjects found');
         }
-      } catch (error) {
-        console.error('❌ SubjectSelectionPanel - Error loading subjects:', error);
+      } catch {
         setError('Failed to load subjects');
         setSubjects([]);
       } finally {

@@ -175,7 +175,6 @@ const BulkImportTraineesModal = ({ show, onClose, onImport, loading = false }) =
         setValidationErrors([]);
 
       } catch (error) {
-        console.error('Error parsing Excel file:', error);
         setErrors(['Failed to parse Excel file. Please check the file format.']);
       }
     };
@@ -211,11 +210,9 @@ const BulkImportTraineesModal = ({ show, onClose, onImport, loading = false }) =
         nation: trainee.nation || ''
       }));
 
-      console.log('🔍 Bulk importing trainees as users:', usersData);
       
       // Call user API bulk import
       const response = await userAPI.bulkImportUsers(usersData);
-      console.log('✅ Bulk import response:', response);
       
       // Call parent onImport callback if provided
       if (onImport) {
@@ -224,7 +221,6 @@ const BulkImportTraineesModal = ({ show, onClose, onImport, loading = false }) =
       
       handleClose();
     } catch (error) {
-      console.error('❌ Error bulk importing trainees:', error);
       setErrors([error.message || 'Failed to import trainees. Please try again.']);
     }
   };

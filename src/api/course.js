@@ -107,17 +107,8 @@ const courseAPI = {
 
   // Get trainee enrollments
   getTraineeEnrollments: async (traineeId) => {
-    try {
-      console.log('🔍 Getting trainee enrollments for traineeId:', traineeId);
-      const response = await apiClient.get(`/courses/trainees/${traineeId}/enrollments`);
-      console.log('✅ Trainee enrollments API response:', response.data);
-      return response.data;
-    } catch (error) {
-      console.error('❌ Error fetching trainee enrollments:', error);
-      console.error('❌ Error status:', error.response?.status);
-      console.error('❌ Error details:', error.response?.data);
-      throw error;
-    }
+    const response = await apiClient.get(`/courses/trainees/${traineeId}/enrollments`);
+    return response.data;
   }
 };
 

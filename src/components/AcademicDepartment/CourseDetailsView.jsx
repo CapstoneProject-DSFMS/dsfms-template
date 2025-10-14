@@ -14,7 +14,6 @@ import {
 import { toast } from 'react-toastify';
 import { PermissionWrapper } from '../Common';
 import { API_PERMISSIONS } from '../../constants/apiPermissions';
-import { usePermissions } from '../../hooks/usePermissions';
 import courseAPI from '../../api/course';
 import CourseTable from './CourseTable';
 import CourseActions from './CourseActions';
@@ -24,7 +23,6 @@ import DepartmentHeadModal from './DepartmentHeadModal';
 
 const CourseDetailsView = ({ courseId }) => {
   const navigate = useNavigate();
-  const { hasPermission, userPermissions } = usePermissions();
   const [course, setCourse] = useState(null);
   const [courses, setCourses] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -159,20 +157,15 @@ const CourseDetailsView = ({ courseId }) => {
         }
         
         setLoading(false);
-      } catch (error) {
-        console.error('❌ Error loading department with courses:', error);
-        console.error('❌ Error details:', error.response?.data);
+      } catch {
         setLoading(false);
         
         // Fallback to hardcoded data if API fails
         const courseData = hardcodedCourses[courseId];
         
         if (courseData) {
-          console.log('🔄 Using fallback hardcoded data');
           setCourse(courseData);
           setCourses(hardcodedCoursesList);
-        } else {
-          console.log('❌ No fallback data available for courseId:', courseId);
         }
       }
     };
@@ -185,26 +178,18 @@ const CourseDetailsView = ({ courseId }) => {
 
   const handleCreateCourse = () => {
     // Debug permission checking
-    console.log('🔍 Debug Permission Check:');
-    console.log('- API_PERMISSIONS.COURSES.CREATE:', API_PERMISSIONS.COURSES.CREATE);
-    console.log('- hasPermission result:', hasPermission(API_PERMISSIONS.COURSES.CREATE));
-    console.log('- userPermissions count:', userPermissions?.length || 0);
-    console.log('- userPermissions:', userPermissions);
     
     setCourseModalMode('add');
     setShowCourseModal(true);
   };
 
   const handleArchiveCourse = (courseId) => {
-    console.log('🔍 handleArchiveCourse called with courseId:', courseId);
     const courseToArchive = courses.find(c => c.id === courseId);
-    console.log('🔍 Found course to archive:', courseToArchive);
     setCourseToArchive(courseToArchive);
     setShowArchiveCourse(true);
   };
 
   const handleConfirmArchiveCourse = async (courseId) => {
-    console.log('Archiving course:', courseId);
     try {
       await courseAPI.archiveCourse(courseId);
       toast.success('Course archived successfully');
@@ -217,15 +202,18 @@ const CourseDetailsView = ({ courseId }) => {
       setShowArchiveCourse(false);
       setCourseToArchive(null);
     } catch (error) {
-      console.error('Error archiving course:', error);
       toast.error('Failed to archive course. Please try again.');
       throw error;
     }
   };
 
   const handleViewCourse = (courseId) => {
-    console.log('🔍 handleViewCourse called with courseId:', courseId);
-    navigate(`/academic/course-detail/${courseId}`);
+    navigate(`/academic/course-detail/${courseId}`, {
+      state: {
+        departmentId: courseId, // courseId is actually departmentId in this context
+        departmentName: course?.name || 'Department'
+      }
+    });
   };
 
 
@@ -234,9 +222,6 @@ const CourseDetailsView = ({ courseId }) => {
       setIsSavingCourse(true);
       
       // Debug permission before API call
-      console.log('🔍 Debug Before API Call:');
-      console.log('- Permission check:', hasPermission(API_PERMISSIONS.COURSES.CREATE));
-      console.log('- Auth token exists:', !!localStorage.getItem('authToken'));
       
       // Build payload expected by API
       const payload = {
@@ -253,7 +238,6 @@ const CourseDetailsView = ({ courseId }) => {
         level: courseData.level
       };
 
-      console.log('📤 Sending payload:', payload);
       const created = await courseAPI.createCourse(payload);
 
       // Notify user
@@ -277,16 +261,10 @@ const CourseDetailsView = ({ courseId }) => {
       };
       setCourses(prev => [createdForTable, ...prev]);
     } catch (error) {
-      console.error('❌ Error creating course:', error);
-      console.error('❌ Error response:', error.response);
-      console.error('❌ Error status:', error.response?.status);
-      console.error('❌ Error data:', error.response?.data);
       
       // Check if it's a permission error
       if (error.response?.status === 403) {
-        console.error('🚫 403 Forbidden - Permission denied');
-        console.error('🚫 User permissions:', userPermissions);
-        console.error('🚫 Required permission:', API_PERMISSIONS.COURSES.CREATE);
+        // Handle permission error
       }
       
       toast.error(error.response?.data?.message || 'Failed to create course');
