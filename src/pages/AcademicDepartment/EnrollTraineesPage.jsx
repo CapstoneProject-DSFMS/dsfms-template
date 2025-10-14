@@ -29,6 +29,7 @@ const EnrollTraineesPage = () => {
   const [tableRefreshKey, setTableRefreshKey] = useState(0);
 
   const handleBack = () => {
+    // Navigate back to course detail page
     navigate(`/academic/course-detail/${courseId}`);
   };
 
@@ -40,7 +41,6 @@ const EnrollTraineesPage = () => {
     setBulkImportLoading(true);
     try {
       // TODO: Implement actual API call to import trainees
-      console.log('Importing trainees:', trainees);
       
       // For now, just add to selected trainees
       const newTrainees = trainees.map((trainee, index) => ({
@@ -56,7 +56,6 @@ const EnrollTraineesPage = () => {
       await new Promise(resolve => setTimeout(resolve, 1000));
       
     } catch (error) {
-      console.error('Failed to import trainees:', error);
       throw error;
     } finally {
       setBulkImportLoading(false);
@@ -72,43 +71,30 @@ const EnrollTraineesPage = () => {
     setEnrollLoading(true);
     
     try {
-      console.log('🔍 Starting enrollment process...');
-      console.log('Selected subjects (IDs):', selectedSubjects);
-      console.log('Selected subjects type:', typeof selectedSubjects, Array.isArray(selectedSubjects));
-      console.log('Selected trainees:', selectedTrainees);
 
       // Prepare data for API call - Backend expects batchCode and traineeUserIds
       const traineeData = {
         batchCode: "TEST0012025", // Fixed batch code
         traineeUserIds: selectedTrainees.map(trainee => {
-          console.log('🔍 Processing trainee:', trainee);
           return trainee.id; // Just the user IDs as array
         })
       };
 
-      console.log('🔍 Prepared trainee data:', traineeData);
 
       // Call API for each selected subject
       const enrollmentPromises = selectedSubjects.map(async (subjectId) => {
-        console.log(`🔍 Enrolling trainees to subject ID: ${subjectId}`);
-        console.log(`🔍 Subject ID validation:`, {
-          subjectId: subjectId,
-          subjectIdType: typeof subjectId
-        });
         
         if (!subjectId) {
           throw new Error(`Invalid subject ID: ${subjectId}`);
         }
         
         const response = await subjectAPI.assignTrainees(subjectId, traineeData);
-        console.log(`✅ Enrollment response for subject ${subjectId}:`, response);
         return { subjectId, response };
       });
 
       // Wait for all enrollments to complete
       const enrollmentResults = await Promise.all(enrollmentPromises);
       
-      console.log('✅ All enrollments completed:', enrollmentResults);
 
       // Refresh the enrolled trainees table
       setTableRefreshKey(prev => prev + 1);
@@ -118,14 +104,8 @@ const EnrollTraineesPage = () => {
       setSelectedSubjects([]);
       
       toast.success(`Successfully enrolled ${selectedTrainees.length} trainees to ${selectedSubjects.length} subject(s)`);
-      console.log('🎉 Enrollment completed successfully!');
       
     } catch (error) {
-      console.error('❌ Error during enrollment:', error);
-      console.error('❌ Error type:', typeof error);
-      console.error('❌ Error message:', error.message);
-      console.error('❌ Error response:', error.response);
-      console.error('❌ Error config:', error.config);
       
       // Show more specific error message
       let errorMessage = 'Failed to enroll trainees. Please try again.';

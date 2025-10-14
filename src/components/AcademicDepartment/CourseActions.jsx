@@ -7,12 +7,10 @@ import { API_PERMISSIONS } from '../../constants/apiPermissions';
 
 const CourseActions = ({ course, onView, onDisable }) => {
   const handleViewClick = () => {
-    console.log('🔍 CourseActions - View Details clicked for course:', course.id);
     onView(course.id);
   };
 
   const handleArchiveClick = () => {
-    console.log('🔍 CourseActions - Archive Course clicked for course:', course.id);
     onDisable(course.id);
   };
 

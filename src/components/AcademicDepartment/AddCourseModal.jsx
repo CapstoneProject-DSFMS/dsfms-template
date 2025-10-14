@@ -164,7 +164,6 @@ const AddCourseModal = ({ show, onClose, onSave, loading = false }) => {
       await onSave(formData);
       handleClose();
     } catch (error) {
-      console.error('Error saving course:', error);
     }
   };
 

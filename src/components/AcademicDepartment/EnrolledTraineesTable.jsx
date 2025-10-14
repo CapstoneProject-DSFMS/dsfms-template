@@ -9,13 +9,6 @@ import courseAPI from '../../api/course';
 import traineeAPI from '../../api/trainee';
 import subjectAPI from '../../api/subject';
 
-const mockSubjects = [
-  { id: 's1', name: 'Safety Basics', code: 'SB01' },
-  { id: 's2', name: 'Evacuation Drills', code: 'ED02' },
-  { id: 's3', name: 'CPR & First Aid', code: 'FA03' },
-  { id: 's4', name: 'Fire Safety', code: 'FS04' },
-  { id: 's5', name: 'Emergency Procedures', code: 'EP05' }
-];
 
 const EnrolledTraineesTable = ({ courseId, loading = false }) => {
   const [enrolledTrainees, setEnrolledTrainees] = useState([]);
@@ -32,15 +25,11 @@ const EnrolledTraineesTable = ({ courseId, loading = false }) => {
   const loadEnrolledTrainees = useCallback(async () => {
     setLoadingEnrolled(true);
     try {
-      console.log('🔍 Loading enrolled trainees for course:', courseId);
-      
       // Step 1: Get all available trainees
       const traineesResponse = await traineeAPI.getTraineesForEnrollment();
-      console.log('✅ All trainees response:', traineesResponse);
       
       if (!traineesResponse || !traineesResponse.data) {
         setEnrolledTrainees([]);
-        console.log('⚠️ No trainees found');
         return;
       }
       
@@ -49,12 +38,8 @@ const EnrolledTraineesTable = ({ courseId, loading = false }) => {
       
       for (const trainee of traineesResponse.data) {
         try {
-          console.log(`🔍 Checking enrollments for trainee: ${trainee.id}`);
-          
           // Call API to get trainee's enrollment details
           const enrollmentData = await courseAPI.getTraineeEnrollments(trainee.id);
-          
-          console.log(`✅ Enrollment data for trainee ${trainee.id}:`, enrollmentData);
           
           // Check if trainee has any ENROLLED enrollments
           if (enrollmentData && enrollmentData.enrollments && enrollmentData.enrollments.length > 0) {
@@ -78,32 +63,22 @@ const EnrolledTraineesTable = ({ courseId, loading = false }) => {
               };
               
               enrolledTrainees.push(enrolledTrainee);
-              console.log(`✅ Added enrolled trainee: ${enrolledTrainee.name} with ${subjectIds.length} ENROLLED subjects`);
-            } else {
-              console.log(`⚠️ Trainee ${trainee.id} has enrollments but none are ENROLLED status`);
             }
           }
-        } catch (error) {
-          console.log(`⚠️ No enrollments found for trainee ${trainee.id}:`, error.message);
+        } catch {
           // Continue to next trainee
         }
       }
       
       setEnrolledTrainees(enrolledTrainees);
-      console.log('✅ Loaded enrolled trainees from API:', enrolledTrainees.length);
       
-    } catch (error) {
-      console.error('❌ Error loading enrolled trainees from API:', error);
-      
+    } catch {
       // Fallback to empty array if API fails
       setEnrolledTrainees([]);
-      
-      // You can also show a toast notification here if needed
-      // toast.error('Failed to load enrolled trainees');
     } finally {
       setLoadingEnrolled(false);
     }
-  }, [courseId]);
+  }, []);
 
   // Load enrolled trainees from API
   useEffect(() => {
@@ -114,12 +89,8 @@ const EnrolledTraineesTable = ({ courseId, loading = false }) => {
 
   const handleViewSubjects = async (trainee) => {
     try {
-      console.log('🔍 Loading enrollment details for trainee:', trainee.userId);
-      
       // Call API to get trainee's enrollment details
       const enrollmentData = await courseAPI.getTraineeEnrollments(trainee.userId);
-      
-      console.log('✅ Enrollment data received:', enrollmentData);
       
       // Transform API data to match component format (only ENROLLED enrollments)
       const enrolledEnrollments = enrollmentData.enrollments?.filter(
@@ -145,8 +116,7 @@ const EnrolledTraineesTable = ({ courseId, loading = false }) => {
       
       setSelectedTrainee(transformedTrainee);
       setShowSubjectModal(true);
-    } catch (error) {
-      console.error('❌ Error loading trainee enrollment details:', error);
+    } catch {
       // Fallback to basic trainee data
       setSelectedTrainee(trainee);
       setShowSubjectModal(true);
@@ -167,27 +137,18 @@ const EnrolledTraineesTable = ({ courseId, loading = false }) => {
 
     setRemoveLoading(true);
     try {
-      console.log('🔍 Removing trainee from all subjects:', traineeToRemove.userId);
-
       // Get the trainee's enrollment details to find all subjects
       const enrollmentData = await courseAPI.getTraineeEnrollments(traineeToRemove.userId);
       
       if (enrollmentData && enrollmentData.enrollments && enrollmentData.enrollments.length > 0) {
-        console.log(`🔍 Found ${enrollmentData.enrollments.length} subjects to remove trainee from`);
         
         // Remove trainee from each subject
         const removePromises = enrollmentData.enrollments.map(async (enrollment) => {
           const subjectId = enrollment.subject.id;
-          const batchCode = enrollment.enrollment?.batchCode || "TEST0012025";
-          
-          console.log(`🔍 Removing from subject: ${subjectId} with batch: ${batchCode}`);
-          console.log(`🔍 Full enrollment data:`, JSON.stringify(enrollment, null, 2));
-          console.log(`🔍 Enrollment status: ${enrollment.enrollment?.status}`);
-          console.log(`🔍 Subject status: ${enrollment.subject?.status}`);
+          const batchCode = enrollment.enrollment?.batchCode || 'TEST0012025';
           
           // Check if enrollment status is ENROLLED
           if (enrollment.enrollment?.status !== 'ENROLLED') {
-            console.warn(`⚠️ Skipping subject ${subjectId} - enrollment status is ${enrollment.enrollment?.status}, not ENROLLED`);
             return null; // Skip this enrollment
           }
           
@@ -198,27 +159,19 @@ const EnrolledTraineesTable = ({ courseId, loading = false }) => {
         const validPromises = removePromises.filter(promise => promise !== null);
         if (validPromises.length > 0) {
           await Promise.all(validPromises);
-        } else {
-          console.log('⚠️ No valid enrollments to remove (all have non-ENROLLED status)');
         }
-        
-        console.log('✅ Successfully removed trainee from all subjects');
         
         // Refresh the enrolled trainees data
         await loadEnrolledTrainees();
         
         // Close modal
         setShowRemoveModal(false);
-        
-        console.log('🎉 Trainee removed from all subjects successfully!');
       } else {
-        console.log('⚠️ No enrollments found for trainee');
         // Just close modal if no enrollments
         setShowRemoveModal(false);
       }
       
-    } catch (error) {
-      console.error('❌ Error removing trainee from all subjects:', error);
+    } catch {
       // You can add error toast notification here
     } finally {
       setRemoveLoading(false);
@@ -227,9 +180,12 @@ const EnrolledTraineesTable = ({ courseId, loading = false }) => {
 
   const handleRemoveSubject = (traineeId, subjectId) => {
     const trainee = enrolledTrainees.find(t => t.id === traineeId);
-    const subjectName = getSubjectName(subjectId);
     
     if (!trainee) return;
+
+    // Find the subject name from the selected trainee's subjects
+    const subject = selectedTrainee?.subjects?.find(s => s.id === subjectId);
+    const subjectName = subject ? subject.name : 'Unknown Subject';
 
     setTraineeToRemove(trainee);
     setSubjectToRemove(subjectName);
@@ -242,36 +198,22 @@ const EnrolledTraineesTable = ({ courseId, loading = false }) => {
     // Find the subject ID from the selected trainee's subjects
     const subject = selectedTrainee?.subjects?.find(s => s.name === subjectToRemove);
     if (!subject) {
-      console.error('❌ Subject not found:', subjectToRemove);
       return;
     }
 
     setRemoveLoading(true);
     try {
-      console.log('🔍 Removing trainee from subject:', {
-        traineeId: traineeToRemove.userId,
-        subjectId: subject.id,
-        subjectName: subject.name
-      });
-
       // Get batch code from enrollment data
-      const batchCode = subject.enrollment?.batchCode || "TEST0012025";
-      
-      console.log(`🔍 Full subject data:`, JSON.stringify(subject, null, 2));
-      console.log(`🔍 Enrollment status: ${subject.enrollment?.status}`);
-      console.log(`🔍 Subject status: ${subject.status}`);
+      const batchCode = subject.enrollment?.batchCode || 'TEST0012025';
       
       // Check if enrollment status is ENROLLED
       if (subject.enrollment?.status !== 'ENROLLED') {
-        console.warn(`⚠️ Cannot remove trainee - enrollment status is ${subject.enrollment?.status}, not ENROLLED`);
         // You can show a toast notification here
         return;
       }
       
       // Call API to remove trainee from subject
       await subjectAPI.removeTraineeFromSubject(subject.id, traineeToRemove.userId, batchCode);
-      
-      console.log('✅ Successfully removed trainee from subject');
       
       // Refresh the enrolled trainees data
       await loadEnrolledTrainees();
@@ -280,21 +222,13 @@ const EnrolledTraineesTable = ({ courseId, loading = false }) => {
       setShowRemoveModal(false);
       setShowSubjectModal(false);
       
-      // Show success message (you can add toast notification here)
-      console.log('🎉 Trainee removed from subject successfully!');
-      
-    } catch (error) {
-      console.error('❌ Error removing trainee from subject:', error);
+    } catch {
       // You can add error toast notification here
     } finally {
       setRemoveLoading(false);
     }
   };
 
-  const getSubjectName = (subjectId) => {
-    const subject = mockSubjects.find(s => s.id === subjectId);
-    return subject ? subject.name : 'Unknown Subject';
-  };
 
 
   if (loading || loadingEnrolled) {
@@ -397,7 +331,8 @@ const EnrolledTraineesTable = ({ courseId, loading = false }) => {
         className="d-flex flex-column mb-5" 
         style={{ 
           height: '400px',
-          marginBottom: '3rem'
+          marginBottom: '2rem',
+          marginTop: '12rem'
         }}
       >
         <Card.Header 

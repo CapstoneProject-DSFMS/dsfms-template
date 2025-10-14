@@ -159,6 +159,55 @@ const subjectAPI = {
       console.error('❌ Error message:', error.response?.data?.message);
       throw error;
     }
+  },
+
+  // Add trainer to subject
+  addTrainerToSubject: async (subjectId, trainerData) => {
+    try {
+      const requestData = {
+        trainerUserId: trainerData.trainer_user_id,
+        roleInSubject: trainerData.role_in_subject
+      };
+      
+      const response = await apiClient.post(`/subjects/${subjectId}/trainers`, requestData);
+      return response.data;
+    } catch (error) {
+      throw error.response?.data || error.message;
+    }
+  },
+
+  // Get trainers of a subject (NOT USED - using subject.instructors instead)
+  getSubjectTrainers: async (subjectId) => {
+    try {
+      const response = await apiClient.get(`/subjects/${subjectId}/trainers`);
+      return response.data;
+    } catch (error) {
+      throw error.response?.data || error.message;
+    }
+  },
+
+  // Update trainer role in subject
+  updateTrainerRole: async (subjectId, trainerId, roleData) => {
+    try {
+      const requestData = {
+        roleInSubject: roleData.roleInSubject
+      };
+      
+      const response = await apiClient.put(`/subjects/${subjectId}/trainers/${trainerId}`, requestData);
+      return response.data;
+    } catch (error) {
+      throw error.response?.data || error.message;
+    }
+  },
+
+  // Remove trainer from subject
+  removeTrainerFromSubject: async (subjectId, trainerId) => {
+    try {
+      const response = await apiClient.delete(`/subjects/${subjectId}/trainers/${trainerId}`);
+      return response.data;
+    } catch (error) {
+      throw error.response?.data || error.message;
+    }
   }
 };
 

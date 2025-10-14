@@ -1,11 +1,12 @@
 import React, { useState, useEffect } from 'react';
 import { Container } from 'react-bootstrap';
-import { useParams } from 'react-router-dom';
+import { useParams, useLocation } from 'react-router-dom';
 import courseAPI from '../../api/course';
 import InPageCourseDetail from './InPageCourseDetail';
 
 const CourseDetailPage = () => {
   const { courseId } = useParams();
+  const location = useLocation();
   const [course, setCourse] = useState(null);
   const [department, setDepartment] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -24,7 +25,6 @@ const CourseDetailPage = () => {
             setDepartment(response.department);
           }
         } catch (courseError) {
-          console.warn('Course API failed, using fallback data:', courseError);
           
           // Fallback: Create mock course data based on courseId
           const fallbackCourse = {
@@ -41,12 +41,19 @@ const CourseDetailPage = () => {
             level: "INTERMEDIATE"
           };
           
+          // In this context, courseId is actually departmentId
+          // Try to get department from location state or use courseId as department ID
+          const fallbackDepartment = {
+            id: location.state?.departmentId || courseId, // courseId is actually departmentId
+            name: location.state?.departmentName || "Default Department"
+          };
+          
           setCourse(fallbackCourse);
+          setDepartment(fallbackDepartment);
         }
         
         setLoading(false);
       } catch (error) {
-        console.error('Error loading course:', error);
         setLoading(false);
       }
     };

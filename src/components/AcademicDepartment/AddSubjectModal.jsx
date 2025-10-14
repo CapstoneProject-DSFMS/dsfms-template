@@ -44,7 +44,6 @@ const AddSubjectModal = ({ show, onClose, onSave, loading = false, courseId }) =
         setCourses(response);
       }
     } catch (error) {
-      console.error('Error loading courses:', error);
       toast.error('Failed to load courses');
     } finally {
       setLoadingCourses(false);
@@ -146,7 +145,6 @@ const AddSubjectModal = ({ show, onClose, onSave, loading = false, courseId }) =
       
       handleClose();
     } catch (error) {
-      console.error('Error creating subject:', error);
       
       // Show error toast
       const errorMessage = error.response?.data?.message || error.message || 'Failed to create subject';

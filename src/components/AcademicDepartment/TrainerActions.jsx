@@ -18,7 +18,7 @@ const TrainerActions = ({ trainer, onEdit, onDelete }) => (
       {
         label: 'Edit Trainer',
         icon: <Pencil />,
-        onClick: () => onEdit(trainer.trainer_user_id),
+        onClick: () => onEdit(trainer.id),
         permission: API_PERMISSIONS.SUBJECTS.UPDATE
       },
       { type: 'divider' },
@@ -26,7 +26,7 @@ const TrainerActions = ({ trainer, onEdit, onDelete }) => (
         label: 'Remove Trainer',
         icon: <Trash />,
         className: 'text-danger',
-        onClick: () => onDelete(trainer.trainer_user_id),
+        onClick: () => onDelete(trainer.id),
         permission: API_PERMISSIONS.SUBJECTS.REMOVE_INSTRUCTOR
       }
     ]}

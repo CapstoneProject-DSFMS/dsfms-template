@@ -159,7 +159,6 @@ const EditCourseModal = ({ show, onClose, onSave, course, loading = false }) => 
       
       handleClose();
     } catch (error) {
-      console.error('Error updating course:', error);
       
       // Show error toast
       const errorMessage = error.response?.data?.message || error.message || 'Failed to update course';
