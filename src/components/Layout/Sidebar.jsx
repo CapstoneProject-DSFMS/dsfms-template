@@ -92,10 +92,10 @@ const Sidebar = ({ collapsed, onClose }) => {
       module: "GLOBAL_FIELDS"
     },
     {
-      id: "academic-details",
-      label: "Academic Details",
+      id: "trainee-dashboard",
+      label: "Trainee Dashboard",
       icon: PersonCheck,
-      path: "/trainee/academic-details",
+      path: "/trainee/dashboard",
       permission: API_PERMISSIONS.TRAINEES.VIEW_DETAIL,
       module: "TRAINEES"
     },
@@ -108,18 +108,41 @@ const Sidebar = ({ collapsed, onClose }) => {
       module: "TRAINEES"
     },
     {
-      id: "assessment-pending",
-      label: "Assessment Pending List",
+      id: "all-assessments",
+      label: "All Assessments",
       icon: PersonCheck,
-      path: "/trainee/assessment-pending",
+      path: "/trainee/all-assessments",
       permission: API_PERMISSIONS.TRAINEES.VIEW_ASSESSMENTS,
-      module: "TRAINEES"
+      module: "TRAINEES",
+      children: [
+        {
+          id: "your-assessments",
+          label: "Your Assessments",
+          path: "/trainee/your-assessments",
+          permission: API_PERMISSIONS.TRAINEES.VIEW_ASSESSMENTS,
+          module: "TRAINEES"
+        },
+        {
+          id: "signature-required",
+          label: "Signature Required List",
+          path: "/trainee/signature-required",
+          permission: API_PERMISSIONS.TRAINEES.VIEW_ASSESSMENTS,
+          module: "TRAINEES"
+        },
+        {
+          id: "completion-required",
+          label: "Section Completion Required List",
+          path: "/trainee/completion-required",
+          permission: API_PERMISSIONS.TRAINEES.VIEW_ASSESSMENTS,
+          module: "TRAINEES"
+        }
+      ]
     },
     {
       id: "create-issue",
-      label: "Create Issue Report/Feedback",
+      label: "Create Incident/Feedback Report",
       icon: PersonCheck,
-      path: "/trainee/create-issue",
+      path: "/trainee/create-incident-feedback-report",
       permission: API_PERMISSIONS.TRAINEES.VIEW_ALL,
       module: "TRAINEES"
     },
@@ -150,7 +173,7 @@ const Sidebar = ({ collapsed, onClose }) => {
     }
     // For TRAINEE role, show all trainee-related items
     if (user?.role === 'TRAINEE') {
-      const isTraineeItem = ['academic-details', 'enrolled-courses', 'assessment-pending', 'create-issue'].includes(item.id);
+      const isTraineeItem = ['trainee-dashboard', 'enrolled-courses', 'all-assessments', 'create-issue'].includes(item.id);
       console.log(`🔍 TRAINEE role - ${item.id}: ${isTraineeItem}`);
       return isTraineeItem;
     }
@@ -260,21 +283,24 @@ const Sidebar = ({ collapsed, onClose }) => {
           // Debug logging
           console.log(`🔍 Sidebar - Item: ${item.id}, Path: ${item.path}, Current: ${location.pathname}, Active: ${isActive}`);
           
-          // Special handling for Assessment Pending List dropdown
-          if (item.id === 'assessment-pending' && user?.role === 'TRAINEE') {
+          // Special handling for All Assessments dropdown
+          if (item.id === 'all-assessments' && user?.role === 'TRAINEE') {
             return (
               <Nav.Item key={item.id} className="mb-3">
                 <div className="position-relative">
                   {/* Assessment dropdown trigger */}
                   <div
-                    className={`sidebar-nav-link text-white d-flex align-items-center py-3 pe-1 rounded nav-link text-nowrap ${collapsed ? "justify-content-center" : ""} ${location.pathname.startsWith('/trainee/assessment') ? "active" : ""}`}
+                    className={`sidebar-nav-link text-white d-flex align-items-center py-3 pe-1 rounded nav-link ${collapsed ? "justify-content-center" : ""} ${location.pathname.startsWith('/trainee/signature-required') || location.pathname.startsWith('/trainee/completion-required') || location.pathname.startsWith('/trainee/your-assessments') ? "active" : ""}`}
                     style={{
                       minHeight: collapsed ? "48px" : "auto",
-                      backgroundColor: location.pathname.startsWith('/trainee/assessment') ? "rgba(255, 255, 255, 0.1)" : "transparent",
+                      backgroundColor: location.pathname.startsWith('/trainee/signature-required') || location.pathname.startsWith('/trainee/completion-required') || location.pathname.startsWith('/trainee/your-assessments') ? "rgba(255, 255, 255, 0.1)" : "transparent",
                       cursor: "pointer"
                     }}
                     onClick={() => {
-                      if (!collapsed) {
+                      if (collapsed) {
+                        navigate('/trainee/all-assessments');
+                        onClose();
+                      } else {
                         setIsAssessmentDropdownOpen(!isAssessmentDropdownOpen);
                       }
                     }}
@@ -290,7 +316,7 @@ const Sidebar = ({ collapsed, onClose }) => {
                     />
                     {!collapsed && (
                       <>
-                        <span className="sidebar-nav-label flex-grow-1">{item.label}</span>
+                        <span className="sidebar-nav-label flex-grow-1" style={{ wordWrap: 'break-word', overflowWrap: 'break-word', lineHeight: '1.2' }}>{item.label}</span>
                         <ChevronDown
                           size={16}
                           className={`ms-auto transition-transform ${isAssessmentDropdownOpen ? "rotate-180" : ""}`}
@@ -302,33 +328,25 @@ const Sidebar = ({ collapsed, onClose }) => {
                     )}
                   </div>
 
-                  {/* Assessment dropdown menu */}
+                  {/* All Assessments dropdown menu */}
                   {!collapsed && isAssessmentDropdownOpen && (
                     <div className="mt-2 ms-4">
-                      <Link
-                        to="/trainee/assessment-pending/signature-required"
-                        className="sidebar-nav-link text-white d-flex align-items-center py-2 pe-1 rounded nav-link"
-                        style={{
-                          backgroundColor: location.pathname === '/trainee/assessment-pending/signature-required' ? "rgba(255, 255, 255, 0.1)" : "transparent",
-                          whiteSpace: 'normal',
-                          wordWrap: 'break-word'
-                        }}
-                        onClick={onClose}
-                      >
-                        <span className="sidebar-nav-label">Signature Required List</span>
-                      </Link>
-                      <Link
-                        to="/trainee/assessment-pending/section-completion"
-                        className="sidebar-nav-link text-white d-flex align-items-center py-2 pe-1 rounded nav-link"
-                        style={{
-                          backgroundColor: location.pathname === '/trainee/assessment-pending/section-completion' ? "rgba(255, 255, 255, 0.1)" : "transparent",
-                          whiteSpace: 'normal',
-                          wordWrap: 'break-word'
-                        }}
-                        onClick={onClose}
-                      >
-                        <span className="sidebar-nav-label">Section Completion Required List</span>
-                      </Link>
+                      {item.children && item.children.map((child) => (
+                        <Link
+                          key={child.id}
+                          to={child.path}
+                          className="sidebar-nav-link text-white d-flex align-items-center py-2 pe-1 rounded nav-link"
+                          style={{
+                            backgroundColor: location.pathname === child.path ? "rgba(255, 255, 255, 0.1)" : "transparent",
+                            whiteSpace: 'normal',
+                            wordWrap: 'break-word',
+                            overflowWrap: 'break-word'
+                          }}
+                          onClick={onClose}
+                        >
+                          <span className="sidebar-nav-label">{child.label}</span>
+                        </Link>
+                      ))}
                     </div>
                   )}
                 </div>
@@ -341,12 +359,13 @@ const Sidebar = ({ collapsed, onClose }) => {
             <Nav.Item key={item.id} className="mb-3">
               <Link
                 to={item.path}
-                className={`sidebar-nav-link text-white d-flex align-items-center py-3 pe-1 rounded nav-link ${collapsed ? "justify-content-center text-nowrap" : ""} ${isActive ? "active" : ""}`}
+                className={`sidebar-nav-link text-white d-flex align-items-center py-3 pe-1 rounded nav-link ${collapsed ? "justify-content-center" : ""} ${isActive ? "active" : ""}`}
                 style={{
                   minHeight: collapsed ? "48px" : "auto",
                   backgroundColor: isActive ? "rgba(255, 255, 255, 0.1)" : "transparent",
                   whiteSpace: collapsed ? 'nowrap' : 'normal',
-                  wordWrap: collapsed ? 'normal' : 'break-word'
+                  wordWrap: collapsed ? 'normal' : 'break-word',
+                  overflowWrap: 'break-word'
                 }}
                 onClick={(e) => {
                   console.log(`🔍 Sidebar - Clicked on: ${item.id}, navigating to: ${item.path}`);
@@ -364,7 +383,7 @@ const Sidebar = ({ collapsed, onClose }) => {
                     transition: "transform 0.3s cubic-bezier(.68,-0.55,.27,1.55)",
                   }}
                 />
-                {!collapsed && <span className="sidebar-nav-label">{item.label}</span>}
+                {!collapsed && <span className="sidebar-nav-label" style={{ wordWrap: 'break-word', overflowWrap: 'break-word', lineHeight: '1.2' }}>{item.label}</span>}
               </Link>
             </Nav.Item>
           );
@@ -376,7 +395,7 @@ const Sidebar = ({ collapsed, onClose }) => {
             <div className="position-relative">
               {/* Department dropdown trigger */}
               <div
-                className={`sidebar-nav-link text-white d-flex align-items-center py-3 pe-1 rounded nav-link text-nowrap ${collapsed ? "justify-content-center" : ""} ${location.pathname.startsWith('/academic/departments') ? "active" : ""}`}
+                className={`sidebar-nav-link text-white d-flex align-items-center py-3 pe-1 rounded nav-link ${collapsed ? "justify-content-center" : ""} ${location.pathname.startsWith('/academic/departments') ? "active" : ""}`}
                 style={{
                   minHeight: collapsed ? "48px" : "auto",
                   backgroundColor: location.pathname.startsWith('/academic/departments') ? "rgba(255, 255, 255, 0.1)" : "transparent",
@@ -395,7 +414,7 @@ const Sidebar = ({ collapsed, onClose }) => {
                   <>
                     <span 
                       className="sidebar-nav-label flex-grow-1"
-                      style={{ cursor: "pointer" }}
+                      style={{ cursor: "pointer", wordWrap: 'break-word', overflowWrap: 'break-word', lineHeight: '1.2' }}
                       onClick={() => {
                         setIsDepartmentDropdownOpen(!isDepartmentDropdownOpen);
                         navigate('/academic/departments');
@@ -443,7 +462,10 @@ const Sidebar = ({ collapsed, onClose }) => {
                         style={{
                           fontSize: "0.875rem",
                           backgroundColor: location.pathname === `/academic/course/${dept.id}` ? "rgba(255, 255, 255, 0.1)" : "transparent",
-                          transition: "background-color 0.2s ease"
+                          transition: "background-color 0.2s ease",
+                          wordWrap: 'break-word',
+                          overflowWrap: 'break-word',
+                          whiteSpace: 'normal'
                         }}
                         onClick={() => {
                           // Không đóng dropdown, chỉ đóng sidebar trên mobile

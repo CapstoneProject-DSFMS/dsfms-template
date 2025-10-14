@@ -38,19 +38,73 @@ const EnrollTraineesPage = () => {
   };
 
   const handleBulkImportTrainees = async (trainees) => {
+    // Prevent duplicate calls
+    if (bulkImportLoading) {
+      console.log('🔍 Bulk import already in progress, skipping...');
+      return;
+    }
+    
     setBulkImportLoading(true);
     try {
-      // TODO: Implement actual API call to import trainees
+      console.log('🔍 Bulk import trainees received:', trainees);
       
-      // For now, just add to selected trainees
-      const newTrainees = trainees.map((trainee, index) => ({
-        id: `imported_${Date.now()}_${index}`,
-        eid: trainee.eid,
-        name: trainee.full_name,
-        subjects: []
-      }));
+      // Use real trainees from API lookup (they already have proper UUIDs)
+      const newTrainees = trainees.map((trainee) => {
+        console.log('🔍 Processing bulk import trainee:', {
+          id: trainee.id,
+          eid: trainee.eid,
+          firstName: trainee.firstName,
+          lastName: trainee.lastName
+        });
+        
+        return {
+          id: trainee.id, // Use real UUID from API
+          eid: trainee.eid,
+          name: `${trainee.firstName} ${trainee.lastName}`.trim(), // Combined name for display
+          firstName: trainee.firstName,
+          lastName: trainee.lastName,
+          email: trainee.email,
+          phoneNumber: trainee.phoneNumber,
+          status: trainee.status,
+          subjects: []
+        };
+      });
       
-      setSelectedTrainees(prev => [...prev, ...newTrainees]);
+      console.log('🔍 New trainees to add:', newTrainees);
+      
+      // Check for duplicates and only add new trainees
+      setSelectedTrainees(prev => {
+        const existingIds = new Set(prev.map(t => t.id));
+        const newUniqueTrainees = newTrainees.filter(trainee => !existingIds.has(trainee.id));
+        
+        console.log('🔍 Existing trainee IDs:', Array.from(existingIds));
+        console.log('🔍 New unique trainees to add:', newUniqueTrainees);
+        console.log('🔍 Duplicates filtered out:', newTrainees.length - newUniqueTrainees.length);
+        
+        // Only show toast if there are actual changes
+        if (newUniqueTrainees.length === 0 && newTrainees.length > 0) {
+          // Use setTimeout to prevent duplicate toasts
+          setTimeout(() => {
+            toast.error('All selected trainees are already in the list!', {
+              autoClose: 3000,
+              position: "top-right",
+              toastId: 'duplicate-trainees', // Prevent duplicate toasts
+              closeButton: false // Remove close button
+            });
+          }, 100);
+        } else if (newUniqueTrainees.length < newTrainees.length && newUniqueTrainees.length > 0) {
+          setTimeout(() => {
+            toast.warning(`Added ${newUniqueTrainees.length} new trainees. ${newTrainees.length - newUniqueTrainees.length} were already selected.`, {
+              autoClose: 4000,
+              position: "top-right",
+              toastId: 'partial-duplicates', // Prevent duplicate toasts
+              closeButton: false // Remove close button
+            });
+          }, 100);
+        }
+        
+        return [...prev, ...newUniqueTrainees];
+      });
       
       // Simulate API delay
       await new Promise(resolve => setTimeout(resolve, 1000));
@@ -73,13 +127,29 @@ const EnrollTraineesPage = () => {
     try {
 
       // Prepare data for API call - Backend expects batchCode and traineeUserIds
+      console.log('🔍 Selected trainees for enrollment:', selectedTrainees);
+      
       const traineeData = {
         batchCode: "TEST0012025", // Fixed batch code
         traineeUserIds: selectedTrainees.map(trainee => {
+          console.log('🔍 Processing trainee:', {
+            id: trainee.id,
+            eid: trainee.eid,
+            name: `${trainee.firstName} ${trainee.lastName}`
+          });
+          
+          if (!trainee.id) {
+            throw new Error(`Trainee ${trainee.eid} (${trainee.firstName} ${trainee.lastName}) is missing UUID`);
+          }
+          
           return trainee.id; // Just the user IDs as array
         })
       };
+      
+      console.log('🔍 Final trainee data for API:', traineeData);
 
+      // Check for potential duplicates (this is just a warning, server will handle actual validation)
+      console.log('⚠️ Note: Server will validate for duplicate enrollments');
 
       // Call API for each selected subject
       const enrollmentPromises = selectedSubjects.map(async (subjectId) => {
@@ -95,6 +165,7 @@ const EnrollTraineesPage = () => {
       // Wait for all enrollments to complete
       const enrollmentResults = await Promise.all(enrollmentPromises);
       
+      console.log('✅ All enrollments completed successfully:', enrollmentResults);
 
       // Refresh the enrolled trainees table
       setTableRefreshKey(prev => prev + 1);

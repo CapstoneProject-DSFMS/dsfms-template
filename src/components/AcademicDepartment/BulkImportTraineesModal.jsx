@@ -1,45 +1,30 @@
 import React, { useState, useRef } from 'react';
-import { Modal, Button, Table, Card, Alert } from 'react-bootstrap';
-import { X, Upload, FileEarmarkExcel, CheckCircle, XCircle, Download } from 'react-bootstrap-icons';
+import { Modal, Button, Table, Card, Alert, Form, Badge } from 'react-bootstrap';
+import { X, Upload, FileEarmarkExcel, CheckCircle, XCircle, Download, Search } from 'react-bootstrap-icons';
 import * as XLSX from 'xlsx';
-import { userAPI } from '../../api/user';
+import { traineeAPI } from '../../api/trainee';
 
 const BulkImportTraineesModal = ({ show, onClose, onImport, loading = false }) => {
   const [dragActive, setDragActive] = useState(false);
   const [uploadedFile, setUploadedFile] = useState(null);
   const [previewData, setPreviewData] = useState([]);
+  const [lookupResults, setLookupResults] = useState(null);
+  const [selectedTrainees, setSelectedTrainees] = useState([]);
   const [errors, setErrors] = useState([]);
   const [validationErrors, setValidationErrors] = useState([]);
+  const [isLookingUp, setIsLookingUp] = useState(false);
   const fileInputRef = useRef(null);
 
-  // Required columns for trainee import (based on UserModal structure)
+  // Required columns for trainee import (only eid and email)
   const requiredColumns = [
     'eid',
-    'first_name',
-    'last_name',
-    'email',
-    'phone_number',
-    'role'
+    'email'
   ];
 
-  // All possible columns (based on UserModal structure)
+  // All possible columns (simplified for lookup)
   const allColumns = [
     'eid',
-    'first_name',
-    'last_name',
-    'middle_name',
-    'email',
-    'phone_number',
-    'address',
-    'gender',
-    'role',
-    'certification_number',
-    'specialization',
-    'years_of_experience',
-    'date_of_birth',
-    'training_batch',
-    'passport_no',
-    'nation'
+    'email'
   ];
 
   const handleDrag = (e) => {
@@ -109,69 +94,40 @@ const BulkImportTraineesModal = ({ show, onClose, onImport, loading = false }) =
           return;
         }
 
-        // Process data
-        const trainees = dataRows.map((row, index) => {
-          const trainee = {
+        // Process data - only extract eid and email for lookup
+        const identifiers = dataRows.map((row, index) => {
+          const eid = row[headers.indexOf('eid')]?.toString().trim() || '';
+          const email = row[headers.indexOf('email')]?.toString().trim() || '';
+          
+          return {
             id: `temp_${index}`,
             rowNumber: index + 2,
-            eid: row[headers.indexOf('eid')]?.toString().trim() || '',
-            firstName: row[headers.indexOf('first_name')]?.toString().trim() || '',
-            lastName: row[headers.indexOf('last_name')]?.toString().trim() || '',
-            middleName: row[headers.indexOf('middle_name')]?.toString().trim() || '',
-            email: row[headers.indexOf('email')]?.toString().trim() || '',
-            phoneNumber: row[headers.indexOf('phone_number')]?.toString().trim() || '',
-            address: row[headers.indexOf('address')]?.toString().trim() || '',
-            gender: row[headers.indexOf('gender')]?.toString().trim() || 'MALE',
-            role: row[headers.indexOf('role')]?.toString().trim() || 'TRAINEE',
-            certificationNumber: row[headers.indexOf('certification_number')]?.toString().trim() || '',
-            specialization: row[headers.indexOf('specialization')]?.toString().trim() || '',
-            yearsOfExperience: row[headers.indexOf('years_of_experience')]?.toString().trim() || '',
-            dateOfBirth: row[headers.indexOf('date_of_birth')]?.toString().trim() || '',
-            trainingBatch: row[headers.indexOf('training_batch')]?.toString().trim() || '',
-            passportNo: row[headers.indexOf('passport_no')]?.toString().trim() || '',
-            nation: row[headers.indexOf('nation')]?.toString().trim() || '',
+            eid,
+            email,
             hasError: false,
             errors: []
           };
+        }).filter(item => item.eid || item.email); // Remove completely empty rows
 
-          // Validate trainee data
-          if (!trainee.eid) {
-            trainee.hasError = true;
-            trainee.errors.push('EID is required');
+        // Validate identifiers
+        const validatedIdentifiers = identifiers.map(item => {
+          if (!item.eid) {
+            item.hasError = true;
+            item.errors.push('EID is required');
           }
 
-          if (!trainee.firstName) {
-            trainee.hasError = true;
-            trainee.errors.push('First name is required');
+          if (!item.email) {
+            item.hasError = true;
+            item.errors.push('Email is required');
+          } else if (!/\S+@\S+\.\S+/.test(item.email)) {
+            item.hasError = true;
+            item.errors.push('Email format is invalid');
           }
 
-          if (!trainee.lastName) {
-            trainee.hasError = true;
-            trainee.errors.push('Last name is required');
-          }
+          return item;
+        });
 
-          if (!trainee.email) {
-            trainee.hasError = true;
-            trainee.errors.push('Email is required');
-          } else if (!/\S+@\S+\.\S+/.test(trainee.email)) {
-            trainee.hasError = true;
-            trainee.errors.push('Email format is invalid');
-          }
-
-          if (!trainee.phoneNumber) {
-            trainee.hasError = true;
-            trainee.errors.push('Phone number is required');
-          }
-
-          if (!trainee.role) {
-            trainee.hasError = true;
-            trainee.errors.push('Role is required');
-          }
-
-          return trainee;
-        }).filter(trainee => trainee.eid || trainee.firstName || trainee.lastName); // Remove completely empty rows
-
-        setPreviewData(trainees);
+        setPreviewData(validatedIdentifiers);
         setValidationErrors([]);
 
       } catch (error) {
@@ -181,56 +137,140 @@ const BulkImportTraineesModal = ({ show, onClose, onImport, loading = false }) =
     reader.readAsArrayBuffer(file);
   };
 
-  const handleImportAll = async () => {
-    const traineesToImport = previewData.filter(trainee => !trainee.hasError);
+  const handleLookupTrainees = async () => {
+    const validIdentifiers = previewData.filter(item => !item.hasError);
     
-    if (traineesToImport.length === 0) {
-      setErrors(['No valid trainees to import']);
+    if (validIdentifiers.length === 0) {
+      setErrors(['No valid identifiers to lookup']);
+      return;
+    }
+
+    setIsLookingUp(true);
+    setErrors([]);
+
+    try {
+      // Prepare identifiers for API call - try different formats
+      const identifiers = validIdentifiers.map(item => ({
+        eid: item.eid,
+        email: item.email
+      }));
+
+      console.log('Sending lookup request with identifiers:', identifiers);
+
+      // Call lookup API
+      const response = await traineeAPI.lookupTrainees(identifiers);
+      console.log('Lookup response:', response);
+      console.log('Found users:', response.foundUsers);
+      console.log('Not found:', response.notFoundIdentifiers);
+      
+      // Debug: Check structure of found users
+      if (response.foundUsers && response.foundUsers.length > 0) {
+        console.log('🔍 First found user structure:', response.foundUsers[0]);
+        console.log('🔍 All found user IDs:', response.foundUsers.map(u => ({ id: u.id, eid: u.eid, email: u.email })));
+      }
+      
+      // Filter found users to only include exact matches with uploaded identifiers
+      const exactMatches = (response.foundUsers || []).filter(trainee => {
+        return identifiers.some(id => 
+          id.eid === trainee.eid && id.email === trainee.email
+        );
+      });
+      
+      // Find identifiers that were not found
+      const notFoundIdentifiers = identifiers.filter(id => 
+        !exactMatches.some(trainee => 
+          trainee.eid === id.eid && trainee.email === id.email
+        )
+      );
+      
+      // Validate that exact matches have proper UUIDs
+      const validatedMatches = exactMatches.map(trainee => {
+        console.log('🔍 Validating trainee:', {
+          id: trainee.id,
+          eid: trainee.eid,
+          email: trainee.email,
+          firstName: trainee.firstName,
+          lastName: trainee.lastName
+        });
+        
+        if (!trainee.id || typeof trainee.id !== 'string' || trainee.id.length < 10) {
+          throw new Error(`Trainee ${trainee.eid} has invalid UUID: ${trainee.id}`);
+        }
+        
+        if (!trainee.firstName || !trainee.lastName) {
+          throw new Error(`Trainee ${trainee.eid} has missing name fields`);
+        }
+        
+        return trainee;
+      });
+      
+      const validatedResponse = {
+        foundUsers: validatedMatches,
+        notFoundIdentifiers: notFoundIdentifiers,
+        uploadedIdentifiers: identifiers
+      };
+      
+      console.log('Exact matches found:', validatedMatches);
+      console.log('Not found identifiers:', notFoundIdentifiers);
+      
+      setLookupResults(validatedResponse);
+      
+      // Initialize selected trainees with exact matches only
+      setSelectedTrainees(validatedMatches);
+      console.log('Set selected trainees (exact matches only):', validatedMatches);
+      
+    } catch (error) {
+      console.error('Lookup error:', error);
+      console.error('Error response:', error.response?.data);
+      setErrors([error.response?.data?.message || error.message || 'Failed to lookup trainees. Please try again.']);
+    } finally {
+      setIsLookingUp(false);
+    }
+  };
+
+  const handleSelectTrainee = (trainee, isSelected) => {
+    if (isSelected) {
+      setSelectedTrainees(prev => [...prev, trainee]);
+    } else {
+      setSelectedTrainees(prev => prev.filter(t => t.id !== trainee.id));
+    }
+  };
+
+  const handleSelectAllTrainees = (isSelected) => {
+    if (isSelected) {
+      setSelectedTrainees(lookupResults?.foundUsers || []);
+    } else {
+      setSelectedTrainees([]);
+    }
+  };
+
+  const handleImportSelected = async () => {
+    if (selectedTrainees.length === 0) {
+      setErrors(['Please select at least one trainee to import']);
       return;
     }
 
     try {
-      // Transform data to match user API format
-      const usersData = traineesToImport.map(trainee => ({
-        eid: trainee.eid,
-        firstName: trainee.firstName,
-        lastName: trainee.lastName,
-        middleName: trainee.middleName || '',
-        email: trainee.email,
-        phoneNumber: trainee.phoneNumber || '',
-        address: trainee.address || '',
-        gender: trainee.gender || 'MALE',
-        role: trainee.role || 'TRAINEE',
-        certificationNumber: trainee.certificationNumber || '',
-        specialization: trainee.specialization || '',
-        yearsOfExperience: trainee.yearsOfExperience || '',
-        dateOfBirth: trainee.dateOfBirth || '',
-        trainingBatch: trainee.trainingBatch || '',
-        passportNo: trainee.passportNo || '',
-        nation: trainee.nation || ''
-      }));
-
-      
-      // Call user API bulk import
-      const response = await userAPI.bulkImportUsers(usersData);
-      
-      // Call parent onImport callback if provided
+      // Call parent onImport callback with selected trainees
       if (onImport) {
-        await onImport(traineesToImport);
+        await onImport(selectedTrainees);
       }
       
       handleClose();
     } catch (error) {
-      setErrors([error.message || 'Failed to import trainees. Please try again.']);
+      setErrors([error.message || 'Failed to import selected trainees. Please try again.']);
     }
   };
 
   const handleClose = () => {
     setUploadedFile(null);
     setPreviewData([]);
+    setLookupResults(null);
+    setSelectedTrainees([]);
     setErrors([]);
     setValidationErrors([]);
     setDragActive(false);
+    setIsLookingUp(false);
     onClose();
   };
 
@@ -243,14 +283,14 @@ const BulkImportTraineesModal = ({ show, onClose, onImport, loading = false }) =
   };
 
   const downloadTemplate = () => {
-    // Create sample data for template (based on UserModal structure)
+    // Create simplified template with only eid and email
     const templateData = [
-      ['eid', 'first_name', 'last_name', 'middle_name', 'email', 'phone_number', 'address', 'gender', 'role', 'certification_number', 'specialization', 'years_of_experience', 'date_of_birth', 'training_batch', 'passport_no', 'nation'], // Header row
-      ['TE000001', 'John', 'Doe', 'Michael', 'john.doe@example.com', '0934980926', '221B Baker Street, London', 'MALE', 'TRAINEE', '', '', '', '1990-01-15', 'BATCH2023-01', 'P123456789', 'Vietnam'], // Sample data row 1
-      ['TE000002', 'Jane', 'Smith', 'Elizabeth', 'jane.smith@example.com', '0934980927', '221B Baker Street, London', 'FEMALE', 'TRAINEE', '', '', '', '1992-05-20', 'BATCH2023-01', 'P123456790', 'Vietnam'], // Sample data row 2
-      ['TE000003', 'Bob', 'Johnson', 'Robert', 'bob.johnson@example.com', '0934980928', '221B Baker Street, London', 'MALE', 'TRAINEE', '', '', '', '1988-12-10', 'BATCH2023-02', 'P123456791', 'Vietnam'], // Sample data row 3
-      ['TE000004', 'Alice', 'Brown', 'Marie', 'alice.brown@example.com', '0934980929', '221B Baker Street, London', 'FEMALE', 'TRAINEE', '', '', '', '1995-08-25', 'BATCH2023-02', 'P123456792', 'Vietnam'], // Sample data row 4
-      ['TE000005', 'Charlie', 'Wilson', 'David', 'charlie.wilson@example.com', '0934980930', '221B Baker Street, London', 'MALE', 'TRAINEE', '', '', '', '1991-03-18', 'BATCH2023-03', 'P123456793', 'Vietnam'] // Sample data row 5
+      ['eid', 'email'], // Header row
+      ['TE000001', 'john.doe@example.com'], // Sample data row 1
+      ['TE000002', 'jane.smith@example.com'], // Sample data row 2
+      ['TE000003', 'bob.johnson@example.com'], // Sample data row 3
+      ['TE000004', 'alice.brown@example.com'], // Sample data row 4
+      ['TE000005', 'charlie.wilson@example.com'] // Sample data row 5
     ];
 
     // Create workbook and worksheet
@@ -260,28 +300,14 @@ const BulkImportTraineesModal = ({ show, onClose, onImport, loading = false }) =
     // Set column widths
     worksheet['!cols'] = [
       { wch: 15 }, // eid column width
-      { wch: 15 }, // first_name column width
-      { wch: 15 }, // last_name column width
-      { wch: 15 }, // middle_name column width
-      { wch: 30 }, // email column width
-      { wch: 15 }, // phone_number column width
-      { wch: 40 }, // address column width
-      { wch: 10 }, // gender column width
-      { wch: 15 }, // role column width
-      { wch: 20 }, // certification_number column width
-      { wch: 20 }, // specialization column width
-      { wch: 15 }, // years_of_experience column width
-      { wch: 15 }, // date_of_birth column width
-      { wch: 15 }, // training_batch column width
-      { wch: 15 }, // passport_no column width
-      { wch: 15 }  // nation column width
+      { wch: 30 }  // email column width
     ];
 
     // Add worksheet to workbook
-    XLSX.utils.book_append_sheet(workbook, worksheet, 'Trainees Template');
+    XLSX.utils.book_append_sheet(workbook, worksheet, 'Trainees Lookup Template');
 
     // Generate and download file
-    const fileName = 'Trainees_Import_Template.xlsx';
+    const fileName = 'Trainees_Lookup_Template.xlsx';
     XLSX.writeFile(workbook, fileName);
   };
 
@@ -345,7 +371,7 @@ const BulkImportTraineesModal = ({ show, onClose, onImport, loading = false }) =
             <div className="mt-3 d-flex justify-content-between align-items-center">
               <div>
                 <small className="text-muted">
-                  <strong>Required columns:</strong> eid, first_name, last_name, email, phone_number, role
+                  <strong>Required columns:</strong> eid, email
                 </small>
                 <div className="mt-1">
                   <Button 
@@ -369,12 +395,12 @@ const BulkImportTraineesModal = ({ show, onClose, onImport, loading = false }) =
           </Card.Body>
         </Card>
 
-        {/* Preview Data */}
+        {/* Uploaded Identifiers - Always show when available */}
         {previewData.length > 0 && (
-          <Card>
+          <Card className="mb-4">
             <Card.Header className="bg-light">
               <h6 className="mb-0">
-                Preview Data ({previewData.length} trainees)
+                Uploaded Identifiers ({previewData.length} entries)
                 <span className="ms-2">
                   <CheckCircle className="text-success me-1" size={16} />
                   {previewData.filter(t => !t.hasError).length} valid
@@ -384,40 +410,28 @@ const BulkImportTraineesModal = ({ show, onClose, onImport, loading = false }) =
               </h6>
             </Card.Header>
             <Card.Body className="p-0">
-              <div style={{ maxHeight: '300px', overflowY: 'auto' }}>
+              <div style={{ maxHeight: '200px', overflowY: 'auto' }}>
                 <Table hover className="mb-0">
                   <thead className="bg-light sticky-top">
                     <tr>
                       <th>Status</th>
                       <th>EID</th>
-                      <th>First Name</th>
-                      <th>Last Name</th>
                       <th>Email</th>
-                      <th>Phone</th>
-                      <th>Role</th>
-                      <th>Training Batch</th>
-                      <th>Passport No</th>
                       <th>Errors</th>
                     </tr>
                   </thead>
                   <tbody>
-                    {previewData.map((trainee, index) => (
-                      <tr key={trainee.id} className={trainee.hasError ? 'table-danger' : 'table-success'}>
+                    {previewData.map((item, index) => (
+                      <tr key={item.id} className={item.hasError ? 'table-danger' : 'table-success'}>
                         <td>
-                          {getStatusIcon(trainee.hasError ? 'invalid' : 'valid')}
+                          {getStatusIcon(item.hasError ? 'invalid' : 'valid')}
                         </td>
-                        <td>{trainee.eid}</td>
-                        <td>{trainee.firstName}</td>
-                        <td>{trainee.lastName}</td>
-                        <td>{trainee.email}</td>
-                        <td>{trainee.phoneNumber}</td>
-                        <td>{trainee.role}</td>
-                        <td>{trainee.trainingBatch}</td>
-                        <td>{trainee.passportNo}</td>
+                        <td>{item.eid}</td>
+                        <td>{item.email}</td>
                         <td>
-                          {trainee.errors.length > 0 && (
+                          {item.errors.length > 0 && (
                             <small className="text-danger">
-                              {trainee.errors.join(', ')}
+                              {item.errors.join(', ')}
                             </small>
                           )}
                         </td>
@@ -427,6 +441,130 @@ const BulkImportTraineesModal = ({ show, onClose, onImport, loading = false }) =
                 </Table>
               </div>
             </Card.Body>
+            <Card.Footer className="bg-light">
+              <Button
+                variant="primary"
+                onClick={handleLookupTrainees}
+                disabled={isLookingUp || previewData.filter(t => !t.hasError).length === 0}
+                className="d-flex align-items-center"
+              >
+                {isLookingUp ? (
+                  <>
+                    <span className="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true" style={{ width: '1rem', height: '1rem' }}></span>
+                    Looking up...
+                  </>
+                ) : (
+                  <>
+                    <Search className="me-2" size={16} />
+                    Lookup Existing Trainees ({previewData.filter(t => !t.hasError).length} valid)
+                  </>
+                )}
+              </Button>
+            </Card.Footer>
+          </Card>
+        )}
+
+        {/* Lookup Results - Only show matched trainees from Excel */}
+        {lookupResults && (
+          <Card>
+            <Card.Header className="bg-light">
+              <h6 className="mb-0">
+                Matched Trainees from Excel
+                <span className="ms-2">
+                  <CheckCircle className="text-success me-1" size={16} />
+                  {lookupResults.foundUsers?.length || 0} matched
+                  <XCircle className="text-danger ms-2 me-1" size={16} />
+                  {lookupResults.notFoundIdentifiers?.length || 0} not found
+                </span>
+              </h6>
+            </Card.Header>
+            <Card.Body className="p-0">
+              {lookupResults.foundUsers?.length > 0 ? (
+                <div style={{ maxHeight: '300px', overflowY: 'auto' }}>
+                  <Table hover className="mb-0">
+                    <thead className="bg-light sticky-top">
+                      <tr>
+                        <th>
+                          <Form.Check
+                            type="checkbox"
+                            checked={selectedTrainees.length === (lookupResults.foundUsers?.length || 0) && (lookupResults.foundUsers?.length || 0) > 0}
+                            onChange={(e) => handleSelectAllTrainees(e.target.checked)}
+                          />
+                        </th>
+                        <th>EID</th>
+                        <th>Name</th>
+                        <th>Email</th>
+                        <th>Phone</th>
+                        <th>Status</th>
+                        <th>Matched From Excel</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {lookupResults.foundUsers?.map((trainee) => {
+                        // Find the original identifier from Excel that matched this trainee
+                        const matchedIdentifier = lookupResults.uploadedIdentifiers?.find(
+                          id => id.eid === trainee.eid && id.email === trainee.email
+                        );
+                        
+                        // Only show if there's an exact match
+                        if (!matchedIdentifier) {
+                          return null;
+                        }
+                        
+                        return (
+                          <tr key={trainee.id} className={selectedTrainees.some(t => t.id === trainee.id) ? 'table-success' : ''}>
+                            <td>
+                              <Form.Check
+                                type="checkbox"
+                                checked={selectedTrainees.some(t => t.id === trainee.id)}
+                                onChange={(e) => handleSelectTrainee(trainee, e.target.checked)}
+                              />
+                            </td>
+                            <td>{trainee.eid}</td>
+                            <td>{trainee.firstName} {trainee.lastName}</td>
+                            <td>{trainee.email}</td>
+                            <td>{trainee.phoneNumber}</td>
+                            <td>
+                              <Badge bg={trainee.status === 'ACTIVE' ? 'success' : 'secondary'}>
+                                {trainee.status}
+                              </Badge>
+                            </td>
+                            <td>
+                              <Badge bg="success">
+                                ✓ Exact Match
+                              </Badge>
+                            </td>
+                          </tr>
+                        );
+                      }).filter(Boolean)}
+                    </tbody>
+                  </Table>
+                </div>
+              ) : (
+                <div className="p-4 text-center">
+                  <XCircle size={48} className="text-muted mb-3" />
+                  <h6 className="text-muted">No matching trainees found</h6>
+                  <p className="text-muted mb-0">
+                    None of the uploaded identifiers match existing trainees with TRAINEE role in the system.
+                  </p>
+                </div>
+              )}
+            </Card.Body>
+            {lookupResults.notFoundIdentifiers?.length > 0 && (
+              <Card.Footer className="bg-warning bg-opacity-10">
+                <Alert variant="warning" className="mb-0">
+                  <strong>Identifiers Not Found in System ({lookupResults.notFoundIdentifiers.length}):</strong>
+                  <p className="mb-2 mt-2">These identifiers from your Excel file do not exist in the system:</p>
+                  <ul className="mb-0">
+                    {lookupResults.notFoundIdentifiers.map((identifier, index) => (
+                      <li key={index}>
+                        <strong>{identifier.eid}</strong> - {identifier.email}
+                      </li>
+                    ))}
+                  </ul>
+                </Alert>
+              </Card.Footer>
+            )}
           </Card>
         )}
       </Modal.Body>
@@ -437,21 +575,21 @@ const BulkImportTraineesModal = ({ show, onClose, onImport, loading = false }) =
           Cancel
         </Button>
         
-        {previewData.length > 0 && (
+        {lookupResults && lookupResults.foundUsers?.length > 0 && selectedTrainees.length > 0 && (
           <Button
             variant="primary"
-            onClick={handleImportAll}
-            disabled={loading || previewData.filter(t => !t.hasError).length === 0}
+            onClick={handleImportSelected}
+            disabled={loading}
           >
             {loading ? (
               <>
-                <span className="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
+                <span className="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true" style={{ width: '1rem', height: '1rem' }}></span>
                 Importing...
               </>
             ) : (
               <>
                 <Upload className="me-2" size={16} />
-                Import All ({previewData.filter(t => !t.hasError).length} trainees)
+                Import Selected ({selectedTrainees.length} matched trainees)
               </>
             )}
           </Button>
