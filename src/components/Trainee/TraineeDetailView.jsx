@@ -7,7 +7,6 @@ import { PermissionWrapper } from '../Common';
 import { API_PERMISSIONS } from '../../constants/apiPermissions';
 import traineeAPI from '../../api/trainee';
 import TraineeCourseList from './TraineeCourseList';
-import TraineeAssessmentPendingList from './TraineeAssessmentPendingList';
 
 const TraineeDetailView = ({ traineeId }) => {
   const navigate = useNavigate();
@@ -215,10 +214,11 @@ const TraineeDetailView = ({ traineeId }) => {
                 Assessment Pending List
               </h5>
             </Card.Header>
-            <Card.Body className="p-0">
-              <PermissionWrapper permission={API_PERMISSIONS.TRAINEES.VIEW_ASSESSMENTS}>
-                <TraineeAssessmentPendingList traineeId={traineeId} />
-              </PermissionWrapper>
+            <Card.Body className="p-3">
+              <div className="text-center text-muted">
+                <ClipboardCheck size={48} className="mb-3" />
+                <p>Assessment pending list component is being updated.</p>
+              </div>
             </Card.Body>
           </Card>
         </Col>

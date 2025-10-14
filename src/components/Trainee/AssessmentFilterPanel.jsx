@@ -2,20 +2,23 @@ import React from 'react';
 import { Dropdown, Form, Button } from 'react-bootstrap';
 import { Funnel, X } from 'react-bootstrap-icons';
 
-const DepartmentFilterPanel = ({
-  uniqueTypes,
-  uniqueStatuses,
-  selectedTypes,
-  selectedStatuses,
-  onTypeToggle,
-  onStatusToggle,
+const AssessmentFilterPanel = ({ 
+  uniqueTypes, 
+  uniqueStatuses, 
+  uniquePriorities,
+  selectedTypes, 
+  selectedStatuses, 
+  selectedPriorities,
+  onTypeToggle, 
+  onStatusToggle, 
+  onPriorityToggle,
   onClearFilters,
   className = ""
 }) => {
-  const hasActiveFilters = selectedTypes.length > 0 || selectedStatuses.length > 0;
+  const hasActiveFilters = selectedTypes.length > 0 || selectedStatuses.length > 0 || selectedPriorities.length > 0;
 
   return (
-    <Dropdown className={`filter-panel-dropdown ${className}`}>
+    <Dropdown className={`filter-panel-dropdown course-filter-dropdown ${className}`}>
       <Dropdown.Toggle 
         variant="outline-secondary" 
         className="w-100 d-flex align-items-center justify-content-between position-relative"
@@ -25,28 +28,25 @@ const DepartmentFilterPanel = ({
           Filters
           {hasActiveFilters && (
             <span className="badge bg-primary ms-2">
-              {selectedTypes.length + selectedStatuses.length}
+              {selectedTypes.length + selectedStatuses.length + selectedPriorities.length}
             </span>
           )}
-        </div>
-        <div className="position-absolute end-0 me-3">
-          <svg width="12" height="12" viewBox="0 0 12 12" fill="currentColor">
-            <path d="M6 8L2 4h8L6 8z"/>
-          </svg>
         </div>
       </Dropdown.Toggle>
 
       <Dropdown.Menu 
-        className="course-filter-menu" 
+        className="course-filter-menu"
         style={{ 
           width: window.innerWidth <= 768 ? 'calc(100vw - 2rem)' : '320px',
           maxWidth: '90vw',
           maxHeight: window.innerWidth <= 768 ? '50vh' : '70vh',
           overflowY: 'auto',
-          marginTop: '0px',
-          top: '100%',
-          transform: 'none',
-          position: 'absolute'
+          marginTop: '0px !important',
+          top: '100% !important',
+          transform: 'none !important',
+          position: 'absolute !important',
+          left: 'auto !important',
+          right: '0 !important'
         }}
         align="end"
         flip={true}
@@ -54,7 +54,9 @@ const DepartmentFilterPanel = ({
           modifiers: [
             {
               name: 'offset',
-              options: { offset: [0, 0] }
+              options: {
+                offset: [0, 0]
+              }
             },
             {
               name: 'preventOverflow',
@@ -72,10 +74,10 @@ const DepartmentFilterPanel = ({
           ],
         }}
       >
-        {/* Department Type Filters */}
+        {/* Type Filters */}
         <div className="mb-4" style={{ paddingLeft: '1.5rem', paddingTop: '1rem' }}>
           <div className="d-flex justify-content-between align-items-center mb-2">
-            <label className="form-label small fw-semibold mb-0">Department Types</label>
+            <label className="form-label small fw-semibold mb-0">Types</label>
             {selectedTypes.length > 0 && (
               <Button
                 variant="link"
@@ -103,7 +105,7 @@ const DepartmentFilterPanel = ({
         </div>
 
         {/* Status Filters */}
-        <div className="mb-3" style={{ paddingLeft: '1.5rem', paddingBottom: '1rem' }}>
+        <div className="mb-4" style={{ paddingLeft: '1.5rem' }}>
           <div className="d-flex justify-content-between align-items-center mb-2">
             <label className="form-label small fw-semibold mb-0">Status</label>
             {selectedStatuses.length > 0 && (
@@ -132,6 +134,36 @@ const DepartmentFilterPanel = ({
           </div>
         </div>
 
+        {/* Priority Filters */}
+        <div className="mb-3" style={{ paddingLeft: '1.5rem', paddingBottom: '1rem' }}>
+          <div className="d-flex justify-content-between align-items-center mb-2">
+            <label className="form-label small fw-semibold mb-0">Priority</label>
+            {selectedPriorities.length > 0 && (
+              <Button
+                variant="link"
+                size="sm"
+                className="p-0 text-danger"
+                onClick={() => onPriorityToggle('clear')}
+              >
+                <X size={12} />
+              </Button>
+            )}
+          </div>
+          <div className="max-height-150 overflow-auto">
+            {uniquePriorities.map(priority => (
+              <Form.Check
+                key={priority}
+                type="checkbox"
+                id={`priority-${priority}`}
+                label={priority}
+                checked={selectedPriorities.includes(priority)}
+                onChange={() => onPriorityToggle(priority)}
+                className="mb-1"
+              />
+            ))}
+          </div>
+        </div>
+
         {/* Clear All Filters */}
         {hasActiveFilters && (
           <div className="border-top pt-3" style={{ paddingLeft: '1.5rem', paddingRight: '1.5rem' }}>
@@ -152,4 +184,16 @@ const DepartmentFilterPanel = ({
   );
 };
 
-export default DepartmentFilterPanel;
+// Add CSS to override dropdown-unified.css
+const style = document.createElement('style');
+style.textContent = `
+  .course-filter-dropdown .course-filter-menu {
+    margin-top: 0px !important;
+    top: 100% !important;
+    transform: none !important;
+    position: absolute !important;
+  }
+`;
+document.head.appendChild(style);
+
+export default AssessmentFilterPanel;

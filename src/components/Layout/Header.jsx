@@ -147,10 +147,14 @@ const Header = ({ onToggleSidebar }) => {
       '/academic/profile': 'Profile',
       
       // Trainee routes
-      '/trainee': 'Trainee Portal',
+      '/trainee': 'Trainee Dashboard',
+      '/trainee/dashboard': 'Trainee Dashboard',
       '/trainee/academic-details': 'Academic Details',
       '/trainee/enrolled-courses': 'Enrolled Course List',
-      '/trainee/assessment-pending': 'Assessment Pending List',
+      '/trainee/all-assessments': 'All Assessments',
+      '/trainee/signature-required': 'Signature Required List',
+      '/trainee/completion-required': 'Section Completion Required List',
+      '/trainee/your-assessments': 'Your Assessments',
       '/trainee/create-issue': 'Create Issue Report/Feedback',
       '/trainee/assessment-pending/signature-required': 'Signature Required List',
       '/trainee/assessment-pending/section-completion': 'Section Completion Required List'
@@ -201,27 +205,27 @@ const Header = ({ onToggleSidebar }) => {
     }
     
     // Check for trainee course detail (pattern: /trainee/:traineeId/course/:courseId)
-    if (path.match(/^\/trainee\/[^\/]+\/course\/[^\/]+$/)) {
+    if (path.match(/^\/trainee\/[^/]+\/course\/[^/]+$/)) {
       return 'Course Details';
     }
     
     // Check for trainee subject detail (pattern: /trainee/:traineeId/course/:courseId/subject/:subjectId)
-    if (path.match(/^\/trainee\/[^\/]+\/course\/[^\/]+\/subject\/[^\/]+$/)) {
+    if (path.match(/^\/trainee\/[^/]+\/course\/[^/]+\/subject\/[^/]+$/)) {
       return 'Subject Details';
     }
     
     // Check for trainee assessments (pattern: /trainee/:traineeId/assessments)
-    if (path.match(/^\/trainee\/[^\/]+\/assessments$/)) {
+    if (path.match(/^\/trainee\/[^/]+\/assessments$/)) {
       return 'Assessment Details';
     }
     
     // Check for signature pad (pattern: /trainee/:traineeId/signature-pad/:documentId)
-    if (path.match(/^\/trainee\/[^\/]+\/signature-pad\/[^\/]+$/)) {
+    if (path.match(/^\/trainee\/[^/]+\/signature-pad\/[^/]+$/)) {
       return 'Digital Signature';
     }
     
     // Check for assessment section (pattern: /trainee/:traineeId/assessment-section/:sectionId)
-    if (path.match(/^\/trainee\/[^\/]+\/assessment-section\/[^\/]+$/)) {
+    if (path.match(/^\/trainee\/[^/]+\/assessment-section\/[^/]+$/)) {
       return 'Assessment Section';
     }
     

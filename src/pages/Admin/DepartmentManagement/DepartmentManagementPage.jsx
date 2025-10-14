@@ -278,7 +278,7 @@ const DepartmentManagementPage = () => {
 
         <Card.Body>
           {/* Search and Filters */}
-          <Row className="mb-3 form-mobile-stack">
+          <Row className="mb-4 form-mobile-stack">
             <Col xs={12} lg={6} md={5} className="mb-2 mb-lg-0">
               <SearchBar
                 placeholder="Search departments by name, code, or description..."
@@ -310,7 +310,7 @@ const DepartmentManagementPage = () => {
 
 
           {/* Department Table with Scrollable Container */}
-          <div className="position-relative">
+          <div className="position-relative mt-3">
             <DepartmentTable
               departments={filteredDepartments}
               loading={loading}

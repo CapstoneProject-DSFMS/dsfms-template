@@ -139,6 +139,25 @@ export const traineeAPI = {
     } catch (error) {
       throw error.response?.data || error.message;
     }
+  },
+
+  // Lookup trainees by eid and email
+  lookupTrainees: async (identifiers) => {
+    try {
+      console.log('API call - lookupTrainees with:', identifiers);
+      
+      // Use the working format: {trainees: [...]}
+      const requestBody = { trainees: identifiers };
+      console.log('Sending request with format:', requestBody);
+      
+      const response = await apiClient.post('/subjects/trainees/lookup', requestBody);
+      console.log('API response:', response.data);
+      return response.data;
+      
+    } catch (error) {
+      console.error('Lookup failed:', error.response?.data);
+      throw error.response?.data || error.message;
+    }
   }
 };
 
