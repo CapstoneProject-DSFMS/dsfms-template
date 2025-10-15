@@ -2,20 +2,20 @@ import React from 'react';
 import { Dropdown, Form, Button } from 'react-bootstrap';
 import { Funnel, X } from 'react-bootstrap-icons';
 
-const FilterPanel = ({ 
-  uniqueRoles, 
-  uniqueDepartments, 
-  selectedRoles, 
-  selectedDepartments, 
-  onRoleToggle, 
-  onDepartmentToggle, 
+const CourseFilterPanel = ({ 
+  uniqueLevels, 
+  uniqueStatuses, 
+  selectedLevels, 
+  selectedStatuses, 
+  onLevelToggle, 
+  onStatusToggle, 
   onClearFilters,
   className = ""
 }) => {
-  const hasActiveFilters = selectedRoles.length > 0 || selectedDepartments.length > 0;
+  const hasActiveFilters = selectedLevels.length > 0 || selectedStatuses.length > 0;
 
   return (
-    <Dropdown className={`filter-panel-dropdown ${className}`}>
+    <Dropdown className={`filter-panel-dropdown course-filter-dropdown ${className}`}>
       <Dropdown.Toggle 
         variant="outline-secondary" 
         className="w-100 d-flex align-items-center justify-content-between position-relative"
@@ -25,7 +25,7 @@ const FilterPanel = ({
           Filters
           {hasActiveFilters && (
             <span className="badge bg-primary ms-2">
-              {selectedRoles.length + selectedDepartments.length}
+              {selectedLevels.length + selectedStatuses.length}
             </span>
           )}
         </div>
@@ -38,10 +38,12 @@ const FilterPanel = ({
           maxWidth: '90vw',
           maxHeight: window.innerWidth <= 768 ? '50vh' : '70vh',
           overflowY: 'auto',
-          marginTop: '0px',
-          top: '100%',
-          transform: 'none',
-          position: 'absolute'
+          marginTop: '0px !important',
+          top: '100% !important',
+          transform: 'none !important',
+          position: 'absolute !important',
+          left: 'auto !important',
+          right: '0 !important'
         }}
         align="end"
         flip={true}
@@ -49,7 +51,9 @@ const FilterPanel = ({
           modifiers: [
             {
               name: 'offset',
-              options: { offset: [0, 0] }
+              options: {
+                offset: [0, 0]
+              }
             },
             {
               name: 'preventOverflow',
@@ -67,60 +71,60 @@ const FilterPanel = ({
           ],
         }}
       >
-        {/* Role Filters */}
+        {/* Level Filters */}
         <div className="mb-4" style={{ paddingLeft: '1.5rem', paddingTop: '1rem' }}>
           <div className="d-flex justify-content-between align-items-center mb-2">
-            <label className="form-label small fw-semibold mb-0">Roles</label>
-            {selectedRoles.length > 0 && (
+            <label className="form-label small fw-semibold mb-0">Levels</label>
+            {selectedLevels.length > 0 && (
               <Button
                 variant="link"
                 size="sm"
                 className="p-0 text-danger"
-                onClick={() => onRoleToggle('clear')}
+                onClick={() => onLevelToggle('clear')}
               >
                 <X size={12} />
               </Button>
             )}
           </div>
           <div className="max-height-150 overflow-auto">
-            {uniqueRoles.map(role => (
+            {uniqueLevels.map(level => (
               <Form.Check
-                key={role}
+                key={level}
                 type="checkbox"
-                id={`role-${role}`}
-                label={role}
-                checked={selectedRoles.includes(role)}
-                onChange={() => onRoleToggle(role)}
+                id={`level-${level}`}
+                label={level}
+                checked={selectedLevels.includes(level)}
+                onChange={() => onLevelToggle(level)}
                 className="mb-1"
               />
             ))}
           </div>
         </div>
 
-        {/* Department Filters */}
+        {/* Status Filters */}
         <div className="mb-3" style={{ paddingLeft: '1.5rem', paddingBottom: '1rem' }}>
           <div className="d-flex justify-content-between align-items-center mb-2">
-            <label className="form-label small fw-semibold mb-0">Departments</label>
-            {selectedDepartments.length > 0 && (
+            <label className="form-label small fw-semibold mb-0">Statuses</label>
+            {selectedStatuses.length > 0 && (
               <Button
                 variant="link"
                 size="sm"
                 className="p-0 text-danger"
-                onClick={() => onDepartmentToggle('clear')}
+                onClick={() => onStatusToggle('clear')}
               >
                 <X size={12} />
               </Button>
             )}
           </div>
           <div className="max-height-150 overflow-auto">
-            {uniqueDepartments.map(dept => (
+            {uniqueStatuses.map(status => (
               <Form.Check
-                key={dept}
+                key={status}
                 type="checkbox"
-                id={`dept-${dept}`}
-                label={dept}
-                checked={selectedDepartments.includes(dept)}
-                onChange={() => onDepartmentToggle(dept)}
+                id={`status-${status}`}
+                label={status}
+                checked={selectedStatuses.includes(status)}
+                onChange={() => onStatusToggle(status)}
                 className="mb-1"
               />
             ))}
@@ -147,4 +151,16 @@ const FilterPanel = ({
   );
 };
 
-export default FilterPanel;
+// Add CSS to override dropdown-unified.css
+const style = document.createElement('style');
+style.textContent = `
+  .course-filter-dropdown .course-filter-menu {
+    margin-top: 0px !important;
+    top: 100% !important;
+    transform: none !important;
+    position: absolute !important;
+  }
+`;
+document.head.appendChild(style);
+
+export default CourseFilterPanel;

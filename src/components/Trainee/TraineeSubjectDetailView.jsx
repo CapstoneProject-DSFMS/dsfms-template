@@ -1,8 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { Container, Row, Col, Card, Button, Badge, Spinner, Alert } from 'react-bootstrap';
-import { ArrowLeft, Book, Calendar, Clock, Person, GeoAlt } from 'react-bootstrap-icons';
+import { ArrowLeft, Book, Calendar, Clock, Person, GeoAlt, ClipboardCheck, CheckCircle } from 'react-bootstrap-icons';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'react-toastify';
+import TraineeUpcomingAssessments from './TraineeUpcomingAssessments';
+import TraineeCompletedAssessments from './TraineeCompletedAssessments';
 
 const TraineeSubjectDetailView = ({ traineeId, courseId, subjectId }) => {
   const navigate = useNavigate();
@@ -176,23 +178,49 @@ const TraineeSubjectDetailView = ({ traineeId, courseId, subjectId }) => {
       </Row>
 
       <Row>
-        {/* Enrolled Subject Details - Left side with Upcoming Assessment Events */}
+        {/* Enrolled Subject Details - Left side with Assessment Events */}
         <Col lg={8} className="mb-4">
-          <Card className="h-100 border-0 shadow-sm">
-            <Card.Header className="bg-white border-bottom">
-              <h5 className="mb-0 d-flex align-items-center">
-                <ClipboardCheck className="me-2" size={20} />
-                Upcoming Assessment Events
-              </h5>
-            </Card.Header>
-            <Card.Body className="p-0">
-              <TraineeUpcomingAssessments 
-                traineeId={traineeId} 
-                courseId={courseId}
-                subjectId={subjectId}
-              />
-            </Card.Body>
-          </Card>
+          <Row>
+            {/* Upcoming Assessment Events */}
+            <Col className="mb-4">
+              <Card className="h-100 border-0 shadow-sm">
+                <Card.Header className="bg-white border-bottom">
+                  <h5 className="mb-0 d-flex align-items-center">
+                    <ClipboardCheck className="me-2" size={20} />
+                    Upcoming Assessment Events
+                  </h5>
+                </Card.Header>
+                <Card.Body className="p-0">
+                  <TraineeUpcomingAssessments 
+                    traineeId={traineeId} 
+                    courseId={courseId}
+                    subjectId={subjectId}
+                  />
+                </Card.Body>
+              </Card>
+            </Col>
+          </Row>
+
+          <Row>
+            {/* Completed Assessments */}
+            <Col>
+              <Card className="h-100 border-0 shadow-sm">
+                <Card.Header className="bg-white border-bottom">
+                  <h5 className="mb-0 d-flex align-items-center">
+                    <CheckCircle className="me-2" size={20} />
+                    Completed Assessments
+                  </h5>
+                </Card.Header>
+                <Card.Body className="p-0">
+                  <TraineeCompletedAssessments 
+                    traineeId={traineeId} 
+                    courseId={courseId}
+                    subjectId={subjectId}
+                  />
+                </Card.Body>
+              </Card>
+            </Col>
+          </Row>
         </Col>
 
         {/* Subject Information - Right side */}

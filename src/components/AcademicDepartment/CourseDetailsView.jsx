@@ -14,24 +14,22 @@ import {
 import { toast } from 'react-toastify';
 import { PermissionWrapper } from '../Common';
 import { API_PERMISSIONS } from '../../constants/apiPermissions';
-import { usePermissions } from '../../hooks/usePermissions';
 import courseAPI from '../../api/course';
 import CourseTable from './CourseTable';
 import CourseActions from './CourseActions';
 import AddCourseModal from './AddCourseModal';
-import DisableCourseModal from './DisableCourseModal';
+import ArchiveCourseModal from './ArchiveCourseModal';
 import DepartmentHeadModal from './DepartmentHeadModal';
 
 const CourseDetailsView = ({ courseId }) => {
   const navigate = useNavigate();
-  const { hasPermission, userPermissions } = usePermissions();
   const [course, setCourse] = useState(null);
   const [courses, setCourses] = useState([]);
   const [loading, setLoading] = useState(true);
   const [showCourseModal, setShowCourseModal] = useState(false);
   const [courseModalMode, setCourseModalMode] = useState('add');
-  const [showDisableCourse, setShowDisableCourse] = useState(false);
-  const [courseToDisable, setCourseToDisable] = useState(null);
+  const [showArchiveCourse, setShowArchiveCourse] = useState(false);
+  const [courseToArchive, setCourseToArchive] = useState(null);
   const [departmentHead, setDepartmentHead] = useState(null);
   const [showDepartmentHeadModal, setShowDepartmentHeadModal] = useState(false);
   const [isSavingCourse, setIsSavingCourse] = useState(false);
@@ -159,20 +157,15 @@ const CourseDetailsView = ({ courseId }) => {
         }
         
         setLoading(false);
-      } catch (error) {
-        console.error('❌ Error loading department with courses:', error);
-        console.error('❌ Error details:', error.response?.data);
+      } catch {
         setLoading(false);
         
         // Fallback to hardcoded data if API fails
         const courseData = hardcodedCourses[courseId];
         
         if (courseData) {
-          console.log('🔄 Using fallback hardcoded data');
           setCourse(courseData);
           setCourses(hardcodedCoursesList);
-        } else {
-          console.log('❌ No fallback data available for courseId:', courseId);
         }
       }
     };
@@ -185,34 +178,42 @@ const CourseDetailsView = ({ courseId }) => {
 
   const handleCreateCourse = () => {
     // Debug permission checking
-    console.log('🔍 Debug Permission Check:');
-    console.log('- API_PERMISSIONS.COURSES.CREATE:', API_PERMISSIONS.COURSES.CREATE);
-    console.log('- hasPermission result:', hasPermission(API_PERMISSIONS.COURSES.CREATE));
-    console.log('- userPermissions count:', userPermissions?.length || 0);
-    console.log('- userPermissions:', userPermissions);
     
     setCourseModalMode('add');
     setShowCourseModal(true);
   };
 
-  const handleDisableCourse = (courseId) => {
-    console.log('🔍 handleDisableCourse called with courseId:', courseId);
-    const courseToDisable = courses.find(c => c.id === courseId);
-    console.log('🔍 Found course to disable:', courseToDisable);
-    setCourseToDisable(courseToDisable);
-    setShowDisableCourse(true);
+  const handleArchiveCourse = (courseId) => {
+    const courseToArchive = courses.find(c => c.id === courseId);
+    setCourseToArchive(courseToArchive);
+    setShowArchiveCourse(true);
   };
 
-  const handleConfirmDisableCourse = async (courseId) => {
-    console.log('Disabling course:', courseId);
-    // TODO: Implement disable course API call
-    setShowDisableCourse(false);
-    setCourseToDisable(null);
+  const handleConfirmArchiveCourse = async (courseId) => {
+    try {
+      await courseAPI.archiveCourse(courseId);
+      toast.success('Course archived successfully');
+      
+      // Update course status in the list
+      setCourses(prev => prev.map(c => 
+        c.id === courseId ? { ...c, status: 'ARCHIVED' } : c
+      ));
+      
+      setShowArchiveCourse(false);
+      setCourseToArchive(null);
+    } catch (error) {
+      toast.error('Failed to archive course. Please try again.');
+      throw error;
+    }
   };
 
   const handleViewCourse = (courseId) => {
-    console.log('🔍 handleViewCourse called with courseId:', courseId);
-    navigate(`/academic/course-detail/${courseId}`);
+    navigate(`/academic/course-detail/${courseId}`, {
+      state: {
+        departmentId: course.id, // Use the current department ID, not courseId
+        departmentName: course?.name || 'Department'
+      }
+    });
   };
 
 
@@ -221,9 +222,6 @@ const CourseDetailsView = ({ courseId }) => {
       setIsSavingCourse(true);
       
       // Debug permission before API call
-      console.log('🔍 Debug Before API Call:');
-      console.log('- Permission check:', hasPermission(API_PERMISSIONS.COURSES.CREATE));
-      console.log('- Auth token exists:', !!localStorage.getItem('authToken'));
       
       // Build payload expected by API
       const payload = {
@@ -240,7 +238,6 @@ const CourseDetailsView = ({ courseId }) => {
         level: courseData.level
       };
 
-      console.log('📤 Sending payload:', payload);
       const created = await courseAPI.createCourse(payload);
 
       // Notify user
@@ -264,16 +261,10 @@ const CourseDetailsView = ({ courseId }) => {
       };
       setCourses(prev => [createdForTable, ...prev]);
     } catch (error) {
-      console.error('❌ Error creating course:', error);
-      console.error('❌ Error response:', error.response);
-      console.error('❌ Error status:', error.response?.status);
-      console.error('❌ Error data:', error.response?.data);
       
       // Check if it's a permission error
       if (error.response?.status === 403) {
-        console.error('🚫 403 Forbidden - Permission denied');
-        console.error('🚫 User permissions:', userPermissions);
-        console.error('🚫 Required permission:', API_PERMISSIONS.COURSES.CREATE);
+        // Handle permission error
       }
       
       toast.error(error.response?.data?.message || 'Failed to create course');
@@ -402,7 +393,7 @@ const CourseDetailsView = ({ courseId }) => {
                 loading={false}
                 actionsComponent={CourseActions}
                 onView={handleViewCourse}
-                onDisable={handleDisableCourse}
+                onDisable={handleArchiveCourse}
               />
             </div>
           </Card>
@@ -420,11 +411,11 @@ const CourseDetailsView = ({ courseId }) => {
       />
 
 
-      <DisableCourseModal
-        show={showDisableCourse}
-        onClose={() => setShowDisableCourse(false)}
-        onDisable={handleConfirmDisableCourse}
-        course={courseToDisable}
+      <ArchiveCourseModal
+        show={showArchiveCourse}
+        onClose={() => setShowArchiveCourse(false)}
+        onArchive={handleConfirmArchiveCourse}
+        course={courseToArchive}
       />
 
       <DepartmentHeadModal

@@ -67,6 +67,31 @@ const AddCourseModal = ({ show, onClose, onSave, loading = false }) => {
         [name]: ''
       }));
     }
+    
+    // Real-time validation for date fields
+    if (name === 'startDate' && value) {
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+      const startDate = new Date(value + 'T00:00:00');
+      if (startDate < today) {
+        setErrors(prev => ({
+          ...prev,
+          startDate: 'Start date cannot be in the past'
+        }));
+      }
+    }
+    
+    if (name === 'endDate' && value) {
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+      const endDate = new Date(value + 'T00:00:00');
+      if (endDate < today) {
+        setErrors(prev => ({
+          ...prev,
+          endDate: 'End date cannot be in the past'
+        }));
+      }
+    }
   };
 
   const validateForm = () => {
@@ -102,7 +127,7 @@ const AddCourseModal = ({ show, onClose, onSave, loading = false }) => {
       // Check if start date is in the past
       const today = new Date();
       today.setHours(0, 0, 0, 0); // Reset time to start of day
-      const startDate = new Date(formData.startDate);
+      const startDate = new Date(formData.startDate + 'T00:00:00'); // Ensure local timezone
       if (startDate < today) {
         newErrors.startDate = 'Start date cannot be in the past';
       }
@@ -114,13 +139,13 @@ const AddCourseModal = ({ show, onClose, onSave, loading = false }) => {
       // Check if end date is in the past
       const today = new Date();
       today.setHours(0, 0, 0, 0); // Reset time to start of day
-      const endDate = new Date(formData.endDate);
+      const endDate = new Date(formData.endDate + 'T00:00:00'); // Ensure local timezone
       if (endDate < today) {
         newErrors.endDate = 'End date cannot be in the past';
       }
     }
 
-    if (formData.startDate && formData.endDate && new Date(formData.startDate) >= new Date(formData.endDate)) {
+    if (formData.startDate && formData.endDate && new Date(formData.startDate + 'T00:00:00') >= new Date(formData.endDate + 'T00:00:00')) {
       newErrors.endDate = 'End date must be after start date';
     }
 
@@ -139,7 +164,6 @@ const AddCourseModal = ({ show, onClose, onSave, loading = false }) => {
       await onSave(formData);
       handleClose();
     } catch (error) {
-      console.error('Error saving course:', error);
     }
   };
 

@@ -30,7 +30,6 @@ const CourseModal = ({ show, course, mode, onSave, onClose, departmentId }) => {
       const departmentsData = response.departments || [];
       setDepartments(departmentsData);
     } catch (error) {
-      console.error('Error fetching departments:', error);
       toast.error('Failed to load departments');
       setDepartments([]);
     } finally {
@@ -126,7 +125,6 @@ const CourseModal = ({ show, course, mode, onSave, onClose, departmentId }) => {
       toast.success(mode === 'add' ? 'Course created successfully!' : 'Course updated successfully!');
       onClose();
     } catch (error) {
-      console.error('Error saving course:', error);
       toast.error('Failed to save course');
     } finally {
       setIsSubmitting(false);

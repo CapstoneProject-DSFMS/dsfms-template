@@ -3,18 +3,18 @@ import { router } from './routes/router.jsx'
 import AuthWrapper from './components/Common/AuthWrapper.jsx'
 import { ToastContainer } from 'react-toastify'
 import { useEffect } from 'react'
+import './styles/dropdown-unified.css' // Unified dropdown styles to prevent conflicts
+import './styles/sidebar-dropdown.css' // Beautiful sidebar dropdown styles
 // import './styles/trainee.css' // Removed to prevent color overrides
 
 function App() {
   useEffect(() => {
     // Handle GitHub Pages 404.html redirect
     const handleGitHubPagesRedirect = () => {
-      const pathSegmentsToKeep = 1;
       const l = window.location;
       
       // Check if we're on GitHub Pages and URL has been redirected
       if (l.hostname.includes('github.io') && l.search.includes('?/')) {
-        const pathname = l.pathname;
         const search = l.search;
         const hash = l.hash;
         

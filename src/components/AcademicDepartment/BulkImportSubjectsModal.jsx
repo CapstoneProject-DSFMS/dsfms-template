@@ -198,8 +198,6 @@ const BulkImportSubjectsModal = ({ show, onClose, onImport, loading = false, cou
               }
             }
             
-            console.log('🔍 Original start_date:', subject.start_date);
-            console.log('🔍 Normalized start_date:', normalizedStartDate);
             
             if (isNaN(Date.parse(normalizedStartDate))) {
               subject.hasError = true;
@@ -235,8 +233,6 @@ const BulkImportSubjectsModal = ({ show, onClose, onImport, loading = false, cou
               }
             }
             
-            console.log('🔍 Original end_date:', subject.end_date);
-            console.log('🔍 Normalized end_date:', normalizedEndDate);
             
             if (isNaN(Date.parse(normalizedEndDate))) {
               subject.hasError = true;
@@ -254,7 +250,6 @@ const BulkImportSubjectsModal = ({ show, onClose, onImport, loading = false, cou
         setValidationErrors([]);
 
       } catch (error) {
-        console.error('Error parsing Excel file:', error);
         setErrors(['Failed to parse Excel file. Please check the file format.']);
       }
     };
@@ -285,22 +280,6 @@ const BulkImportSubjectsModal = ({ show, onClose, onImport, loading = false, cou
       start_date: subject.start_date || null,
       end_date: subject.end_date || null
     }));
-
-    console.log('🔍 Formatted subjects for API:', formattedSubjects);
-    console.log('🔍 Data types check:', {
-      courseId_type: typeof formattedSubjects[0]?.courseId,
-      courseId_value: formattedSubjects[0]?.courseId,
-      courseId_constructor: formattedSubjects[0]?.courseId?.constructor?.name,
-      method_type: typeof formattedSubjects[0]?.method,
-      method_value: formattedSubjects[0]?.method,
-      type_type: typeof formattedSubjects[0]?.type,
-      type_value: formattedSubjects[0]?.type,
-      all_keys: Object.keys(formattedSubjects[0] || {}),
-      all_types: Object.keys(formattedSubjects[0] || {}).reduce((acc, key) => {
-        acc[key] = typeof formattedSubjects[0][key];
-        return acc;
-      }, {})
-    });
 
     try {
       await onImport(formattedSubjects);

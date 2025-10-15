@@ -1,6 +1,5 @@
 import React from 'react';
 import { Table, Badge } from 'react-bootstrap';
-import RoleRow from './RoleRow';
 import { LoadingSkeleton, SortIcon } from '../../../components/Common';
 import useTableSort from '../../../hooks/useTableSort';
 
@@ -93,7 +92,7 @@ const RoleTable = ({
   };
 
   return (
-    <div className="scrollable-table-container">
+    <div className="scrollable-table-container admin-table">
       <Table hover className="mb-0 table-mobile-responsive">
         <thead className="sticky-header bg-gradient-primary-custom">
           <tr>

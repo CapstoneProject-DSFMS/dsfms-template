@@ -2,10 +2,12 @@ import React, { useState } from 'react';
 import { Container, Row, Col, Card, Button, Form } from 'react-bootstrap';
 import { ArrowLeft, Upload, Search, Plus } from 'react-bootstrap-icons';
 import { useNavigate, useParams } from 'react-router-dom';
+import { toast } from 'react-toastify';
 import SubjectSelectionPanel from '../../components/AcademicDepartment/SubjectSelectionPanel';
 import TraineeSelectionPanel from '../../components/AcademicDepartment/TraineeSelectionPanel';
 import EnrolledTraineesTable from '../../components/AcademicDepartment/EnrolledTraineesTable';
 import BulkImportTraineesModal from '../../components/AcademicDepartment/BulkImportTraineesModal';
+import subjectAPI from '../../api/subject';
 
 const EnrollTraineesPage = () => {
   const navigate = useNavigate();
@@ -21,15 +23,13 @@ const EnrollTraineesPage = () => {
 
   const [selectedSubjects, setSelectedSubjects] = useState([]);
   const [selectedTrainees, setSelectedTrainees] = useState([]);
-  const [enrolledTrainees, setEnrolledTrainees] = useState([
-    { id: 't1', eid: 'EMP001', name: 'John Doe', subjects: ['s1', 's2'] },
-    { id: 't2', eid: 'EMP002', name: 'Jane Smith', subjects: ['s1', 's3'] },
-    { id: 't3', eid: 'EMP003', name: 'Bob Johnson', subjects: ['s2', 's3'] }
-  ]);
   const [showBulkImport, setShowBulkImport] = useState(false);
   const [bulkImportLoading, setBulkImportLoading] = useState(false);
+  const [enrollLoading, setEnrollLoading] = useState(false);
+  const [tableRefreshKey, setTableRefreshKey] = useState(0);
 
   const handleBack = () => {
+    // Navigate back to course detail page
     navigate(`/academic/course-detail/${courseId}`);
   };
 
@@ -38,59 +38,167 @@ const EnrollTraineesPage = () => {
   };
 
   const handleBulkImportTrainees = async (trainees) => {
+    // Prevent duplicate calls
+    if (bulkImportLoading) {
+      console.log('🔍 Bulk import already in progress, skipping...');
+      return;
+    }
+    
     setBulkImportLoading(true);
     try {
-      // TODO: Implement actual API call to import trainees
-      console.log('Importing trainees:', trainees);
+      console.log('🔍 Bulk import trainees received:', trainees);
       
-      // For now, just add to selected trainees
-      const newTrainees = trainees.map((trainee, index) => ({
-        id: `imported_${Date.now()}_${index}`,
-        eid: trainee.eid,
-        name: trainee.full_name,
-        subjects: []
-      }));
+      // Use real trainees from API lookup (they already have proper UUIDs)
+      const newTrainees = trainees.map((trainee) => {
+        console.log('🔍 Processing bulk import trainee:', {
+          id: trainee.id,
+          eid: trainee.eid,
+          firstName: trainee.firstName,
+          lastName: trainee.lastName
+        });
+        
+        return {
+          id: trainee.id, // Use real UUID from API
+          eid: trainee.eid,
+          name: `${trainee.firstName} ${trainee.lastName}`.trim(), // Combined name for display
+          firstName: trainee.firstName,
+          lastName: trainee.lastName,
+          email: trainee.email,
+          phoneNumber: trainee.phoneNumber,
+          status: trainee.status,
+          subjects: []
+        };
+      });
       
-      setSelectedTrainees(prev => [...prev, ...newTrainees]);
+      console.log('🔍 New trainees to add:', newTrainees);
+      
+      // Check for duplicates and only add new trainees
+      setSelectedTrainees(prev => {
+        const existingIds = new Set(prev.map(t => t.id));
+        const newUniqueTrainees = newTrainees.filter(trainee => !existingIds.has(trainee.id));
+        
+        console.log('🔍 Existing trainee IDs:', Array.from(existingIds));
+        console.log('🔍 New unique trainees to add:', newUniqueTrainees);
+        console.log('🔍 Duplicates filtered out:', newTrainees.length - newUniqueTrainees.length);
+        
+        // Only show toast if there are actual changes
+        if (newUniqueTrainees.length === 0 && newTrainees.length > 0) {
+          // Use setTimeout to prevent duplicate toasts
+          setTimeout(() => {
+            toast.error('All selected trainees are already in the list!', {
+              autoClose: 3000,
+              position: "top-right",
+              toastId: 'duplicate-trainees', // Prevent duplicate toasts
+              closeButton: false // Remove close button
+            });
+          }, 100);
+        } else if (newUniqueTrainees.length < newTrainees.length && newUniqueTrainees.length > 0) {
+          setTimeout(() => {
+            toast.warning(`Added ${newUniqueTrainees.length} new trainees. ${newTrainees.length - newUniqueTrainees.length} were already selected.`, {
+              autoClose: 4000,
+              position: "top-right",
+              toastId: 'partial-duplicates', // Prevent duplicate toasts
+              closeButton: false // Remove close button
+            });
+          }, 100);
+        }
+        
+        return [...prev, ...newUniqueTrainees];
+      });
       
       // Simulate API delay
       await new Promise(resolve => setTimeout(resolve, 1000));
       
     } catch (error) {
-      console.error('Failed to import trainees:', error);
       throw error;
     } finally {
       setBulkImportLoading(false);
     }
   };
 
-  const handleEnroll = () => {
-    console.log('Enrolling trainees:', selectedTrainees, 'to subjects:', selectedSubjects);
+  const handleEnroll = async () => {
+    if (selectedSubjects.length === 0 || selectedTrainees.length === 0) {
+      toast.warning('Please select both subjects and trainees to enroll');
+      return;
+    }
+
+    setEnrollLoading(true);
     
-    // TODO: Implement actual API call to enroll trainees
-    // For now, simulate enrollment by updating state
-    
-    // Add selected trainees to enrolled list with selected subjects
-    const newEnrolledTrainees = selectedTrainees.map(trainee => ({
-      ...trainee,
-      subjects: selectedSubjects // Assign selected subjects to each trainee
-    }));
-    
-    // Update enrolled trainees state
-    setEnrolledTrainees(prev => [...prev, ...newEnrolledTrainees]);
-    
-    // Clear selected trainees and subjects
-    setSelectedTrainees([]);
-    setSelectedSubjects([]);
-    
-    console.log('Enrollment completed! Added', newEnrolledTrainees.length, 'trainees');
+    try {
+
+      // Prepare data for API call - Backend expects batchCode and traineeUserIds
+      console.log('🔍 Selected trainees for enrollment:', selectedTrainees);
+      
+      const traineeData = {
+        batchCode: "TEST0012025", // Fixed batch code
+        traineeUserIds: selectedTrainees.map(trainee => {
+          console.log('🔍 Processing trainee:', {
+            id: trainee.id,
+            eid: trainee.eid,
+            name: `${trainee.firstName} ${trainee.lastName}`
+          });
+          
+          if (!trainee.id) {
+            throw new Error(`Trainee ${trainee.eid} (${trainee.firstName} ${trainee.lastName}) is missing UUID`);
+          }
+          
+          return trainee.id; // Just the user IDs as array
+        })
+      };
+      
+      console.log('🔍 Final trainee data for API:', traineeData);
+
+      // Check for potential duplicates (this is just a warning, server will handle actual validation)
+      console.log('⚠️ Note: Server will validate for duplicate enrollments');
+
+      // Call API for each selected subject
+      const enrollmentPromises = selectedSubjects.map(async (subjectId) => {
+        
+        if (!subjectId) {
+          throw new Error(`Invalid subject ID: ${subjectId}`);
+        }
+        
+        const response = await subjectAPI.assignTrainees(subjectId, traineeData);
+        return { subjectId, response };
+      });
+
+      // Wait for all enrollments to complete
+      const enrollmentResults = await Promise.all(enrollmentPromises);
+      
+      console.log('✅ All enrollments completed successfully:', enrollmentResults);
+
+      // Refresh the enrolled trainees table
+      setTableRefreshKey(prev => prev + 1);
+      
+      // Clear selected trainees and subjects
+      setSelectedTrainees([]);
+      setSelectedSubjects([]);
+      
+      toast.success(`Successfully enrolled ${selectedTrainees.length} trainees to ${selectedSubjects.length} subject(s)`);
+      
+    } catch (error) {
+      
+      // Show more specific error message
+      let errorMessage = 'Failed to enroll trainees. Please try again.';
+      if (error.response?.data?.message) {
+        errorMessage = error.response.data.message;
+      } else if (error.response?.data?.errors) {
+        errorMessage = `Validation errors: ${JSON.stringify(error.response.data.errors)}`;
+      } else if (error.message) {
+        errorMessage = error.message;
+      }
+      
+      toast.error(errorMessage);
+    } finally {
+      setEnrollLoading(false);
+    }
   };
 
   return (
-    <Container fluid className="py-1 enroll-page">
+    <Container fluid className="py-4 px-4 enroll-page">
       <div className="d-flex flex-column">
         {/* Header - Fixed */}
-        <div className="flex-shrink-0 mb-2">
+        <div className="flex-shrink-0 mb-3">
           <div className="d-flex align-items-center mb-2">
             <Button 
               variant="outline-secondary" 
@@ -120,12 +228,27 @@ const EnrollTraineesPage = () => {
                     size="sm" 
                     variant="primary"
                     onClick={handleEnroll}
-                    disabled={selectedSubjects.length === 0 || selectedTrainees.length === 0}
+                    disabled={selectedSubjects.length === 0 || selectedTrainees.length === 0 || enrollLoading}
+                    style={{ fontSize: '0.75rem', padding: '0.25rem 0.5rem' }}
                   >
-                    <Plus size={14} className="me-1" /> Enroll
+                    {enrollLoading ? (
+                      <>
+                        <span className="spinner-border spinner-border-sm me-1" role="status" aria-hidden="true" style={{ width: '0.75rem', height: '0.75rem' }}></span>
+                        Enrolling...
+                      </>
+                    ) : (
+                      <>
+                        <Plus size={12} className="me-1" /> Enroll
+                      </>
+                    )}
                   </Button>
-                  <Button size="sm" variant="outline-primary" onClick={handleBulkImport}>
-                    <Upload size={14} className="me-1" /> Bulk Import Trainees
+                  <Button 
+                    size="sm" 
+                    variant="outline-primary" 
+                    onClick={handleBulkImport}
+                    style={{ fontSize: '0.75rem', padding: '0.25rem 0.5rem' }}
+                  >
+                    <Upload size={12} className="me-1" /> Bulk Import Trainees
                   </Button>
                 </Col>
               </Row>
@@ -135,21 +258,25 @@ const EnrollTraineesPage = () => {
 
         {/* Main Content */}
         <div className="mb-4">
-          <Row className="g-2">
+          <Row className="g-3">
             {/* Panel 1: Subject Selection */}
             <Col lg={6}>
-              <SubjectSelectionPanel 
-                selectedSubjects={selectedSubjects}
-                onSelectionChange={setSelectedSubjects}
-              />
+              <div style={{ height: '500px' }}>
+                <SubjectSelectionPanel 
+                  selectedSubjects={selectedSubjects}
+                  onSelectionChange={setSelectedSubjects}
+                />
+              </div>
             </Col>
 
             {/* Panel 2: Trainee Selection */}
             <Col lg={6}>
-              <TraineeSelectionPanel 
-                selectedTrainees={selectedTrainees}
-                onSelectionChange={setSelectedTrainees}
-              />
+              <div style={{ height: '500px' }}>
+                <TraineeSelectionPanel 
+                  selectedTrainees={selectedTrainees}
+                  onSelectionChange={setSelectedTrainees}
+                />
+              </div>
             </Col>
           </Row>
         </div>
@@ -158,8 +285,8 @@ const EnrollTraineesPage = () => {
         {/* Enrolled Trainees Table - Full Width at Bottom */}
         <div className="mt-4">
           <EnrolledTraineesTable 
-            enrolledTrainees={enrolledTrainees}
-            onUpdate={setEnrolledTrainees}
+            key={tableRefreshKey}
+            courseId={courseId}
             loading={false}
           />
         </div>

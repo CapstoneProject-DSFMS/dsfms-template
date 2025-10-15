@@ -7,7 +7,6 @@ import { PermissionWrapper } from '../Common';
 import { API_PERMISSIONS } from '../../constants/apiPermissions';
 import traineeAPI from '../../api/trainee';
 import TraineeCourseList from './TraineeCourseList';
-import TraineeAssessmentPendingList from './TraineeAssessmentPendingList';
 
 const TraineeDetailView = ({ traineeId }) => {
   const navigate = useNavigate();
@@ -32,12 +31,10 @@ const TraineeDetailView = ({ traineeId }) => {
         firstName: 'John',
         middleName: 'Michael',
         lastName: 'Doe',
-        eid: 'EMP001',
         email: 'john.doe@company.com',
         phoneNumber: '+1 (555) 123-4567',
         dateOfBirth: '1990-05-15',
         address: '123 Main Street, New York, NY 10001',
-        status: 'ACTIVE',
         department: {
           id: 1,
           name: 'Flight Operations',
@@ -63,17 +60,6 @@ const TraineeDetailView = ({ traineeId }) => {
     navigate('/trainee');
   };
 
-  const getStatusBadge = (status) => {
-    const statusConfig = {
-      'ACTIVE': { variant: 'success', text: 'Active' },
-      'INACTIVE': { variant: 'secondary', text: 'Inactive' },
-      'PENDING': { variant: 'warning', text: 'Pending' },
-      'SUSPENDED': { variant: 'danger', text: 'Suspended' }
-    };
-    
-    const config = statusConfig[status] || { variant: 'secondary', text: status };
-    return <Badge bg={config.variant} className="fs-6">{config.text}</Badge>;
-  };
 
   if (loading) {
     return (
@@ -121,12 +107,11 @@ const TraineeDetailView = ({ traineeId }) => {
                 {trainee.firstName} {trainee.lastName}
               </h2>
                 <p className="text-muted mb-0">
-                  {trainee.eid} • {trainee.department?.name || 'No Department'}
+                  {trainee.department?.name || 'No Department'}
                 </p>
               </div>
             </div>
             <div className="d-flex align-items-center gap-2">
-              {getStatusBadge(trainee.status)}
               <PermissionWrapper permission={API_PERMISSIONS.TRAINEES.UPDATE}>
                 <Button variant="outline-primary" size="sm">
                   Edit Trainee
@@ -152,9 +137,6 @@ const TraineeDetailView = ({ traineeId }) => {
                 <h4 className="mb-1">
                   {trainee.firstName} {trainee.middleName} {trainee.lastName}
                 </h4>
-                <Badge bg="primary" className="fs-6">
-                  {trainee.eid}
-                </Badge>
               </div>
 
               <div className="space-y-3">
@@ -232,10 +214,11 @@ const TraineeDetailView = ({ traineeId }) => {
                 Assessment Pending List
               </h5>
             </Card.Header>
-            <Card.Body className="p-0">
-              <PermissionWrapper permission={API_PERMISSIONS.TRAINEES.VIEW_ASSESSMENTS}>
-                <TraineeAssessmentPendingList traineeId={traineeId} />
-              </PermissionWrapper>
+            <Card.Body className="p-3">
+              <div className="text-center text-muted">
+                <ClipboardCheck size={48} className="mb-3" />
+                <p>Assessment pending list component is being updated.</p>
+              </div>
             </Card.Body>
           </Card>
         </Col>

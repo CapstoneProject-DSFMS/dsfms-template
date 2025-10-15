@@ -123,6 +123,52 @@ export const traineeAPI = {
     } catch (error) {
       throw error.response?.data || error.message;
     }
+  },
+
+  // Get all trainees with role filter (for enrollment)
+  getTraineesForEnrollment: async (params = {}) => {
+    try {
+      const response = await apiClient.get('/users', { 
+        params: {
+          includeDeleted: true,
+          roleName: 'TRAINEE',
+          ...params
+        }
+      });
+      return response.data;
+    } catch (error) {
+      throw error.response?.data || error.message;
+    }
+  },
+
+  // Lookup trainees by eid and email
+  lookupTrainees: async (identifiers) => {
+    try {
+      console.log('API call - lookupTrainees with:', identifiers);
+      
+      // Use the working format: {trainees: [...]}
+      const requestBody = { trainees: identifiers };
+      console.log('Sending request with format:', requestBody);
+      
+      const response = await apiClient.post('/subjects/trainees/lookup', requestBody);
+      console.log('API response:', response.data);
+      return response.data;
+      
+    } catch (error) {
+      console.error('Lookup failed:', error.response?.data);
+      throw error.response?.data || error.message;
+    }
+  },
+
+  // Get trainees by course ID
+  getTraineesByCourseId: async (courseId) => {
+    try {
+      const response = await apiClient.get(`/courses/${courseId}/trainees`);
+      return response.data;
+    } catch (error) {
+      console.error('Error fetching trainees by course ID:', error);
+      throw error;
+    }
   }
 };
 

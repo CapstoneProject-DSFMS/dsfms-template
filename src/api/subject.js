@@ -14,11 +14,21 @@ const subjectAPI = {
 
   // Get subjects by course ID
   getSubjectsByCourse: async (courseId, params = {}) => {
+    const url = `/subjects/course/${courseId}`;
+    console.log('🔍 API Call - URL:', url);
+    console.log('🔍 API Call - courseId:', courseId);
+    console.log('🔍 API Call - params:', params);
+    
     try {
-      const response = await apiClient.get(`/subjects/course/${courseId}`, { params });
+      const response = await apiClient.get(url, { params });
+      console.log('🔍 API Call - Response:', response);
+      console.log('🔍 API Call - Response data:', response.data);
       return response.data;
     } catch (error) {
-      console.error('Error fetching subjects by course:', error);
+      console.error('❌ API Call - Error:', error);
+      console.error('❌ API Call - Error response:', error.response);
+      console.error('❌ API Call - Error status:', error.response?.status);
+      console.error('❌ API Call - Error data:', error.response?.data);
       throw error;
     }
   },
@@ -102,6 +112,111 @@ const subjectAPI = {
       console.error('❌ Validation errors:', error.response?.data?.errors);
       console.error('❌ Full error response:', JSON.stringify(error.response?.data, null, 2));
       throw error;
+    }
+  },
+
+  // Assign trainees to subject
+  assignTrainees: async (subjectId, traineeData) => {
+    try {
+      console.log('🔍 Assigning trainees to subject:', subjectId);
+      console.log('🔍 Trainee data being sent:', JSON.stringify(traineeData, null, 2));
+      console.log('🔍 Data validation:', {
+        subjectId: subjectId,
+        subjectIdType: typeof subjectId,
+        traineeDataKeys: Object.keys(traineeData),
+        enrolledCount: traineeData.enrolledCount,
+        enrolledArray: traineeData.enrolled,
+        enrolledLength: traineeData.enrolled?.length,
+        firstTrainee: traineeData.enrolled?.[0],
+        firstTraineeKeys: traineeData.enrolled?.[0] ? Object.keys(traineeData.enrolled[0]) : null
+      });
+      
+      const response = await apiClient.post(`/subjects/${subjectId}/assign-trainees`, traineeData);
+      console.log('✅ Assign trainees API response:', response.data);
+      return response.data;
+    } catch (error) {
+      console.error('❌ Error assigning trainees to subject:', error);
+      console.error('❌ Error status:', error.response?.status);
+      console.error('❌ Error details:', error.response?.data);
+      console.error('❌ Error message:', error.response?.data?.message);
+      console.error('❌ Validation errors:', error.response?.data?.errors);
+      console.error('❌ Full error response:', JSON.stringify(error.response?.data, null, 2));
+      throw error;
+    }
+  },
+
+  // Remove trainee from subject
+  removeTraineeFromSubject: async (subjectId, traineeId, batchCode) => {
+    try {
+      console.log('🔍 Removing trainee from subject:', { subjectId, traineeId, batchCode });
+      
+      const requestData = {
+        batchCode: batchCode
+      };
+      
+      console.log('🔍 Request data:', JSON.stringify(requestData, null, 2));
+      
+      const response = await apiClient.delete(`/subjects/${subjectId}/trainees/${traineeId}`, {
+        data: requestData
+      });
+      
+      console.log('✅ Remove trainee from subject API response:', response.data);
+      return response.data;
+    } catch (error) {
+      console.error('❌ Error removing trainee from subject:', error);
+      console.error('❌ Error status:', error.response?.status);
+      console.error('❌ Error details:', error.response?.data);
+      console.error('❌ Error message:', error.response?.data?.message);
+      throw error;
+    }
+  },
+
+  // Add trainer to subject
+  addTrainerToSubject: async (subjectId, trainerData) => {
+    try {
+      const requestData = {
+        trainerUserId: trainerData.trainer_user_id,
+        roleInSubject: trainerData.role_in_subject
+      };
+      
+      const response = await apiClient.post(`/subjects/${subjectId}/trainers`, requestData);
+      return response.data;
+    } catch (error) {
+      throw error.response?.data || error.message;
+    }
+  },
+
+  // Get trainers of a subject (NOT USED - using subject.instructors instead)
+  getSubjectTrainers: async (subjectId) => {
+    try {
+      const response = await apiClient.get(`/subjects/${subjectId}/trainers`);
+      return response.data;
+    } catch (error) {
+      throw error.response?.data || error.message;
+    }
+  },
+
+  // Update trainer role in subject
+  updateTrainerRole: async (subjectId, trainerId, roleData) => {
+    try {
+      const requestData = {
+        roleInSubject: roleData.roleInSubject
+      };
+      
+      const response = await apiClient.put(`/subjects/${subjectId}/trainers/${trainerId}`, requestData);
+      return response.data;
+    } catch (error) {
+      throw error.response?.data || error.message;
+    }
+  },
+
+  // Remove trainer from subject
+  removeTrainerFromSubject: async (subjectId, trainerId) => {
+    try {
+      const response = await apiClient.delete(`/subjects/${subjectId}/trainers/${trainerId}`);
+      return response.data;
+    } catch (error) {
+      throw error.response?.data || error.message;
     }
   }
 };

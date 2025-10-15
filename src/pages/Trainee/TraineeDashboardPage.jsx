@@ -2,11 +2,36 @@ import React from 'react';
 import { Container, Row, Col, Card, Button } from 'react-bootstrap';
 import { Person, Book, ClipboardCheck, ExclamationTriangle, ArrowRight } from 'react-bootstrap-icons';
 import { useNavigate } from 'react-router-dom';
-import { useAuth } from '../../hooks/useAuth';
 
+// Add custom CSS to override Bootstrap card-header styles for dashboard
+const dashboardStyles = `
+  .training-progress-card .card-header {
+    background-color: #1b3c53 !important;
+    color: #ffffff !important;
+    border-bottom: 1px solid #dee2e6 !important;
+  }
+  .training-progress-card .card-header h5 {
+    color: #ffffff !important;
+  }
+  .assessments-card .card-header {
+    background-color: #1b3c53 !important;
+    color: #ffffff !important;
+    border-bottom: 1px solid #dee2e6 !important;
+  }
+  .assessments-card .card-header h5 {
+    color: #ffffff !important;
+  }
+`;
+
+// Inject the styles
+if (typeof document !== 'undefined') {
+  const styleSheet = document.createElement('style');
+  styleSheet.type = 'text/css';
+  styleSheet.innerText = dashboardStyles;
+  document.head.appendChild(styleSheet);
+}
 const TraineeDashboardPage = () => {
   const navigate = useNavigate();
-  const { user } = useAuth();
 
   const quickActions = [
     {
@@ -17,14 +42,14 @@ const TraineeDashboardPage = () => {
       color: 'primary'
     },
     {
-      title: 'Enrolled Courses',
+      title: 'Your Courses',
       description: 'Check your enrolled courses and progress',
       icon: Book,
       path: '/trainee/enrolled-courses',
       color: 'success'
     },
     {
-      title: 'Assessment Pending',
+      title: 'All Assessments',
       description: 'View pending assessments and tasks',
       icon: ClipboardCheck,
       path: '/trainee/assessment-pending',
@@ -42,19 +67,6 @@ const TraineeDashboardPage = () => {
 
   return (
     <Container fluid className="py-4">
-      {/* Welcome Header */}
-      <Row className="mb-4">
-        <Col>
-          <div>
-            <h1 className="mb-1">
-              {user?.fullName || user?.firstName || 'Trainee'}!
-            </h1>
-            <p className="text-muted mb-0">
-              Welcome to your training portal. Here's what you can do today.
-            </p>
-          </div>
-        </Col>
-      </Row>
 
       {/* Quick Actions */}
       <Row className="mb-4">
@@ -105,34 +117,15 @@ const TraineeDashboardPage = () => {
         })}
       </Row>
 
-      {/* Recent Activity */}
-      <Row className="mt-5">
-        <Col>
-          <Card className="border-0 shadow-sm">
-            <Card.Header className="bg-white border-bottom">
-              <h5 className="mb-0">Recent Activity</h5>
-            </Card.Header>
-            <Card.Body>
-              <div className="text-center py-4">
-                <Book size={48} className="text-muted mb-3" />
-                <h6 className="text-muted">No recent activity</h6>
-                <p className="text-muted small mb-0">
-                  Your recent training activities will appear here.
-                </p>
-              </div>
-            </Card.Body>
-          </Card>
-        </Col>
-      </Row>
 
       {/* Training Progress */}
       <Row className="mt-4">
-        <Col lg={6}>
-          <Card className="border-0 shadow-sm">
-            <Card.Header className="bg-white border-bottom">
+        <Col lg={6} className="d-flex">
+          <Card className="border-0 shadow-sm w-100 training-progress-card">
+            <Card.Header>
               <h5 className="mb-0">Training Progress</h5>
             </Card.Header>
-            <Card.Body>
+            <Card.Body className="d-flex flex-column justify-content-center">
               <div className="text-center py-4">
                 <div className="mb-3">
                   <div className="display-4 text-primary fw-bold">0%</div>
@@ -151,18 +144,28 @@ const TraineeDashboardPage = () => {
             </Card.Body>
           </Card>
         </Col>
-        <Col lg={6}>
-          <Card className="border-0 shadow-sm">
-            <Card.Header className="bg-white border-bottom">
-              <h5 className="mb-0">Upcoming Deadlines</h5>
+        <Col lg={6} className="d-flex">
+          <Card className="border-0 shadow-sm w-100 assessments-card">
+            <Card.Header>
+              <h5 className="mb-0">Assessments Required Confirmations</h5>
             </Card.Header>
-            <Card.Body>
+            <Card.Body className="d-flex flex-column justify-content-center">
               <div className="text-center py-4">
                 <ClipboardCheck size={48} className="text-muted mb-3" />
-                <h6 className="text-muted">No upcoming deadlines</h6>
-                <p className="text-muted small mb-0">
-                  Check your assessment pending list for upcoming tasks.
+                <h6 className="text-muted">No assessments pending</h6>
+                <p className="text-muted small mb-3">
+                  Complete your assessment confirmations to track progress.
                 </p>
+                <Button 
+                  variant="outline-primary" 
+                  size="sm"
+                  onClick={() => navigate('/trainee/assessment-pending/signature-required')}
+                  className="d-flex align-items-center justify-content-center mx-auto"
+                >
+                  <ClipboardCheck size={16} className="me-2" />
+                  Go to Assessments
+                  <ArrowRight size={16} className="ms-2" />
+                </Button>
               </div>
             </Card.Body>
           </Card>

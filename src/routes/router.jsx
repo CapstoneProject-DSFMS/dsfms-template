@@ -25,10 +25,11 @@ import AssessmentSectionDetailsPage from '../pages/Trainee/AssessmentSectionDeta
 import TraineeDashboardPage from '../pages/Trainee/TraineeDashboardPage'
 import AcademicDetailsPage from '../pages/Trainee/AcademicDetailsPage'
 import EnrolledCoursesPage from '../pages/Trainee/EnrolledCoursesPage'
-import AssessmentPendingPage from '../pages/Trainee/AssessmentPendingPage'
+import AllAssessmentsPage from '../pages/Trainee/AllAssessmentsPage';
+import SignatureRequiredPage from '../pages/Trainee/SignatureRequiredPage';
+import SectionCompletionPage from '../pages/Trainee/SectionCompletionPage';
+import YourAssessmentsPage from '../pages/Trainee/YourAssessmentsPage';
 import CreateIssuePage from '../pages/Trainee/CreateIssuePage'
-import SignatureRequiredPage from '../pages/Trainee/SignatureRequiredPage'
-import SectionCompletionPage from '../pages/Trainee/SectionCompletionPage'
 import { API_PERMISSIONS } from '../constants/apiPermissions'
 import { getCurrentBasename } from '../utils/navigation'
 
@@ -174,10 +175,6 @@ export const router = createBrowserRouter([
         element: <CourseSelectionView />
       },
       {
-        path: "departments/:departmentId",
-        element: <CourseSelectionView />
-      },
-      {
         path: "course/:courseId",
         element: <CourseDetailsWrapper />
       },
@@ -214,6 +211,17 @@ export const router = createBrowserRouter([
           <PermissionRoute 
             permission={API_PERMISSIONS.TRAINEES.VIEW_ALL}
             fallback={<div className="p-4 text-center text-muted">You don't have permission to access trainee portal.</div>}
+          >
+            <TraineeDashboardPage />
+          </PermissionRoute>
+        )
+      },
+      {
+        path: "dashboard",
+        element: (
+          <PermissionRoute 
+            permission={API_PERMISSIONS.TRAINEES.VIEW_DETAIL}
+            fallback={<div className="p-4 text-center text-muted">You don't have permission to access trainee dashboard.</div>}
           >
             <TraineeDashboardPage />
           </PermissionRoute>
@@ -308,22 +316,55 @@ export const router = createBrowserRouter([
         )
       },
       {
-        path: "assessment-pending",
+        path: "all-assessments",
         element: (
           <PermissionRoute 
             permission={API_PERMISSIONS.TRAINEES.VIEW_ASSESSMENTS}
-            fallback={<div className="p-4 text-center text-muted">You don't have permission to view assessment pending list.</div>}
+            fallback={<div className="p-4 text-center text-muted">You don't have permission to view all assessments.</div>}
           >
-            <AssessmentPendingPage />
+            <AllAssessmentsPage />
           </PermissionRoute>
         )
       },
       {
-        path: "create-issue",
+        path: "signature-required",
+        element: (
+          <PermissionRoute 
+            permission={API_PERMISSIONS.TRAINEES.VIEW_ASSESSMENTS}
+            fallback={<div className="p-4 text-center text-muted">You don't have permission to view signature required list.</div>}
+          >
+            <SignatureRequiredPage />
+          </PermissionRoute>
+        )
+      },
+      {
+        path: "completion-required",
+        element: (
+          <PermissionRoute 
+            permission={API_PERMISSIONS.TRAINEES.VIEW_ASSESSMENTS}
+            fallback={<div className="p-4 text-center text-muted">You don't have permission to view section completion list.</div>}
+          >
+            <SectionCompletionPage />
+          </PermissionRoute>
+        )
+      },
+      {
+        path: "your-assessments",
+        element: (
+          <PermissionRoute 
+            permission={API_PERMISSIONS.TRAINEES.VIEW_ASSESSMENTS}
+            fallback={<div className="p-4 text-center text-muted">You don't have permission to view your assessments.</div>}
+          >
+            <YourAssessmentsPage />
+          </PermissionRoute>
+        )
+      },
+      {
+        path: "create-incident-feedback-report",
         element: (
           <PermissionRoute 
             permission={API_PERMISSIONS.TRAINEES.VIEW_ALL}
-            fallback={<div className="p-4 text-center text-muted">You don't have permission to create issue reports.</div>}
+            fallback={<div className="p-4 text-center text-muted">You don't have permission to create incident/feedback reports.</div>}
           >
             <CreateIssuePage />
           </PermissionRoute>
