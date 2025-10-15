@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { Card, Button, Row, Col, Container, Badge, Nav, Tab } from 'react-bootstrap';
 import { Plus, Upload, Pencil, ArrowLeft, People, Calendar, GeoAlt, FileText, Award, PersonCheck, Book } from 'react-bootstrap-icons';
 import { useNavigate, useParams } from 'react-router-dom';
@@ -11,9 +11,13 @@ import BulkImportSubjectsModal from '../../components/AcademicDepartment/BulkImp
 import EditCourseModal from '../../components/AcademicDepartment/EditCourseModal';
 import DisableSubjectModal from '../../components/AcademicDepartment/DisableSubjectModal';
 
-const InPageCourseDetail = ({ course, department, onClose, onEdit }) => {
+const InPageCourseDetail = ({ course, department }) => {
   const navigate = useNavigate();
   const { courseId } = useParams();
+  
+  console.log('🔍 InPageCourseDetail - courseId from URL params:', courseId);
+  console.log('🔍 InPageCourseDetail - course prop:', course);
+  console.log('🔍 InPageCourseDetail - department prop:', department);
   
   // Modal states
   const [showAddSubject, setShowAddSubject] = useState(false);
@@ -27,56 +31,45 @@ const InPageCourseDetail = ({ course, department, onClose, onEdit }) => {
   const [courseDetails, setCourseDetails] = useState(null);
   const [subjects, setSubjects] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [hasApiData, setHasApiData] = useState(false); // Track if we have API data
-  const [courses, setCourses] = useState([]);
+  // const [hasApiData, setHasApiData] = useState(false); // Track if we have API data
   
   // Active tab state
   const [activeTab, setActiveTab] = useState('course-info');
   
   // Load subjects from API
-  const loadSubjects = async () => {
+  const loadSubjects = useCallback(async () => {
+    console.log('🔍 Loading subjects...');
+    
     try {
       const response = await subjectAPI.getSubjects();
+      console.log('🔍 API Response:', response);
       
       if (response && response.subjects) {
+        console.log('🔍 Found subjects:', response.subjects.length, 'subjects');
         setSubjects(response.subjects);
-        setHasApiData(true);
+      } else {
+        console.log('🔍 No subjects found in response');
+        setSubjects([]);
       }
     } catch (error) {
-      // Keep existing subjects (mock data) if API fails
+      console.error('❌ Error loading subjects:', error);
+      console.error('❌ Error details:', error.response?.data);
+      console.error('❌ Error status:', error.response?.status);
+      // Keep existing subjects if API fails (fallback behavior)
     }
-  };
+  }, []);
 
-  // Load courses from API
-  const loadCourses = async () => {
-    try {
-      const response = await courseAPI.getDepartmentById(courseId);
-      
-      if (response && response.courses) {
-        const transformedCourses = response.courses.map(course => ({
-          id: course.id,
-          name: course.name,
-          code: course.code,
-          startDate: course.startDate ? new Date(course.startDate).toISOString().split('T')[0] : 'N/A',
-          endDate: course.endDate ? new Date(course.endDate).toISOString().split('T')[0] : 'N/A',
-          venue: course.venue || 'N/A',
-          note: course.note || 'N/A',
-          status: course.status,
-          description: course.description,
-          maxNumTrainee: course.maxNumTrainee,
-          passScore: course.passScore,
-          level: course.level
-        }));
-        setCourses(transformedCourses);
-      }
-    } catch (error) {
-    }
-  };
+  // Load courses from API - This function is not needed for course detail page
+  const loadCourses = useCallback(async () => {
+    // This function is not needed for course detail page
+    // We already load course details in the main useEffect
+    return;
+  }, []);
 
   // Load courses when component mounts
   useEffect(() => {
     loadCourses();
-  }, [courseId]);
+  }, [courseId, loadCourses]);
 
   // Fetch course details from API
   useEffect(() => {
@@ -109,7 +102,7 @@ const InPageCourseDetail = ({ course, department, onClose, onEdit }) => {
         
         setCourseDetails(transformedCourseDetails);
         setLoading(false);
-      } catch (error) {
+      } catch {
         setLoading(false);
         
         // Fallback to hardcoded data if API fails
@@ -132,15 +125,15 @@ const InPageCourseDetail = ({ course, department, onClose, onEdit }) => {
 
     loadCourseDetails();
     loadSubjects(); // Load subjects from API
-  }, [courseId, course]);
+  }, [courseId, course, loadSubjects]);
   
   const handleBack = () => {
-    // Always navigate back to department details, not browser history
+    // Navigate back to department details using the correct route
     if (department?.id) {
       navigate(`/academic/course/${department.id}`);
     } else {
-      // Fallback to browser history if no department info
-      navigate(-1);
+      // Fallback to department list if no department info
+      navigate('/academic/departments');
     }
   };
 
@@ -178,40 +171,36 @@ const InPageCourseDetail = ({ course, department, onClose, onEdit }) => {
     navigate(`/academic/course/${courseId}/subject/${subjectId}`);
   };
 
-  const handleEditSubject = (subjectId) => {
+  const handleEditSubject = () => {
     // TODO: Implement edit subject functionality
   };
 
   const handleDeleteSubject = (subjectId) => {
-    // Find the subject from mock data
-    const mockSubjects = [
-      { id: 's1', name: 'Safety Basics', code: 'SB01', description: 'Basic safety procedures training' },
-      { id: 's2', name: 'Evacuation Drills', code: 'ED02', description: 'Emergency evacuation procedures' },
-      { id: 's3', name: 'CPR & First Aid', code: 'FA03', description: 'Cardiopulmonary resuscitation and first aid' },
-      { id: 's4', name: 'Fire Safety', code: 'FS04', description: 'Fire prevention and safety measures' },
-      { id: 's5', name: 'Emergency Procedures', code: 'EP05', description: 'General emergency response procedures' }
-    ];
-    
-    const subject = mockSubjects.find(s => s.id === subjectId);
+    // Find the subject from current subjects state
+    const subject = subjects.find(s => s.id === subjectId);
     if (subject) {
       setSelectedSubject(subject);
       setShowDisableSubject(true);
     }
   };
 
-  const handleConfirmDisableSubject = async (subjectId) => {
+  const handleConfirmDisableSubject = async () => {
+    if (!selectedSubject) return;
+    
     setIsDisabling(true);
     try {
-      // TODO: Implement disable subject API call
-      // For now, simulate API call
-      await new Promise(resolve => setTimeout(resolve, 1000));
+      // Call API to disable subject
+      await subjectAPI.deleteSubject(selectedSubject.id);
       
-      // Show success message
+      // Reload subjects to get updated data
+      await loadSubjects();
       
       // Close modal
       setShowDisableSubject(false);
       setSelectedSubject(null);
     } catch (error) {
+      console.error('Error disabling subject:', error);
+      // Handle error - could show toast notification
     } finally {
       setIsDisabling(false);
     }
@@ -223,89 +212,71 @@ const InPageCourseDetail = ({ course, department, onClose, onEdit }) => {
 
   // Modal handlers
   const handleAddSubject = async (subjectData) => {
-    // TODO: Implement add subject API call
-    setShowAddSubject(false);
+    try {
+      // Call API to create subject
+      await subjectAPI.createSubject({
+        ...subjectData,
+        courseId: courseId
+      });
+      
+      // Reload subjects to get updated data
+      await loadSubjects();
+      
+      setShowAddSubject(false);
+    } catch (error) {
+      console.error('Error adding subject:', error);
+      // Handle error - could show toast notification
+    }
   };
 
   const handleBulkImportSubjects = async (subjectsData) => {
-    
     try {
       // Call bulk import API
-      const response = await subjectAPI.bulkImportSubjects(subjectsData);
+      await subjectAPI.bulkImportSubjects(subjectsData);
       
       // Reload subjects from API to get updated data
       await loadSubjects();
       
       setShowBulkImport(false);
     } catch (error) {
-      // Fallback to local state if API fails
-      const newSubjects = subjectsData.map((subject, index) => ({
-        id: `imported_${Date.now()}_${index}`,
-        name: subject.name,
-        code: subject.code,
-        method: subject.method || 'THEORY',
-        duration: subject.duration ? `${subject.duration} days` : '1 week',
-        startDate: subject.start_date ? new Date(subject.start_date).toLocaleDateString() : '',
-        endDate: subject.end_date ? new Date(subject.end_date).toLocaleDateString() : '',
-        roomName: subject.room_name || 'TBD',
-        trainees: 0,
-        status: 'ACTIVE',
-        source: 'bulk_import' // Mark as bulk imported
-      }));
-      
-      // Smart merge: Add new subjects to existing subjects, avoid duplicates
-      setSubjects(prevSubjects => {
-        const existingCodes = new Set(prevSubjects.map(s => s.code));
-        const uniqueNewSubjects = newSubjects.filter(s => !existingCodes.has(s.code));
-        
-        return [...prevSubjects, ...uniqueNewSubjects];
-      });
-      
-      setShowBulkImport(false);
+      console.error('Error bulk importing subjects:', error);
+      // Handle error - could show toast notification
+      // Don't close modal on error so user can retry
     }
   };
 
   const handleEditCourse = async (updatedCourseData) => {
-    
-    // Update the course in the courses list
-    setCourses(prevCourses => 
-      prevCourses.map(c => 
-        c.id === updatedCourseData.id 
-          ? {
-              ...c,
-              name: updatedCourseData.name,
-              code: updatedCourseData.code,
-              description: updatedCourseData.description,
-              maxNumTrainee: updatedCourseData.maxNumTrainee,
-              venue: updatedCourseData.venue,
-              note: updatedCourseData.note,
-              passScore: updatedCourseData.passScore,
-              startDate: updatedCourseData.startDate ? new Date(updatedCourseData.startDate).toISOString().split('T')[0] : 'N/A',
-              endDate: updatedCourseData.endDate ? new Date(updatedCourseData.endDate).toISOString().split('T')[0] : 'N/A',
-              level: updatedCourseData.level
-            }
-          : c
-      )
-    );
-    
-    // Also update courseDetails if it matches
-    if (courseDetails && courseDetails.id === updatedCourseData.id) {
-      setCourseDetails(prev => ({
-        ...prev,
-        name: updatedCourseData.name,
-        code: updatedCourseData.code,
-        description: updatedCourseData.description,
-        maxTrainees: updatedCourseData.maxNumTrainee,
-        venue: updatedCourseData.venue,
-        note: updatedCourseData.note,
-        passScore: updatedCourseData.passScore,
-        startDate: updatedCourseData.startDate ? new Date(updatedCourseData.startDate).toISOString().split('T')[0] : 'N/A',
-        endDate: updatedCourseData.endDate ? new Date(updatedCourseData.endDate).toISOString().split('T')[0] : 'N/A',
-        level: updatedCourseData.level
-      }));
+    try {
+      // Call API to update course
+      await courseAPI.updateCourse(courseId, updatedCourseData);
+      
+      // Reload course details to get updated data
+      const response = await courseAPI.getCourseById(courseId);
+      const transformedCourseDetails = {
+        name: response.name,
+        code: response.code,
+        description: response.description,
+        maxTrainees: response.maxNumTrainee,
+        venue: response.venue,
+        note: response.note,
+        passScore: response.passScore,
+        startDate: response.startDate ? new Date(response.startDate).toISOString().split('T')[0] : 'N/A',
+        endDate: response.endDate ? new Date(response.endDate).toISOString().split('T')[0] : 'N/A',
+        level: response.level,
+        status: response.status,
+        department: response.department,
+        subjectCount: response.subjectCount || 0,
+        traineeCount: response.traineeCount || 0,
+        trainerCount: response.trainerCount || 0,
+        subjects: response.subjects || []
+      };
+      setCourseDetails(transformedCourseDetails);
+      
+      setShowEditCourse(false);
+    } catch (error) {
+      console.error('Error updating course:', error);
+      // Handle error - could show toast notification
     }
-    
-    setShowEditCourse(false);
   };
 
   return (
@@ -505,7 +476,16 @@ const InPageCourseDetail = ({ course, department, onClose, onEdit }) => {
               {/* Trainees Tab */}
               <Tab.Pane eventKey="trainees" style={{ height: '100%' }}>
                 <TraineeCountTable 
-                  course={course} 
+                  course={course}
+                  loading={false}
+                  onView={(trainee) => {
+                    // Handle view trainee details
+                    console.log('View trainee:', trainee);
+                  }}
+                  onRemove={(trainee) => {
+                    // Handle remove trainee from course
+                    console.log('Remove trainee:', trainee);
+                  }}
                 />
               </Tab.Pane>
             </Tab.Content>

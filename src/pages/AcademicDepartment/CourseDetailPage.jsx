@@ -41,10 +41,9 @@ const CourseDetailPage = () => {
             level: "INTERMEDIATE"
           };
           
-          // In this context, courseId is actually departmentId
-          // Try to get department from location state or use courseId as department ID
+          // Try to get department from location state
           const fallbackDepartment = {
-            id: location.state?.departmentId || courseId, // courseId is actually departmentId
+            id: location.state?.departmentId || null, // Don't fallback to courseId
             name: location.state?.departmentName || "Default Department"
           };
           

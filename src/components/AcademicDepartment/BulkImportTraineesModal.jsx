@@ -2,7 +2,7 @@ import React, { useState, useRef } from 'react';
 import { Modal, Button, Table, Card, Alert, Form, Badge } from 'react-bootstrap';
 import { X, Upload, FileEarmarkExcel, CheckCircle, XCircle, Download, Search } from 'react-bootstrap-icons';
 import * as XLSX from 'xlsx';
-import { traineeAPI } from '../../api/trainee';
+import traineeAPI from '../../api/trainee';
 
 const BulkImportTraineesModal = ({ show, onClose, onImport, loading = false }) => {
   const [dragActive, setDragActive] = useState(false);

@@ -210,7 +210,7 @@ const CourseDetailsView = ({ courseId }) => {
   const handleViewCourse = (courseId) => {
     navigate(`/academic/course-detail/${courseId}`, {
       state: {
-        departmentId: courseId, // courseId is actually departmentId in this context
+        departmentId: course.id, // Use the current department ID, not courseId
         departmentName: course?.name || 'Department'
       }
     });

@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { Nav, Button } from "react-bootstrap";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import {
@@ -31,6 +31,8 @@ const Sidebar = ({ collapsed, onClose }) => {
   const { departments, loading: departmentsLoading } = useDepartmentManagement(user?.role === 'ACADEMIC_DEPARTMENT');
   const [isDepartmentDropdownOpen, setIsDepartmentDropdownOpen] = useState(false);
   const [isAssessmentDropdownOpen, setIsAssessmentDropdownOpen] = useState(false);
+  const [isScrollable, setIsScrollable] = useState(false);
+  const dropdownRef = useRef(null);
   
   
   // Debug log
@@ -41,6 +43,15 @@ const Sidebar = ({ collapsed, onClose }) => {
   
   // Filter active departments
   const activeDepartments = departments.filter(dept => dept.status === 'ACTIVE');
+
+  // Check if dropdown is scrollable
+  useEffect(() => {
+    if (dropdownRef.current && isDepartmentDropdownOpen) {
+      const element = dropdownRef.current;
+      const isScrollable = element.scrollHeight > element.clientHeight;
+      setIsScrollable(isScrollable);
+    }
+  }, [isDepartmentDropdownOpen, departments]);
 
   const allNavItems = [
     {
@@ -441,7 +452,8 @@ const Sidebar = ({ collapsed, onClose }) => {
               {/* Department dropdown menu */}
               {!collapsed && isDepartmentDropdownOpen && (
                 <div 
-                  className="position-absolute start-0 end-0 mt-1"
+                  ref={dropdownRef}
+                  className={`position-absolute start-0 end-0 mt-1 sidebar-department-dropdown ${isScrollable ? 'scrollable' : ''}`}
                   style={{
                     zIndex: 1000,
                     maxHeight: "300px",
@@ -450,7 +462,7 @@ const Sidebar = ({ collapsed, onClose }) => {
                 >
                   {/* Individual departments */}
                   {departmentsLoading ? (
-                    <div className="px-3 py-2 text-white-50">
+                    <div className="px-3 py-2 text-white-50 sidebar-department-loading">
                       <small>Loading departments...</small>
                     </div>
                   ) : departments.length > 0 ? (
@@ -458,11 +470,10 @@ const Sidebar = ({ collapsed, onClose }) => {
                       <Link
                         key={dept.id}
                         to={`/academic/course/${dept.id}`}
-                        className="d-block px-3 py-2 text-white text-decoration-none d-flex align-items-center"
+                        className={`d-block px-3 py-2 text-white text-decoration-none d-flex align-items-center sidebar-department-item ${location.pathname === `/academic/course/${dept.id}` ? 'active' : ''}`}
                         style={{
                           fontSize: "0.875rem",
-                          backgroundColor: location.pathname === `/academic/course/${dept.id}` ? "rgba(255, 255, 255, 0.1)" : "transparent",
-                          transition: "background-color 0.2s ease",
+                          backgroundColor: location.pathname === `/academic/course/${dept.id}` ? "rgba(255, 255, 255, 0.15)" : "transparent",
                           wordWrap: 'break-word',
                           overflowWrap: 'break-word',
                           whiteSpace: 'normal'
@@ -471,18 +482,8 @@ const Sidebar = ({ collapsed, onClose }) => {
                           // Không đóng dropdown, chỉ đóng sidebar trên mobile
                           onClose && onClose();
                         }}
-                        onMouseEnter={(e) => {
-                          if (location.pathname !== `/academic/course/${dept.id}`) {
-                            e.target.style.backgroundColor = "rgba(255, 255, 255, 0.05)";
-                          }
-                        }}
-                        onMouseLeave={(e) => {
-                          if (location.pathname !== `/academic/course/${dept.id}`) {
-                            e.target.style.backgroundColor = "transparent";
-                          }
-                        }}
                       >
-                        <ChevronRight size={12} className="me-2" />
+                        <ChevronRight size={12} className="me-2 sidebar-department-chevron" />
                         {dept.code}
                       </Link>
                     ))

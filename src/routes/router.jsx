@@ -175,10 +175,6 @@ export const router = createBrowserRouter([
         element: <CourseSelectionView />
       },
       {
-        path: "departments/:departmentId",
-        element: <CourseSelectionView />
-      },
-      {
         path: "course/:courseId",
         element: <CourseDetailsWrapper />
       },

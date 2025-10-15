@@ -94,10 +94,10 @@ const courseAPI = {
     }
   },
 
-  // Get department by ID (new endpoint)
+  // Get department by ID
   getDepartmentById: async (departmentId) => {
     try {
-      const response = await apiClient.get(`/departments/${departmentId}?includeDeleted=true`);
+      const response = await apiClient.get(`/departments/${departmentId}`);
       return response.data;
     } catch (error) {
       console.error('Error fetching department by ID:', error);

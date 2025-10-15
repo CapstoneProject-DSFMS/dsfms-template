@@ -5,7 +5,8 @@ import CourseDetailsView from '../../components/AcademicDepartment/CourseDetails
 const CourseDetailsWrapper = () => {
   const { courseId } = useParams();
   
-
+  // In this context, courseId is actually departmentId
+  // because the route is /academic/course/:courseId but it's used for department details
   return <CourseDetailsView courseId={courseId} />;
 };
 
