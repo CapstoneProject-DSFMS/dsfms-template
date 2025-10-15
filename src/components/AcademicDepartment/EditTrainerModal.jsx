@@ -4,14 +4,14 @@ import { X, Pencil } from 'react-bootstrap-icons';
 
 const EditTrainerModal = ({ show, onClose, onSave, trainer, loading = false }) => {
   const [formData, setFormData] = useState({
-    role_in_subject: 'ASSISTANT_INSTRUCTOR'
+    roleInSubject: 'ASSISTANT_INSTRUCTOR'
   });
   const [errors, setErrors] = useState([]);
 
   useEffect(() => {
     if (trainer && show) {
       setFormData({
-        role_in_subject: trainer.role_in_subject || 'ASSISTANT_INSTRUCTOR'
+        roleInSubject: trainer.role || 'ASSISTANT_INSTRUCTOR'
       });
       setErrors([]);
     }
@@ -28,7 +28,7 @@ const EditTrainerModal = ({ show, onClose, onSave, trainer, loading = false }) =
   const validateForm = () => {
     const newErrors = [];
     
-    if (!formData.role_in_subject) {
+    if (!formData.roleInSubject) {
       newErrors.push('Role in subject is required');
     }
     
@@ -47,13 +47,12 @@ const EditTrainerModal = ({ show, onClose, onSave, trainer, loading = false }) =
       await onSave(formData);
       handleClose();
     } catch (error) {
-      console.error('Error saving trainer:', error);
     }
   };
 
   const handleClose = () => {
     setFormData({
-      role_in_subject: 'ASSISTANT_INSTRUCTOR'
+      roleInSubject: 'ASSISTANT_INSTRUCTOR'
     });
     setErrors([]);
     onClose();
@@ -98,10 +97,10 @@ const EditTrainerModal = ({ show, onClose, onSave, trainer, loading = false }) =
             </Col>
             <Col md={6}>
               <Form.Group className="mb-3">
-                <Form.Label>Email</Form.Label>
+                <Form.Label>EID</Form.Label>
                 <Form.Control
-                  type="email"
-                  value={trainer?.email || ''}
+                  type="text"
+                  value={trainer?.eid || ''}
                   disabled={true}
                   className="bg-light"
                 />
@@ -110,30 +109,23 @@ const EditTrainerModal = ({ show, onClose, onSave, trainer, loading = false }) =
           </Row>
 
           <Row>
-            <Col md={6}>
-              <Form.Group className="mb-3">
-                <Form.Label>Specialization</Form.Label>
-                <Form.Control
-                  type="text"
-                  value={trainer?.specialization || ''}
-                  disabled={true}
-                  className="bg-light"
-                />
-              </Form.Group>
-            </Col>
-            <Col md={6}>
+            <Col md={12}>
               <Form.Group className="mb-3">
                 <Form.Label>Role in Subject *</Form.Label>
                 <Form.Select
-                  name="role_in_subject"
-                  value={formData.role_in_subject}
+                  name="roleInSubject"
+                  value={formData.roleInSubject}
                   onChange={handleInputChange}
                   disabled={loading}
                 >
-                  <option value="LEAD_INSTRUCTOR">Lead Instructor</option>
-                  <option value="ASSISTANT_INSTRUCTOR">Assistant Instructor</option>
-                  <option value="SUPPORT_INSTRUCTOR">Support Instructor</option>
+                  <option value="PRIMARY_INSTRUCTOR">Primary Instructor - Main course instructor</option>
+                  <option value="EXAMINER">Examiner - Conducts exams and assessments</option>
+                  <option value="ASSESSMENT_REVIEWER">Assessment Reviewer - Reviews and grades assessments</option>
+                  <option value="ASSISTANT_INSTRUCTOR">Assistant Instructor - Supports primary instructor</option>
                 </Form.Select>
+                <Form.Text className="text-muted">
+                  Select the appropriate role for this trainer in the subject
+                </Form.Text>
               </Form.Group>
             </Col>
           </Row>

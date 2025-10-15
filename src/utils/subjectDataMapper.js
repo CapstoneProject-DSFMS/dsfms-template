@@ -48,7 +48,14 @@ export const mapApiSubjectToTable = (apiSubject) => {
  * @returns {Array} Array of mapped subjects for UI
  */
 export const mapApiSubjectsToTable = (apiSubjects) => {
-  return apiSubjects.map(mapApiSubjectToTable);
+  console.log('🔍 mapApiSubjectsToTable - Input:', apiSubjects);
+  console.log('🔍 mapApiSubjectsToTable - Input length:', apiSubjects.length);
+  
+  const result = apiSubjects.map(mapApiSubjectToTable);
+  console.log('🔍 mapApiSubjectsToTable - Output:', result);
+  console.log('🔍 mapApiSubjectsToTable - Output length:', result.length);
+  
+  return result;
 };
 
 /**

@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import { Modal, Button, Form, Alert, Row, Col } from 'react-bootstrap';
+import { Modal, Button, Form, Alert, Row, Col, Spinner } from 'react-bootstrap';
 import { X, Plus } from 'react-bootstrap-icons';
+import { userAPI } from '../../api/user';
 
 const AddTrainerModal = ({ show, onClose, onSave, loading = false }) => {
   const [formData, setFormData] = useState({
@@ -8,6 +9,25 @@ const AddTrainerModal = ({ show, onClose, onSave, loading = false }) => {
     role_in_subject: 'ASSISTANT_INSTRUCTOR'
   });
   const [errors, setErrors] = useState([]);
+  const [trainers, setTrainers] = useState([]);
+  const [loadingTrainers, setLoadingTrainers] = useState(false);
+
+  // Load trainers from API
+  const loadTrainers = async () => {
+    setLoadingTrainers(true);
+    try {
+      const response = await userAPI.getTrainers();
+      if (response && response.data) {
+        setTrainers(response.data);
+      } else {
+        setTrainers([]);
+      }
+    } catch (error) {
+      setTrainers([]);
+    } finally {
+      setLoadingTrainers(false);
+    }
+  };
 
   useEffect(() => {
     if (show) {
@@ -17,6 +37,8 @@ const AddTrainerModal = ({ show, onClose, onSave, loading = false }) => {
         role_in_subject: 'ASSISTANT_INSTRUCTOR'
       });
       setErrors([]);
+      // Load trainers when modal opens
+      loadTrainers();
     }
   }, [show]);
 
@@ -54,7 +76,6 @@ const AddTrainerModal = ({ show, onClose, onSave, loading = false }) => {
       await onSave(formData);
       handleClose();
     } catch (error) {
-      console.error('Error saving trainer:', error);
     }
   };
 
@@ -99,20 +120,23 @@ const AddTrainerModal = ({ show, onClose, onSave, loading = false }) => {
                   name="trainer_user_id"
                   value={formData.trainer_user_id}
                   onChange={handleInputChange}
-                  disabled={loading}
+                  disabled={loading || loadingTrainers}
                 >
-                  <option value="">Choose a trainer...</option>
-                  <option value="550e8400-e29b-41d4-a716-446655440100">John Smith - Safety Basics</option>
-                  <option value="550e8400-e29b-41d4-a716-446655440101">Sarah Johnson - Safety Procedures</option>
-                  <option value="550e8400-e29b-41d4-a716-446655440102">Mike Davis - Evacuation Procedures</option>
-                  <option value="550e8400-e29b-41d4-a716-446655440103">Lisa Wilson - Emergency Exits</option>
-                  <option value="550e8400-e29b-41d4-a716-446655440104">David Brown - Passenger Safety</option>
-                  <option value="550e8400-e29b-41d4-a716-446655440105">Emily Taylor - CPR & First Aid</option>
-                  <option value="550e8400-e29b-41d4-a716-446655440106">Robert Anderson - Fire Prevention</option>
-                  <option value="550e8400-e29b-41d4-a716-446655440107">Jennifer Martinez - Fire Detection</option>
-                  <option value="550e8400-e29b-41d4-a716-446655440108">Captain James Wilson - Emergency Response</option>
-                  <option value="550e8400-e29b-41d4-a716-446655440109">Captain Maria Garcia - Crisis Management</option>
+                  <option value="">
+                    {loadingTrainers ? 'Loading trainers...' : 'Choose a trainer...'}
+                  </option>
+                  {trainers.map((trainer) => (
+                    <option key={trainer.id} value={trainer.id}>
+                      {trainer.firstName} {trainer.lastName} - {trainer.department?.name || 'General'}
+                    </option>
+                  ))}
                 </Form.Select>
+                {loadingTrainers && (
+                  <div className="mt-2 text-center">
+                    <Spinner animation="border" size="sm" className="me-2" />
+                    <small className="text-muted">Loading trainers...</small>
+                  </div>
+                )}
               </Form.Group>
             </Col>
             <Col md={6}>
@@ -124,10 +148,14 @@ const AddTrainerModal = ({ show, onClose, onSave, loading = false }) => {
                   onChange={handleInputChange}
                   disabled={loading}
                 >
-                  <option value="LEAD_INSTRUCTOR">Lead Instructor</option>
-                  <option value="ASSISTANT_INSTRUCTOR">Assistant Instructor</option>
-                  <option value="SUPPORT_INSTRUCTOR">Support Instructor</option>
+                  <option value="PRIMARY_INSTRUCTOR">Primary Instructor - Main course instructor</option>
+                  <option value="EXAMINER">Examiner - Conducts exams and assessments</option>
+                  <option value="ASSESSMENT_REVIEWER">Assessment Reviewer - Reviews and grades assessments</option>
+                  <option value="ASSISTANT_INSTRUCTOR">Assistant Instructor - Supports primary instructor</option>
                 </Form.Select>
+                <Form.Text className="text-muted">
+                  Select the appropriate role for this trainer in the subject
+                </Form.Text>
               </Form.Group>
             </Col>
           </Row>
@@ -151,7 +179,12 @@ const AddTrainerModal = ({ show, onClose, onSave, loading = false }) => {
         >
           {loading ? (
             <>
-              <span className="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
+              <span 
+                className="spinner-border spinner-border-sm me-2" 
+                role="status" 
+                aria-hidden="true"
+                style={{ width: '0.75rem', height: '0.75rem' }}
+              ></span>
               Adding...
             </>
           ) : (

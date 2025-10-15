@@ -87,7 +87,7 @@ const UserTable = ({ users, loading, onView, onEdit, onDisable }) => {
   };
 
   return (
-    <div className="scrollable-table-container">
+    <div className="scrollable-table-container admin-table">
       <Table hover className="mb-0 table-mobile-responsive" style={{ fontSize: '0.875rem' }}>
         <thead className="sticky-header">
           <tr>

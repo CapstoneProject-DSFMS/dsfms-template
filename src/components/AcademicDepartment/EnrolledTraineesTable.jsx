@@ -1,31 +1,126 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { Card, Table, Badge, Modal, Button } from 'react-bootstrap';
 import { People, X } from 'react-bootstrap-icons';
 import { LoadingSkeleton, SortIcon } from '../Common';
 import useTableSort from '../../hooks/useTableSort';
 import EnrolledTraineeActions from './EnrolledTraineeActions';
 import RemoveTraineeModal from './RemoveTraineeModal';
+import courseAPI from '../../api/course';
+import { traineeAPI } from '../../api/trainee';
+import subjectAPI from '../../api/subject';
 
-const mockSubjects = [
-  { id: 's1', name: 'Safety Basics', code: 'SB01' },
-  { id: 's2', name: 'Evacuation Drills', code: 'ED02' },
-  { id: 's3', name: 'CPR & First Aid', code: 'FA03' },
-  { id: 's4', name: 'Fire Safety', code: 'FS04' },
-  { id: 's5', name: 'Emergency Procedures', code: 'EP05' }
-];
 
-const EnrolledTraineesTable = ({ enrolledTrainees, onUpdate, loading = false }) => {
+const EnrolledTraineesTable = ({ courseId, loading = false }) => {
+  const [enrolledTrainees, setEnrolledTrainees] = useState([]);
+  const [loadingEnrolled, setLoadingEnrolled] = useState(true);
   const [showSubjectModal, setShowSubjectModal] = useState(false);
   const [selectedTrainee, setSelectedTrainee] = useState(null);
   const [showRemoveModal, setShowRemoveModal] = useState(false);
   const [traineeToRemove, setTraineeToRemove] = useState(null);
   const [subjectToRemove, setSubjectToRemove] = useState(null);
+  const [removeLoading, setRemoveLoading] = useState(false);
   
   const { sortedData, sortConfig, handleSort } = useTableSort(enrolledTrainees);
 
-  const handleViewSubjects = (trainee) => {
-    setSelectedTrainee(trainee);
-    setShowSubjectModal(true);
+  const loadEnrolledTrainees = useCallback(async () => {
+    setLoadingEnrolled(true);
+    try {
+      // Step 1: Get all available trainees
+      const traineesResponse = await traineeAPI.getTraineesForEnrollment();
+      
+      if (!traineesResponse || !traineesResponse.data) {
+        setEnrolledTrainees([]);
+        return;
+      }
+      
+      // Step 2: For each trainee, check if they have enrollments
+      const enrolledTrainees = [];
+      
+      for (const trainee of traineesResponse.data) {
+        try {
+          // Call API to get trainee's enrollment details
+          const enrollmentData = await courseAPI.getTraineeEnrollments(trainee.id);
+          
+          // Check if trainee has any ENROLLED enrollments
+          if (enrollmentData && enrollmentData.enrollments && enrollmentData.enrollments.length > 0) {
+            // Filter only ENROLLED enrollments
+            const enrolledEnrollments = enrollmentData.enrollments.filter(
+              enrollment => enrollment.enrollment?.status === 'ENROLLED'
+            );
+            
+            if (enrolledEnrollments.length > 0) {
+              // Transform enrollment data to get subject IDs (only ENROLLED ones)
+              const subjectIds = enrolledEnrollments.map(enrollment => enrollment.subject.id);
+              
+              const enrolledTrainee = {
+                id: trainee.id,
+                eid: trainee.eid,
+                name: `${trainee.firstName} ${trainee.lastName}`.trim(),
+                subjects: subjectIds,
+                userId: trainee.id,
+                email: trainee.email,
+                department: trainee.department
+              };
+              
+              enrolledTrainees.push(enrolledTrainee);
+            }
+          }
+        } catch {
+          // Continue to next trainee
+        }
+      }
+      
+      setEnrolledTrainees(enrolledTrainees);
+      
+    } catch {
+      // Fallback to empty array if API fails
+      setEnrolledTrainees([]);
+    } finally {
+      setLoadingEnrolled(false);
+    }
+  }, []);
+
+  // Load enrolled trainees from API
+  useEffect(() => {
+    if (courseId) {
+      loadEnrolledTrainees();
+    }
+  }, [courseId, loadEnrolledTrainees]);
+
+  const handleViewSubjects = async (trainee) => {
+    try {
+      // Call API to get trainee's enrollment details
+      const enrollmentData = await courseAPI.getTraineeEnrollments(trainee.userId);
+      
+      // Transform API data to match component format (only ENROLLED enrollments)
+      const enrolledEnrollments = enrollmentData.enrollments?.filter(
+        enrollment => enrollment.enrollment?.status === 'ENROLLED'
+      ) || [];
+      
+      const transformedTrainee = {
+        ...trainee,
+        enrollmentDetails: enrollmentData,
+        subjects: enrolledEnrollments.map(enrollment => ({
+          id: enrollment.subject.id,
+          name: enrollment.subject.name,
+          code: enrollment.subject.code,
+          status: enrollment.subject.status,
+          type: enrollment.subject.type,
+          method: enrollment.subject.method,
+          startDate: enrollment.subject.startDate,
+          endDate: enrollment.subject.endDate,
+          course: enrollment.subject.course,
+          enrollment: enrollment.enrollment
+        }))
+      };
+      
+      setSelectedTrainee(transformedTrainee);
+      setShowSubjectModal(true);
+    } catch {
+      // Fallback to basic trainee data
+      setSelectedTrainee(trainee);
+      setShowSubjectModal(true);
+    }
   };
 
   const handleRemoveTrainee = (traineeId) => {
@@ -37,59 +132,106 @@ const EnrolledTraineesTable = ({ enrolledTrainees, onUpdate, loading = false }) 
     setShowRemoveModal(true);
   };
 
-  const handleConfirmRemoveTrainee = () => {
+  const handleConfirmRemoveTrainee = async () => {
     if (!traineeToRemove) return;
 
-    console.log('Remove trainee from all subjects:', traineeToRemove.id);
-    // TODO: Implement remove trainee from all subjects
-    onUpdate(enrolledTrainees.filter(t => t.id !== traineeToRemove.id));
+    setRemoveLoading(true);
+    try {
+      // Get the trainee's enrollment details to find all subjects
+      const enrollmentData = await courseAPI.getTraineeEnrollments(traineeToRemove.userId);
+      
+      if (enrollmentData && enrollmentData.enrollments && enrollmentData.enrollments.length > 0) {
+        
+        // Remove trainee from each subject
+        const removePromises = enrollmentData.enrollments.map(async (enrollment) => {
+          const subjectId = enrollment.subject.id;
+          const batchCode = enrollment.enrollment?.batchCode || 'TEST0012025';
+          
+          // Check if enrollment status is ENROLLED
+          if (enrollment.enrollment?.status !== 'ENROLLED') {
+            return null; // Skip this enrollment
+          }
+          
+          return subjectAPI.removeTraineeFromSubject(subjectId, traineeToRemove.userId, batchCode);
+        });
+        
+        // Wait for all removals to complete (filter out null values)
+        const validPromises = removePromises.filter(promise => promise !== null);
+        if (validPromises.length > 0) {
+          await Promise.all(validPromises);
+        }
+        
+        // Refresh the enrolled trainees data
+        await loadEnrolledTrainees();
+        
+        // Close modal
+        setShowRemoveModal(false);
+      } else {
+        // Just close modal if no enrollments
+        setShowRemoveModal(false);
+      }
+      
+    } catch {
+      // You can add error toast notification here
+    } finally {
+      setRemoveLoading(false);
+    }
   };
 
   const handleRemoveSubject = (traineeId, subjectId) => {
     const trainee = enrolledTrainees.find(t => t.id === traineeId);
-    const subjectName = getSubjectName(subjectId);
     
     if (!trainee) return;
+
+    // Find the subject name from the selected trainee's subjects
+    const subject = selectedTrainee?.subjects?.find(s => s.id === subjectId);
+    const subjectName = subject ? subject.name : 'Unknown Subject';
 
     setTraineeToRemove(trainee);
     setSubjectToRemove(subjectName);
     setShowRemoveModal(true);
   };
 
-  const handleConfirmRemoveSubject = () => {
+  const handleConfirmRemoveSubject = async () => {
     if (!traineeToRemove || !subjectToRemove) return;
 
-    const subjectId = mockSubjects.find(s => s.name === subjectToRemove)?.id;
-    if (!subjectId) return;
+    // Find the subject ID from the selected trainee's subjects
+    const subject = selectedTrainee?.subjects?.find(s => s.name === subjectToRemove);
+    if (!subject) {
+      return;
+    }
 
-    console.log('Remove trainee from subject:', traineeToRemove.id, subjectId);
-    // TODO: Implement remove trainee from specific subject
-    const updatedTrainees = enrolledTrainees.map(trainee => {
-      if (trainee.id === traineeToRemove.id) {
-        return {
-          ...trainee,
-          subjects: trainee.subjects.filter(s => s !== subjectId)
-        };
+    setRemoveLoading(true);
+    try {
+      // Get batch code from enrollment data
+      const batchCode = subject.enrollment?.batchCode || 'TEST0012025';
+      
+      // Check if enrollment status is ENROLLED
+      if (subject.enrollment?.status !== 'ENROLLED') {
+        // You can show a toast notification here
+        return;
       }
-      return trainee;
-    });
-    onUpdate(updatedTrainees);
-    
-    // Close the subject modal after successful removal
-    setShowSubjectModal(false);
+      
+      // Call API to remove trainee from subject
+      await subjectAPI.removeTraineeFromSubject(subject.id, traineeToRemove.userId, batchCode);
+      
+      // Refresh the enrolled trainees data
+      await loadEnrolledTrainees();
+      
+      // Close modals
+      setShowRemoveModal(false);
+      setShowSubjectModal(false);
+      
+    } catch {
+      // You can add error toast notification here
+    } finally {
+      setRemoveLoading(false);
+    }
   };
 
-  const getSubjectName = (subjectId) => {
-    const subject = mockSubjects.find(s => s.id === subjectId);
-    return subject ? subject.name : 'Unknown Subject';
-  };
 
-  const getSubjectCode = (subjectId) => {
-    const subject = mockSubjects.find(s => s.id === subjectId);
-    return subject ? subject.code : 'Unknown';
-  };
 
-  if (loading) {
+  if (loading || loadingEnrolled) {
     return (
       <Card className="h-100">
         <Card.Header className="bg-white border-bottom">
@@ -189,8 +331,9 @@ const EnrolledTraineesTable = ({ enrolledTrainees, onUpdate, loading = false }) 
         className="d-flex flex-column mb-5" 
         style={{ 
           height: '400px',
-          marginBottom: '3rem'
-        }}
+          marginBottom: '2rem',
+          marginTop: '12rem'
+        }}  
       >
         <Card.Header 
           className="bg-white border-bottom" 
@@ -280,45 +423,127 @@ const EnrolledTraineesTable = ({ enrolledTrainees, onUpdate, loading = false }) 
       </Card>
 
       {/* Subject List Modal */}
-      <Modal show={showSubjectModal} onHide={() => setShowSubjectModal(false)} size="md">
-        <Modal.Header closeButton>
-          <Modal.Title>
-            {selectedTrainee?.name} Enrolled Subjects
+      <Modal show={showSubjectModal} onHide={() => setShowSubjectModal(false)} size="lg">
+        <Modal.Header closeButton className="border-bottom">
+          <Modal.Title className="d-flex align-items-center">
+            <People className="me-2" size={20} />
+            {selectedTrainee?.name} - Enrolled Subjects
           </Modal.Title>
         </Modal.Header>
-        <Modal.Body>
+        <Modal.Body className="p-4">
           {selectedTrainee && (
             <div>
-              <p className="text-muted mb-3">
-                <strong>EID:</strong> {selectedTrainee.eid}
-              </p>
-              <div className="list-group">
-                {selectedTrainee.subjects.map(subjectId => (
-                  <div 
-                    key={subjectId}
-                    className="list-group-item d-flex justify-content-between align-items-center"
-                  >
-                    <div>
-                      <div className="fw-semibold">{getSubjectName(subjectId)}</div>
-                      <small className="text-muted">{getSubjectCode(subjectId)}</small>
+              {/* Trainee Info Header */}
+              <div className="mb-4 p-3 bg-light rounded">
+                <div className="row align-items-center">
+                  <div className="col-md-6">
+                    <h6 className="mb-1 text-primary">Trainee Information</h6>
+                    <div className="d-flex align-items-center">
+                      <Badge bg="secondary" className="me-2">EID</Badge>
+                      <span className="fw-semibold">{selectedTrainee.eid}</span>
                     </div>
-                    <Button 
-                      size="sm" 
-                      variant="outline-danger"
-                      onClick={() => {
-                        handleRemoveSubject(selectedTrainee.id, subjectId);
-                        // Don't close the subject modal immediately - let the confirmation modal handle it
-                      }}
-                    >
-                      <X size={14} />
-                    </Button>
+                  </div>
+                  <div className="col-md-6 text-md-end">
+                    <div className="text-muted small">
+                      <div>Total Subjects: <Badge bg="info">{selectedTrainee.subjects.length}</Badge></div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Subjects List */}
+              <div className="row g-3">
+                {selectedTrainee.subjects.map(subject => (
+                  <div key={subject.id} className="col-12">
+                    <Card className="border-0 shadow-sm">
+                      <Card.Body className="p-3">
+                        <div className="row">
+                          {/* Subject Info */}
+                          <div className="col-md-8">
+                            <div className="d-flex justify-content-between align-items-start mb-3">
+                              <div>
+                                <h6 className="mb-1 text-dark">{subject.name}</h6>
+                                <div className="d-flex flex-wrap gap-2 align-items-center">
+                                  <Badge bg="outline-secondary" className="text-dark border">
+                                    {subject.code}
+                                  </Badge>
+                                  <Badge bg={subject.status === 'ACTIVE' ? 'success' : 'secondary'}>
+                                    {subject.status}
+                                  </Badge>
+                                </div>
+                              </div>
+                              <Button 
+                                size="sm" 
+                                variant="outline-danger"
+                                className="ms-2"
+                                onClick={() => {
+                                  handleRemoveSubject(selectedTrainee.id, subject.id);
+                                }}
+                              >
+                                <X size={14} />
+                              </Button>
+                            </div>
+                            
+                            {/* Subject Details */}
+                            <div className="row g-2 mb-3">
+                              <div className="col-sm-6">
+                                <div className="d-flex align-items-center">
+                                  <span className="text-muted small me-2">Type:</span>
+                                  <Badge bg="outline-primary" className="text-primary border">
+                                    {subject.type}
+                                  </Badge>
+                                </div>
+                              </div>
+                              <div className="col-sm-6">
+                                <div className="d-flex align-items-center">
+                                  <span className="text-muted small me-2">Method:</span>
+                                  <Badge bg="outline-info" className="text-info border">
+                                    {subject.method}
+                                  </Badge>
+                                </div>
+                              </div>
+                            </div>
+                            
+                            <div className="mb-3">
+                              <span className="text-muted small me-2">Course:</span>
+                              <span className="fw-medium">{subject.course?.name}</span>
+                            </div>
+                          </div>
+
+                          {/* Enrollment Info */}
+                          {subject.enrollment && (
+                            <div className="col-md-4">
+                              <div className="p-3 bg-primary bg-opacity-10 rounded border-start border-primary border-3">
+                                <h6 className="text-primary mb-2">Enrollment Details</h6>
+                                <div className="space-y-2">
+                                  <div className="d-flex justify-content-between align-items-center">
+                                    <span className="text-muted small">Status:</span>
+                                    <Badge bg="info">{subject.enrollment.status}</Badge>
+                                  </div>
+                                  <div className="d-flex justify-content-between align-items-center">
+                                    <span className="text-muted small">Batch:</span>
+                                    <span className="fw-medium small">{subject.enrollment.batchCode}</span>
+                                  </div>
+                                  <div className="d-flex justify-content-between align-items-center">
+                                    <span className="text-muted small">Enrolled:</span>
+                                    <span className="fw-medium small">
+                                      {new Date(subject.enrollment.enrollmentDate).toLocaleDateString()}
+                                    </span>
+                                  </div>
+                                </div>
+                              </div>
+                            </div>
+                          )}
+                        </div>
+                      </Card.Body>
+                    </Card>
                   </div>
                 ))}
               </div>
             </div>
           )}
         </Modal.Body>
-        <Modal.Footer>
+        <Modal.Footer className="border-top">
           <Button variant="secondary" onClick={() => setShowSubjectModal(false)}>
             Close
           </Button>
@@ -332,13 +557,14 @@ const EnrolledTraineesTable = ({ enrolledTrainees, onUpdate, loading = false }) 
           setShowRemoveModal(false);
           setTraineeToRemove(null);
           setSubjectToRemove(null);
+          setRemoveLoading(false);
           // If we were removing from a specific subject, keep the subject modal open
           // If we were removing from all subjects, the subject modal should already be closed
         }}
         onConfirm={subjectToRemove ? handleConfirmRemoveSubject : handleConfirmRemoveTrainee}
         trainee={traineeToRemove}
         subjectName={subjectToRemove}
-        loading={false}
+        loading={removeLoading}
       />
     </>
   );

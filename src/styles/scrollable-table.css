@@ -477,31 +477,7 @@
   border-bottom: 2px solid #dee2e6 !important;
 }
 
-/* Fix dropdown positioning in scrollable containers */
-.scrollable-table-container .dropdown-menu,
-.department-table-container .dropdown-menu {
-  position: absolute !important;
-  z-index: 1050 !important;
-  transform: none !important;
-  max-height: none !important;
-  overflow-y: visible !important;
-}
-
-/* Prevent body scroll when dropdown is open */
-body.dropdown-open {
-  overflow: hidden;
-}
-
-/* Fix dropdown positioning for table rows */
-.table tbody tr .dropdown-menu {
-  position: absolute !important;
-  z-index: 1050 !important;
-  transform: none !important;
-  max-height: none !important;
-  overflow-y: visible !important;
-  right: 0 !important;
-  left: auto !important;
-}
+/* Dropdown styles moved to dropdown-unified.css */
 
 /* Department table specific styles */
 .department-table-container {
@@ -642,28 +618,7 @@ body, html {
   padding-bottom: 0 !important;
 }
 
-/* Fix dropdown menu positioning and scrolling */
-.department-table-container .dropdown {
-  position: relative;
-}
-
-.department-table-container .dropdown-menu {
-  position: absolute !important;
-  z-index: 1050 !important;
-  transform: none !important;
-  max-height: none !important;
-  overflow-y: visible !important;
-  right: 0 !important;
-  left: auto !important;
-  top: 100% !important;
-  margin-top: 0.125rem !important;
-}
-
-/* Prevent dropdown from causing scroll issues */
-.department-table-container .dropdown-menu.show {
-  display: block !important;
-  position: absolute !important;
-}
+/* Dropdown styles moved to dropdown-unified.css */
 
 /* Responsive height adjustments */
 @media (max-height: 800px) {
@@ -685,150 +640,127 @@ body, html {
   .department-table-container {
     max-height: 100px;
   }
+  
+  .subject-table-scroll {
+    height: 300px !important;
+    max-height: 300px !important;
+  }
 }
 
-/* Fix dropdown scroll issues */
-.department-table-container .dropdown-menu {
-  box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15) !important;
-  border: 1px solid rgba(0, 0, 0, 0.15) !important;
-  border-radius: 0.375rem !important;
-}
-
-/* Prevent dropdown from extending beyond container */
-.department-table-container .dropdown-menu {
-  max-width: 200px !important;
-  white-space: nowrap !important;
-}
-
-/* Fix dropdown positioning for last rows */
-.department-table-container .dropdown-menu.dropdown-menu-end {
-  right: 0 !important;
-  left: auto !important;
-}
-
-/* Portal dropdown styling */
-.dropdown-menu.show {
-  position: fixed !important;
-  z-index: 1050 !important;
-  transform: none !important;
-  max-height: none !important;
-  overflow-y: visible !important;
-  border-radius: 0.375rem !important;
-}
-
-/* Dropdown item styling */
-.dropdown-item {
-  display: flex !important;
-  align-items: center !important;
-  padding: 0.5rem 1rem !important;
-  color: #212529 !important;
-  text-decoration: none !important;
-  background-color: transparent !important;
-  border: none !important;
-  border-top: none !important;
-  border-bottom: none !important;
-  border-left: none !important;
-  border-right: none !important;
-  width: 100% !important;
-  text-align: left !important;
-  transition: background-color 0.15s ease-in-out !important;
-  margin: 0 !important;
-}
-
-.dropdown-item:hover {
-  background-color: #f8f9fa !important;
-  color: #212529 !important;
-}
-
-.dropdown-item:focus {
-  background-color: #f8f9fa !important;
-  color: #212529 !important;
-  outline: none !important;
-}
-
-.dropdown-divider {
-  height: 0 !important;
-  margin: 0 !important;
-  overflow: hidden !important;
-  border-top: 1px solid #dee2e6 !important;
-}
+/* Dropdown styles moved to dropdown-unified.css */
 
 /* Fix empty space below table */
 .department-table-container .table {
   margin-bottom: 0 !important;
 }
 
-/* Ensure table fills container properly */
+/* Ensure table fills container properly - removed flex to prevent white space */
 .department-table-container {
-  display: flex;
-  flex-direction: column;
+  display: block;
 }
 
 .department-table-container .table {
-  flex: 1;
+  width: 100%;
 }
 
-/* Fix scroll container overflow */
+/* Fix scroll container overflow - only scroll table content, not dropdown */
 .department-table-container {
   overflow-y: auto !important;
-  overflow-x: visible !important;
+  overflow-x: hidden !important;
+  position: relative !important;
 }
+
+/* Subject table uses same CSS as admin tables */
 
 .department-table-container .table {
   margin-bottom: 0 !important;
 }
 
-/* Fix dropdown positioning relative to table */
-.department-table-container .table tbody tr {
-  position: relative;
-}
+/* Dropdown styles moved to dropdown-unified.css */
 
-.department-table-container .table tbody tr .dropdown {
-  position: static;
-}
-
-.department-table-container .table tbody tr .dropdown-menu {
-  position: absolute !important;
-  top: 100% !important;
-  right: 0 !important;
-  left: auto !important;
-  transform: none !important;
-  max-height: none !important;
-  overflow-y: visible !important;
-}
-
-/* Fix course actions dropdown specifically */
-.course-actions-dropdown {
-  position: relative !important;
-  z-index: auto !important;
-}
-
-.course-actions-dropdown .dropdown-menu {
-  position: absolute !important;
-  z-index: 1060 !important;
-  top: 100% !important;
-  right: 0 !important;
-  left: auto !important;
-  transform: none !important;
-  max-height: none !important;
-  overflow: visible !important;
-  box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15) !important;
-  border: 1px solid rgba(0, 0, 0, 0.15) !important;
-  border-radius: 0.375rem !important;
-}
-
-/* Ensure table cells don't clip dropdown */
-.department-table-container .table tbody tr td:last-child {
-  overflow: visible !important;
+/* Specific scroll styles for Subject and Trainee tables in tabs */
+.subject-table-scroll {
+  height: 200px !important; /* Reduced from 100% to fixed height */
+  max-height: 200px !important;
+  overflow-y: auto !important;
+  overflow-x: visible !important;
   position: relative !important;
 }
 
-/* Fix any overflow issues in table container */
-.department-table-container {
+/* Fix Tab.Pane height for Subject table */
+.tab-pane {
+  height: auto !important;
+  min-height: auto !important;
+}
+
+/* Fix Card height for Subject table */
+.card {
+  height: auto !important;
+  min-height: auto !important;
+}
+
+.card-body {
+  height: auto !important;
+  min-height: auto !important;
   overflow: visible !important;
 }
 
-.department-table-container .table {
+/* Fix Container height for Course Detail */
+.course-detail {
+  height: auto !important;
+  min-height: auto !important;
   overflow: visible !important;
+}
+
+.container-fluid {
+  height: auto !important;
+  min-height: auto !important;
+  overflow: visible !important;
+}
+
+.trainee-table-scroll {
+  height: 100% !important;
+  overflow-y: auto !important;
+}
+
+/* Subject table column width fixes */
+.subject-table-scroll .table th:nth-child(2),
+.subject-table-scroll .table td:nth-child(2) {
+  width: 120px !important;
+  min-width: 120px !important;
+  max-width: 120px !important;
+}
+
+.subject-table-scroll .table th:nth-child(3),
+.subject-table-scroll .table td:nth-child(3) {
+  width: 120px !important;
+  min-width: 120px !important;
+  max-width: 120px !important;
+}
+
+/* Dropdown styles moved to dropdown-unified.css */
+
+/* Add Subject Modal scroll fixes */
+.modal-body {
+  scrollbar-width: thin;
+  scrollbar-color: #6c757d #f8f9fa;
+}
+
+.modal-body::-webkit-scrollbar {
+  width: 8px;
+}
+
+.modal-body::-webkit-scrollbar-track {
+  background: #f8f9fa;
+  border-radius: 4px;
+}
+
+.modal-body::-webkit-scrollbar-thumb {
+  background: #6c757d;
+  border-radius: 4px;
+}
+
+.modal-body::-webkit-scrollbar-thumb:hover {
+  background: #495057;
 }
 

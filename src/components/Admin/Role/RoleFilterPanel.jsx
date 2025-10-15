@@ -29,17 +29,25 @@ const RoleFilterPanel = ({
       </Dropdown.Toggle>
 
       <Dropdown.Menu 
-        className="p-3" 
+        className="course-filter-menu" 
         style={{ 
           width: window.innerWidth <= 768 ? 'calc(100vw - 2rem)' : '280px',
           maxWidth: '90vw',
           maxHeight: window.innerWidth <= 768 ? '50vh' : '70vh',
-          overflowY: 'auto'
+          overflowY: 'auto',
+          marginTop: '0px',
+          top: '100%',
+          transform: 'none',
+          position: 'absolute'
         }}
         align="end"
         flip={true}
         popperConfig={{
           modifiers: [
+            {
+              name: 'offset',
+              options: { offset: [0, 0] }
+            },
             {
               name: 'preventOverflow',
               options: {
@@ -57,7 +65,7 @@ const RoleFilterPanel = ({
         }}
       >
         {/* Status Filters */}
-        <div className="mb-3">
+        <div className="mb-3" style={{ paddingLeft: '1.5rem', paddingTop: '1rem', paddingBottom: '1rem' }}>
           <div className="d-flex justify-content-between align-items-center mb-2">
             <label className="form-label small fw-semibold mb-0">Status</label>
             {selectedStatuses.length > 0 && (
@@ -88,7 +96,7 @@ const RoleFilterPanel = ({
 
         {/* Clear All Filters */}
         {hasActiveFilters && (
-          <div className="border-top pt-3">
+          <div className="border-top pt-3" style={{ paddingLeft: '1.5rem', paddingRight: '1.5rem' }}>
             <Button
               variant="outline-danger"
               size="sm"

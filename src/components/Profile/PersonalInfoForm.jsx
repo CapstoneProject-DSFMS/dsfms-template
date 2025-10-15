@@ -34,23 +34,8 @@ const PersonalInfoForm = ({ profileData, user, onUpdate }) => {
       };
       setPersonalInfo(newPersonalInfo);
       setIsInitialized(true);
-    } else if (user && !isInitialized) {
-      // Try to parse fullName if available
-      const nameParts = (user.fullName || '').split(' ');
-      const newPersonalInfo = {
-        firstName: nameParts[0] || '',
-        lastName: nameParts[nameParts.length - 1] || '',
-        middleName: nameParts.slice(1, -1).join(' ') || '',
-        email: user.email || '',
-        phoneNumber: user.phone || '',
-        address: '',
-        gender: '',
-        avatarUrl: ''
-      };
-      setPersonalInfo(newPersonalInfo);
-      setIsInitialized(true);
     }
-  }, [profileData, user, isInitialized]);
+  }, [profileData, isInitialized]);
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;

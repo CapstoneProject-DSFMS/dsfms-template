@@ -67,7 +67,6 @@ const EditSubjectModal = ({ show, onClose, onSave, subject, loading = false }) =
       await onSave(formData);
       handleClose();
     } catch (error) {
-      console.error('Error saving subject:', error);
     }
   };
 

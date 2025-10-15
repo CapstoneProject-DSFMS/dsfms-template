@@ -8,7 +8,8 @@ import {
   X
 } from 'react-bootstrap-icons';
 import { useAuth } from '../../hooks/useAuth';
-import '../../styles/dropdown-clean.css';
+import useProfile from '../../hooks/useProfile';
+// import '../../styles/dropdown-clean.css'; // Moved to dropdown-unified.css in App.jsx
 
 // Force remove box shadow from dropdown
 const dropdownStyle = {
@@ -37,11 +38,88 @@ const Header = ({ onToggleSidebar }) => {
   const [showDesktopDropdown, setShowDesktopDropdown] = useState(false);
   const dropdownRef = useRef(null);
   const { user, isLoading } = useAuth();
+  const { profile, getDisplayName: getProfileDisplayName, loading: profileLoading } = useProfile();
+  
+  // Debug logging
+  useEffect(() => {
+    console.log('Header - User data:', user);
+    console.log('Header - Profile data:', profile);
+    console.log('Header - Profile loading:', profileLoading);
+    if (profile && getProfileDisplayName) {
+      console.log('Header - Profile display name:', getProfileDisplayName());
+    }
+    
+    // Debug JWT token payload
+    try {
+      const token = localStorage.getItem('authToken');
+      if (token) {
+        const tokenPayload = JSON.parse(atob(token.split('.')[1]));
+        console.log('Header - JWT token payload:', tokenPayload);
+      }
+    } catch (error) {
+      console.error('Header - Error parsing JWT token:', error);
+    }
+  }, [user, profile, profileLoading, getProfileDisplayName]);
   
   // Helper functions
   const getDisplayName = () => {
     if (!user) return 'Loading...';
-    return user.fullName || user.name || 'User';
+    
+    // If profile is still loading, show loading state
+    if (profileLoading) {
+      return 'Loading...';
+    }
+    
+    // Try to get fullName from profile first (most accurate)
+    if (profile && getProfileDisplayName && getProfileDisplayName() && getProfileDisplayName() !== 'Loading...') {
+      const profileName = getProfileDisplayName();
+      if (profileName && profileName.trim() !== '') {
+        return profileName;
+      }
+    }
+    
+    // Try to get name from profile if available (direct access)
+    if (profile && profile.firstName) {
+      const nameParts = [profile.firstName];
+      if (profile.middleName) nameParts.push(profile.middleName);
+      if (profile.lastName) nameParts.push(profile.lastName);
+      const fullName = nameParts.join(' ').trim();
+      if (fullName) {
+        return fullName;
+      }
+    }
+    
+    // Try to get fullName from user object (from JWT token)
+    if (user.fullName && user.fullName !== 'User' && user.fullName.trim() !== '') {
+      return user.fullName;
+    }
+    
+    // If user has firstName and lastName, construct full name
+    if (user.firstName && user.lastName) {
+      return `${user.firstName} ${user.lastName}`;
+    }
+    
+    // Try to get name from JWT token payload directly
+    try {
+      const token = localStorage.getItem('authToken');
+      if (token) {
+        const tokenPayload = JSON.parse(atob(token.split('.')[1]));
+        if (tokenPayload.fullName && tokenPayload.fullName !== 'User') {
+          return tokenPayload.fullName;
+        }
+        if (tokenPayload.name && tokenPayload.name !== 'User') {
+          return tokenPayload.name;
+        }
+        if (tokenPayload.firstName && tokenPayload.lastName) {
+          return `${tokenPayload.firstName} ${tokenPayload.lastName}`;
+        }
+      }
+    } catch (error) {
+      console.error('Error parsing JWT token for display name:', error);
+    }
+    
+    // Fallback to name or default
+    return user.name || 'User';
   };
   
   const getEmail = () => {
@@ -69,10 +147,14 @@ const Header = ({ onToggleSidebar }) => {
       '/academic/profile': 'Profile',
       
       // Trainee routes
-      '/trainee': 'Trainee Portal',
+      '/trainee': 'Trainee Dashboard',
+      '/trainee/dashboard': 'Trainee Dashboard',
       '/trainee/academic-details': 'Academic Details',
       '/trainee/enrolled-courses': 'Enrolled Course List',
-      '/trainee/assessment-pending': 'Assessment Pending List',
+      '/trainee/all-assessments': 'All Assessments',
+      '/trainee/signature-required': 'Signature Required List',
+      '/trainee/completion-required': 'Section Completion Required List',
+      '/trainee/your-assessments': 'Your Assessments',
       '/trainee/create-issue': 'Create Issue Report/Feedback',
       '/trainee/assessment-pending/signature-required': 'Signature Required List',
       '/trainee/assessment-pending/section-completion': 'Section Completion Required List'
@@ -85,7 +167,12 @@ const Header = ({ onToggleSidebar }) => {
     
     // Check for academic department pages (pattern: /academic/departments/:id)
     if (path.startsWith('/academic/departments/') && path !== '/academic/departments') {
-      return 'Department Courses';
+      return 'Department Management';
+    }
+    
+    // Check for enroll trainees page (pattern: /academic/course/:id/enroll-trainees)
+    if (path.includes('/enroll-trainees')) {
+      return 'Trainee Enrollments';
     }
     
     // Check for course detail page (pattern: /academic/course/:id)
@@ -118,27 +205,27 @@ const Header = ({ onToggleSidebar }) => {
     }
     
     // Check for trainee course detail (pattern: /trainee/:traineeId/course/:courseId)
-    if (path.match(/^\/trainee\/[^\/]+\/course\/[^\/]+$/)) {
+    if (path.match(/^\/trainee\/[^/]+\/course\/[^/]+$/)) {
       return 'Course Details';
     }
     
     // Check for trainee subject detail (pattern: /trainee/:traineeId/course/:courseId/subject/:subjectId)
-    if (path.match(/^\/trainee\/[^\/]+\/course\/[^\/]+\/subject\/[^\/]+$/)) {
+    if (path.match(/^\/trainee\/[^/]+\/course\/[^/]+\/subject\/[^/]+$/)) {
       return 'Subject Details';
     }
     
     // Check for trainee assessments (pattern: /trainee/:traineeId/assessments)
-    if (path.match(/^\/trainee\/[^\/]+\/assessments$/)) {
+    if (path.match(/^\/trainee\/[^/]+\/assessments$/)) {
       return 'Assessment Details';
     }
     
     // Check for signature pad (pattern: /trainee/:traineeId/signature-pad/:documentId)
-    if (path.match(/^\/trainee\/[^\/]+\/signature-pad\/[^\/]+$/)) {
+    if (path.match(/^\/trainee\/[^/]+\/signature-pad\/[^/]+$/)) {
       return 'Digital Signature';
     }
     
     // Check for assessment section (pattern: /trainee/:traineeId/assessment-section/:sectionId)
-    if (path.match(/^\/trainee\/[^\/]+\/assessment-section\/[^\/]+$/)) {
+    if (path.match(/^\/trainee\/[^/]+\/assessment-section\/[^/]+$/)) {
       return 'Assessment Section';
     }
     
@@ -235,7 +322,7 @@ const Header = ({ onToggleSidebar }) => {
                 onClick={() => setShowDesktopDropdown(!showDesktopDropdown)}
               >
                 <PersonCircle size={32} className="me-2" />
-                <span>{isLoading ? 'Loading...' : getDisplayName()}</span>
+                <span>{isLoading || profileLoading ? 'Loading...' : getDisplayName()}</span>
               </button>
               
               
@@ -246,7 +333,7 @@ const Header = ({ onToggleSidebar }) => {
               >
                   <div className="dropdown-header" style={{ padding: '0.5rem 1rem', wordBreak: 'break-all' }}>                  
                     <div className="fw-bold text-primary-custom">
-                      {isLoading ? 'Loading...' : getDisplayName()}
+                      {isLoading || profileLoading ? 'Loading...' : getDisplayName()}
                     </div>
                     <small className="text-muted" style={{ 
                       wordBreak: 'break-all', 
@@ -338,7 +425,7 @@ const Header = ({ onToggleSidebar }) => {
           </div>
           
           <div className="profile-name">
-            {isLoading ? 'Loading...' : getDisplayName()}
+            {isLoading || profileLoading ? 'Loading...' : getDisplayName()}
           </div>
           <div className="profile-email">
             {isLoading ? 'Loading...' : getEmail()}

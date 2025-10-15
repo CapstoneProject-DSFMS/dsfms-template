@@ -1,10 +1,12 @@
 import React, { useState, useEffect } from 'react';
 import { Container, Row, Col, Card, Button, Badge, Spinner, Alert } from 'react-bootstrap';
-import { ArrowLeft, Book, Calendar, GeoAlt, People, Clock } from 'react-bootstrap-icons';
+import { ArrowLeft, Book, Calendar, GeoAlt, People, Clock, ClipboardCheck, CheckCircle } from 'react-bootstrap-icons';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'react-toastify';
 import traineeAPI from '../../api/trainee';
 import TraineeSubjectList from './TraineeSubjectList';
+import TraineeUpcomingAssessments from './TraineeUpcomingAssessments';
+import TraineeCompletedAssessments from './TraineeCompletedAssessments';
 
 const TraineeCourseDetailView = ({ traineeId, courseId }) => {
   const navigate = useNavigate();
@@ -66,7 +68,7 @@ const TraineeCourseDetailView = ({ traineeId, courseId }) => {
   };
 
   const handleBack = () => {
-    navigate(`/trainee/${traineeId}`);
+    navigate('/trainee/enrolled-courses');
   };
 
   const getStatusBadge = (status) => {
@@ -175,7 +177,7 @@ const TraineeCourseDetailView = ({ traineeId, courseId }) => {
 
           <Row>
             {/* Upcoming Assessment Events */}
-            <Col>
+            <Col className="mb-4">
               <Card className="h-100 border-0 shadow-sm">
                 <Card.Header className="bg-white border-bottom">
                   <h5 className="mb-0 d-flex align-items-center">
@@ -185,6 +187,26 @@ const TraineeCourseDetailView = ({ traineeId, courseId }) => {
                 </Card.Header>
                 <Card.Body className="p-0">
                   <TraineeUpcomingAssessments 
+                    traineeId={traineeId} 
+                    courseId={courseId} 
+                  />
+                </Card.Body>
+              </Card>
+            </Col>
+          </Row>
+
+          <Row>
+            {/* Completed Assessments */}
+            <Col>
+              <Card className="h-100 border-0 shadow-sm">
+                <Card.Header className="bg-white border-bottom">
+                  <h5 className="mb-0 d-flex align-items-center">
+                    <CheckCircle className="me-2" size={20} />
+                    Completed Assessments
+                  </h5>
+                </Card.Header>
+                <Card.Body className="p-0">
+                  <TraineeCompletedAssessments 
                     traineeId={traineeId} 
                     courseId={courseId} 
                   />

@@ -1,24 +1,71 @@
-import React, { useState } from 'react';
-import { Card, Form, Button, Badge, Dropdown } from 'react-bootstrap';
+import React, { useState, useEffect, useRef } from 'react';
+import { Card, Form, Button, Badge, Dropdown, Spinner } from 'react-bootstrap';
 import { Search, Plus, X, ChevronDown, People } from 'react-bootstrap-icons';
-
-const mockAllTrainees = [
-  { id: 't1', eid: 'EMP001', name: 'John Doe' },
-  { id: 't2', eid: 'EMP002', name: 'Jane Smith' },
-  { id: 't3', eid: 'EMP003', name: 'Bob Johnson' },
-  { id: 't4', eid: 'EMP004', name: 'Alice Brown' },
-  { id: 't5', eid: 'EMP005', name: 'Charlie Wilson' },
-  { id: 't6', eid: 'EMP006', name: 'Diana Lee' },
-  { id: 't7', eid: 'EMP007', name: 'Eve Davis' },
-  { id: 't8', eid: 'EMP008', name: 'Frank Miller' }
-];
+import traineeAPI from '../../api/trainee';
 
 const TraineeSelectionPanel = ({ selectedTrainees, onSelectionChange }) => {
   const [searchTerm, setSearchTerm] = useState('');
   const [showAvailableDropdown, setShowAvailableDropdown] = useState(false);
-  
+  const [allTrainees, setAllTrainees] = useState([]);
+  const [loadingTrainees, setLoadingTrainees] = useState(false);
+  const [error, setError] = useState(null);
+  const dropdownRef = useRef(null);
 
-  const filteredTrainees = mockAllTrainees.filter(trainee =>
+  // Load trainees from API
+  useEffect(() => {
+    loadTrainees();
+  }, []);
+
+  // Close dropdown when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
+        setShowAvailableDropdown(false);
+      }
+    };
+
+    if (showAvailableDropdown) {
+      document.addEventListener('mousedown', handleClickOutside);
+    }
+
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, [showAvailableDropdown]);
+
+  const loadTrainees = async () => {
+    setLoadingTrainees(true);
+    setError(null);
+    try {
+      
+      const response = await traineeAPI.getTraineesForEnrollment();
+      
+      
+      if (response && response.data) {
+        // Transform API data to match component format
+        const transformedTrainees = response.data.map(trainee => ({
+          id: trainee.id,
+          eid: trainee.eid,
+          name: `${trainee.firstName} ${trainee.lastName}`.trim(),
+          firstName: trainee.firstName,
+          lastName: trainee.lastName,
+          email: trainee.email,
+          status: trainee.status
+        }));
+        
+        setAllTrainees(transformedTrainees);
+      } else {
+        setAllTrainees([]);
+      }
+    } catch {
+      setError('Failed to load trainees');
+      setAllTrainees([]);
+    } finally {
+      setLoadingTrainees(false);
+    }
+  };
+
+  const filteredTrainees = allTrainees.filter(trainee =>
     trainee.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
     trainee.eid.toLowerCase().includes(searchTerm.toLowerCase())
   );
@@ -36,16 +83,16 @@ const TraineeSelectionPanel = ({ selectedTrainees, onSelectionChange }) => {
   
 
   return (
-    <Card className="d-flex flex-column">
-      <Card.Header className="bg-white border-bottom">
+    <Card className="d-flex flex-column h-100" style={{ border: '1px solid #e9ecef', boxShadow: '0 2px 4px rgba(0,0,0,0.1)', overflow: 'hidden' }}>
+      <Card.Header className="bg-gradient-primary-custom text-white border-0">
         <div className="d-flex justify-content-between align-items-center">
-          <h6 className="mb-0">Add Trainees</h6>
+          <h6 className="mb-0 text-white">Add Trainees</h6>
         </div>
       </Card.Header>
       <Card.Body className="p-0 d-flex flex-column" style={{ height: '500px' }}>
 
         {/* Available Trainees - Top Section */}
-        <div>
+        <div className="flex-shrink-0" style={{ position: 'relative' }} ref={dropdownRef}>
           {/* Search Bar */}
           <div className="p-2 border-bottom">
             <Form.Control
@@ -64,10 +111,11 @@ const TraineeSelectionPanel = ({ selectedTrainees, onSelectionChange }) => {
               className="w-100 d-flex align-items-center justify-content-between"
               size="sm"
               onClick={() => setShowAvailableDropdown(!showAvailableDropdown)}
+              disabled={loadingTrainees}
             >
               <span>
                 <People className="me-2" size={16} />
-                Show All Available Trainees ({mockAllTrainees.length})
+                {loadingTrainees ? 'Loading...' : `Show All Available Trainees (${allTrainees.length})`}
               </span>
               <ChevronDown size={16} />
             </Button>
@@ -75,8 +123,32 @@ const TraineeSelectionPanel = ({ selectedTrainees, onSelectionChange }) => {
 
           {/* Dropdown List */}
           {showAvailableDropdown && (
-            <div className="border-top" style={{ maxHeight: '150px', overflowY: 'auto' }}>
-              {filteredTrainees.length === 0 ? (
+            <div 
+              className="border bg-white shadow-sm" 
+              style={{ 
+                position: 'absolute',
+                top: '100%',
+                left: 0,
+                right: 0,
+                zIndex: 1050,
+                maxHeight: '200px', 
+                overflowY: 'auto',
+                borderRadius: '0 0 8px 8px'
+              }}
+            >
+              {loadingTrainees ? (
+                <div className="p-3 text-center">
+                  <Spinner animation="border" size="sm" className="me-2" />
+                  <span className="text-muted">Loading trainees...</span>
+                </div>
+              ) : error ? (
+                <div className="p-3 text-center text-danger">
+                  <p className="mb-0">{error}</p>
+                  <Button size="sm" variant="outline-danger" onClick={loadTrainees} className="mt-2">
+                    Retry
+                  </Button>
+                </div>
+              ) : filteredTrainees.length === 0 ? (
                 <div className="p-3 text-center text-muted">
                   <p className="mb-0">No trainees found</p>
                 </div>
@@ -85,14 +157,14 @@ const TraineeSelectionPanel = ({ selectedTrainees, onSelectionChange }) => {
                   <div 
                     key={trainee.id}
                     className="p-2 border-bottom d-flex align-items-center justify-content-between hover-bg-light"
-                    style={{ cursor: 'pointer' }}
+                    style={{ cursor: 'pointer', minWidth: 0 }}
                     onClick={() => handleAddTrainee(trainee)}
                   >
-                    <div>
-                      <div className="fw-semibold">{trainee.name}</div>
-                      <small className="text-muted">{trainee.eid}</small>
+                    <div style={{ minWidth: 0, overflow: 'hidden', flex: 1 }}>
+                      <div className="fw-semibold text-truncate" title={trainee.name}>{trainee.name}</div>
+                      <small className="text-muted text-truncate d-block" title={trainee.eid}>{trainee.eid}</small>
                     </div>
-                    <Plus size={14} className="text-primary" />
+                    <Plus size={14} className="text-primary flex-shrink-0" />
                   </div>
                 ))
               )}
@@ -115,14 +187,16 @@ const TraineeSelectionPanel = ({ selectedTrainees, onSelectionChange }) => {
                 <div 
                   key={trainee.id}
                   className="p-2 border-bottom d-flex align-items-center justify-content-between"
+                  style={{ minWidth: 0 }}
                 >
-                  <div>
-                    <div className="fw-semibold">{trainee.name}</div>
-                    <small className="text-muted">{trainee.eid}</small>
+                  <div style={{ minWidth: 0, overflow: 'hidden', flex: 1 }}>
+                    <div className="fw-semibold text-truncate" title={trainee.name}>{trainee.name}</div>
+                    <small className="text-muted text-truncate d-block" title={trainee.eid}>{trainee.eid}</small>
                   </div>
                   <Button 
                     size="sm" 
                     variant="outline-danger"
+                    className="flex-shrink-0"
                     onClick={() => handleRemoveTrainee(trainee.id)}
                   >
                     <X size={14} />

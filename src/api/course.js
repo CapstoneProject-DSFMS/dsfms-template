@@ -56,6 +56,17 @@ const courseAPI = {
     }
   },
 
+  // Archive course
+  archiveCourse: async (courseId) => {
+    try {
+      const response = await apiClient.post(`/courses/${courseId}/archive`);
+      return response.data;
+    } catch (error) {
+      console.error('Error archiving course:', error);
+      throw error;
+    }
+  },
+
   // Get courses by department
   getCoursesByDepartment: async (departmentId, params = {}) => {
     try {
@@ -83,15 +94,21 @@ const courseAPI = {
     }
   },
 
-  // Get department by ID (new endpoint)
+  // Get department by ID
   getDepartmentById: async (departmentId) => {
     try {
-      const response = await apiClient.get(`/departments/${departmentId}?includeDeleted=true`);
+      const response = await apiClient.get(`/departments/${departmentId}`);
       return response.data;
     } catch (error) {
       console.error('Error fetching department by ID:', error);
       throw error;
     }
+  },
+
+  // Get trainee enrollments
+  getTraineeEnrollments: async (traineeId) => {
+    const response = await apiClient.get(`/courses/trainees/${traineeId}/enrollments`);
+    return response.data;
   }
 };
 
