@@ -167,7 +167,7 @@ const Header = ({ onToggleSidebar }) => {
     
     // Check for academic department pages (pattern: /academic/departments/:id)
     if (path.startsWith('/academic/departments/') && path !== '/academic/departments') {
-      return 'Department Courses';
+      return 'Department Management';
     }
     
     // Check for enroll trainees page (pattern: /academic/course/:id/enroll-trainees)

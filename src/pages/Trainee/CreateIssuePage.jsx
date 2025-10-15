@@ -36,11 +36,12 @@ if (typeof document !== 'undefined') {
 
 const CreateIssuePage = () => {
   const [formData, setFormData] = useState({
+    request_type: '',
+    severity: 'MEDIUM',
     title: '',
-    category: '',
-    priority: 'MEDIUM',
     description: '',
-    attachments: []
+    actions_taken: '',
+    is_anonymous: false
   });
   const [loading, setLoading] = useState(false);
 
@@ -58,10 +59,10 @@ const CreateIssuePage = () => {
   };
 
   const handleInputChange = (e) => {
-    const { name, value } = e.target;
+    const { name, value, type, checked } = e.target;
     setFormData(prev => ({
       ...prev,
-      [name]: value
+      [name]: type === 'checkbox' ? checked : value
     }));
   };
 
@@ -80,11 +81,12 @@ const CreateIssuePage = () => {
       
       // Reset form
       setFormData({
+        request_type: '',
+        severity: 'MEDIUM',
         title: '',
-        category: '',
-        priority: 'MEDIUM',
         description: '',
-        attachments: []
+        actions_taken: '',
+        is_anonymous: false
       });
     } catch (error) {
       console.error('Error submitting incident/feedback report:', error);
@@ -123,34 +125,28 @@ const CreateIssuePage = () => {
                 <Row>
                   <Col md={6}>
                     <Form.Group className="mb-3">
-                      <Form.Label>Title *</Form.Label>
+                      <Form.Label>Title</Form.Label>
                       <Form.Control
                         type="text"
                         name="title"
                         value={formData.title}
                         onChange={handleInputChange}
                         placeholder="Brief description of the incident or feedback"
-                        required
                       />
                     </Form.Group>
                   </Col>
                   <Col md={6}>
                     <Form.Group className="mb-3">
-                      <Form.Label>Category *</Form.Label>
+                      <Form.Label>Request Type *</Form.Label>
                       <Form.Select
-                        name="category"
-                        value={formData.category}
+                        name="request_type"
+                        value={formData.request_type}
                         onChange={handleInputChange}
                         required
                       >
-                        <option value="">Select category</option>
-                        <option value="TECHNICAL">Technical Incident</option>
-                        <option value="CONTENT">Content Problem</option>
-                        <option value="ASSESSMENT">Assessment Issue</option>
-                        <option value="ACCESS">Access Problem</option>
-                        <option value="FEEDBACK">General Feedback</option>
-                        <option value="SAFETY">Safety Incident</option>
-                        <option value="OTHER">Other</option>
+                        <option value="">Select request type</option>
+                        <option value="SAFETY_REPORT">Safety Report</option>
+                        <option value="ASSESSMENT_APPROVAL_REQUEST">Assessment Approval Request</option>
                       </Form.Select>
                     </Form.Group>
                   </Col>
@@ -159,31 +155,52 @@ const CreateIssuePage = () => {
                 <Row>
                   <Col md={6}>
                     <Form.Group className="mb-3">
-                      <Form.Label>Priority</Form.Label>
+                      <Form.Label>Severity</Form.Label>
                       <Form.Select
-                        name="priority"
-                        value={formData.priority}
+                        name="severity"
+                        value={formData.severity}
                         onChange={handleInputChange}
                       >
                         <option value="LOW">Low</option>
                         <option value="MEDIUM">Medium</option>
                         <option value="HIGH">High</option>
-                        <option value="URGENT">Urgent</option>
+                        <option value="CRITICAL">Critical</option>
                       </Form.Select>
                     </Form.Group>
                   </Col>
                 </Row>
 
-                <Form.Group className="mb-4">
-                  <Form.Label>Description *</Form.Label>
+                <Form.Group className="mb-3">
+                  <Form.Label>Description</Form.Label>
                   <Form.Control
                     as="textarea"
-                    rows={6}
+                    rows={4}
                     name="description"
                     value={formData.description}
                     onChange={handleInputChange}
                     placeholder="Please provide detailed information about the incident or feedback..."
-                    required
+                  />
+                </Form.Group>
+
+                <Form.Group className="mb-3">
+                  <Form.Label>Actions Taken</Form.Label>
+                  <Form.Control
+                    as="textarea"
+                    rows={3}
+                    name="actions_taken"
+                    value={formData.actions_taken}
+                    onChange={handleInputChange}
+                    placeholder="Describe any actions you have already taken regarding this incident..."
+                  />
+                </Form.Group>
+
+                <Form.Group className="mb-4">
+                  <Form.Check
+                    type="checkbox"
+                    name="is_anonymous"
+                    checked={formData.is_anonymous}
+                    onChange={handleInputChange}
+                    label="Submit anonymously (your identity will be kept confidential)"
                   />
                 </Form.Group>
 

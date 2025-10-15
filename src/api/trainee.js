@@ -158,6 +158,17 @@ export const traineeAPI = {
       console.error('Lookup failed:', error.response?.data);
       throw error.response?.data || error.message;
     }
+  },
+
+  // Get trainees by course ID
+  getTraineesByCourseId: async (courseId) => {
+    try {
+      const response = await apiClient.get(`/courses/${courseId}/trainees`);
+      return response.data;
+    } catch (error) {
+      console.error('Error fetching trainees by course ID:', error);
+      throw error;
+    }
   }
 };
 

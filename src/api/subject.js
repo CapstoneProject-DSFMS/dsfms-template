@@ -14,11 +14,21 @@ const subjectAPI = {
 
   // Get subjects by course ID
   getSubjectsByCourse: async (courseId, params = {}) => {
+    const url = `/subjects/course/${courseId}`;
+    console.log('🔍 API Call - URL:', url);
+    console.log('🔍 API Call - courseId:', courseId);
+    console.log('🔍 API Call - params:', params);
+    
     try {
-      const response = await apiClient.get(`/subjects/course/${courseId}`, { params });
+      const response = await apiClient.get(url, { params });
+      console.log('🔍 API Call - Response:', response);
+      console.log('🔍 API Call - Response data:', response.data);
       return response.data;
     } catch (error) {
-      console.error('Error fetching subjects by course:', error);
+      console.error('❌ API Call - Error:', error);
+      console.error('❌ API Call - Error response:', error.response);
+      console.error('❌ API Call - Error status:', error.response?.status);
+      console.error('❌ API Call - Error data:', error.response?.data);
       throw error;
     }
   },

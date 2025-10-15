@@ -1,0 +1,153 @@
+/* ===== SIDEBAR DROPDOWN STYLES ===== */
+/* Beautiful custom scrollbar for sidebar dropdown */
+
+/* Department dropdown container */
+.sidebar-department-dropdown {
+  background: rgba(255, 255, 255, 0.05);
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 8px;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+  overflow: hidden;
+}
+
+/* COMPLETELY HIDE SCROLLBAR - NO VISIBLE SCROLLBAR */
+.sidebar-department-dropdown {
+  /* Hide scrollbar for Chrome, Safari and Opera */
+  scrollbar-width: none; /* Firefox */
+  -ms-overflow-style: none; /* IE and Edge */
+  scroll-behavior: smooth;
+}
+
+.sidebar-department-dropdown::-webkit-scrollbar {
+  display: none;
+}
+
+/* Custom scroll indicators */
+.sidebar-department-dropdown {
+  position: relative;
+}
+
+.sidebar-department-dropdown::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  right: 0;
+  width: 2px;
+  height: 100%;
+  background: linear-gradient(180deg, 
+    rgba(255, 255, 255, 0.1) 0%, 
+    transparent 20%, 
+    transparent 80%, 
+    rgba(255, 255, 255, 0.1) 100%
+  );
+  pointer-events: none;
+  z-index: 1;
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+
+.sidebar-department-dropdown:hover::before {
+  opacity: 1;
+}
+
+/* Scroll fade effect */
+.sidebar-department-dropdown::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 20px;
+  background: linear-gradient(transparent, rgba(0, 0, 0, 0.1));
+  pointer-events: none;
+  z-index: 1;
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+
+.sidebar-department-dropdown.scrollable::after {
+  opacity: 1;
+}
+
+/* Department item styling */
+.sidebar-department-item {
+  position: relative;
+  overflow: hidden;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.sidebar-department-item::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.1), transparent);
+  transition: left 0.5s ease;
+}
+
+.sidebar-department-item:hover::before {
+  left: 100%;
+}
+
+.sidebar-department-item:hover {
+  background: rgba(255, 255, 255, 0.1) !important;
+  transform: translateX(4px);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+}
+
+/* Chevron icon animation */
+.sidebar-department-chevron {
+  transition: transform 0.3s cubic-bezier(0.68, -0.55, 0.27, 1.55);
+  opacity: 0.7;
+}
+
+.sidebar-department-item:hover .sidebar-department-chevron {
+  transform: translateX(2px);
+  opacity: 1;
+}
+
+/* Loading state */
+.sidebar-department-loading {
+  background: linear-gradient(90deg, 
+    rgba(255, 255, 255, 0.1) 25%, 
+    rgba(255, 255, 255, 0.2) 50%, 
+    rgba(255, 255, 255, 0.1) 75%
+  );
+  background-size: 200% 100%;
+  animation: shimmer 1.5s infinite;
+}
+
+@keyframes shimmer {
+  0% {
+    background-position: -200% 0;
+  }
+  100% {
+    background-position: 200% 0;
+  }
+}
+
+/* Active department item */
+.sidebar-department-item.active {
+  background: rgba(255, 255, 255, 0.15) !important;
+  border-left: 3px solid rgba(255, 255, 255, 0.8);
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.3);
+}
+
+/* Smooth transitions */
+.sidebar-department-dropdown * {
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+  .sidebar-department-dropdown {
+    max-height: 250px;
+  }
+  
+  .sidebar-department-dropdown::-webkit-scrollbar {
+    width: 4px;
+  }
+}

@@ -6,91 +6,24 @@ import useTableSort from '../../hooks/useTableSort';
 import SubjectActions from './SubjectActions';
 import { mapApiSubjectsToTable, getStatusBadgeColor, getMethodBadgeColor } from '../../utils/subjectDataMapper';
 
-const mockSubjects = [
-  { 
-    id: 's1', 
-    name: 'Safety Basics', 
-    code: 'SB01', 
-    method: 'Classroom',
-    duration: '2 weeks',
-    startDate: '2024-01-15',
-    endDate: '2024-01-29',
-    roomName: 'Training Center A - Room 101',
-    trainees: 24, 
-    status: 'ACTIVE' 
-  },
-  { 
-    id: 's2', 
-    name: 'Evacuation Drills', 
-    code: 'ED02', 
-    method: 'Practical',
-    duration: '1 week',
-    startDate: '2024-02-01',
-    endDate: '2024-02-07',
-    roomName: 'Simulator Complex - Room 201',
-    trainees: 18, 
-    status: 'ACTIVE' 
-  },
-  { 
-    id: 's3', 
-    name: 'CPR & First Aid', 
-    code: 'FA03', 
-    method: 'Mixed',
-    duration: '3 days',
-    startDate: '2024-02-10',
-    endDate: '2024-02-12',
-    roomName: 'Medical Center - Room 301',
-    trainees: 12, 
-    status: 'INACTIVE' 
-  },
-  { 
-    id: 's4', 
-    name: 'Fire Safety', 
-    code: 'FS04', 
-    method: 'Classroom',
-    duration: '1 week',
-    startDate: '2024-02-15',
-    endDate: '2024-02-21',
-    roomName: 'Training Center B - Room 102',
-    trainees: 15, 
-    status: 'ACTIVE' 
-  },
-  { 
-    id: 's5', 
-    name: 'Emergency Procedures', 
-    code: 'EP05', 
-    method: 'Practical',
-    duration: '2 weeks',
-    startDate: '2024-03-01',
-    endDate: '2024-03-14',
-    roomName: 'Emergency Training Facility',
-    trainees: 20, 
-    status: 'ACTIVE' 
-  },
-];
 
 const SubjectTable = ({ subjects = [], loading = false, onView, onEdit, onDelete }) => {
-  // Map API subjects to table format if they exist
-  const mappedApiSubjects = subjects.length > 0 ? mapApiSubjectsToTable(subjects) : [];
+  console.log('🔍 SubjectTable - Received subjects:', subjects);
+  console.log('🔍 SubjectTable - subjects length:', subjects.length);
+  console.log('🔍 SubjectTable - loading:', loading);
   
-  // If we have API data, use it exclusively. Otherwise, use mock data
-  let finalSubjects;
-  if (mappedApiSubjects.length > 0) {
-    finalSubjects = mappedApiSubjects;
-  } else {
-    finalSubjects = mockSubjects.map(subject => ({
-      ...subject,
-      source: 'mock_data'
-    }));
-  }
+  // Map API subjects to table format
+  const mappedApiSubjects = mapApiSubjectsToTable(subjects);
+  console.log('🔍 SubjectTable - mappedApiSubjects:', mappedApiSubjects);
+  console.log('🔍 SubjectTable - mappedApiSubjects length:', mappedApiSubjects.length);
   
-  const { sortedData, sortConfig, handleSort } = useTableSort(finalSubjects);
+  const { sortedData, sortConfig, handleSort } = useTableSort(mappedApiSubjects);
 
   if (loading) {
     return <LoadingSkeleton rows={4} columns={5} />;
   }
 
-  if (finalSubjects.length === 0) {
+  if (mappedApiSubjects.length === 0) {
     return (
       <div className="text-center py-5">
         <div className="text-muted">
@@ -203,28 +136,17 @@ const SubjectTable = ({ subjects = [], loading = false, onView, onEdit, onDelete
             <SortableHeader columnKey="status" className="show-mobile">
               Status
             </SortableHeader>
-            <th className="border-neutral-200 text-primary-custom fw-bold letter-spacing px-3 py-3 text-start show-mobile" style={{ minWidth: '80px', maxWidth: '150px' }}>
-              <div className="d-flex align-items-center justify-content-between position-relative w-100">
+            <th className="border-neutral-200 text-primary-custom fw-bold letter-spacing px-3 py-3 text-center show-mobile" style={{ minWidth: '80px', maxWidth: '150px' }}>
+              <div className="d-flex align-items-center justify-content-center position-relative w-100">
                 <span style={{
                   transition: 'all 0.3s ease',
                   fontWeight: '600',
-                  flex: '1',
                   whiteSpace: 'nowrap',
                   overflow: 'hidden',
                   textOverflow: 'ellipsis'
                 }}>
                   Actions
                 </span>
-                <div
-                  className="d-flex align-items-center"
-                  style={{
-                    minWidth: '20px',
-                    justifyContent: 'center',
-                    flexShrink: 0
-                  }}
-                >
-                  {/* Empty space to match other columns */}
-                </div>
               </div>
             </th>
           </tr>

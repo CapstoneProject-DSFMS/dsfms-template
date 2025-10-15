@@ -6,7 +6,7 @@ import useTableSort from '../../hooks/useTableSort';
 import EnrolledTraineeActions from './EnrolledTraineeActions';
 import RemoveTraineeModal from './RemoveTraineeModal';
 import courseAPI from '../../api/course';
-import traineeAPI from '../../api/trainee';
+import { traineeAPI } from '../../api/trainee';
 import subjectAPI from '../../api/subject';
 
 
@@ -333,7 +333,7 @@ const EnrolledTraineesTable = ({ courseId, loading = false }) => {
           height: '400px',
           marginBottom: '2rem',
           marginTop: '12rem'
-        }}
+        }}  
       >
         <Card.Header 
           className="bg-white border-bottom" 
