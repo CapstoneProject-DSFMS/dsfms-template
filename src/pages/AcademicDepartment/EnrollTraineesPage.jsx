@@ -7,6 +7,7 @@ import SubjectSelectionPanel from '../../components/AcademicDepartment/SubjectSe
 import TraineeSelectionPanel from '../../components/AcademicDepartment/TraineeSelectionPanel';
 import EnrolledTraineesTable from '../../components/AcademicDepartment/EnrolledTraineesTable';
 import BulkImportTraineesModal from '../../components/AcademicDepartment/BulkImportTraineesModal';
+import BatchCodeModal from '../../components/AcademicDepartment/BatchCodeModal';
 import subjectAPI from '../../api/subject';
 
 const EnrollTraineesPage = () => {
@@ -24,6 +25,7 @@ const EnrollTraineesPage = () => {
   const [selectedSubjects, setSelectedSubjects] = useState([]);
   const [selectedTrainees, setSelectedTrainees] = useState([]);
   const [showBulkImport, setShowBulkImport] = useState(false);
+  const [showBatchCodeModal, setShowBatchCodeModal] = useState(false);
   const [bulkImportLoading, setBulkImportLoading] = useState(false);
   const [enrollLoading, setEnrollLoading] = useState(false);
   const [tableRefreshKey, setTableRefreshKey] = useState(0);
@@ -116,21 +118,27 @@ const EnrollTraineesPage = () => {
     }
   };
 
-  const handleEnroll = async () => {
+  const handleEnroll = () => {
     if (selectedSubjects.length === 0 || selectedTrainees.length === 0) {
       toast.warning('Please select both subjects and trainees to enroll');
       return;
     }
 
+    // Show batch code modal instead of directly enrolling
+    setShowBatchCodeModal(true);
+  };
+
+  const handleBatchCodeConfirm = async (batchCode) => {
     setEnrollLoading(true);
+    setShowBatchCodeModal(false);
     
     try {
-
       // Prepare data for API call - Backend expects batchCode and traineeUserIds
       console.log('🔍 Selected trainees for enrollment:', selectedTrainees);
+      console.log('🔍 Using batch code:', batchCode);
       
       const traineeData = {
-        batchCode: "TEST0012025", // Fixed batch code
+        batchCode: batchCode, // Use batch code from modal
         traineeUserIds: selectedTrainees.map(trainee => {
           console.log('🔍 Processing trainee:', {
             id: trainee.id,
@@ -174,7 +182,7 @@ const EnrollTraineesPage = () => {
       setSelectedTrainees([]);
       setSelectedSubjects([]);
       
-      toast.success(`Successfully enrolled ${selectedTrainees.length} trainees to ${selectedSubjects.length} subject(s)`);
+      toast.success(`Successfully enrolled ${selectedTrainees.length} trainees to ${selectedSubjects.length} subject(s) with batch code: ${batchCode}`);
       
     } catch (error) {
       
@@ -233,7 +241,7 @@ const EnrollTraineesPage = () => {
                   >
                     {enrollLoading ? (
                       <>
-                        <span className="spinner-border spinner-border-sm me-1" role="status" aria-hidden="true" style={{ width: '0.75rem', height: '0.75rem' }}></span>
+                        <span className="spinner-border spinner-border-sm me-1" role="status" aria-hidden="true" style={{ width: '0.5rem', height: '0.5rem' }}></span>
                         Enrolling...
                       </>
                     ) : (
@@ -298,6 +306,14 @@ const EnrollTraineesPage = () => {
         onClose={() => setShowBulkImport(false)}
         onImport={handleBulkImportTrainees}
         loading={bulkImportLoading}
+      />
+
+      {/* Batch Code Modal */}
+      <BatchCodeModal
+        show={showBatchCodeModal}
+        onClose={() => setShowBatchCodeModal(false)}
+        onConfirm={handleBatchCodeConfirm}
+        loading={enrollLoading}
       />
     </Container>
   );
