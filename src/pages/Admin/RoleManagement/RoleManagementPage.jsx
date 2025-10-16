@@ -81,7 +81,7 @@ const RoleManagementPage = () => {
           onClick: () => handleEdit(role)
         },
         // Only show disable/enable option if role is not administrator
-        ...(role.name.toLowerCase() !== 'administrator' ? [
+        ...(role.name.toUpperCase() !== 'ADMINISTRATOR' ? [
           { type: 'divider' },
           {
             label: role.status === 'Active' ? 'Disable Role' : 'Enable Role',
