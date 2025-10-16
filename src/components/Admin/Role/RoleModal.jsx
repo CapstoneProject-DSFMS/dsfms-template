@@ -1,8 +1,8 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { Modal, Form, Button, Row, Col, ListGroup, Badge, Spinner, Alert } from 'react-bootstrap';
 import { X, Save, Eye, Shield, ChevronDown, ChevronRight, ExclamationTriangle } from 'react-bootstrap-icons';
 import { usePermissions } from '../../../hooks/usePermissions';
-import { isBaseRole, canModifyRole, getBaseRoleDescription } from '../../../utils/roleUtils';
+import { isBaseRole } from '../../../utils/roleUtils';
 
 const RoleModal = ({ show, role, mode, onSave, onClose }) => {
   const [formData, setFormData] = useState({
@@ -18,15 +18,14 @@ const RoleModal = ({ show, role, mode, onSave, onClose }) => {
   const { 
     getPermissionGroups, 
     loading: permissionsLoading, 
-    error: permissionsError,
-    isPermissionActive 
+    error: permissionsError
   } = usePermissions();
 
-  // Get permission groups for current mode
-  const getPermissionGroupsForMode = (selectedRole, mode) => {
+  // Get permission groups for current mode using useMemo to prevent infinite loops
+  const permissionGroups = useMemo(() => {
     const allGroups = getPermissionGroups();
     
-    if (mode === 'view' && selectedRole && role?.permissions) {
+    if (mode === 'view' && role?.permissions) {
       // View mode: only show permissions assigned to the role
       const assignedPermissionIds = role.permissions.map(p => p.id || p);
       
@@ -40,9 +39,7 @@ const RoleModal = ({ show, role, mode, onSave, onClose }) => {
     
     // Add/Edit mode: show all permissions (no filtering)
     return allGroups;
-  };
-
-  const permissionGroups = getPermissionGroupsForMode(role?.name, mode);
+  }, [getPermissionGroups, mode, role?.permissions]);
 
   useEffect(() => {
     console.log('RoleModal useEffect - Role:', role);
@@ -67,7 +64,10 @@ const RoleModal = ({ show, role, mode, onSave, onClose }) => {
       });
     }
     setErrors({});
-    
+  }, [role, mode, show]);
+
+  // Separate useEffect for expanded groups to avoid infinite loop
+  useEffect(() => {
     // Set expanded groups based on mode
     if (mode === 'view') {
       // In view mode, expand all groups by default
@@ -89,7 +89,7 @@ const RoleModal = ({ show, role, mode, onSave, onClose }) => {
       // In add mode, start with all groups collapsed
       setExpandedGroups({});
     }
-  }, [role, mode, show]);
+  }, [mode, permissionGroups]);
 
   const validateForm = () => {
     const newErrors = {};

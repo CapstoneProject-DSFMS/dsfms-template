@@ -2,10 +2,7 @@
 
 // Define base roles that cannot be modified
 export const BASE_ROLES = [
-  'ADMINISTRATOR',
-  'ADMIN', 
-  'ACADEMIC_DEPARTMENT',
-  'TRAINEE'
+  'ADMINISTRATOR'
 ];
 
 // Check if a role is a base role
@@ -21,10 +18,7 @@ export const canModifyRole = (roleName) => {
 // Get base role description
 export const getBaseRoleDescription = (roleName) => {
   const descriptions = {
-    'ADMINISTRATOR': 'System administrator with full access',
-    'ADMIN': 'System administrator with full access', 
-    'ACADEMIC_DEPARTMENT': 'Academic department role for course management',
-    'TRAINEE': 'Trainee role for course participants'
+    'ADMINISTRATOR': 'System administrator with full access'
   };
   
   return descriptions[roleName?.toUpperCase()] || 'System-defined role';
