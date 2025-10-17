@@ -5,4 +5,4 @@ export { default as FormEditorLayout } from './FormEditorLayout';
 export { default as FormEditorContainer } from './FormEditorContainer';
 export { default as EditorHeader } from './EditorHeader';
 export { default as MergeFieldsPanel } from './MergeFieldsPanel';
-export { default as QuillEditor } from './QuillEditor';
+export { default as OnlyOfficeFormEditor } from './OnlyOfficeFormEditor';

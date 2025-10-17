@@ -3,6 +3,7 @@ import { Table, Badge, Button, Spinner } from 'react-bootstrap';
 import { ClipboardCheck, Clock, Calendar } from 'react-bootstrap-icons';
 import { toast } from 'react-toastify';
 import traineeAPI from '../../api/trainee';
+import '../../styles/scrollable-table.css';
 
 const TraineeUpcomingAssessments = ({ traineeId, courseId }) => {
   const [assessments, setAssessments] = useState([]);
@@ -105,39 +106,61 @@ const TraineeUpcomingAssessments = ({ traineeId, courseId }) => {
   }
 
   return (
-    <div className="trainee-upcoming-assessments">
-      <Table responsive hover className="mb-0">
-        <thead className="table-light">
+    <div className="scrollable-table-container admin-table">
+      <Table hover className="mb-0 table-mobile-responsive" style={{ fontSize: '0.875rem' }}>
+        <thead className="sticky-header">
           <tr>
-            <th className="text-start">Assessment</th>
-            <th className="text-start">Subject</th>
-            <th className="text-start">Type</th>
-            <th className="text-start">Priority</th>
-            <th className="text-start">Due Date</th>
-            <th className="text-start">Actions</th>
+            <th className="border-neutral-200 text-primary-custom fw-semibold show-mobile">Assessment</th>
+            <th className="border-neutral-200 text-primary-custom fw-semibold show-mobile">Subject</th>
+            <th className="border-neutral-200 text-primary-custom fw-semibold show-mobile">Type</th>
+            <th className="border-neutral-200 text-primary-custom fw-semibold show-mobile">Priority</th>
+            <th className="border-neutral-200 text-primary-custom fw-semibold show-mobile">Due Date</th>
+            <th className="border-neutral-200 text-primary-custom fw-semibold text-center show-mobile">Actions</th>
           </tr>
         </thead>
         <tbody>
-          {assessments.map((assessment) => (
-            <tr key={assessment.id}>
-              <td>
-                <div className="fw-semibold">{assessment.name}</div>
+          {assessments.map((assessment, index) => (
+            <tr 
+              key={assessment.id}
+              className={`${index % 2 === 0 ? 'bg-white' : 'bg-neutral-50'} transition-all`}
+              style={{
+                transition: 'background-color 0.2s ease'
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.backgroundColor = 'var(--bs-neutral-100)';
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.backgroundColor = index % 2 === 0 ? 'white' : 'var(--bs-neutral-50)';
+              }}
+            >
+              <td className="border-neutral-200 align-middle show-mobile">
+                <div className="fw-medium text-dark">
+                  {assessment.name}
+                </div>
               </td>
-              <td>
-                <div className="fw-semibold">{assessment.subject}</div>
+              <td className="border-neutral-200 align-middle show-mobile">
+                <span className="text-dark">
+                  {assessment.subject}
+                </span>
               </td>
-              <td>{getTypeBadge(assessment.type)}</td>
-              <td>{getPriorityBadge(assessment.priority)}</td>
-              <td>
+              <td className="border-neutral-200 align-middle show-mobile">
+                {getTypeBadge(assessment.type)}
+              </td>
+              <td className="border-neutral-200 align-middle show-mobile">
+                {getPriorityBadge(assessment.priority)}
+              </td>
+              <td className="border-neutral-200 align-middle show-mobile">
                 <div className="d-flex align-items-center">
                   <Clock className="text-muted me-1" size={14} />
-                  {new Date(assessment.dueDate).toLocaleDateString()}
+                  <span className="text-dark">
+                    {new Date(assessment.dueDate).toLocaleDateString()}
+                  </span>
                 </div>
                 <small className="text-muted">
                   {new Date(assessment.dueDate).toLocaleTimeString()}
                 </small>
               </td>
-              <td>
+              <td className="border-neutral-200 align-middle text-center show-mobile">
                 <Button
                   variant="primary"
                   size="sm"

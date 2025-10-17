@@ -1,7 +1,7 @@
 import React from 'react';
 import { Container } from 'react-bootstrap';
 import { useAuth } from '../../hooks/useAuth';
-import TraineeDetailView from '../../components/Trainee/TraineeDetailView';
+import AcademicDetailsView from '../../components/Trainee/AcademicDetailsView';
 
 const AcademicDetailsPage = () => {
   const { user } = useAuth();
@@ -18,7 +18,7 @@ const AcademicDetailsPage = () => {
 
   return (
     <Container className="py-3">
-      <TraineeDetailView traineeId={user.id} />
+      <AcademicDetailsView />
     </Container>
   );
 };

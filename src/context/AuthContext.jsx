@@ -21,7 +21,7 @@ export const AuthContext = createContext({
 
 // Create the provider component
 export const AuthProvider = ({ children }) => {
-  console.log('🔍 AuthProvider initializing...');
+  // console.log('🔍 AuthProvider initializing...'); // Commented out to reduce console noise
   
   const [user, setUser] = useState(null);
   const [userRole, setUserRole] = useState(null);
@@ -44,7 +44,7 @@ export const AuthProvider = ({ children }) => {
             const currentTime = Date.now() / 1000;
             
             if (tokenPayload.exp < currentTime) {
-              console.log('🔄 Token expired on initialization, attempting refresh...');
+              // console.log('🔄 Token expired on initialization, attempting refresh...'); // Commented out to reduce console noise
               // Token expired, try to refresh
               try {
                 const response = await authAPI.refreshToken(refreshTokenValue);
@@ -74,9 +74,9 @@ export const AuthProvider = ({ children }) => {
                   setIsAuthenticated(false);
                 }
                 
-                console.log('✅ Token refreshed successfully on initialization');
+                // console.log('✅ Token refreshed successfully on initialization'); // Commented out to reduce console noise
               } catch (refreshError) {
-                console.error('❌ Token refresh failed on initialization:', refreshError);
+                // console.error('❌ Token refresh failed on initialization:', refreshError); // Commented out to reduce console noise
                 authAPI.logout();
                 setUser(null);
                 setUserRole(null);
@@ -108,7 +108,7 @@ export const AuthProvider = ({ children }) => {
                 setIsAuthenticated(false);
               }
               
-              console.log('✅ Valid token found on initialization');
+              // console.log('✅ Valid token found on initialization'); // Commented out to reduce console noise
             }
           } catch (error) {
             console.error('❌ Error parsing token or user data:', error);
@@ -150,7 +150,7 @@ export const AuthProvider = ({ children }) => {
       const refreshTokenValue = localStorage.getItem('refreshToken');
       
       if (!token || !refreshTokenValue) {
-        console.log('❌ Missing token or refresh token, logging out');
+        // console.log('❌ Missing token or refresh token, logging out'); // Commented out to reduce console noise
         logout();
         return;
       }
@@ -161,11 +161,11 @@ export const AuthProvider = ({ children }) => {
         const currentTime = Date.now() / 1000;
         const timeUntilExpiry = tokenPayload.exp - currentTime;
         
-        console.log(`⏰ Token expires in ${Math.round(timeUntilExpiry / 60)} minutes`);
+        // console.log(`⏰ Token expires in ${Math.round(timeUntilExpiry / 60)} minutes`); // Commented out to reduce console noise
         
         // If token expires in less than 5 minutes, refresh it
         if (timeUntilExpiry < 300) {
-          console.log('🔄 Token expires soon, refreshing...');
+          // console.log('🔄 Token expires soon, refreshing...'); // Commented out to reduce console noise
           const refreshResult = await refreshToken();
           if (!refreshResult.success) {
             console.error('❌ Token refresh failed in validation');
@@ -176,7 +176,7 @@ export const AuthProvider = ({ children }) => {
         console.error('❌ Token validation failed:', error);
         // Token is invalid, try to refresh
         try {
-          console.log('🔄 Token invalid, attempting refresh...');
+          // console.log('🔄 Token invalid, attempting refresh...'); // Commented out to reduce console noise
           const refreshResult = await refreshToken();
           if (!refreshResult.success) {
             console.error('❌ Token refresh failed after validation error');
@@ -206,13 +206,13 @@ export const AuthProvider = ({ children }) => {
   // Fetch user role and permissions using roleId from JWT
   const fetchUserRoleAndPermissions = async (roleName, roleId) => {
     try {
-      console.log('Fetching role details for:', { roleName, roleId });
+      // console.log('Fetching role details for:', { roleName, roleId }); // Commented out to reduce console noise
       
       // Try to get role details by ID first
       if (roleId) {
         try {
           const fullRoleData = await roleAPI.getRoleById(roleId);
-          console.log('Full role data with permissions:', fullRoleData);
+          // console.log('Full role data with permissions:', fullRoleData); // Commented out to reduce console noise
           
           setUserRole(fullRoleData);
           setUserPermissions(fullRoleData.permissions || []);
@@ -227,7 +227,7 @@ export const AuthProvider = ({ children }) => {
             // Try to get user's own permissions from user profile API
             try {
               const userProfile = await apiClient.get('/users/me');
-              console.log('User profile with permissions:', userProfile.data);
+              // console.log('User profile with permissions:', userProfile.data); // Commented out to reduce console noise
               
               if (userProfile.data && userProfile.data.role && userProfile.data.role.permissions) {
                 const roleWithPermissions = {
@@ -268,7 +268,7 @@ export const AuthProvider = ({ children }) => {
       // Fallback: try to get all roles (only if user has permission)
       try {
         const rolesResponse = await roleAPI.getRoles();
-        console.log('Roles response:', rolesResponse);
+        // console.log('Roles response:', rolesResponse); // Commented out to reduce console noise
         
         const rolesData = rolesResponse.data || rolesResponse;
         let rolesArray;
@@ -314,7 +314,7 @@ export const AuthProvider = ({ children }) => {
       let userInfo;
       try {
         const tokenPayload = JSON.parse(atob(response.access_token.split('.')[1]));
-        console.log('Token payload:', tokenPayload);
+        // console.log('Token payload:', tokenPayload); // Commented out to reduce console noise
         
         // Validate required fields from JWT token
         if (!tokenPayload.userId || !tokenPayload.roleName) {
@@ -335,8 +335,8 @@ export const AuthProvider = ({ children }) => {
         throw new Error('Invalid token format or missing required fields');
       }
       
-      console.log('Login response:', response);
-      console.log('User info created:', userInfo);
+      // console.log('Login response:', response); // Commented out to reduce console noise
+      // console.log('User info created:', userInfo); // Commented out to reduce console noise
       
       localStorage.setItem('user', JSON.stringify(userInfo));
       
@@ -352,13 +352,13 @@ export const AuthProvider = ({ children }) => {
       setUserPermissions(permissions);
       setIsAuthenticated(true);
       
-      console.log('Login successful:', { user: userInfo, role, permissions });
-      console.log('🔍 User permissions for RBAC check:', permissions.map(p => ({
-        id: p.id,
-        name: p.name,
-        path: p.path,
-        method: p.method
-      })));
+      // console.log('Login successful:', { user: userInfo, role, permissions }); // Commented out to reduce console noise
+      // console.log('🔍 User permissions for RBAC check:', permissions.map(p => ({
+      //   id: p.id,
+      //   name: p.name,
+      //   path: p.path,
+      //   method: p.method
+      // }))); // Commented out to reduce console noise
       return { success: true, user: userInfo, role, permissions };
     } catch (error) {
       return { success: false, error: mapError(error) || 'Login failed' };
@@ -410,13 +410,13 @@ export const AuthProvider = ({ children }) => {
     fetchUserRoleAndPermissions
   };
 
-  console.log('🔍 AuthProvider rendering with value:', {
-    user: !!user,
-    userRole: !!userRole,
-    userPermissions: userPermissions.length,
-    isAuthenticated,
-    isLoading
-  });
+  // console.log('🔍 AuthProvider rendering with value:', {
+  //   user: !!user,
+  //   userRole: !!userRole,
+  //   userPermissions: userPermissions.length,
+  //   isAuthenticated,
+  //   isLoading
+  // }); // Commented out to reduce console noise
 
   try {
     return (

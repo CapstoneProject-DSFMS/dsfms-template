@@ -91,7 +91,7 @@ const AssessmentSectionDetails = ({ traineeId, sectionId }) => {
   };
 
   const handleBack = () => {
-    navigate(`/trainee/${traineeId}/assessments`);
+    navigate('/trainee/your-assessments');
   };
 
   const getStatusBadge = (status) => {

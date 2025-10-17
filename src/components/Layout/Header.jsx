@@ -40,26 +40,26 @@ const Header = ({ onToggleSidebar }) => {
   const { user, isLoading } = useAuth();
   const { profile, getDisplayName: getProfileDisplayName, loading: profileLoading } = useProfile();
   
-  // Debug logging
-  useEffect(() => {
-    console.log('Header - User data:', user);
-    console.log('Header - Profile data:', profile);
-    console.log('Header - Profile loading:', profileLoading);
-    if (profile && getProfileDisplayName) {
-      console.log('Header - Profile display name:', getProfileDisplayName());
-    }
-    
-    // Debug JWT token payload
-    try {
-      const token = localStorage.getItem('authToken');
-      if (token) {
-        const tokenPayload = JSON.parse(atob(token.split('.')[1]));
-        console.log('Header - JWT token payload:', tokenPayload);
-      }
-    } catch (error) {
-      console.error('Header - Error parsing JWT token:', error);
-    }
-  }, [user, profile, profileLoading, getProfileDisplayName]);
+  // Debug logging - Commented out to reduce console noise
+  // useEffect(() => {
+  //   console.log('Header - User data:', user);
+  //   console.log('Header - Profile data:', profile);
+  //   console.log('Header - Profile loading:', profileLoading);
+  //   if (profile && getProfileDisplayName) {
+  //     console.log('Header - Profile display name:', getProfileDisplayName());
+  //   }
+  //   
+  //   // Debug JWT token payload
+  //   try {
+  //     const token = localStorage.getItem('authToken');
+  //     if (token) {
+  //       const tokenPayload = JSON.parse(atob(token.split('.')[1]));
+  //       console.log('Header - JWT token payload:', tokenPayload);
+  //     }
+  //   } catch (error) {
+  //     console.error('Header - Error parsing JWT token:', error);
+  //   }
+  // }, [user, profile, profileLoading, getProfileDisplayName]);
   
   // Helper functions
   const getDisplayName = () => {
@@ -151,11 +151,10 @@ const Header = ({ onToggleSidebar }) => {
       '/trainee/dashboard': 'Trainee Dashboard',
       '/trainee/academic-details': 'Academic Details',
       '/trainee/enrolled-courses': 'Enrolled Course List',
-      '/trainee/all-assessments': 'All Assessments',
       '/trainee/signature-required': 'Signature Required List',
       '/trainee/completion-required': 'Section Completion Required List',
       '/trainee/your-assessments': 'Your Assessments',
-      '/trainee/create-issue': 'Create Issue Report/Feedback',
+      '/trainee/create-incident-feedback-report': 'Create Incident/Feedback Report',
       '/trainee/assessment-pending/signature-required': 'Signature Required List',
       '/trainee/assessment-pending/section-completion': 'Section Completion Required List'
     };
@@ -195,15 +194,6 @@ const Header = ({ onToggleSidebar }) => {
       return 'Enroll Trainees';
     }
     
-    // Check for trainee detail pages (pattern: /trainee/:traineeId)
-    if (path.startsWith('/trainee/') && path !== '/trainee' && 
-        !path.startsWith('/trainee/academic-details') &&
-        !path.startsWith('/trainee/enrolled-courses') &&
-        !path.startsWith('/trainee/assessment-pending') &&
-        !path.startsWith('/trainee/create-issue')) {
-      return 'Trainee Details';
-    }
-    
     // Check for trainee course detail (pattern: /trainee/:traineeId/course/:courseId)
     if (path.match(/^\/trainee\/[^/]+\/course\/[^/]+$/)) {
       return 'Course Details';
@@ -227,6 +217,19 @@ const Header = ({ onToggleSidebar }) => {
     // Check for assessment section (pattern: /trainee/:traineeId/assessment-section/:sectionId)
     if (path.match(/^\/trainee\/[^/]+\/assessment-section\/[^/]+$/)) {
       return 'Assessment Section';
+    }
+    
+    // Check for trainee detail pages (pattern: /trainee/:traineeId) - must be last
+    if (path.startsWith('/trainee/') && path !== '/trainee' && 
+        !path.startsWith('/trainee/dashboard') &&
+        !path.startsWith('/trainee/academic-details') &&
+        !path.startsWith('/trainee/enrolled-courses') &&
+        !path.startsWith('/trainee/assessment-pending') &&
+        !path.startsWith('/trainee/create-incident-feedback-report') &&
+        !path.startsWith('/trainee/signature-required') &&
+        !path.startsWith('/trainee/completion-required') &&
+        !path.startsWith('/trainee/your-assessments')) {
+      return 'Trainee Details';
     }
     
     return routes[path] || 'Dashboard';

@@ -48,7 +48,7 @@ const FormEditorLayout = ({
     }
   };
   return (
-    <Card className={`border-neutral-200 shadow-sm ${className}`}>
+    <Card className={`border-neutral-200 shadow-sm form-editor-layout ${className}`}>
       {/* Header */}
       <Card.Header className={`bg-light-custom border-neutral-200 ${headerClassName}`}>
         <EditorHeader
@@ -73,7 +73,7 @@ const FormEditorLayout = ({
         <Row className="g-0">
           {/* Merge Fields Panel */}
           {showMergeFields && (
-            <Col md={mergeFieldsWidth} className="border-end">
+            <Col xs={12} lg={mergeFieldsWidth} className="border-end">
               <MergeFieldsPanel
                 mergeFields={mergeFields}
                 onInsertField={handleInsertField}
@@ -84,7 +84,7 @@ const FormEditorLayout = ({
           )}
 
           {/* Editor */}
-          <Col md={editorWidth}>
+          <Col xs={12} lg={editorWidth}>
             <div className="p-3">
               <QuillEditor
                 content={content}

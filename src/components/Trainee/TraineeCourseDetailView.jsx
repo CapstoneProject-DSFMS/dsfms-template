@@ -159,7 +159,7 @@ const TraineeCourseDetailView = ({ traineeId, courseId }) => {
             {/* Subject List */}
             <Col className="mb-4">
               <Card className="h-100 border-0 shadow-sm">
-                <Card.Header className="bg-white border-bottom">
+                <Card.Header className="bg-primary text-white">
                   <h5 className="mb-0 d-flex align-items-center">
                     <Book className="me-2" size={20} />
                     Subject List
@@ -179,7 +179,7 @@ const TraineeCourseDetailView = ({ traineeId, courseId }) => {
             {/* Upcoming Assessment Events */}
             <Col className="mb-4">
               <Card className="h-100 border-0 shadow-sm">
-                <Card.Header className="bg-white border-bottom">
+                <Card.Header className="bg-primary text-white">
                   <h5 className="mb-0 d-flex align-items-center">
                     <ClipboardCheck className="me-2" size={20} />
                     Upcoming Assessment Events
@@ -199,7 +199,7 @@ const TraineeCourseDetailView = ({ traineeId, courseId }) => {
             {/* Completed Assessments */}
             <Col>
               <Card className="h-100 border-0 shadow-sm">
-                <Card.Header className="bg-white border-bottom">
+                <Card.Header className="bg-primary text-white">
                   <h5 className="mb-0 d-flex align-items-center">
                     <CheckCircle className="me-2" size={20} />
                     Completed Assessments
@@ -219,7 +219,7 @@ const TraineeCourseDetailView = ({ traineeId, courseId }) => {
         {/* Course Information - Right side */}
         <Col lg={4} className="mb-4">
           <Card className="h-100 border-0 shadow-sm">
-            <Card.Header className="bg-white border-bottom">
+            <Card.Header className="bg-primary text-white">
               <h5 className="mb-0 d-flex align-items-center">
                 <Book className="me-2" size={20} />
                 Enrolled Course Details

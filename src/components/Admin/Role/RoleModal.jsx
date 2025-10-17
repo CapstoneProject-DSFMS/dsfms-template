@@ -216,16 +216,17 @@ const RoleModal = ({ show, role, mode, onSave, onClose }) => {
 
           <Row>
             <Col md={12}>
-              <Form.Group className="mb-4">
+              <Form.Group className="mb-3">
                 <Row className="align-items-center">
-                  <Col md={3}>
-                    <Form.Label className="text-primary-custom fw-semibold fs-5 mb-0">
+                  <Col md={2}>
+                    <Form.Label className="text-primary-custom fw-semibold fs-6 mb-0">
                       Role Name *
                     </Form.Label>
                   </Col>
-                  <Col md={6}>
+                  <Col md={4}>
                     <Form.Control
                       type="text"
+                      size="sm"
                       value={formData.name}
                       onChange={(e) => {
                         const value = e.target.value;
@@ -238,7 +239,7 @@ const RoleModal = ({ show, role, mode, onSave, onClose }) => {
                       readOnly={isReadOnly}
                       style={{
                         borderColor: errors.name ? '#dc3545' : 'var(--bs-primary)',
-                        borderWidth: '2px'
+                        borderWidth: '1px'
                       }}
                     />
                     <Form.Control.Feedback type="invalid">
@@ -252,24 +253,25 @@ const RoleModal = ({ show, role, mode, onSave, onClose }) => {
 
           <Row>
             <Col md={12}>
-              <Form.Group className="mb-4">
+              <Form.Group className="mb-3">
                 <Row className="align-items-start">
-                  <Col md={3}>
-                    <Form.Label className="text-primary-custom fw-semibold fs-5 mb-0">
+                  <Col md={2}>
+                    <Form.Label className="text-primary-custom fw-semibold fs-6 mb-0">
                       Description
                     </Form.Label>
                   </Col>
-                  <Col md={6}>
+                  <Col md={4}>
                     <Form.Control
                       as="textarea"
-                      rows={3}
+                      rows={2}
+                      size="sm"
                       value={formData.description}
                       onChange={(e) => handleInputChange('description', e.target.value)}
                       readOnly={isReadOnly}
                       placeholder="Enter role description (optional)"
                       style={{
                         borderColor: 'var(--bs-primary)',
-                        borderWidth: '2px',
+                        borderWidth: '1px',
                         resize: 'none'
                       }}
                     />
@@ -296,7 +298,7 @@ const RoleModal = ({ show, role, mode, onSave, onClose }) => {
                 )}
                 
                 <div className="border rounded p-4 bg-light" style={{ 
-                  maxHeight: '190px', 
+                  maxHeight: '300px', 
                   overflowY: 'auto',
                   borderColor: 'var(--bs-primary)',
                   borderWidth: '2px'

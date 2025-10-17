@@ -32,7 +32,9 @@ const EditDepartmentDetails = ({ department, onUpdate }) => {
     const loadDepartmentHeads = async () => {
       try {
         const response = await departmentAPI.getDepartmentHeads();
-        setAvailableUsers(response);
+        // Ensure response is an array
+        const users = Array.isArray(response) ? response : (response.data || response.users || []);
+        setAvailableUsers(users);
       } catch (error) {
         console.error('Error loading department heads:', error);
         toast.error('Failed to load department heads');
@@ -104,14 +106,14 @@ const EditDepartmentDetails = ({ department, onUpdate }) => {
                 onChange={handleInputChange}
               >
                 <option value="">Select Department Head</option>
-                {availableUsers.map(user => (
+                {Array.isArray(availableUsers) && availableUsers.map(user => (
                   <option key={user.id} value={user.id}>
                     [{user.eid}] - {user.firstName} {user.lastName}
                   </option>
                 ))}
               </select>
               {formData.headUserId && (() => {
-                const selectedUser = availableUsers.find(u => u.id === formData.headUserId);
+                const selectedUser = Array.isArray(availableUsers) ? availableUsers.find(u => u.id === formData.headUserId) : null;
                 return selectedUser ? (
                   <div className="form-text">
                     Current selection: [{selectedUser.eid}] - {selectedUser.firstName} {selectedUser.lastName}
