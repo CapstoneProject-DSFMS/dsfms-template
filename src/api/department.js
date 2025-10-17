@@ -21,7 +21,11 @@ export const departmentAPI = {
   // Get department by ID
   getDepartmentById: async (id) => {
     try {
-      const response = await apiClient.get(`/departments/${id}`);
+      const response = await apiClient.get(`/departments/${id}`, {
+        params: {
+          includeDeleted: true,
+        }
+      });
       return response.data;
     } catch (error) {
       console.error('Error fetching department:', error);

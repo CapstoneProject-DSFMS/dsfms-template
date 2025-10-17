@@ -96,12 +96,14 @@ const DepartmentRow = ({ department, index, onView, onToggleStatus }) => {
             children: <ThreeDotsVertical size={16} />
           }}
           items={[
-            {
+            // Only show View Details for ACTIVE departments
+            ...(department.status === 'ACTIVE' ? [{
               label: 'View Details',
               icon: <Eye />,
               onClick: () => onView(department)
-            },
-            { type: 'divider' },
+            }] : []),
+            // Only show divider if View Details is shown
+            ...(department.status === 'ACTIVE' ? [{ type: 'divider' }] : []),
             {
               label: department.status === 'ACTIVE' ? 'Deactivate' : 'Activate',
               icon: <PersonX />,

@@ -36,7 +36,7 @@ const TraineeDashboardPage = () => {
   const quickActions = [
     {
       title: 'Academic Details',
-      description: 'View your personal and academic information',
+      description: 'Track your learning progress and achievements',
       icon: Person,
       path: '/trainee/academic-details',
       color: 'primary'
@@ -52,14 +52,14 @@ const TraineeDashboardPage = () => {
       title: 'All Assessments',
       description: 'View pending assessments and tasks',
       icon: ClipboardCheck,
-      path: '/trainee/assessment-pending',
+      path: '/trainee/your-assessments',
       color: 'warning'
     },
     {
       title: 'Create Issue Report',
       description: 'Report issues or provide feedback',
       icon: ExclamationTriangle,
-      path: '/trainee/create-issue',
+      path: '/trainee/create-incident-feedback-report',
       color: 'danger'
     }
   ];
@@ -154,7 +154,7 @@ const TraineeDashboardPage = () => {
                 <ClipboardCheck size={48} className="text-muted mb-3" />
                 <h6 className="text-muted">No assessments pending</h6>
                 <p className="text-muted small mb-3">
-                  Complete your assessment confirmations to track progress.
+                  View and complete signature required assessments.
                 </p>
                 <Button 
                   variant="outline-primary" 

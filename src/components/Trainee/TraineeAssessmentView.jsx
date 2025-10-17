@@ -88,7 +88,7 @@ const TraineeAssessmentView = ({ traineeId }) => {
   };
 
   const handleBack = () => {
-    navigate(`/trainee/${traineeId}`);
+    navigate('/trainee/your-assessments');
   };
 
   const getStatusBadge = (status) => {

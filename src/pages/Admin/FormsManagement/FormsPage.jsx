@@ -35,7 +35,7 @@ const FormsPage = () => {
   };
 
   return (
-    <Container fluid className="py-4 forms-page">
+    <Container fluid className="py-4 forms-page form-component">
       <Card className="border-neutral-200 shadow-sm">
         <Card.Header className="bg-light-custom border-neutral-200">
           <Row className="align-items-center">
@@ -57,7 +57,7 @@ const FormsPage = () => {
                 <p className="text-muted mb-4">
                   Get started by creating a new form or importing an existing file.
                 </p>
-                <div className="d-flex justify-content-center gap-3">
+                <div className="d-flex justify-content-center gap-3 flex-wrap">
                   <PermissionWrapper 
                     permission={API_PERMISSIONS.TEMPLATES.CREATE}
                     fallback={null}

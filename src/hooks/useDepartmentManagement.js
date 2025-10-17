@@ -18,9 +18,9 @@ const transformDepartmentData = (departmentsData) => {
       role: dept.headUser.role
     } : null,
     status: dept.isActive,
-    coursesCount: dept.courseCount || 0,
-    traineesCount: 0,
-    trainersCount: 0,
+    coursesCount: dept.courseCount || dept.coursesCount || 0,
+    traineesCount: dept.traineeCount || dept.traineesCount || 0,
+    trainersCount: dept.trainerCount || dept.trainersCount || 0,
     createdAt: dept.createdAt,
     updatedAt: dept.updatedAt,
     deletedAt: dept.deletedAt
@@ -43,7 +43,7 @@ const useDepartmentManagement = (shouldLoad = true) => {
   // Load departments from API
   useEffect(() => {
     if (!shouldLoad) {
-      console.log('🔍 useDepartmentManagement - Skipping department load for non-ACADEMIC_DEPARTMENT role');
+      // console.log('🔍 useDepartmentManagement - Skipping department load for non-ACADEMIC_DEPARTMENT role'); // Commented out to reduce console noise
       return;
     }
 
@@ -56,6 +56,7 @@ const useDepartmentManagement = (shouldLoad = true) => {
         
         // Transform API data to match expected format
         const transformedDepartments = transformDepartmentData(departmentsData);
+        
         
         setDepartments(transformedDepartments);
       } catch (err) {

@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { Table, Badge, Spinner, Row, Col } from 'react-bootstrap';
-import { Eye, Book, ThreeDotsVertical } from 'react-bootstrap-icons';
+import { Table, Badge, Spinner, Row, Col, Nav, Tab } from 'react-bootstrap';
+import { Eye, Book, ThreeDotsVertical, Clock, PlayCircle, CheckCircle } from 'react-bootstrap-icons';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'react-toastify';
 import traineeAPI from '../../api/trainee';
@@ -46,14 +46,33 @@ const TraineeCourseList = ({ traineeId }) => {
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedLevels, setSelectedLevels] = useState([]);
   const [selectedStatuses, setSelectedStatuses] = useState([]);
+  const [activeTab, setActiveTab] = useState('upcoming');
   
   // Get unique values from courses
   const uniqueLevels = [...new Set(courses.map(course => course.level).filter(Boolean))];
   const uniqueStatuses = [...new Set(courses.map(course => course.status).filter(Boolean))];
+
+  // Filter courses by tab based on status
+  const getCoursesByTab = (tab) => {
+    return courses.filter(course => {
+      switch (tab) {
+        case 'upcoming':
+          return course.status === 'PLANNED';
+        case 'ongoing':
+          return course.status === 'ON-GOING';
+        case 'completed':
+          return course.status === 'COMPLETED';
+        default:
+          return true;
+      }
+    });
+  };
+
+  const tabCourses = getCoursesByTab(activeTab);
   
   // Filter and search logic
   const filteredCourses = useMemo(() => {
-    return courses.filter(course => {
+    return tabCourses.filter(course => {
       const matchesSearch = !searchTerm || 
         course.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
         course.code.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -64,7 +83,7 @@ const TraineeCourseList = ({ traineeId }) => {
       
       return matchesSearch && matchesLevels && matchesStatuses;
     });
-  }, [courses, searchTerm, selectedLevels, selectedStatuses]);
+  }, [tabCourses, searchTerm, selectedLevels, selectedStatuses]);
   
   const { sortedData, sortConfig, handleSort } = useTableSort(filteredCourses);
 
@@ -86,7 +105,7 @@ const TraineeCourseList = ({ traineeId }) => {
           name: 'Safety Procedures Training',
           description: 'Basic safety procedures and emergency protocols',
           level: 'BEGINNER',
-          status: 'ACTIVE',
+          status: 'ON-GOING',
           startDate: '2024-01-15T09:00:00.000Z',
           endDate: '2024-03-15T17:00:00.000Z',
           progress: 75,
@@ -102,7 +121,7 @@ const TraineeCourseList = ({ traineeId }) => {
           name: 'Flight Operations',
           description: 'Advanced flight operations and navigation',
           level: 'INTERMEDIATE',
-          status: 'ACTIVE',
+          status: 'ON-GOING',
           startDate: '2024-02-01T08:00:00.000Z',
           endDate: '2024-04-01T16:00:00.000Z',
           progress: 45,
@@ -143,6 +162,70 @@ const TraineeCourseList = ({ traineeId }) => {
             name: 'Technical Department',
             code: 'TECH'
           }
+        },
+        {
+          id: '5',
+          code: 'NAV005',
+          name: 'Navigation Systems',
+          description: 'Advanced navigation and GPS systems',
+          level: 'ADVANCED',
+          status: 'COMPLETED',
+          startDate: '2023-09-01T09:00:00.000Z',
+          endDate: '2023-10-15T17:00:00.000Z',
+          progress: 100,
+          department: {
+            id: 5,
+            name: 'Navigation Department',
+            code: 'NAV'
+          }
+        },
+        {
+          id: '6',
+          code: 'COMM006',
+          name: 'Communication Protocols',
+          description: 'Radio communication and protocols',
+          level: 'BEGINNER',
+          status: 'PLANNED',
+          startDate: '2024-04-01T09:00:00.000Z',
+          endDate: '2024-06-01T17:00:00.000Z',
+          progress: 0,
+          department: {
+            id: 6,
+            name: 'Communication Department',
+            code: 'COMM'
+          }
+        },
+        {
+          id: '7',
+          code: 'MAINT007',
+          name: 'Aircraft Maintenance',
+          description: 'Routine maintenance procedures',
+          level: 'INTERMEDIATE',
+          status: 'ON-GOING',
+          startDate: '2024-01-20T08:00:00.000Z',
+          endDate: '2024-03-20T16:00:00.000Z',
+          progress: 60,
+          department: {
+            id: 7,
+            name: 'Maintenance Department',
+            code: 'MAINT'
+          }
+        },
+        {
+          id: '8',
+          code: 'ARCH008',
+          name: 'Archived Course',
+          description: 'This course has been archived',
+          level: 'BEGINNER',
+          status: 'ARCHIVED',
+          startDate: '2023-06-01T09:00:00.000Z',
+          endDate: '2023-08-01T17:00:00.000Z',
+          progress: 100,
+          department: {
+            id: 8,
+            name: 'Archived Department',
+            code: 'ARCH'
+          }
         }
       ];
       
@@ -159,7 +242,7 @@ const TraineeCourseList = ({ traineeId }) => {
 
   const getStatusBadge = (status) => {
     const statusConfig = {
-      'ACTIVE': { variant: 'success', text: 'Active' },
+      'ON-GOING': { variant: 'success', text: 'On-going' },
       'ARCHIVED': { variant: 'secondary', text: 'Archived' },
       'PLANNED': { variant: 'info', text: 'Planned' },
       'COMPLETED': { variant: 'primary', text: 'Completed' }
@@ -301,85 +384,138 @@ const TraineeCourseList = ({ traineeId }) => {
   if (filteredCourses.length === 0 && (searchTerm || selectedLevels.length > 0 || selectedStatuses.length > 0)) {
     return (
       <div>
-        {/* Search and Filters */}
-        <Row className="mb-3 form-mobile-stack search-filter-section">
-          <Col xs={12} lg={6} md={5} className="mb-2 mb-lg-0">
-            <SearchBar
-              placeholder="Search courses by name, code, or description..."
-              value={searchTerm}
-              onChange={setSearchTerm}
-              className="search-bar-mobile"
-            />
-          </Col>
-          <Col xs={12} lg={3} md={4} className="mb-2 mb-lg-0 position-relative">
-            <CourseFilterPanel
-              uniqueLevels={uniqueLevels}
-              uniqueStatuses={uniqueStatuses}
-              selectedLevels={selectedLevels}
-              selectedStatuses={selectedStatuses}
-              onLevelToggle={handleLevelToggle}
-              onStatusToggle={handleStatusToggle}
-              onClearFilters={handleClearFilters}
-              className="filter-panel-mobile"
-            />
-          </Col>
-          <Col xs={12} lg={3} md={3}>
-            <div className="text-end text-mobile-center">
-              <small className="text-muted">
-                {filteredCourses.length} course{filteredCourses.length !== 1 ? 's' : ''}
-              </small>
-            </div>
-          </Col>
-        </Row>
-        
-        <div className="text-center py-5">
-          <div className="text-muted">
-            <h5>No courses found</h5>
-            <p>Try adjusting your search criteria or filters.</p>
-            <button 
-              className="btn btn-outline-primary btn-sm"
-              onClick={handleClearFilters}
-            >
-              Clear Filters
-            </button>
-          </div>
-        </div>
+        {/* Tabs */}
+        <Tab.Container activeKey={activeTab} onSelect={setActiveTab}>
+          <Nav variant="tabs" className="mb-3">
+            <Nav.Item>
+              <Nav.Link eventKey="upcoming" className="d-flex align-items-center">
+                <Clock className="me-2" size={16} />
+                Upcoming ({getCoursesByTab('upcoming').length})
+              </Nav.Link>
+            </Nav.Item>
+            <Nav.Item>
+              <Nav.Link eventKey="ongoing" className="d-flex align-items-center">
+                <PlayCircle className="me-2" size={16} />
+                On-going ({getCoursesByTab('ongoing').length})
+              </Nav.Link>
+            </Nav.Item>
+            <Nav.Item>
+              <Nav.Link eventKey="completed" className="d-flex align-items-center">
+                <CheckCircle className="me-2" size={16} />
+                Completed ({getCoursesByTab('completed').length})
+              </Nav.Link>
+            </Nav.Item>
+          </Nav>
+
+          <Tab.Content>
+            <Tab.Pane eventKey={activeTab}>
+              {/* Search and Filters */}
+              <Row className="mb-3 form-mobile-stack search-filter-section">
+                <Col xs={12} lg={6} md={5} className="mb-2 mb-lg-0">
+                  <SearchBar
+                    placeholder="Search courses by name, code, or description..."
+                    value={searchTerm}
+                    onChange={setSearchTerm}
+                    className="search-bar-mobile"
+                  />
+                </Col>
+                <Col xs={12} lg={3} md={4} className="mb-2 mb-lg-0 position-relative">
+                  <CourseFilterPanel
+                    uniqueLevels={uniqueLevels}
+                    uniqueStatuses={uniqueStatuses}
+                    selectedLevels={selectedLevels}
+                    selectedStatuses={selectedStatuses}
+                    onLevelToggle={handleLevelToggle}
+                    onStatusToggle={handleStatusToggle}
+                    onClearFilters={handleClearFilters}
+                    className="filter-panel-mobile"
+                  />
+                </Col>
+                <Col xs={12} lg={3} md={3}>
+                  <div className="text-end text-mobile-center">
+                    <small className="text-muted">
+                      {filteredCourses.length} course{filteredCourses.length !== 1 ? 's' : ''}
+                    </small>
+                  </div>
+                </Col>
+              </Row>
+              
+              <div className="text-center py-5">
+                <div className="text-muted">
+                  <h5>No courses found</h5>
+                  <p>Try adjusting your search criteria or filters.</p>
+                  <button 
+                    className="btn btn-outline-primary btn-sm"
+                    onClick={handleClearFilters}
+                  >
+                    Clear Filters
+                  </button>
+                </div>
+              </div>
+            </Tab.Pane>
+          </Tab.Content>
+        </Tab.Container>
       </div>
     );
   }
 
   return (
     <div>
-      {/* Search and Filters */}
-      <Row className="mb-3 form-mobile-stack search-filter-section">
-        <Col xs={12} lg={6} md={5} className="mb-2 mb-lg-0">
-          <SearchBar
-            placeholder="Search courses by name, code, or description..."
-            value={searchTerm}
-            onChange={setSearchTerm}
-            className="search-bar-mobile"
-          />
-        </Col>
-        <Col xs={12} lg={3} md={4} className="mb-2 mb-lg-0 position-relative">
-          <CourseFilterPanel
-            uniqueLevels={uniqueLevels}
-            uniqueStatuses={uniqueStatuses}
-            selectedLevels={selectedLevels}
-            selectedStatuses={selectedStatuses}
-            onLevelToggle={handleLevelToggle}
-            onStatusToggle={handleStatusToggle}
-            onClearFilters={handleClearFilters}
-            className="filter-panel-mobile"
-          />
-        </Col>
-        <Col xs={12} lg={3} md={3}>
-          <div className="text-end text-mobile-center">
-            <small className="text-muted">
-              {filteredCourses.length} course{filteredCourses.length !== 1 ? 's' : ''}
-            </small>
-          </div>
-        </Col>
-      </Row>
+      {/* Tabs */}
+      <Tab.Container activeKey={activeTab} onSelect={setActiveTab}>
+        <Nav variant="tabs" className="mb-3">
+          <Nav.Item>
+            <Nav.Link eventKey="upcoming" className="d-flex align-items-center">
+              <Clock className="me-2" size={16} />
+              Upcoming ({getCoursesByTab('upcoming').length})
+            </Nav.Link>
+          </Nav.Item>
+          <Nav.Item>
+            <Nav.Link eventKey="ongoing" className="d-flex align-items-center">
+              <PlayCircle className="me-2" size={16} />
+              On-going ({getCoursesByTab('ongoing').length})
+            </Nav.Link>
+          </Nav.Item>
+          <Nav.Item>
+            <Nav.Link eventKey="completed" className="d-flex align-items-center">
+              <CheckCircle className="me-2" size={16} />
+              Completed ({getCoursesByTab('completed').length})
+            </Nav.Link>
+          </Nav.Item>
+        </Nav>
+
+        <Tab.Content>
+          <Tab.Pane eventKey={activeTab}>
+            {/* Search and Filters */}
+            <Row className="mb-3 form-mobile-stack search-filter-section">
+              <Col xs={12} lg={6} md={5} className="mb-2 mb-lg-0">
+                <SearchBar
+                  placeholder="Search courses by name, code, or description..."
+                  value={searchTerm}
+                  onChange={setSearchTerm}
+                  className="search-bar-mobile"
+                />
+              </Col>
+              <Col xs={12} lg={3} md={4} className="mb-2 mb-lg-0 position-relative">
+                <CourseFilterPanel
+                  uniqueLevels={uniqueLevels}
+                  uniqueStatuses={uniqueStatuses}
+                  selectedLevels={selectedLevels}
+                  selectedStatuses={selectedStatuses}
+                  onLevelToggle={handleLevelToggle}
+                  onStatusToggle={handleStatusToggle}
+                  onClearFilters={handleClearFilters}
+                  className="filter-panel-mobile"
+                />
+              </Col>
+              <Col xs={12} lg={3} md={3}>
+                <div className="text-end text-mobile-center">
+                  <small className="text-muted">
+                    {filteredCourses.length} course{filteredCourses.length !== 1 ? 's' : ''}
+                  </small>
+                </div>
+              </Col>
+            </Row>
 
       <div className="scrollable-table-container admin-table course-list-table-no-borders">
         <Table hover className="mb-0 table-mobile-responsive" style={{ fontSize: '0.875rem' }}>
@@ -486,11 +622,6 @@ const TraineeCourseList = ({ traineeId }) => {
                       label: 'View Course Details',
                       icon: <Eye />,
                       onClick: () => handleViewCourse(course)
-                    },
-                    {
-                      label: 'View Course Info',
-                      icon: <Eye />,
-                      onClick: () => handleEditCourse(course)
                     }
                   ]}
                 />
@@ -500,6 +631,9 @@ const TraineeCourseList = ({ traineeId }) => {
         </tbody>
         </Table>
       </div>
+          </Tab.Pane>
+        </Tab.Content>
+      </Tab.Container>
     </div>
   );
 };
