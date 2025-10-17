@@ -356,8 +356,8 @@ export const useUserManagementAPI = () => {
             const hasTraineeData = userData.dateOfBirth || userData.trainingBatch || userData.passportNo || userData.nation;
             if (hasTraineeData) {
               apiPayload.traineeProfile = {
-                dob: userData.dateOfBirth || null,
-                enrollmentDate: new Date().toISOString().split('T')[0],
+                dob: userData.dateOfBirth ? new Date(userData.dateOfBirth).toISOString() : null,
+                enrollmentDate: new Date().toISOString(),
                 trainingBatch: userData.trainingBatch || '',
                 passportNo: userData.passportNo || '',
                 nation: userData.nation || ''

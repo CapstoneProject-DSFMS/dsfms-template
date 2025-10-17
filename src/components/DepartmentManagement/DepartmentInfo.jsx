@@ -49,16 +49,22 @@ const DepartmentInfo = ({ department }) => {
             </div>
             <div className="info-content">
               <div className="info-item">
-                <span className="info-label">Course Count:</span>
-                <span className="info-value">{department.courseCount || 0}</span>
+                <span className="info-label">Total Courses:</span>
+                <span className="info-value">
+                  {department.courseCount || 0}
+                </span>
               </div>
               <div className="info-item">
-                <span className="info-label">Trainee Count:</span>
-                <span className="info-value">{department.traineeCount || 0}</span>
+                <span className="info-label">Total Trainees:</span>
+                <span className="info-value">
+                  {department.traineeCount || 0}
+                </span>
               </div>
               <div className="info-item">
-                <span className="info-label">Trainer Count:</span>
-                <span className="info-value">{department.trainerCount || 0}</span>
+                <span className="info-label">Total Trainers:</span>
+                <span className="info-value">
+                  {department.trainerCount || 0}
+                </span>
               </div>
               <div className="info-item">
                 <span className="info-label">Head of Department:</span>

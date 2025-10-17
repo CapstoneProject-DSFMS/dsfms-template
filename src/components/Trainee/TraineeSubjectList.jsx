@@ -4,6 +4,7 @@ import { Eye, Book } from 'react-bootstrap-icons';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'react-toastify';
 import traineeAPI from '../../api/trainee';
+import '../../styles/scrollable-table.css';
 
 const TraineeSubjectList = ({ traineeId, courseId }) => {
   const navigate = useNavigate();
@@ -117,43 +118,69 @@ const TraineeSubjectList = ({ traineeId, courseId }) => {
   }
 
   return (
-    <div className="trainee-subjects-table">
-      <Table responsive hover className="mb-0">
-        <thead className="table-light">
+    <div className="scrollable-table-container admin-table">
+      <Table hover className="mb-0 table-mobile-responsive" style={{ fontSize: '0.875rem' }}>
+        <thead className="sticky-header">
           <tr>
-            <th className="text-start">Subject Code</th>
-            <th className="text-start">Subject Name</th>
-            <th className="text-start">Level</th>
-            <th className="text-start">Duration</th>
-            <th className="text-start">Method</th>
-            <th className="text-start">Status</th>
-            <th className="text-start">Progress</th>
-            <th className="text-start">Actions</th>
+            <th className="border-neutral-200 text-primary-custom fw-semibold show-mobile">Subject Code</th>
+            <th className="border-neutral-200 text-primary-custom fw-semibold show-mobile">Subject Name</th>
+            <th className="border-neutral-200 text-primary-custom fw-semibold show-mobile">Level</th>
+            <th className="border-neutral-200 text-primary-custom fw-semibold show-mobile">Duration</th>
+            <th className="border-neutral-200 text-primary-custom fw-semibold show-mobile">Method</th>
+            <th className="border-neutral-200 text-primary-custom fw-semibold show-mobile">Status</th>
+            <th className="border-neutral-200 text-primary-custom fw-semibold show-mobile">Progress</th>
+            <th className="border-neutral-200 text-primary-custom fw-semibold text-center show-mobile">Actions</th>
           </tr>
         </thead>
         <tbody>
-          {subjects.map((subject) => (
-            <tr key={subject.id}>
-              <td>
-                <Badge bg="primary" className="fw-normal">
+          {subjects.map((subject, index) => (
+            <tr 
+              key={subject.id}
+              className={`${index % 2 === 0 ? 'bg-white' : 'bg-neutral-50'} transition-all`}
+              style={{
+                transition: 'background-color 0.2s ease'
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.backgroundColor = 'var(--bs-neutral-100)';
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.backgroundColor = index % 2 === 0 ? 'white' : 'var(--bs-neutral-50)';
+              }}
+            >
+              <td className="border-neutral-200 align-middle show-mobile">
+                <Badge 
+                  bg="primary" 
+                  className="px-2 py-1"
+                  style={{ 
+                    fontSize: '0.75rem'
+                  }}
+                >
                   {subject.code}
                 </Badge>
               </td>
-              <td>
-                <div className="fw-semibold">{subject.name}</div>
+              <td className="border-neutral-200 align-middle show-mobile">
+                <div className="fw-medium text-dark">
+                  {subject.name}
+                </div>
                 <small className="text-muted">{subject.description}</small>
               </td>
-              <td>{getLevelBadge(subject.level)}</td>
-              <td>
-                <div className="fw-semibold">{subject.duration} hours</div>
+              <td className="border-neutral-200 align-middle show-mobile">
+                {getLevelBadge(subject.level)}
               </td>
-              <td>
+              <td className="border-neutral-200 align-middle show-mobile">
+                <span className="text-dark">
+                  {subject.duration} hours
+                </span>
+              </td>
+              <td className="border-neutral-200 align-middle show-mobile">
                 <Badge bg="info" className="fw-normal">
                   {subject.method || 'Classroom'}
                 </Badge>
               </td>
-              <td>{getStatusBadge(subject.status)}</td>
-              <td>
+              <td className="border-neutral-200 align-middle show-mobile">
+                {getStatusBadge(subject.status)}
+              </td>
+              <td className="border-neutral-200 align-middle show-mobile">
                 <div className="d-flex align-items-center">
                   <div className="progress flex-grow-1 me-2" style={{ height: '6px' }}>
                     <div 
@@ -164,7 +191,7 @@ const TraineeSubjectList = ({ traineeId, courseId }) => {
                   <small className="text-muted">{subject.progress || 0}%</small>
                 </div>
               </td>
-              <td>
+              <td className="border-neutral-200 align-middle text-center show-mobile">
                 <Button
                   variant="outline-primary"
                   size="sm"

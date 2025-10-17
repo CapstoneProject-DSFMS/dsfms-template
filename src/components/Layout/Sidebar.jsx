@@ -23,7 +23,7 @@ import { useAuth } from "../../hooks/useAuth";
 import useDepartmentManagement from "../../hooks/useDepartmentManagement";
 
 const Sidebar = ({ collapsed, onClose }) => {
-  const { hasModuleAccess, hasPermission, userPermissions } = usePermissions();
+  const { hasModuleAccess, hasPermission } = usePermissions();
   const { user } = useAuth();
   const location = useLocation();
   const navigate = useNavigate();
@@ -35,14 +35,14 @@ const Sidebar = ({ collapsed, onClose }) => {
   const dropdownRef = useRef(null);
   
   
-  // Debug log
-  console.log('🔍 Sidebar - User role:', user?.role);
-  console.log('🔍 Sidebar - User object:', user);
-  console.log('🔍 Sidebar - User permissions:', userPermissions);
-  console.log('🔍 Sidebar - Departments:', departments);
+  // Debug log - Commented out to reduce console noise
+  // console.log('🔍 Sidebar - User role:', user?.role);
+  // console.log('🔍 Sidebar - User object:', user);
+  // console.log('🔍 Sidebar - User permissions:', userPermissions);
+  // console.log('🔍 Sidebar - Departments:', departments);
   
-  // Filter active departments
-  const activeDepartments = departments.filter(dept => dept.status === 'ACTIVE');
+  // Filter active departments - Commented out as not used
+  // const activeDepartments = departments.filter(dept => dept.status === 'ACTIVE');
 
   // Check if dropdown is scrollable
   useEffect(() => {
@@ -161,36 +161,36 @@ const Sidebar = ({ collapsed, onClose }) => {
 
   // Filter nav items based on user permissions and role
   const navItems = allNavItems.filter(item => {
-    // Debug logging
-    console.log(`🔍 Filtering item: ${item.id}`, {
-      userRole: user?.role,
-      itemModule: item.module,
-      itemPermission: item.permission,
-      hasModuleAccess: hasModuleAccess(item.module),
-      hasPermission: hasPermission(item.permission)
-    });
+    // Debug logging - Commented out to reduce console noise
+    // console.log(`🔍 Filtering item: ${item.id}`, {
+    //   userRole: user?.role,
+    //   itemModule: item.module,
+    //   itemPermission: item.permission,
+    //   hasModuleAccess: hasModuleAccess(item.module),
+    //   hasPermission: hasPermission(item.permission)
+    // });
     
     // For ADMINISTRATOR role, show all items based on permissions
     if (user?.role === 'ADMINISTRATOR') {
       const hasAccess = hasModuleAccess(item.module) || hasPermission(item.permission);
-      console.log(`🔍 ADMINISTRATOR role - ${item.id}: ${hasAccess}`);
+      // console.log(`🔍 ADMINISTRATOR role - ${item.id}: ${hasAccess}`);
       return hasAccess;
     }
     // For ACADEMIC_DEPARTMENT role, only show dashboard
     if (user?.role === 'ACADEMIC_DEPARTMENT') {
       const isDashboard = item.id === 'dashboard';
-      console.log(`🔍 ACADEMIC_DEPARTMENT role - ${item.id}: ${isDashboard}`);
+      // console.log(`🔍 ACADEMIC_DEPARTMENT role - ${item.id}: ${isDashboard}`);
       return isDashboard;
     }
     // For TRAINEE role, show all trainee-related items
     if (user?.role === 'TRAINEE') {
       const isTraineeItem = ['trainee-dashboard', 'enrolled-courses', 'all-assessments', 'create-issue'].includes(item.id);
-      console.log(`🔍 TRAINEE role - ${item.id}: ${isTraineeItem}`);
+      // console.log(`🔍 TRAINEE role - ${item.id}: ${isTraineeItem}`);
       return isTraineeItem;
     }
     // Default behavior for other roles
     const hasAccess = hasModuleAccess(item.module) || hasPermission(item.permission);
-    console.log(`🔍 Default role - ${item.id}: ${hasAccess}`);
+    // console.log(`🔍 Default role - ${item.id}: ${hasAccess}`);
     return hasAccess;
   }).map(item => {
     // Override dashboard path and label for ACADEMIC_DEPARTMENT role
@@ -204,37 +204,37 @@ const Sidebar = ({ collapsed, onClose }) => {
     return item;
   });
 
-  // Debug log after navItems is initialized
-  console.log('🔍 Sidebar - Filtered navItems:', navItems);
-  console.log('🔍 Sidebar - Dashboard permission check:', {
-    permission: API_PERMISSIONS.DASHBOARD.VIEW,
-    hasPermission: hasPermission(API_PERMISSIONS.DASHBOARD.VIEW),
-    hasModuleAccess: hasModuleAccess('DASHBOARD'),
-    userRole: user?.role,
-    userPermissions: userPermissions?.map(p => p.name).filter(name => name.includes('dashboard') || name.includes('DASHBOARD'))
-  });
-  
-  // Debug TRAINEE permissions
-  console.log('🔍 Sidebar - TRAINEE permissions check:', {
-    userRole: user?.role,
-    TRAINEES_VIEW_DETAIL: {
-      permission: API_PERMISSIONS.TRAINEES.VIEW_DETAIL,
-      hasPermission: hasPermission(API_PERMISSIONS.TRAINEES.VIEW_DETAIL)
-    },
-    TRAINEES_VIEW_COURSES: {
-      permission: API_PERMISSIONS.TRAINEES.VIEW_COURSES,
-      hasPermission: hasPermission(API_PERMISSIONS.TRAINEES.VIEW_COURSES)
-    },
-    TRAINEES_VIEW_ASSESSMENTS: {
-      permission: API_PERMISSIONS.TRAINEES.VIEW_ASSESSMENTS,
-      hasPermission: hasPermission(API_PERMISSIONS.TRAINEES.VIEW_ASSESSMENTS)
-    },
-    TRAINEES_VIEW_ALL: {
-      permission: API_PERMISSIONS.TRAINEES.VIEW_ALL,
-      hasPermission: hasPermission(API_PERMISSIONS.TRAINEES.VIEW_ALL)
-    },
-    allUserPermissions: userPermissions?.map(p => p.name)
-  });
+  // Debug log after navItems is initialized - Commented out to reduce console noise
+  // console.log('🔍 Sidebar - Filtered navItems:', navItems);
+  // console.log('🔍 Sidebar - Dashboard permission check:', {
+  //   permission: API_PERMISSIONS.DASHBOARD.VIEW,
+  //   hasPermission: hasPermission(API_PERMISSIONS.DASHBOARD.VIEW),
+  //   hasModuleAccess: hasModuleAccess('DASHBOARD'),
+  //   userRole: user?.role,
+  //   userPermissions: userPermissions?.map(p => p.name).filter(name => name.includes('dashboard') || name.includes('DASHBOARD'))
+  // });
+  // 
+  // // Debug TRAINEE permissions
+  // console.log('🔍 Sidebar - TRAINEE permissions check:', {
+  //   userRole: user?.role,
+  //   TRAINEES_VIEW_DETAIL: {
+  //     permission: API_PERMISSIONS.TRAINEES.VIEW_DETAIL,
+  //     hasPermission: hasPermission(API_PERMISSIONS.TRAINEES.VIEW_DETAIL)
+  //   },
+  //   TRAINEES_VIEW_COURSES: {
+  //     permission: API_PERMISSIONS.TRAINEES.VIEW_COURSES,
+  //     hasPermission: hasPermission(API_PERMISSIONS.TRAINEES.VIEW_COURSES)
+  //   },
+  //   TRAINEES_VIEW_ASSESSMENTS: {
+  //     permission: API_PERMISSIONS.TRAINEES.VIEW_ASSESSMENTS,
+  //     hasPermission: hasPermission(API_PERMISSIONS.TRAINEES.VIEW_ASSESSMENTS)
+  //   },
+  //   TRAINEES_VIEW_ALL: {
+  //     permission: API_PERMISSIONS.TRAINEES.VIEW_ALL,
+  //     hasPermission: hasPermission(API_PERMISSIONS.TRAINEES.VIEW_ALL)
+  //   },
+  //   allUserPermissions: userPermissions?.map(p => p.name)
+  // });
 
   return (
     <div
@@ -292,7 +292,7 @@ const Sidebar = ({ collapsed, onClose }) => {
           const isActive = location.pathname === item.path;
           
           // Debug logging
-          console.log(`🔍 Sidebar - Item: ${item.id}, Path: ${item.path}, Current: ${location.pathname}, Active: ${isActive}`);
+          // console.log(`🔍 Sidebar - Item: ${item.id}, Path: ${item.path}, Current: ${location.pathname}, Active: ${isActive}`); // Commented out to reduce console noise
           
           // Special handling for All Assessments dropdown
           if (item.id === 'all-assessments' && user?.role === 'TRAINEE') {
@@ -378,10 +378,10 @@ const Sidebar = ({ collapsed, onClose }) => {
                   wordWrap: collapsed ? 'normal' : 'break-word',
                   overflowWrap: 'break-word'
                 }}
-                onClick={(e) => {
-                  console.log(`🔍 Sidebar - Clicked on: ${item.id}, navigating to: ${item.path}`);
-                  console.log(`🔍 Sidebar - Current location:`, window.location.href);
-                  console.log(`🔍 Sidebar - Current pathname:`, window.location.pathname);
+                onClick={() => {
+                  // console.log(`🔍 Sidebar - Clicked on: ${item.id}, navigating to: ${item.path}`);
+                  // console.log(`🔍 Sidebar - Current location:`, window.location.href);
+                  // console.log(`🔍 Sidebar - Current pathname:`, window.location.pathname);
                   onClose(); // Close sidebar on mobile when link is clicked
                 }}
               >

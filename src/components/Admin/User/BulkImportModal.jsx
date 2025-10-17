@@ -22,7 +22,7 @@ const BulkImportModal = ({ show, onClose, onImport, loading = false }) => {
     'role'
   ];
 
-  // All possible columns (excluding department)
+  // All possible columns
   const allColumns = [
     'first_name',
     'middle_name',
@@ -33,6 +33,7 @@ const BulkImportModal = ({ show, onClose, onImport, loading = false }) => {
     'avatar_url',
     'gender',
     'role',
+    'department',
     'certification_number',
     'specialization',
     'years_of_experience',
@@ -63,6 +64,122 @@ const BulkImportModal = ({ show, onClose, onImport, loading = false }) => {
     } finally {
       setRolesLoading(false);
     }
+  };
+
+  // Normalize text to ensure proper Vietnamese character display
+  const normalizeText = (text) => {
+    if (!text) return '';
+    
+    // Ensure proper UTF-8 encoding
+    try {
+      // Decode any potential encoding issues
+      const decoded = decodeURIComponent(escape(text));
+      return decoded.trim();
+    } catch (error) {
+      // If decoding fails, return original text
+      return text.toString().trim();
+    }
+  };
+
+  // Format date to ISO string
+  const formatDateToISO = (dateString) => {
+    if (!dateString) return '';
+    
+    try {
+      // Handle different date formats
+      let date;
+      
+      // If it's already a Date object
+      if (dateString instanceof Date) {
+        date = dateString;
+      } else {
+        // Try to parse the date string
+        const dateStr = dateString.toString().trim();
+        
+        // Skip empty or invalid strings
+        if (!dateStr || dateStr === '' || dateStr === 'null' || dateStr === 'undefined') {
+          return '';
+        }
+        
+        // Handle common date formats
+        if (dateStr.includes('/')) {
+          // Format: MM/DD/YYYY or DD/MM/YYYY
+          const parts = dateStr.split('/');
+          if (parts.length === 3) {
+            // Assume MM/DD/YYYY format
+            date = new Date(parts[2], parts[0] - 1, parts[1]);
+          }
+        } else if (dateStr.includes('-')) {
+          // Format: YYYY-MM-DD or DD-MM-YYYY
+          const parts = dateStr.split('-');
+          if (parts.length === 3) {
+            if (parts[0].length === 4) {
+              // YYYY-MM-DD format
+              date = new Date(parts[0], parts[1] - 1, parts[2]);
+            } else {
+              // DD-MM-YYYY format
+              date = new Date(parts[2], parts[1] - 1, parts[0]);
+            }
+          }
+        } else {
+          // Try direct parsing
+          date = new Date(dateStr);
+        }
+      }
+      
+      // Check if date is valid and not too far in the past/future
+      if (isNaN(date.getTime())) {
+        return '';
+      }
+      
+      // Check for reasonable date range (1900-2100)
+      const year = date.getFullYear();
+      if (year < 1900 || year > 2100) {
+        return '';
+      }
+      
+      // Return ISO datetime string (YYYY-MM-DDTHH:mm:ss.sssZ)
+      return date.toISOString();
+    } catch (error) {
+      console.error('Error formatting date:', error, 'Input:', dateString);
+      return '';
+    }
+  };
+
+  // Smart gender mapping function - simplified
+  const normalizeGender = (genderValue) => {
+    if (!genderValue) return 'MALE'; // Default value
+    
+    const normalized = genderValue.toString().toUpperCase().trim();
+    
+    // Direct matches
+    if (normalized === 'MALE' || normalized === 'FEMALE') {
+      return normalized;
+    }
+    
+    // Simple gender mapping
+    const genderMapping = {
+      'M': 'MALE',
+      'F': 'FEMALE'
+    };
+    
+    return genderMapping[normalized] || 'MALE'; // Default to MALE if not recognized
+  };
+
+  // Validate gender input and return error message if invalid
+  const validateGender = (genderValue) => {
+    if (!genderValue) return null; // Empty is allowed (will use default)
+    
+    const normalized = genderValue.toString().toUpperCase().trim();
+    
+    // Valid values - simplified
+    const validValues = ['MALE', 'FEMALE', 'M', 'F'];
+    
+    if (validValues.includes(normalized)) {
+      return null; // Valid
+    }
+    
+    return `Invalid gender value. Accepted values: MALE, FEMALE, M, F`;
   };
 
   // Smart role mapping function
@@ -111,18 +228,67 @@ const BulkImportModal = ({ show, onClose, onImport, loading = false }) => {
     return null;
   };
 
+  // Get actual role name from system
+  const getActualRoleName = (roleName) => {
+    if (!roleName || !roles.length) return null;
+    
+    const normalizedInput = roleName.toUpperCase().trim();
+    
+    // Direct match first
+    const directMatch = roles.find(role => 
+      role.name.toUpperCase() === normalizedInput
+    );
+    if (directMatch) return directMatch.name;
+    
+    // Partial match for common variations
+    const partialMatches = {
+      'ADMIN': 'ADMINISTRATOR',
+      'ADMINISTRATOR': 'ADMINISTRATOR',
+      'TRAINER': 'TRAINER',
+      'TRAINEE': 'TRAINEE',
+      'DEPT_HEAD': 'DEPARTMENT_HEAD',
+      'DEPARTMENT_HEAD': 'DEPARTMENT_HEAD',
+      'DEPT HEAD': 'DEPARTMENT_HEAD',
+      'SQA_AUDITOR': 'SQA_AUDITOR',
+      'SQA AUDITOR': 'SQA_AUDITOR',
+      'ACADEMIC_DEPARTMENT': 'ACADEMIC_DEPARTMENT',
+      'ACADEMIC_DEPT': 'ACADEMIC_DEPARTMENT',
+      'ACADEMIC DEPT': 'ACADEMIC_DEPARTMENT'
+    };
+    
+    const mappedName = partialMatches[normalizedInput];
+    if (mappedName) {
+      const mappedRole = roles.find(role => 
+        role.name.toUpperCase() === mappedName
+      );
+      if (mappedRole) return mappedRole.name;
+    }
+    
+    // Fuzzy match - find roles that contain the input
+    const fuzzyMatch = roles.find(role => 
+      role.name.toUpperCase().includes(normalizedInput) ||
+      normalizedInput.includes(role.name.toUpperCase())
+    );
+    if (fuzzyMatch) return fuzzyMatch.name;
+    
+    return null;
+  };
+
   const downloadTemplate = () => {
     // Create sample data for template
     const templateData = [
       allColumns, // Header row
+      // Note: Gender accepts: M/F or MALE/FEMALE
       [
-        'John', // first_name
-        'Michael', // middle_name
-        'Doe', // last_name
-        '123 Main Street, Ho Chi Minh City', // address
-        'john.doe@example.com', // email
+        'Nguyễn', // first_name
+        'Văn', // middle_name
+        'An', // last_name
+        '123 Đường Lê Lợi, Quận 1, TP.HCM', // address
+        'nguyen.van.an@example.com', // email
         '+84 123 456 789', // phone_number
         'TRAINER', // role
+        'M', // gender (M/F or MALE/FEMALE)
+        '1', // department (department ID)
         'CERT001', // certification_number
         'Flight Training', // specialization
         '5', // years_of_experience
@@ -137,7 +303,11 @@ const BulkImportModal = ({ show, onClose, onImport, loading = false }) => {
     const wb = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(wb, ws, 'Users');
     
-    XLSX.writeFile(wb, 'User_Upload_Template.xlsx');
+    // Set UTF-8 encoding for proper Vietnamese character support
+    XLSX.writeFile(wb, 'User_Upload_Template.xlsx', { 
+      bookType: 'xlsx',
+      type: 'binary'
+    });
   };
 
   const handleDrag = (e) => {
@@ -186,17 +356,26 @@ const BulkImportModal = ({ show, onClose, onImport, loading = false }) => {
     reader.onload = (e) => {
       try {
         const data = new Uint8Array(e.target.result);
-        const workbook = XLSX.read(data, { type: 'array' });
+        const workbook = XLSX.read(data, { 
+          type: 'array',
+          cellText: false,
+          cellDates: true,
+          raw: false
+        });
         const sheetName = workbook.SheetNames[0];
         const worksheet = workbook.Sheets[sheetName];
-        const jsonData = XLSX.utils.sheet_to_json(worksheet, { header: 1 });
+        const jsonData = XLSX.utils.sheet_to_json(worksheet, { 
+          header: 1,
+          defval: '',
+          raw: false
+        });
 
         if (jsonData.length < 2) {
           setErrors(['File must contain at least a header row and one data row']);
           return;
         }
 
-        const headers = jsonData[0].map(h => h ? h.toString().toLowerCase().replace(/\s+/g, '_') : '');
+        const headers = jsonData[0].map(h => h ? h.toString().trim().toLowerCase().replace(/\s+/g, '_') : '');
         const dataRows = jsonData.slice(1);
 
         // Map Excel headers to our field names
@@ -221,6 +400,10 @@ const BulkImportModal = ({ show, onClose, onImport, loading = false }) => {
           'phone number': 'phone_number',
           'phone': 'phone_number',
           'role': 'role',
+          'department': 'department',
+          'dept': 'department',
+          'dept_id': 'department',
+          'department_id': 'department',
           'certification_number': 'certification_number',
           'certificationnumber': 'certification_number',
           'certification number': 'certification_number',
@@ -244,7 +427,9 @@ const BulkImportModal = ({ show, onClose, onImport, loading = false }) => {
           'passport': 'passport_no',
           'nation': 'nation',
           'nationality': 'nation',
-          'country': 'nation'
+          'country': 'nation',
+          'gender': 'gender',
+          'sex': 'gender'
         };
 
         // Map headers to our field names
@@ -272,7 +457,24 @@ const BulkImportModal = ({ show, onClose, onImport, loading = false }) => {
             
             // Only process if it's one of our defined columns
             if (allColumns.includes(mappedHeader)) {
-              const value = row[colIndex] ? row[colIndex].toString().trim() : '';
+              let value = '';
+              
+              // Handle different data types from Excel
+              if (row[colIndex] !== null && row[colIndex] !== undefined) {
+                if (typeof row[colIndex] === 'string') {
+                  value = normalizeText(row[colIndex]);
+                } else if (typeof row[colIndex] === 'number') {
+                  value = row[colIndex].toString();
+                } else {
+                  value = normalizeText(row[colIndex].toString());
+                }
+              }
+              
+              // Normalize gender value
+              if (mappedHeader === 'gender') {
+                value = normalizeGender(value);
+              }
+              
               userData[mappedHeader] = value;
             }
           });
@@ -313,7 +515,68 @@ const BulkImportModal = ({ show, onClose, onImport, loading = false }) => {
               hasError = true;
               rowErrors.push('Invalid experience value');
             }
+
+            // Validate gender
+            if (header === 'gender' && value) {
+              const genderError = validateGender(value);
+              if (genderError) {
+                hasError = true;
+                rowErrors.push(genderError);
+              }
+            }
           });
+
+          // Validate role-specific required fields
+          const actualRoleName = getActualRoleName(userData.role);
+          if (actualRoleName === 'TRAINER') {
+            // Trainer requires specialization, years of experience, and department
+            if (!userData.specialization || userData.specialization.trim() === '') {
+              hasError = true;
+              rowErrors.push('Trainer requires specialization');
+            }
+            if (!userData.years_of_experience || userData.years_of_experience.trim() === '') {
+              hasError = true;
+              rowErrors.push('Trainer requires years of experience');
+            }
+            if (!userData.department || userData.department.trim() === '') {
+              hasError = true;
+              rowErrors.push('Trainer requires department');
+            }
+          } else if (actualRoleName === 'TRAINEE') {
+            // Trainee requires date of birth, training batch, passport number, and nation
+            if (!userData.date_of_birth || userData.date_of_birth.trim() === '') {
+              hasError = true;
+              rowErrors.push('Trainee requires date of birth');
+            } else {
+              // Validate date format
+              const formattedDate = formatDateToISO(userData.date_of_birth);
+              if (!formattedDate) {
+                hasError = true;
+                rowErrors.push(`Invalid date format for date of birth: "${userData.date_of_birth}". Use YYYY-MM-DD, MM/DD/YYYY, or DD/MM/YYYY`);
+              }
+            }
+            if (!userData.training_batch || userData.training_batch.trim() === '') {
+              hasError = true;
+              rowErrors.push('Trainee requires training batch');
+            }
+            if (!userData.passport_no || userData.passport_no.trim() === '') {
+              hasError = true;
+              rowErrors.push('Trainee requires passport number');
+            }
+            if (!userData.nation || userData.nation.trim() === '') {
+              hasError = true;
+              rowErrors.push('Trainee requires nation');
+            }
+            
+            // Validate enrollment_date if provided
+            if (userData.enrollment_date && userData.enrollment_date.trim() !== '') {
+              const formattedEnrollmentDate = formatDateToISO(userData.enrollment_date);
+              if (!formattedEnrollmentDate) {
+                hasError = true;
+                rowErrors.push(`Invalid date format for enrollment date: "${userData.enrollment_date}". Use YYYY-MM-DD, MM/DD/YYYY, or DD/MM/YYYY`);
+              }
+            }
+          }
 
           return {
             id: index + 1,
@@ -350,9 +613,11 @@ const BulkImportModal = ({ show, onClose, onImport, loading = false }) => {
       // Truncate phone number to 15 characters
       const phoneNumber = user.phone_number ? user.phone_number.substring(0, 15) : '';
       
-      // Find role ID using smart mapping
+      // Find role ID and actual role name using smart mapping
       const roleId = findRoleId(user.role);
-      if (!roleId) {
+      const actualRoleName = getActualRoleName(user.role);
+      
+      if (!roleId || !actualRoleName) {
         throw new Error(`Role "${user.role}" not found in system`);
       }
       
@@ -364,29 +629,50 @@ const BulkImportModal = ({ show, onClose, onImport, loading = false }) => {
         email: user.email || '',
         phoneNumber: phoneNumber,
         avatarUrl: user.avatar_url || '',
-        gender: user.gender || 'MALE',
+        gender: normalizeGender(user.gender),
         role: {
           id: roleId,
-          name: user.role || ''
+          name: actualRoleName
         }
       };
 
-      // Add role-specific profiles based on role
-      if (user.role === 'TRAINER') {
+      // Add department if provided
+      if (user.department) {
+        userData.department = {
+          id: user.department // Assuming department is provided as ID
+        };
+      }
+
+      // Add role-specific profiles based on actual role name
+      if (actualRoleName === 'TRAINER') {
         userData.trainerProfile = {
           specialization: user.specialization || '',
           yearsOfExp: user.years_of_experience ? parseInt(user.years_of_experience) : 0,
           certificationNumber: user.certification_number || '',
           bio: user.bio || ''
         };
-      } else if (user.role === 'TRAINEE') {
-        userData.traineeProfile = {
-          dob: user.date_of_birth || '',
-          enrollmentDate: user.enrollment_date || new Date().toISOString().split('T')[0],
+      } else if (actualRoleName === 'TRAINEE') {
+        const traineeProfile = {
           trainingBatch: user.training_batch || '',
           passportNo: user.passport_no || '',
           nation: user.nation || ''
         };
+
+        // Only add date fields if they are valid
+        const dob = formatDateToISO(user.date_of_birth);
+        if (dob) {
+          traineeProfile.dob = dob;
+        }
+
+        const enrollmentDate = formatDateToISO(user.enrollment_date);
+        if (enrollmentDate) {
+          traineeProfile.enrollmentDate = enrollmentDate;
+        } else {
+          // Default to today if no enrollment date provided
+          traineeProfile.enrollmentDate = new Date().toISOString();
+        }
+
+        userData.traineeProfile = traineeProfile;
       }
 
       return userData;
@@ -438,7 +724,15 @@ const BulkImportModal = ({ show, onClose, onImport, loading = false }) => {
         {/* Loading indicator for roles */}
         {rolesLoading && (
           <div className="text-center mb-3">
-            <div className="spinner-border spinner-border-sm text-primary" role="status">
+            <div 
+              className="spinner-border text-primary" 
+              role="status"
+              style={{ 
+                width: '1.5rem', 
+                height: '1.5rem',
+                borderWidth: '0.2em'
+              }}
+            >
               <span className="visually-hidden">Loading roles...</span>
             </div>
             <span className="ms-2 text-muted">Loading roles...</span>
@@ -485,6 +779,9 @@ const BulkImportModal = ({ show, onClose, onImport, loading = false }) => {
                   </p>
                 )}
                 <p className="text-muted mb-0">Up to 100 records per upload.</p>
+                <small className="text-info d-block mt-1">
+                  <strong>Gender format:</strong> M/F or MALE/FEMALE
+                </small>
               </div>
               <Button
                 variant="outline-primary"
@@ -544,6 +841,7 @@ const BulkImportModal = ({ show, onClose, onImport, loading = false }) => {
                       <th style={{ minWidth: '120px' }}>LAST NAME</th>
                       <th style={{ minWidth: '200px' }}>EMAIL</th>
                       <th style={{ minWidth: '120px' }}>ROLE</th>
+                      <th style={{ minWidth: '100px' }}>DEPARTMENT</th>
                       <th style={{ minWidth: '150px' }}>PHONE NUMBER</th>
                       <th style={{ minWidth: '100px' }}>GENDER</th>
                       <th style={{ minWidth: '150px' }}>CERTIFICATION</th>
@@ -567,8 +865,15 @@ const BulkImportModal = ({ show, onClose, onImport, loading = false }) => {
                         <td>{user.last_name || '-'}</td>
                         <td>{user.email || '-'}</td>
                         <td>{user.role || '-'}</td>
+                        <td>{user.department || '-'}</td>
                         <td>{user.phone_number || '-'}</td>
-                        <td>{user.gender || '-'}</td>
+                        <td>
+                          {user.gender ? (
+                            <span title={`Original: ${user.gender}`}>
+                              {normalizeGender(user.gender)}
+                            </span>
+                          ) : '-'}
+                        </td>
                         <td>{user.certification_number || '-'}</td>
                         <td>{user.specialization || '-'}</td>
                         <td>{user.years_of_experience || '-'}</td>
@@ -627,7 +932,16 @@ const BulkImportModal = ({ show, onClose, onImport, loading = false }) => {
             >
               {loading ? (
                 <>
-                  <span className="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
+                  <span 
+                    className="spinner-border me-2" 
+                    role="status" 
+                    aria-hidden="true"
+                    style={{ 
+                      width: '1rem', 
+                      height: '1rem',
+                      borderWidth: '0.15em'
+                    }}
+                  ></span>
                   Importing...
                 </>
               ) : (
