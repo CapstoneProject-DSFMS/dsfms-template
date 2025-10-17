@@ -155,17 +155,17 @@ const UserModal = ({ show, user, mode, onSave, onClose }) => {
 
     if (!formData.firstName.trim()) {
       newErrors.firstName = 'First name is required';
-    } else if (!/^[a-zA-ZÀÁÂÃÈÉÊÌÍÒÓÔÕÙÚĂĐĨŨƠàáâãèéêìíòóôõùúăđĩũơƯĂÂÊÔưăâêô\s]+$/.test(formData.firstName.trim())) {
+    } else if (!/^[a-zA-ZÀÁÂÃÈÉÊÌÍÒÓÔÕÙÚĂĐĨŨƠàáâãèéêìíòóôõùúăđĩũơƯĂÂÊÔưăâêôáàảãạăắằẳẵặâấầẩẫậéèẻẽẹêếềểễệíìỉĩịóòỏõọôốồổỗộơớờởỡợúùủũụưứừửữựýỳỷỹỵđ\s]+$/.test(formData.firstName.trim())) {
       newErrors.firstName = 'First name can only contain letters and spaces';
     }
 
     if (!formData.lastName.trim()) {
       newErrors.lastName = 'Last name is required';
-    } else if (!/^[a-zA-ZÀÁÂÃÈÉÊÌÍÒÓÔÕÙÚĂĐĨŨƠàáâãèéêìíòóôõùúăđĩũơƯĂÂÊÔưăâêô\s]+$/.test(formData.lastName.trim())) {
+    } else if (!/^[a-zA-ZÀÁÂÃÈÉÊÌÍÒÓÔÕÙÚĂĐĨŨƠàáâãèéêìíòóôõùúăđĩũơƯĂÂÊÔưăâêôáàảãạăắằẳẵặâấầẩẫậéèẻẽẹêếềểễệíìỉĩịóòỏõọôốồổỗộơớờởỡợúùủũụưứừửữựýỳỷỹỵđ\s]+$/.test(formData.lastName.trim())) {
       newErrors.lastName = 'Last name can only contain letters and spaces';
     }
 
-    if (formData.middleName.trim() && !/^[a-zA-ZÀÁÂÃÈÉÊÌÍÒÓÔÕÙÚĂĐĨŨƠàáâãèéêìíòóôõùúăđĩũơƯĂÂÊÔưăâêô\s]+$/.test(formData.middleName.trim())) {
+    if (formData.middleName.trim() && !/^[a-zA-ZÀÁÂÃÈÉÊÌÍÒÓÔÕÙÚĂĐĨŨƠàáâãèéêìíòóôõùúăđĩũơƯĂÂÊÔưăâêôáàảãạăắằẳẵặâấầẩẫậéèẻẽẹêếềểễệíìỉĩịóòỏõọôốồổỗộơớờởỡợúùủũụưứừửữựýỳỷỹỵđ\s]+$/.test(formData.middleName.trim())) {
       newErrors.middleName = 'Middle name can only contain letters and spaces';
     }
 
@@ -234,8 +234,8 @@ const UserModal = ({ show, user, mode, onSave, onClose }) => {
       }
       if (!formData.passportNo.trim()) {
         newErrors.passportNo = 'Passport number is required for trainees';
-      } else if (!/^\d{1,9}$/.test(formData.passportNo.trim())) {
-        newErrors.passportNo = 'Passport number must be 1-9 digits only';
+      } else if (!/^\d{1,20}$/.test(formData.passportNo.trim())) {
+        newErrors.passportNo = 'Passport number must be 1-20 digits only';
       }
       if (!formData.dateOfBirth.trim()) {
         newErrors.dateOfBirth = 'Date of birth is required for trainees';

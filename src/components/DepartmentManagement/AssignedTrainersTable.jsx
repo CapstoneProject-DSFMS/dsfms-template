@@ -1,10 +1,12 @@
 import React, { useState } from 'react';
-import { Table, Button, Dropdown, Modal } from 'react-bootstrap';
+import { Table, Button, Modal } from 'react-bootstrap';
 import { PersonCheck, PersonPlus, ThreeDotsVertical, PersonDash } from 'react-bootstrap-icons';
 import { toast } from 'react-toastify';
 import { departmentAPI } from '../../api/department';
 import PermissionWrapper from '../Common/PermissionWrapper';
+import PortalUnifiedDropdown from '../Common/PortalUnifiedDropdown';
 import { API_PERMISSIONS } from '../../constants/apiPermissions';
+import '../../styles/scrollable-table.css';
 
 const AssignedTrainersTable = ({ 
   trainers = [], 
@@ -95,69 +97,88 @@ const AssignedTrainersTable = ({
         )}
       </div>
 
-      <div className="table-responsive">
-        <Table hover className="mb-0">
-          <thead className="table-light">
+      <div className="scrollable-table-container admin-table">
+        <Table hover className="mb-0 table-mobile-responsive" style={{ fontSize: '0.875rem' }}>
+          <thead className="sticky-header">
             <tr>
-              <th>EID</th>
-              <th>Full Name</th>
-              <th>Email</th>
-              <th>Phone</th>
-              <th>Address</th>
-              <th width="80">Actions</th>
+              <th className="border-neutral-200 text-primary-custom fw-semibold show-mobile">EID</th>
+              <th className="border-neutral-200 text-primary-custom fw-semibold show-mobile">Full Name</th>
+              <th className="border-neutral-200 text-primary-custom fw-semibold show-mobile">Email</th>
+              <th className="border-neutral-200 text-primary-custom fw-semibold hide-mobile">Phone</th>
+              <th className="border-neutral-200 text-primary-custom fw-semibold hide-mobile">Address</th>
+              <th className="border-neutral-200 text-primary-custom fw-semibold text-center show-mobile" width="80">Actions</th>
             </tr>
           </thead>
           <tbody>
-            {trainers.map((trainer) => (
-              <tr key={trainer.id}>
-                <td>
-                  <code className="text-primary">{trainer.eid}</code>
+            {trainers.map((trainer, index) => (
+              <tr 
+                key={trainer.id}
+                className={`${index % 2 === 0 ? 'bg-white' : 'bg-neutral-50'} transition-all`}
+                style={{
+                  transition: 'background-color 0.2s ease'
+                }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.backgroundColor = 'var(--bs-neutral-100)';
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.backgroundColor = index % 2 === 0 ? 'white' : 'var(--bs-neutral-50)';
+                }}
+              >
+                <td className="border-neutral-200 align-middle show-mobile">
+                  <span className="fw-semibold text-primary-custom">
+                    {trainer.eid}
+                  </span>
                 </td>
-                <td>
-                  <div className="fw-medium">{getFullName(trainer)}</div>
+                <td className="border-neutral-200 align-middle show-mobile">
+                  <div className="fw-medium text-dark">
+                    {getFullName(trainer)}
+                  </div>
                 </td>
-                <td>
-                  <span>{trainer.email}</span>
+                <td className="border-neutral-200 align-middle show-mobile">
+                  <span className="text-dark">
+                    {trainer.email}
+                  </span>
                 </td>
-                <td>
+                <td className="border-neutral-200 align-middle hide-mobile">
                   {trainer.phoneNumber ? (
-                    <span>{trainer.phoneNumber}</span>
+                    <span className="text-dark">{trainer.phoneNumber}</span>
                   ) : (
                     <span className="text-muted">-</span>
                   )}
                 </td>
-                <td>
+                <td className="border-neutral-200 align-middle hide-mobile">
                   {trainer.address ? (
-                    <span className="text-truncate" style={{ maxWidth: '200px' }} title={trainer.address}>
+                    <span className="text-truncate text-dark" style={{ maxWidth: '200px' }} title={trainer.address}>
                       {trainer.address}
                     </span>
                   ) : (
                     <span className="text-muted">-</span>
                   )}
                 </td>
-                <td>
+                <td className="border-neutral-200 align-middle text-center show-mobile">
                   <PermissionWrapper 
                     permission={API_PERMISSIONS.DEPARTMENTS.REMOVE_TRAINERS}
                     fallback={null}
                   >
-                    <Dropdown align="end">
-                      <Dropdown.Toggle 
-                        variant="outline-secondary" 
-                        size="sm"
-                        className="border-0 bg-transparent p-1"
-                      >
-                        <ThreeDotsVertical size={16} />
-                      </Dropdown.Toggle>
-                      <Dropdown.Menu>
-                        <Dropdown.Item 
-                          onClick={() => handleRemoveClick(trainer)}
-                          className="text-danger"
-                        >
-                          <PersonDash className="me-2" size={14} />
-                          Remove from Department
-                        </Dropdown.Item>
-                      </Dropdown.Menu>
-                    </Dropdown>
+                    <PortalUnifiedDropdown
+                      align="end"
+                      className="table-dropdown"
+                      placement="bottom-end"
+                      trigger={{
+                        variant: 'link',
+                        className: 'btn btn-link p-0 text-primary-custom',
+                        style: { border: 'none', background: 'transparent' },
+                        children: <ThreeDotsVertical size={16} />
+                      }}
+                      items={[
+                        {
+                          label: 'Remove from Department',
+                          icon: <PersonDash />,
+                          className: 'text-danger',
+                          onClick: () => handleRemoveClick(trainer)
+                        }
+                      ]}
+                    />
                   </PermissionWrapper>
                 </td>
               </tr>

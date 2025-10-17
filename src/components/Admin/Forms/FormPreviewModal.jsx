@@ -85,7 +85,7 @@ const FormPreviewModal = ({ show, onHide, content, fileName }) => {
   };
 
   return (
-    <Modal show={show} onHide={onHide} size="lg" centered>
+    <Modal show={show} onHide={onHide} size="lg" centered className="form-preview-modal">
       <Modal.Header className="bg-primary-custom text-white border-0">
         <Modal.Title className="d-flex align-items-center">
           <FileText className="me-2" size={20} />

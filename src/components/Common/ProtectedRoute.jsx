@@ -21,7 +21,7 @@ const ProtectedRoute = ({ children }) => {
 
   // Only redirect if we're sure the user is not authenticated
   if (!isAuthenticated) {
-    console.log('🔒 User not authenticated, redirecting to login');
+    // console.log('🔒 User not authenticated, redirecting to login'); // Commented out to reduce console noise
     // Redirect to login page with return url
     return <Navigate to="/" state={{ from: location }} replace />;
   }

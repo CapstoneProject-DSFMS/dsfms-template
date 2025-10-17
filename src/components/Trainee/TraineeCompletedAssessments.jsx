@@ -196,11 +196,11 @@ const TraineeCompletedAssessments = ({ traineeId, courseId, subjectId }) => {
   }
 
   return (
-    <div className="scrollable-table-container admin-table completed-assessments-table-no-borders">
-      <Table hover className="mb-0 table-hover" borderless>
-        <thead className="table-light">
+    <div className="scrollable-table-container admin-table">
+      <Table hover className="mb-0 table-mobile-responsive" style={{ fontSize: '0.875rem' }}>
+        <thead className="sticky-header">
           <tr>
-            <th className="text-start">
+            <th className="border-neutral-200 text-primary-custom fw-semibold show-mobile">
               <SortableHeader 
                 title="Assessment" 
                 sortKey="name" 
@@ -209,7 +209,7 @@ const TraineeCompletedAssessments = ({ traineeId, courseId, subjectId }) => {
               />
             </th>
             {!subjectId && (
-              <th className="text-start">
+              <th className="border-neutral-200 text-primary-custom fw-semibold show-mobile">
                 <SortableHeader 
                   title="Subject" 
                   sortKey="subject" 
@@ -218,7 +218,7 @@ const TraineeCompletedAssessments = ({ traineeId, courseId, subjectId }) => {
                 />
               </th>
             )}
-            <th className="text-start">
+            <th className="border-neutral-200 text-primary-custom fw-semibold show-mobile">
               <SortableHeader 
                 title="Type" 
                 sortKey="type" 
@@ -226,7 +226,7 @@ const TraineeCompletedAssessments = ({ traineeId, courseId, subjectId }) => {
                 onSort={handleSort} 
               />
             </th>
-            <th className="text-start">
+            <th className="border-neutral-200 text-primary-custom fw-semibold show-mobile">
               <SortableHeader 
                 title="Score" 
                 sortKey="score" 
@@ -234,7 +234,7 @@ const TraineeCompletedAssessments = ({ traineeId, courseId, subjectId }) => {
                 onSort={handleSort} 
               />
             </th>
-            <th className="text-start">
+            <th className="border-neutral-200 text-primary-custom fw-semibold show-mobile">
               <SortableHeader 
                 title="Completed Date" 
                 sortKey="completedDate" 
@@ -242,7 +242,7 @@ const TraineeCompletedAssessments = ({ traineeId, courseId, subjectId }) => {
                 onSort={handleSort} 
               />
             </th>
-            <th className="text-start">
+            <th className="border-neutral-200 text-primary-custom fw-semibold show-mobile">
               <SortableHeader 
                 title="Status" 
                 sortKey="status" 
@@ -250,35 +250,51 @@ const TraineeCompletedAssessments = ({ traineeId, courseId, subjectId }) => {
                 onSort={handleSort} 
               />
             </th>
-            <th className="text-start">Actions</th>
+            <th className="border-neutral-200 text-primary-custom fw-semibold text-center show-mobile">Actions</th>
           </tr>
         </thead>
         <tbody>
-          {sortedData.map((assessment) => (
-            <tr key={assessment.id}>
-              <td>
-                <div className="fw-semibold">{assessment.name}</div>
+          {sortedData.map((assessment, index) => (
+            <tr 
+              key={assessment.id}
+              className={`${index % 2 === 0 ? 'bg-white' : 'bg-neutral-50'} transition-all`}
+              style={{
+                transition: 'background-color 0.2s ease'
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.backgroundColor = 'var(--bs-neutral-100)';
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.backgroundColor = index % 2 === 0 ? 'white' : 'var(--bs-neutral-50)';
+              }}
+            >
+              <td className="border-neutral-200 align-middle show-mobile">
+                <div className="fw-medium text-dark">{assessment.name}</div>
                 <small className="text-muted">{assessment.description}</small>
               </td>
               {!subjectId && (
-                <td>
-                  <div className="fw-semibold">{assessment.subject?.name || 'N/A'}</div>
+                <td className="border-neutral-200 align-middle show-mobile">
+                  <div className="fw-medium text-dark">{assessment.subject?.name || 'N/A'}</div>
                   <small className="text-muted">{assessment.subject?.code || ''}</small>
                 </td>
               )}
-              <td>
+              <td className="border-neutral-200 align-middle show-mobile">
                 <Badge bg="primary" className="fw-normal">
                   {assessment.type || 'Assessment'}
                 </Badge>
               </td>
-              <td>
+              <td className="border-neutral-200 align-middle show-mobile">
                 {getScoreBadge(assessment.score, assessment.maxScore)}
               </td>
-              <td>
-                {assessment.completedDate ? new Date(assessment.completedDate).toLocaleDateString() : 'N/A'}
+              <td className="border-neutral-200 align-middle show-mobile">
+                <span className="text-dark">
+                  {assessment.completedDate ? new Date(assessment.completedDate).toLocaleDateString() : 'N/A'}
+                </span>
               </td>
-              <td>{getStatusBadge(assessment.status)}</td>
-              <td>
+              <td className="border-neutral-200 align-middle show-mobile">
+                {getStatusBadge(assessment.status)}
+              </td>
+              <td className="border-neutral-200 align-middle text-center show-mobile">
                 <PortalUnifiedDropdown
                   align="end"
                   className="table-dropdown"

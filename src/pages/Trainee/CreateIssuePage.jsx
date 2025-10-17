@@ -102,7 +102,6 @@ const CreateIssuePage = () => {
       <Row className="mb-4">
         <Col>
           <div className="d-flex align-items-center">
-            <ExclamationTriangle className="me-2" size={28} />
             <div>
               <h2 className="mb-1">Create Incident/Feedback Report</h2>
               <p className="text-muted mb-0">Report incidents or provide feedback about your training experience</p>
@@ -146,7 +145,13 @@ const CreateIssuePage = () => {
                       >
                         <option value="">Select request type</option>
                         <option value="SAFETY_REPORT">Safety Report</option>
+                        <option value="INSTRUCTOR_REPORT">Instructor Report</option>
+                        <option value="FATIGUE_REPORT">Fatigue Report</option>
+                        <option value="TRAINING_PROGRAM_REPORT">Training Program Report</option>
+                        <option value="FACILITIES_REPORT">Facilities Report</option>
+                        <option value="COURSE_ORGANIZATION_REPORT">Course Organization Report</option>
                         <option value="ASSESSMENT_APPROVAL_REQUEST">Assessment Approval Request</option>
+                        <option value="OTHER">Other</option>
                       </Form.Select>
                     </Form.Group>
                   </Col>

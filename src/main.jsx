@@ -4,6 +4,7 @@ import 'bootstrap/dist/css/bootstrap.min.css'
 import './styles/custom-bootstrap.css'
 import './styles/academic-department.css'
 import './styles/scrollable-table.css'
+import './styles/forms-responsive.css'
 import 'react-toastify/dist/ReactToastify.css'
 import App from './App.jsx'
 

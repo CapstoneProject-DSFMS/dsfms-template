@@ -3,7 +3,7 @@ import { Container, Row, Col, Card, Button, Alert } from 'react-bootstrap';
 import { ArrowLeft, Save, Eye, Download } from 'react-bootstrap-icons';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { toast } from 'react-toastify';
-import FormEditor from '../../../components/Admin/Forms/FormEditor';
+import OnlyOfficeFormEditor from '../../../components/Admin/Forms/OnlyOfficeFormEditor';
 import FormPreviewModal from '../../../components/Admin/Forms/FormPreviewModal';
 import { PermissionWrapper } from '../../../components/Common';
 import { API_PERMISSIONS } from '../../../constants/apiPermissions';
@@ -73,47 +73,55 @@ const FormEditorPage = () => {
         </Container>
       }
     >
-      <Container fluid className="py-4 form-editor-page">
+      <Container fluid className="py-4 form-editor-page form-component">
         <Card className="border-neutral-200 shadow-sm">
-          <Card.Header className="bg-light-custom border-neutral-200 d-flex justify-content-between align-items-center">
-            <div className="d-flex align-items-center">
-              <Button 
-                variant="outline-secondary" 
-                onClick={handleBack} 
-                className="me-3"
-                size="sm"
-              >
-                <ArrowLeft size={16} />
-              </Button>
-              <div>
-                <h4 className="mb-0 text-primary-custom">
-                  {fileName}
-                </h4>
-                {importType && (
-                  <small className="text-muted">
-                    Import Type: {importType}
-                  </small>
-                )}
-              </div>
-            </div>
-            <div className="d-flex gap-2">
-              <Button 
-                variant="outline-primary" 
-                onClick={() => setShowPreview(true)}
-                size="sm"
-              >
-                <Eye className="me-2" size={16} />
-                Preview
-              </Button>
-              <Button 
-                variant="primary-custom" 
-                onClick={() => handleExport(content, fileName)}
-                size="sm"
-              >
-                <Download className="me-2" size={16} />
-                Export
-              </Button>
-            </div>
+          <Card.Header className="bg-light-custom border-neutral-200">
+            <Row className="align-items-center">
+              <Col xs={12} md={8}>
+                <div className="d-flex align-items-center">
+                  <Button 
+                    variant="outline-secondary" 
+                    onClick={handleBack} 
+                    className="me-3"
+                    size="sm"
+                  >
+                    <ArrowLeft size={16} />
+                  </Button>
+                  <div>
+                    <h4 className="mb-0 text-primary-custom">
+                      {fileName}
+                    </h4>
+                    {importType && (
+                      <small className="text-muted">
+                        Import Type: {importType}
+                      </small>
+                    )}
+                  </div>
+                </div>
+              </Col>
+              <Col xs={12} md={4} className="mt-2 mt-md-0">
+                <div className="d-flex gap-2 justify-content-md-end">
+                  <Button 
+                    variant="outline-primary" 
+                    onClick={() => setShowPreview(true)}
+                    size="sm"
+                    className="flex-fill flex-md-fill-0"
+                  >
+                    <Eye className="me-2" size={16} />
+                    Preview
+                  </Button>
+                  <Button 
+                    variant="primary-custom" 
+                    onClick={() => handleExport(content, fileName)}
+                    size="sm"
+                    className="flex-fill flex-md-fill-0"
+                  >
+                    <Download className="me-2" size={16} />
+                    Export
+                  </Button>
+                </div>
+              </Col>
+            </Row>
           </Card.Header>
 
           <Card.Body className="p-0">
@@ -124,12 +132,15 @@ const FormEditorPage = () => {
               </Alert>
             )}
             
-            <FormEditor
+            <OnlyOfficeFormEditor
               initialContent={content}
               fileName={fileName}
               onSave={handleSave}
               onPreview={handlePreview}
               onExport={handleExport}
+              onBack={handleBack}
+              showImportInfo={!!importType}
+              importType={importType}
             />
           </Card.Body>
         </Card>

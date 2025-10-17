@@ -13,7 +13,7 @@ const MergeFieldsPanel = ({
   const fields = mergeFields.length > 0 ? mergeFields : DEFAULT_MERGE_FIELDS;
 
   return (
-    <div className={`p-3 bg-light ${className}`}>
+    <div className={`p-3 bg-light merge-fields-panel ${className}`}>
       <h6 className="mb-3 text-muted">Merge Fields</h6>
       <div className="d-grid gap-2">
         {fields.map((field) => (

@@ -101,10 +101,10 @@ export const usePermissions = () => {
       // Use userPermissions from AuthContext instead of calling API
       if (userPermissions && userPermissions.length > 0) {
         setPermissions(userPermissions);
-        console.log('✅ Using userPermissions from AuthContext:', userPermissions.length, 'permissions');
+        // console.log('✅ Using userPermissions from AuthContext:', userPermissions.length, 'permissions'); // Commented out to reduce console noise
       } else {
         setPermissions([]);
-        console.log('⚠️ No userPermissions available');
+        // console.log('⚠️ No userPermissions available'); // Commented out to reduce console noise
       }
     } catch (err) {
       setError(err);
@@ -191,7 +191,7 @@ export const usePermissions = () => {
   // Check if user has specific permission - optimized with Set lookup
   const hasPermission = useCallback((permissionName) => {
     if (!userPermissions || userPermissions.length === 0) {
-      console.log('🔍 hasPermission: No user permissions available');
+      // console.log('🔍 hasPermission: No user permissions available'); // Commented out to reduce console noise
       return false;
     }
     
@@ -202,19 +202,19 @@ export const usePermissions = () => {
     
     const result = hasName || hasPath || hasId;
     
-    // Debug log for role update permission
-    if (permissionName === 'PUT /roles/:roleId' || permissionName.includes('roles')) {
-      console.log('🔍 hasPermission check for role update:', {
-        permissionName,
-        hasName,
-        hasPath,
-        hasId,
-        result,
-        userPermissionNames: Array.from(userPermissionNames),
-        userPermissionPaths: Array.from(userPermissionPaths),
-        userPermissionIds: Array.from(userPermissionIds)
-      });
-    }
+    // Debug log for role update permission - Commented out to reduce console noise
+    // if (permissionName === 'PUT /roles/:roleId' || permissionName.includes('roles')) {
+    //   console.log('🔍 hasPermission check for role update:', {
+    //     permissionName,
+    //     hasName,
+    //     hasPath,
+    //     hasId,
+    //     result,
+    //     userPermissionNames: Array.from(userPermissionNames),
+    //     userPermissionPaths: Array.from(userPermissionPaths),
+    //     userPermissionIds: Array.from(userPermissionIds)
+    //   });
+    // }
     
     return result;
   }, [userPermissions, userPermissionNames, userPermissionPaths, userPermissionIds]);
