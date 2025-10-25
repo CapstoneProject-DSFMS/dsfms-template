@@ -1,7 +1,6 @@
 import apiClient from './config.js';
 
 // Upload API functions - FRESH VERSION 2025-01-17
-console.log('🚀 Loading uploadAPI - FRESH VERSION 2025-01-17');
 
 export const uploadAPI = {
   // Upload document file - FRESH VERSION 2025-01-17
