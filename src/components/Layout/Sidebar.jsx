@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect, useRef, useMemo } from "react";
 import { Nav, Button } from "react-bootstrap";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import {
@@ -226,7 +226,7 @@ const Sidebar = ({ collapsed, onClose }) => {
   ];
 
   // Filter nav items based on user permissions and role
-  const navItems = allNavItems.filter(item => {
+  const navItems = useMemo(() => allNavItems.filter(item => {
     // Debug logging - Commented out to reduce console noise
     // console.log(`🔍 Filtering item: ${item.id}`, {
     //   userRole: user?.role,
@@ -243,7 +243,7 @@ const Sidebar = ({ collapsed, onClose }) => {
       const isSQAItem = ['sqa-dashboard', 'issue-list', 'feedback-list', 'template-list'].includes(item.id);
       
       if (isSQAItem) {
-        console.log(`🔍 ADMINISTRATOR role - SQA item ${item.id}: BLOCKED (ADMINISTRATOR should not see SQA items)`);
+        // console.log(`🔍 ADMINISTRATOR role - SQA item ${item.id}: BLOCKED (ADMINISTRATOR should not see SQA items)`);
         return false; // Always block SQA items for ADMINISTRATOR
       }
       
@@ -284,7 +284,7 @@ const Sidebar = ({ collapsed, onClose }) => {
       };
     }
     return item;
-  });
+  }), [user?.role, hasModuleAccess, hasPermission]);
 
   // Debug log after navItems is initialized - Commented out to reduce console noise
   // console.log('🔍 Sidebar - Filtered navItems:', navItems);
