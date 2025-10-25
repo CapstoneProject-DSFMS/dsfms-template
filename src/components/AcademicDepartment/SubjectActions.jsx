@@ -14,33 +14,38 @@ const SubjectActions = ({ subject, onView, onEdit, onDelete }) => {
   };
 
   return (
-    <PortalUnifiedDropdown
-      align="end"
-      className="table-dropdown"
-      placement="bottom-end"
-      trigger={{
-        variant: 'link',
-        className: 'btn btn-link p-0 text-primary-custom',
-        style: { border: 'none', background: 'transparent' },
-        children: <ThreeDotsVertical size={16} />
-      }}
-      items={[
-        {
-          label: 'View Details',
-          icon: <Eye />,
-          onClick: handleViewClick,
-          permission: API_PERMISSIONS.SUBJECTS.VIEW_DETAIL
-        },
-        { type: 'divider' },
-        {
-          label: 'Disable Subject',
-          icon: <SlashCircle />,
-          className: 'text-warning',
-          onClick: handleDeleteClick,
-          permission: API_PERMISSIONS.SUBJECTS.DELETE
-        }
-      ]}
-    />
+    <PermissionWrapper 
+      permissions={[API_PERMISSIONS.SUBJECTS.VIEW_DETAIL, API_PERMISSIONS.SUBJECTS.DELETE]}
+      fallback={null}
+    >
+      <PortalUnifiedDropdown
+        align="end"
+        className="table-dropdown"
+        placement="bottom-end"
+        trigger={{
+          variant: 'link',
+          className: 'btn btn-link p-0 text-primary-custom',
+          style: { border: 'none', background: 'transparent' },
+          children: <ThreeDotsVertical size={16} />
+        }}
+        items={[
+          {
+            label: 'View Details',
+            icon: <Eye />,
+            onClick: handleViewClick,
+            permission: API_PERMISSIONS.SUBJECTS.VIEW_DETAIL
+          },
+          { type: 'divider' },
+          {
+            label: 'Disable Subject',
+            icon: <SlashCircle />,
+            className: 'text-warning',
+            onClick: handleDeleteClick,
+            permission: API_PERMISSIONS.SUBJECTS.DELETE
+          }
+        ]}
+      />
+    </PermissionWrapper>
   );
 };
 

@@ -2,7 +2,6 @@ import React from 'react';
 import { Card, Row, Col, Alert } from 'react-bootstrap';
 import EditorHeader from './EditorHeader';
 import MergeFieldsPanel from './MergeFieldsPanel';
-import QuillEditor from './QuillEditor';
 
 const FormEditorLayout = ({
   // Header props
@@ -86,16 +85,13 @@ const FormEditorLayout = ({
           {/* Editor */}
           <Col xs={12} lg={editorWidth}>
             <div className="p-3">
-              <QuillEditor
-                content={content}
-                onChange={onContentChange}
-                onInsertField={onInsertField}
+              <textarea
+                value={content}
+                onChange={(e) => onContentChange && onContentChange(e.target.value)}
                 readOnly={readOnly}
                 placeholder={placeholder}
-                height={editorHeight}
-                modules={editorModules}
-                formats={editorFormats}
-                className={editorClassName}
+                style={{ width: '100%', height: editorHeight, resize: 'vertical' }}
+                className={`form-control ${editorClassName}`}
               />
             </div>
           </Col>

@@ -184,6 +184,56 @@ export const API_PERMISSIONS = {
     ENROLL: "POST /trainees/:id/enroll",
     UNENROLL: "DELETE /trainees/:id/enroll/:courseId",
     BULK_IMPORT: "POST /trainees/bulk-import"
+  },
+
+  // SQA Management - Using actual permission names from API
+  SQA: {
+    // Template & Form Management (Core SQA functions)
+    VIEW_TEMPLATES: "GET /templates",
+    VIEW_TEMPLATE_DETAIL: "GET /templates/:id", 
+    VIEW_TEMPLATE_SCHEMA: "GET /templates/:id/schema",
+    PARSE_TEMPLATE: "POST /templates/parse",
+    EXTRACT_TEMPLATE_FIELDS: "POST /templates/extract-fields",
+    LIST_DEPARTMENT_TEMPLATES: "GET /templates/department/:departmentId",
+    
+    // User & Access Management (for context)
+    VIEW_USERS: "GET /users",
+    VIEW_USER_DETAIL: "GET /users/:userId",
+    LOOKUP_TRAINEE_USERS: "POST /users/lookup/trainees",
+    
+    // Academic Management (for context)
+    VIEW_DEPARTMENTS: "GET /departments",
+    VIEW_DEPARTMENT_DETAIL: "GET /departments/:departmentId",
+    VIEW_COURSES: "GET /courses", 
+    VIEW_COURSE_DETAIL: "GET /courses/:courseId",
+    VIEW_COURSE_TRAINEES: "GET /courses/:courseId/trainees",
+    VIEW_SUBJECTS: "GET /subjects",
+    VIEW_SUBJECT_DETAIL: "GET /subjects/:subjectId",
+    
+    // System Management
+    VIEW_GLOBAL_FIELDS: "GET /global-fields",
+    VIEW_GLOBAL_FIELD_DETAIL: "GET /global-fields/detail",
+    
+    // Media Management
+    UPLOAD_IMAGES: "POST /media/images/upload/:type",
+    UPLOAD_DOCUMENTS: "POST /media/docs/upload/:type", 
+    SERVE_STATIC_FILES: "GET /media/static/:filename",
+    
+    // System Services
+    SEND_EMAIL: "POST /email/send",
+    BULK_SEND_EMAILS: "POST /email/bulk-send",
+    
+    // Profile Management
+    VIEW_MY_PROFILE: "GET /profile",
+    UPDATE_MY_PROFILE: "PUT /profile",
+    CHANGE_PASSWORD: "PUT /profile/reset-password",
+    
+    // Assessment Management (for SQA context) - Using template permissions
+    VIEW_ASSESSMENTS: "GET /templates", // Use template permission for issues/feedback
+    VIEW_ASSESSMENT_DETAILS: "GET /templates/:id", // Use template detail for issue/feedback detail
+    
+    // Reportings (for SQA reports)
+    CREATE_REPORT: "POST /reports"
   }
 };
 

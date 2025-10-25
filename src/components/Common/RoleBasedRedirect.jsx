@@ -17,6 +17,9 @@ const RoleBasedRedirect = () => {
         case 'TRAINEE':
           redirectPath = '/trainee';
           break;
+        case 'SQA_AUDITOR':
+          redirectPath = '/sqa/dashboard';
+          break;
         case 'ADMIN':
         case 'ADMINISTRATOR':
         default:

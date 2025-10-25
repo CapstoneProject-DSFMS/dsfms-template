@@ -104,8 +104,8 @@ const ResetPasswordModal = ({ show, onClose, onSave, loading = false }) => {
 
       <Modal.Body className="p-4">
         {alert.show && (
-          <Alert variant={alert.variant} className="mb-3">
-            {alert.message}
+          <Alert variant={alert?.variant} className="mb-3">
+            {alert?.message}
           </Alert>
         )}
 

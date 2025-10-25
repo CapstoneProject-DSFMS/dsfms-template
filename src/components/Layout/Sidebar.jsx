@@ -15,6 +15,9 @@ import {
   ChevronDown,
   ChevronRight as ChevronRightIcon,
   PersonCheck,
+  ExclamationTriangle,
+  ChatDots,
+  FileEarmarkText,
 } from "react-bootstrap-icons";
 import logo from "../../assets/logo-light.png";
 import { usePermissions } from "../../hooks/usePermissions";
@@ -157,6 +160,69 @@ const Sidebar = ({ collapsed, onClose }) => {
       permission: API_PERMISSIONS.TRAINEES.VIEW_ALL,
       module: "TRAINEES"
     },
+    // SQA Navigation Items
+    {
+      id: "sqa-dashboard",
+      label: "SQA Dashboard",
+      icon: House,
+      path: "/sqa/dashboard",
+      permission: API_PERMISSIONS.SQA.VIEW_TEMPLATES,
+      module: "SQA"
+    },
+    {
+      id: "issue-list",
+      label: "Issue List",
+      icon: ExclamationTriangle,
+      path: "/sqa/issues",
+      permission: API_PERMISSIONS.SQA.VIEW_TEMPLATES,
+      module: "SQA"
+    },
+    {
+      id: "feedback-list",
+      label: "Feedback List",
+      icon: ChatDots,
+      path: "/sqa/feedback",
+      permission: API_PERMISSIONS.SQA.VIEW_TEMPLATES,
+      module: "SQA"
+    },
+    {
+      id: "template-list",
+      label: "Template List",
+      icon: FileEarmarkText,
+      path: "/sqa/templates",
+      permission: API_PERMISSIONS.SQA.VIEW_TEMPLATES,
+      module: "SQA",
+      children: [
+        {
+          id: "template-history",
+          label: "List History Version",
+          path: "/sqa/templates/history",
+          permission: API_PERMISSIONS.SQA.VIEW_TEMPLATE_DETAIL,
+          module: "SQA"
+        },
+        {
+          id: "template-sections",
+          label: "Section List",
+          path: "/sqa/templates/sections",
+          permission: API_PERMISSIONS.SQA.VIEW_TEMPLATE_DETAIL,
+          module: "SQA"
+        },
+        {
+          id: "template-fields",
+          label: "Field List",
+          path: "/sqa/templates/fields",
+          permission: API_PERMISSIONS.SQA.VIEW_TEMPLATE_DETAIL,
+          module: "SQA"
+        },
+        {
+          id: "template-export",
+          label: "PDF Preview for Export",
+          path: "/sqa/templates/export",
+          permission: API_PERMISSIONS.SQA.VIEW_TEMPLATE_DETAIL,
+          module: "SQA"
+        }
+      ]
+    },
   ];
 
   // Filter nav items based on user permissions and role
@@ -171,7 +237,17 @@ const Sidebar = ({ collapsed, onClose }) => {
     // });
     
     // For ADMINISTRATOR role, show all items based on permissions
+    // But completely exclude SQA items for ADMINISTRATOR
     if (user?.role === 'ADMINISTRATOR') {
+      // Check if this is an SQA item - ADMINISTRATOR should never see SQA items
+      const isSQAItem = ['sqa-dashboard', 'issue-list', 'feedback-list', 'template-list'].includes(item.id);
+      
+      if (isSQAItem) {
+        console.log(`🔍 ADMINISTRATOR role - SQA item ${item.id}: BLOCKED (ADMINISTRATOR should not see SQA items)`);
+        return false; // Always block SQA items for ADMINISTRATOR
+      }
+      
+      // For non-SQA items, use normal permission check
       const hasAccess = hasModuleAccess(item.module) || hasPermission(item.permission);
       // console.log(`🔍 ADMINISTRATOR role - ${item.id}: ${hasAccess}`);
       return hasAccess;
@@ -187,6 +263,12 @@ const Sidebar = ({ collapsed, onClose }) => {
       const isTraineeItem = ['trainee-dashboard', 'enrolled-courses', 'all-assessments', 'create-issue'].includes(item.id);
       // console.log(`🔍 TRAINEE role - ${item.id}: ${isTraineeItem}`);
       return isTraineeItem;
+    }
+    // For SQA_AUDITOR role, show all SQA-related items
+    if (user?.role === 'SQA_AUDITOR') {
+      const isSQAItem = ['sqa-dashboard', 'issue-list', 'feedback-list', 'template-list'].includes(item.id);
+      // console.log(`🔍 SQA_AUDITOR role - ${item.id}: ${isSQAItem}`);
+      return isSQAItem;
     }
     // Default behavior for other roles
     const hasAccess = hasModuleAccess(item.module) || hasPermission(item.permission);
