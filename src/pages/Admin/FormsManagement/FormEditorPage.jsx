@@ -19,10 +19,25 @@ const FormEditorPage = () => {
   // Get data from navigation state
   useEffect(() => {
     if (location.state) {
-      const { content: initialContent, fileName: initialFileName, importType: initialImportType } = location.state;
-      setContent(initialContent || '');
+      const { 
+        content: initialContent, 
+        documentUrl: initialDocumentUrl,
+        fileName: initialFileName, 
+        importType: initialImportType 
+      } = location.state;
+      
+      // Use documentUrl if available (from upload), otherwise use content
+      const finalContent = initialDocumentUrl || initialContent || '';
+      setContent(finalContent);
       setFileName(initialFileName || 'Untitled Document');
       setImportType(initialImportType || '');
+      
+      console.log('📄 FormEditorPage received:', { 
+        documentUrl: initialDocumentUrl, 
+        content: initialContent, 
+        fileName: initialFileName,
+        finalContent: finalContent
+      });
     }
   }, [location.state]);
 
@@ -36,7 +51,7 @@ const FormEditorPage = () => {
       console.log('File name:', fileName);
       
       toast.success(`Form "${fileName}" saved successfully!`);
-    } catch (error) {
+    } catch (err) {
       throw new Error('Failed to save form');
     }
   };
@@ -111,7 +126,7 @@ const FormEditorPage = () => {
                     Preview
                   </Button>
                   <Button 
-                    variant="primary-custom" 
+                    variant="outline-secondary" 
                     onClick={() => handleExport(content, fileName)}
                     size="sm"
                     className="flex-fill flex-md-fill-0"
@@ -119,19 +134,21 @@ const FormEditorPage = () => {
                     <Download className="me-2" size={16} />
                     Export
                   </Button>
+                  <Button 
+                    variant="primary-custom" 
+                    onClick={() => handleSave(content)}
+                    size="sm"
+                    className="flex-fill flex-md-fill-0"
+                  >
+                    <Save className="me-2" size={16} />
+                    Save
+                  </Button>
                 </div>
               </Col>
             </Row>
           </Card.Header>
 
           <Card.Body className="p-0">
-            {importType && (
-              <Alert variant="info" className="m-3 mb-0">
-                <strong>Import Info:</strong> This form was created from a {importType.toLowerCase()} file. 
-                You can now edit the content and add merge fields as needed.
-              </Alert>
-            )}
-            
             <OnlyOfficeFormEditor
               initialContent={content}
               fileName={fileName}

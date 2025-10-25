@@ -6,4 +6,5 @@ export { departmentAPI } from './department.js';
 export { default as courseAPI } from './course.js';
 export { default as traineeAPI } from './trainee.js';
 export { default as subjectAPI } from './subject.js';
+export { default as uploadAPI } from './upload.js';
 export { default as apiClient } from './config.js';

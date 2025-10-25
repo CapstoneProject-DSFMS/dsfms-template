@@ -1,7 +1,9 @@
 import React from 'react';
 import { Badge } from 'react-bootstrap';
 import PortalUnifiedDropdown from '../../Common/PortalUnifiedDropdown';
+import PermissionWrapper from '../../Common/PermissionWrapper';
 import { Eye, PersonX, ThreeDotsVertical } from 'react-bootstrap-icons';
+import { API_PERMISSIONS } from '../../../constants/apiPermissions';
 
 const DepartmentRow = ({ department, index, onView, onToggleStatus }) => {
   const getStatusVariant = (status) => {
@@ -85,33 +87,40 @@ const DepartmentRow = ({ department, index, onView, onToggleStatus }) => {
       </td>
       
       <td className="border-neutral-200 align-middle text-center show-mobile">
-        <PortalUnifiedDropdown
-          align="end"
-          className="table-dropdown"
-          placement="bottom-end"
-          trigger={{
-            variant: 'link',
-            className: 'btn btn-link p-0 text-primary-custom',
-            style: { border: 'none', background: 'transparent' },
-            children: <ThreeDotsVertical size={16} />
-          }}
-          items={[
-            // Only show View Details for ACTIVE departments
-            ...(department.status === 'ACTIVE' ? [{
-              label: 'View Details',
-              icon: <Eye />,
-              onClick: () => onView(department)
-            }] : []),
-            // Only show divider if View Details is shown
-            ...(department.status === 'ACTIVE' ? [{ type: 'divider' }] : []),
-            {
-              label: department.status === 'ACTIVE' ? 'Deactivate' : 'Activate',
-              icon: <PersonX />,
-              className: department.status === 'ACTIVE' ? 'text-danger' : 'text-success',
-              onClick: () => onToggleStatus(department)
-            }
-          ]}
-        />
+        <PermissionWrapper 
+          permissions={[API_PERMISSIONS.DEPARTMENTS.VIEW_DETAIL, API_PERMISSIONS.DEPARTMENTS.UPDATE]}
+          fallback={null}
+        >
+          <PortalUnifiedDropdown
+            align="end"
+            className="table-dropdown"
+            placement="bottom-end"
+            trigger={{
+              variant: 'link',
+              className: 'btn btn-link p-0 text-primary-custom',
+              style: { border: 'none', background: 'transparent' },
+              children: <ThreeDotsVertical size={16} />
+            }}
+            items={[
+              // Only show View Details for ACTIVE departments
+              ...(department.status === 'ACTIVE' ? [{
+                label: 'View Details',
+                icon: <Eye />,
+                onClick: () => onView(department),
+                permission: API_PERMISSIONS.DEPARTMENTS.VIEW_DETAIL
+              }] : []),
+              // Only show divider if View Details is shown
+              ...(department.status === 'ACTIVE' ? [{ type: 'divider' }] : []),
+              {
+                label: department.status === 'ACTIVE' ? 'Deactivate' : 'Activate',
+                icon: <PersonX />,
+                className: department.status === 'ACTIVE' ? 'text-danger' : 'text-success',
+                onClick: () => onToggleStatus(department),
+                permission: API_PERMISSIONS.DEPARTMENTS.UPDATE
+              }
+            ]}
+          />
+        </PermissionWrapper>
       </td>
     </tr>
   );

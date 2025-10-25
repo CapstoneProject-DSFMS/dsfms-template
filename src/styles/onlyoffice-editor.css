@@ -1,0 +1,124 @@
+/* OnlyOffice Editor Styles */
+
+.onlyoffice-form-editor {
+  width: 100%;
+  height: 100%;
+}
+
+.onlyoffice-form-editor .p-0 {
+  height: 100%;
+}
+
+.onlyoffice-form-editor .row.g-0 {
+  height: 100%;
+  margin: 0;
+}
+
+.onlyoffice-form-editor .col {
+  padding: 0;
+}
+
+/* OnlyOffice Editor Container */
+#onlyoffice-editor {
+  width: 100% !important;
+  height: 90vh !important;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  background: #fff;
+}
+
+/* Variables Panel */
+.onlyoffice-form-editor .variables-panel {
+  background: #f8f9fa;
+  border-right: 1px solid #dee2e6;
+  min-height: 100%;
+}
+
+.onlyoffice-form-editor .variables-panel h6 {
+  margin-bottom: 15px;
+  color: #333;
+  font-weight: 600;
+  padding: 15px 20px 10px;
+  border-bottom: 1px solid #dee2e6;
+}
+
+/* Editor Area */
+.onlyoffice-form-editor .editor-area {
+  position: relative;
+  background: #fff;
+}
+
+.onlyoffice-form-editor .editor-area .p-3 {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+}
+
+/* Loading State */
+.onlyoffice-form-editor .spinner {
+  color: #007bff;
+}
+
+/* Alert Styles */
+.onlyoffice-form-editor .alert {
+  margin-bottom: 15px;
+}
+
+.onlyoffice-form-editor .alert-success {
+  background-color: #d4edda;
+  border-color: #c3e6cb;
+  color: #155724;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+  .onlyoffice-form-editor .row.g-0 {
+    flex-direction: column;
+  }
+  
+  .onlyoffice-form-editor .variables-panel {
+    border-right: none;
+    border-bottom: 1px solid #dee2e6;
+    min-height: auto;
+    max-height: 200px;
+    overflow-y: auto;
+  }
+  
+  #onlyoffice-editor {
+    height: 70vh !important;
+  }
+}
+
+@media (max-width: 576px) {
+  .onlyoffice-form-editor .editor-area .p-3 {
+    padding: 15px !important;
+  }
+  
+  #onlyoffice-editor {
+    height: 60vh !important;
+  }
+}
+
+/* OnlyOffice Editor Overrides */
+.onlyoffice-form-editor #onlyoffice-editor iframe {
+  border: none !important;
+  border-radius: 4px;
+}
+
+/* Custom scrollbar for variables panel */
+.onlyoffice-form-editor .variables-panel::-webkit-scrollbar {
+  width: 6px;
+}
+
+.onlyoffice-form-editor .variables-panel::-webkit-scrollbar-track {
+  background: #f1f1f1;
+}
+
+.onlyoffice-form-editor .variables-panel::-webkit-scrollbar-thumb {
+  background: #c1c1c1;
+  border-radius: 3px;
+}
+
+.onlyoffice-form-editor .variables-panel::-webkit-scrollbar-thumb:hover {
+  background: #a8a8a8;
+}

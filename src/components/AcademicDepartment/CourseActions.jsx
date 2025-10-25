@@ -2,7 +2,7 @@ import React from 'react';
 import { Button } from 'react-bootstrap';
 import { Eye, XCircle, ThreeDotsVertical } from 'react-bootstrap-icons';
 import { PermissionWrapper } from '../Common';
-import PortalDropdown from '../Common/PortalDropdown';
+import PortalUnifiedDropdown from '../Common/PortalUnifiedDropdown';
 import { API_PERMISSIONS } from '../../constants/apiPermissions';
 
 const CourseActions = ({ course, onView, onDisable }) => {
@@ -15,47 +15,38 @@ const CourseActions = ({ course, onView, onDisable }) => {
   };
 
   return (
-    <div className="position-relative course-actions-dropdown">
-      <PortalDropdown
-        trigger={<ThreeDotsVertical size={16} />}
+    <PermissionWrapper 
+      permissions={[API_PERMISSIONS.COURSES.VIEW_DETAIL, API_PERMISSIONS.COURSES.UPDATE]}
+      fallback={null}
+    >
+      <PortalUnifiedDropdown
+        align="end"
+        className="table-dropdown"
         placement="bottom-end"
-        className="d-inline-block"
-      >
-        <button 
-          onClick={handleViewClick}
-          className="dropdown-item d-flex align-items-center transition-all border-bottom"
-          style={{ 
-            transition: 'all 0.2s ease',
-            cursor: 'pointer',
-            padding: '0.5rem 1rem',
-            display: 'flex',
-            alignItems: 'center'
-          }}
-          onMouseEnter={(e) => e.target.style.backgroundColor = '#f8f9fa'}
-          onMouseLeave={(e) => e.target.style.backgroundColor = 'transparent'}
-        >
-          <Eye className="me-2" size={16} />
-          View Details
-        </button>
-        
-        <button 
-          onClick={handleArchiveClick}
-          className="dropdown-item d-flex align-items-center transition-all text-warning"
-          style={{ 
-            transition: 'all 0.2s ease',
-            cursor: 'pointer',
-            padding: '0.5rem 1rem',
-            display: 'flex',
-            alignItems: 'center'
-          }}
-          onMouseEnter={(e) => e.target.style.backgroundColor = '#f8f9fa'}
-          onMouseLeave={(e) => e.target.style.backgroundColor = 'transparent'}
-        >
-          <XCircle className="me-2" size={16} />
-          Archive Course
-        </button>
-      </PortalDropdown>
-    </div>
+        trigger={{
+          variant: 'link',
+          className: 'btn btn-link p-0 text-primary-custom',
+          style: { border: 'none', background: 'transparent' },
+          children: <ThreeDotsVertical size={16} />
+        }}
+        items={[
+          {
+            label: 'View Details',
+            icon: <Eye />,
+            onClick: handleViewClick,
+            permission: API_PERMISSIONS.COURSES.VIEW_DETAIL
+          },
+          { type: 'divider' },
+          {
+            label: 'Archive Course',
+            icon: <XCircle />,
+            className: 'text-warning',
+            onClick: handleArchiveClick,
+            permission: API_PERMISSIONS.COURSES.UPDATE
+          }
+        ]}
+      />
+    </PermissionWrapper>
   );
 };
 
