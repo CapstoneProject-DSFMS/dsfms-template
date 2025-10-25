@@ -191,15 +191,15 @@ const PortalUnifiedDropdown = ({
     <div className={`dropdown ${className}`}>
       <button
         ref={triggerRef}
-        className={`btn ${trigger.variant === 'link' ? 'btn-link' : 'btn-light'} ${trigger.className || ''}`}
+        className={`btn ${trigger?.variant === 'link' ? 'btn-link' : 'btn-light'} ${trigger?.className || ''}`}
         type="button"
         onClick={handleToggle}
         disabled={disabled}
         aria-expanded={isOpen}
         aria-haspopup="true"
-        style={trigger.style || {}}
+        style={trigger?.style || {}}
       >
-        {trigger.children}
+        {trigger?.children}
       </button>
       {dropdownMenu}
     </div>

@@ -4,8 +4,9 @@ import { Eye, Book, ThreeDotsVertical, Clock, PlayCircle, CheckCircle } from 're
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'react-toastify';
 import traineeAPI from '../../api/trainee';
-import { LoadingSkeleton, SortIcon, SearchBar } from '../Common';
+import { LoadingSkeleton, SortIcon, SearchBar, PermissionWrapper } from '../Common';
 import PortalUnifiedDropdown from '../Common/PortalUnifiedDropdown';
+import { API_PERMISSIONS } from '../../constants/apiPermissions';
 import CourseFilterPanel from './CourseFilterPanel';
 import useTableSort from '../../hooks/useTableSort';
 import '../../styles/scrollable-table.css';
@@ -607,24 +608,30 @@ const TraineeCourseList = ({ traineeId }) => {
                 </div>
               </td>
               <td className="border-neutral-200 align-middle text-center show-mobile">
-                <PortalUnifiedDropdown
-                  align="end"
-                  className="table-dropdown"
-                  placement="bottom-end"
-                  trigger={{
-                    variant: 'link',
-                    className: 'btn btn-link p-0 text-primary-custom',
-                    style: { border: 'none', background: 'transparent' },
-                    children: <ThreeDotsVertical size={16} />
-                  }}
-                  items={[
-                    {
-                      label: 'View Course Details',
-                      icon: <Eye />,
-                      onClick: () => handleViewCourse(course)
-                    }
-                  ]}
-                />
+                <PermissionWrapper 
+                  permissions={[API_PERMISSIONS.COURSES.VIEW_DETAIL]}
+                  fallback={null}
+                >
+                  <PortalUnifiedDropdown
+                    align="end"
+                    className="table-dropdown"
+                    placement="bottom-end"
+                    trigger={{
+                      variant: 'link',
+                      className: 'btn btn-link p-0 text-primary-custom',
+                      style: { border: 'none', background: 'transparent' },
+                      children: <ThreeDotsVertical size={16} />
+                    }}
+                    items={[
+                      {
+                        label: 'View Course Details',
+                        icon: <Eye />,
+                        onClick: () => handleViewCourse(course),
+                        permission: API_PERMISSIONS.COURSES.VIEW_DETAIL
+                      }
+                    ]}
+                  />
+                </PermissionWrapper>
               </td>
             </tr>
           ))}

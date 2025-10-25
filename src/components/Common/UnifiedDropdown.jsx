@@ -53,11 +53,11 @@ const UnifiedDropdown = ({
       >
         <Dropdown.Toggle
           as="button"
-          variant={trigger.variant || 'link'}
-          className={trigger.className || ''}
-          style={trigger.style || {}}
+          variant={trigger?.variant || 'link'}
+          className={trigger?.className || ''}
+          style={trigger?.style || {}}
         >
-          {trigger.children}
+          {trigger?.children}
         </Dropdown.Toggle>
 
         <Dropdown.Menu className="border-0 shadow">

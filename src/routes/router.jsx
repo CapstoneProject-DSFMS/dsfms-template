@@ -30,6 +30,10 @@ import SignatureRequiredPage from '../pages/Trainee/SignatureRequiredPage';
 import SectionCompletionPage from '../pages/Trainee/SectionCompletionPage';
 import YourAssessmentsPage from '../pages/Trainee/YourAssessmentsPage';
 import CreateIssuePage from '../pages/Trainee/CreateIssuePage'
+import SQADashboard from '../pages/SQA/SQADashboard'
+import IssueListPage from '../pages/SQA/IssueListPage'
+import FeedbackListPage from '../pages/SQA/FeedbackListPage'
+import TemplateListPage from '../pages/SQA/TemplateListPage'
 import { API_PERMISSIONS } from '../constants/apiPermissions'
 import { getCurrentBasename } from '../utils/navigation'
 
@@ -389,6 +393,65 @@ export const router = createBrowserRouter([
             fallback={<div className="p-4 text-center text-muted">You don't have permission to view section completion list.</div>}
           >
             <SectionCompletionPage />
+          </PermissionRoute>
+        )
+      }
+    ]
+  },
+  {
+    path: "/sqa",
+    element: (
+      <ProtectedRoute>
+        <LayoutWrapper />
+      </ProtectedRoute>
+    ),
+    errorElement: <ErrorBoundary />,
+    children: [
+      {
+        path: "",
+        element: <RoleBasedRedirect />
+      },
+      {
+        path: "dashboard",
+        element: (
+          <PermissionRoute 
+            permission={API_PERMISSIONS.SQA.VIEW_TEMPLATES}
+            fallback={<div className="p-4 text-center text-muted">You don't have permission to access SQA dashboard.</div>}
+          >
+            <SQADashboard />
+          </PermissionRoute>
+        )
+      },
+      {
+        path: "issues",
+        element: (
+          <PermissionRoute 
+            permission={API_PERMISSIONS.SQA.VIEW_TEMPLATES}
+            fallback={<div className="p-4 text-center text-muted">You don't have permission to access issue list.</div>}
+          >
+            <IssueListPage />
+          </PermissionRoute>
+        )
+      },
+      {
+        path: "feedback",
+        element: (
+          <PermissionRoute 
+            permission={API_PERMISSIONS.SQA.VIEW_TEMPLATES}
+            fallback={<div className="p-4 text-center text-muted">You don't have permission to access feedback list.</div>}
+          >
+            <FeedbackListPage />
+          </PermissionRoute>
+        )
+      },
+      {
+        path: "templates",
+        element: (
+          <PermissionRoute 
+            permission={API_PERMISSIONS.SQA.VIEW_TEMPLATES}
+            fallback={<div className="p-4 text-center text-muted">You don't have permission to access template list.</div>}
+          >
+            <TemplateListPage />
           </PermissionRoute>
         )
       }
