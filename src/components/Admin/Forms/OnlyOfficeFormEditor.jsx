@@ -429,18 +429,6 @@ const OnlyOfficeFormEditor = ({
         )}
 
         <Row className="g-0">
-          {/* Merge Fields Panel */}
-          {showMergeFields && (
-            <Col md={3} className="border-end">
-              <MergeFieldsPanel
-                mergeFields={mergeFields}
-                onInsertField={handleInsertField}
-                readOnly={readOnly}
-                className="h-100"
-              />
-            </Col>
-          )}
-
           {/* OnlyOffice Editor */}
           <Col md={showMergeFields ? 9 : 12}>
             <div className="p-3 h-100">
@@ -457,6 +445,18 @@ const OnlyOfficeFormEditor = ({
               />
             </div>
           </Col>
+
+          {/* Merge Fields Panel - Moved to right side */}
+          {showMergeFields && (
+            <Col md={3} className="border-start">
+              <MergeFieldsPanel
+                mergeFields={mergeFields}
+                onInsertField={handleInsertField}
+                readOnly={readOnly}
+                className="h-100"
+              />
+            </Col>
+          )}
         </Row>
       </div>
     </div>

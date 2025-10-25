@@ -2,11 +2,11 @@
 
 /* Import File Modal Responsive */
 .import-file-modal .modal-dialog {
-  max-width: 90vw;
+  max-width: 60vw;
 }
 
 .import-file-modal .modal-body {
-  max-height: 80vh;
+  max-height: 60vh;
   overflow-y: auto;
 }
 
