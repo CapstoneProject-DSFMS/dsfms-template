@@ -13,9 +13,9 @@
   },
   "dependencies": {
     "@headlessui/react": "^2.2.8",
-    "@onlyoffice/document-editor-react": "^2.1.1",
     "axios": "^1.12.2",
     "bootstrap": "^5.3.8",
+    "jose": "^6.1.0",
     "mammoth": "^1.11.0",
     "react": "^18.3.1",
     "react-bootstrap": "^2.10.10",
