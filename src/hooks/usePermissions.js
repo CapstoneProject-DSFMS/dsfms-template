@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import { useAuth } from './useAuth';
+import { permissionAPI } from '../api/permission';
 
 // Helper function to format API endpoint names to be more user-friendly
 const formatPermissionName = (name) => {
@@ -92,23 +93,24 @@ export const usePermissions = () => {
   const [error, setError] = useState(null);
   const { userPermissions, userRole } = useAuth();
 
-  // Use userPermissions as the source of permissions instead of fetching from API
+  // Always use userPermissions from AuthContext (fetched via role detail API)
   const fetchPermissions = useCallback(async () => {
     setLoading(true);
     setError(null);
     
     try {
-      // Use userPermissions from AuthContext instead of calling API
+      // All roles use userPermissions from AuthContext (fetched via role detail API)
       if (userPermissions && userPermissions.length > 0) {
         setPermissions(userPermissions);
-        // console.log('✅ Using userPermissions from AuthContext:', userPermissions.length, 'permissions'); // Commented out to reduce console noise
+        console.log('✅ Using userPermissions from AuthContext:', userPermissions.length, 'permissions');
       } else {
         setPermissions([]);
-        // console.log('⚠️ No userPermissions available'); // Commented out to reduce console noise
+        console.log('⚠️ No userPermissions available');
       }
     } catch (err) {
+      console.error('Error setting permissions:', err);
       setError(err);
-      console.error('Error setting permissions from userPermissions:', err);
+      setPermissions([]);
     } finally {
       setLoading(false);
     }
@@ -307,12 +309,10 @@ export const usePermissions = () => {
     return Object.values(featureGroups).sort((a, b) => a.name.localeCompare(b.name));
   }, [userPermissions]);
 
-  // Initialize permissions when userPermissions change
+  // Initialize permissions on mount
   useEffect(() => {
-    if (userPermissions && userPermissions.length > 0) {
-      fetchPermissions();
-    }
-  }, [fetchPermissions, userPermissions]);
+    fetchPermissions();
+  }, [fetchPermissions]);
 
   return {
     permissions,
@@ -333,5 +333,62 @@ export const usePermissions = () => {
     // User data
     userPermissions,
     userRole
+  };
+};
+
+// Hook specifically for getting ALL permissions in the system
+// Used in Role Management to view/assign permissions
+export const useAllPermissions = () => {
+  const [allPermissions, setAllPermissions] = useState([]);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
+
+  const fetchAllPermissions = useCallback(async () => {
+    setLoading(true);
+    setError(null);
+    
+    try {
+      // Call API to get all permissions in the system
+      const response = await permissionAPI.getPermissions({ includeDeleted: true });
+      console.log('🔍 All Permissions API Response:', response);
+      
+      if (response && response.data) {
+        // Extract permissions from nested structure
+        const permissions = [];
+        response.data.forEach(module => {
+          if (module.module && module.module.listPermissions) {
+            module.module.listPermissions.forEach(permission => {
+              permissions.push({
+                id: permission.permissionId,
+                name: permission.name,
+                module: module.module.name,
+                viewName: permission.name,
+                viewModule: module.module.name,
+                isActive: true // Assume active if not specified
+              });
+            });
+          }
+        });
+        
+        setAllPermissions(permissions);
+        console.log('✅ Fetched all permissions from API:', permissions.length, 'permissions');
+      } else {
+        setAllPermissions([]);
+        console.log('⚠️ No permissions data in API response');
+      }
+    } catch (err) {
+      console.error('Error fetching all permissions from API:', err);
+      setError(err);
+      setAllPermissions([]);
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  return {
+    allPermissions,
+    loading,
+    error,
+    fetchAllPermissions
   };
 };

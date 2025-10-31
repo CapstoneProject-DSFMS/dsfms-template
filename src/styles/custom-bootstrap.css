@@ -737,9 +737,22 @@ button,
   font-weight: 600 !important;
 }
 
-.table td {
-  border-color: var(--bs-neutral-200) !important;
-  vertical-align: middle !important;
+/* Admin table - completely remove all borders */
+.admin-table .table td,
+.admin-table .table th {
+  border: none !important;
+}
+
+.admin-table .table thead th {
+  border-bottom: none !important;
+}
+
+.admin-table .table tbody tr {
+  border-bottom: none !important;
+}
+
+.admin-table .table tbody tr:last-child {
+  border-bottom: none !important;
 }
 
 
@@ -750,6 +763,20 @@ button,
 
 .modal-footer {
   border-top: 1px solid var(--bs-neutral-200) !important;
+}
+
+/* Forms Page Header Override - Maximum Specificity */
+html body .forms-page .forms-page-header {
+  background-color: #1b3c53 !important;
+  color: white !important;
+}
+
+html body .forms-page .forms-page-header h4 {
+  color: white !important;
+}
+
+html body .forms-page .forms-page-header .text-white {
+  color: white !important;
 }
 
 /* Card enhancements */
@@ -1701,4 +1728,237 @@ button.text-primary-custom:focus-within {
   .profile-menu-link {
     padding: 1.35rem 1.5rem !important;
   }
+}
+
+/* ULTRA HIGH SPECIFICITY - Override everything */
+html body .template-detail-page .card-header.bg-primary-custom .nav-tabs .nav-item .nav-link {
+  background-color: transparent !important;
+  border: none !important;
+  color: white !important;
+  margin: 0 !important;
+  padding: 0.5rem 1rem !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  text-align: center !important;
+  flex: 1 !important;
+  width: 100% !important;
+  border-radius: 0 !important;
+  position: relative !important;
+}
+
+html body .template-detail-page .card-header.bg-primary-custom .nav-tabs .nav-item .nav-link.active {
+  background-color: black !important;
+  color: white !important;
+  border-bottom: none !important;
+  border-radius: 0 !important;
+  margin: 0 !important;
+  padding: 0.5rem 1rem !important;
+  position: relative !important;
+  z-index: 1 !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  text-align: center !important;
+  flex: 1 !important;
+  width: 100% !important;
+}
+
+html body .template-detail-page .nav-tabs {
+  border-bottom: none !important;
+  margin-bottom: 0 !important;
+  padding: 0 !important;
+  display: flex !important;
+  flex-direction: row !important;
+  align-items: stretch !important;
+}
+
+html body .template-detail-page .nav-tabs .nav-item {
+  margin-bottom: 0 !important;
+  margin-right: 0 !important;
+  flex: 1 !important;
+  display: flex !important;
+}
+
+/* FINAL OVERRIDE - Maximum specificity to beat Bootstrap */
+html body div.template-detail-page .card-header.bg-primary-custom .nav-tabs .nav-item .nav-link {
+  background-color: transparent !important;
+  border: none !important;
+  color: white !important;
+  margin: 0 !important;
+  padding: 0.5rem 1rem !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  text-align: center !important;
+  flex: 1 !important;
+  width: 100% !important;
+  border-radius: 0 !important;
+  position: relative !important;
+  box-sizing: border-box !important;
+}
+
+html body div.template-detail-page .card-header.bg-primary-custom .nav-tabs .nav-item .nav-link.active {
+  background-color: black !important;
+  color: white !important;
+  border-bottom: none !important;
+  border-radius: 0 !important;
+  margin: 0 !important;
+  padding: 0.5rem 1rem !important;
+  position: relative !important;
+  z-index: 1 !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  text-align: center !important;
+  flex: 1 !important;
+  width: 100% !important;
+  box-sizing: border-box !important;
+}
+
+html body div.template-detail-page .nav-tabs {
+  border-bottom: none !important;
+  margin-bottom: 0 !important;
+  padding: 0 !important;
+  display: flex !important;
+  flex-direction: row !important;
+  align-items: stretch !important;
+  width: 100% !important;
+}
+
+html body div.template-detail-page .nav-tabs .nav-item {
+  margin-bottom: 0 !important;
+  margin-right: 0 !important;
+  flex: 1 !important;
+  display: flex !important;
+  width: 100% !important;
+}
+
+/* ABSOLUTE FINAL OVERRIDE - Beat everything including Bootstrap */
+html body div.template-detail-page .card-header.bg-primary-custom .nav-tabs .nav-item .nav-link {
+  background-color: transparent !important;
+  border: none !important;
+  color: white !important;
+  margin: 0 !important;
+  padding: 0.5rem 1rem !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  text-align: center !important;
+  flex: 1 !important;
+  width: 100% !important;
+  border-radius: 0 !important;
+  position: relative !important;
+  box-sizing: border-box !important;
+  min-width: 0 !important;
+  max-width: none !important;
+}
+
+html body div.template-detail-page .card-header.bg-primary-custom .nav-tabs .nav-item .nav-link.active {
+  background-color: black !important;
+  color: white !important;
+  border-bottom: none !important;
+  border-radius: 0 !important;
+  margin: 0 !important;
+  padding: 0.5rem 1rem !important;
+  position: relative !important;
+  z-index: 1 !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  text-align: center !important;
+  flex: 1 !important;
+  width: 100% !important;
+  box-sizing: border-box !important;
+  min-width: 0 !important;
+  max-width: none !important;
+}
+
+html body div.template-detail-page .nav-tabs {
+  border-bottom: none !important;
+  margin-bottom: 0 !important;
+  padding: 0 !important;
+  display: flex !important;
+  flex-direction: row !important;
+  align-items: stretch !important;
+  width: 100% !important;
+  justify-content: space-between !important;
+}
+
+/* Custom Tabs for Template Detail Page */
+.custom-tabs {
+  display: flex;
+  width: 100%;
+  background-color: var(--bs-primary);
+  border-radius: 0;
+}
+
+.custom-tab {
+  flex: 1;
+  background-color: transparent;
+  border: none;
+  color: white;
+  padding: 0.75rem 1rem;
+  font-size: 0.9rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  text-align: center;
+  position: relative;
+  margin: 0;
+  border-radius: 0;
+}
+
+.custom-tab:hover {
+  background-color: rgba(255, 255, 255, 0.1);
+  color: white;
+}
+
+.custom-tab.active {
+  background-color: var(--bs-secondary);
+  color: white;
+  font-weight: 600;
+  margin: 0 !important;
+  border-radius: 0 !important;
+  border: none !important;
+}
+
+/* Force override với specificity cực cao */
+.custom-tabs .custom-tab.active {
+  border-radius: 0 !important;
+  margin: 0 !important;
+  border: none !important;
+}
+
+/* Override mọi CSS khác */
+.custom-tab.active,
+.custom-tab.active:hover,
+.custom-tab.active:focus {
+  border-radius: 0 !important;
+  margin: 0 !important;
+  border: none !important;
+  outline: none !important;
+}
+
+/* ABSOLUTE FINAL OVERRIDE - Force hình vuông */
+html body .custom-tabs .custom-tab.active {
+  border-radius: 0 !important;
+  margin: 0 !important;
+  border: none !important;
+  outline: none !important;
+  box-shadow: none !important;
+}
+
+html body .custom-tabs .custom-tab.active:hover {
+  border-radius: 0 !important;
+  margin: 0 !important;
+  border: none !important;
+  outline: none !important;
+}
+
+html body .custom-tabs .custom-tab.active:focus {
+  border-radius: 0 !important;
+  margin: 0 !important;
+  border: none !important;
+  outline: none !important;
 }

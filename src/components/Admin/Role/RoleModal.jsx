@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { Modal, Form, Button, Row, Col, ListGroup, Badge, Spinner, Alert } from 'react-bootstrap';
 import { X, Save, Eye, Shield, ChevronDown, ChevronRight, ExclamationTriangle } from 'react-bootstrap-icons';
-import { usePermissions } from '../../../hooks/usePermissions';
+import { useAllPermissions } from '../../../hooks/usePermissions';
 import { isBaseRole } from '../../../utils/roleUtils';
 
 const RoleModal = ({ show, role, mode, onSave, onClose }) => {
@@ -14,16 +14,51 @@ const RoleModal = ({ show, role, mode, onSave, onClose }) => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [expandedGroups, setExpandedGroups] = useState({});
   
-  // Use permissions hook to get API data
+  // Use all permissions hook to get ALL permissions in the system
   const { 
-    getPermissionGroups, 
+    allPermissions,
     loading: permissionsLoading, 
-    error: permissionsError
-  } = usePermissions();
+    error: permissionsError,
+    fetchAllPermissions
+  } = useAllPermissions();
+
+  // Create permission groups from allPermissions
+  const getPermissionGroups = useMemo(() => {
+    if (!allPermissions || allPermissions.length === 0) return [];
+    
+    const featureGroups = {};
+    
+    // Group permissions by module
+    allPermissions.forEach(permission => {
+      const moduleId = permission.module;
+      const moduleName = permission.viewModule || `${permission.module} Management`;
+      
+      if (!featureGroups[moduleId]) {
+        featureGroups[moduleId] = {
+          id: moduleId,
+          name: moduleName,
+          description: `Manage ${moduleName.toLowerCase()} related permissions`,
+          permissions: []
+        };
+      }
+      
+      featureGroups[moduleId].permissions.push({
+        id: permission.id,
+        title: permission.viewName || permission.name,
+        description: permission.description || '',
+        isActive: permission.isActive,
+        method: permission.method,
+        path: permission.path
+      });
+    });
+
+    // Sort groups by module name
+    return Object.values(featureGroups).sort((a, b) => a.name.localeCompare(b.name));
+  }, [allPermissions]);
 
   // Get permission groups for current mode using useMemo to prevent infinite loops
   const permissionGroups = useMemo(() => {
-    const allGroups = getPermissionGroups();
+    const allGroups = getPermissionGroups;
     
     if (mode === 'view' && role?.permissions) {
       // View mode: only show permissions assigned to the role
@@ -65,6 +100,13 @@ const RoleModal = ({ show, role, mode, onSave, onClose }) => {
     }
     setErrors({});
   }, [role, mode, show]);
+
+  // Fetch all permissions when modal opens
+  useEffect(() => {
+    if (show) {
+      fetchAllPermissions();
+    }
+  }, [show, fetchAllPermissions]);
 
   // Separate useEffect for expanded groups to avoid infinite loop
   useEffect(() => {

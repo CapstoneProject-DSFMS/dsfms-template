@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Table, Badge, Spinner } from 'react-bootstrap';
 import { CheckCircle, Clock, ExclamationTriangle, ThreeDotsVertical } from 'react-bootstrap-icons';
+import { useNavigate } from 'react-router-dom';
 import { toast } from 'react-toastify';
 import { LoadingSkeleton } from '../Common';
 import PortalUnifiedDropdown from '../Common/PortalUnifiedDropdown';
@@ -38,6 +39,7 @@ if (typeof document !== 'undefined') {
 }
 
 const TraineeCompletedAssessments = ({ traineeId, courseId, subjectId }) => {
+  const navigate = useNavigate();
   const [assessments, setAssessments] = useState([]);
   const [loading, setLoading] = useState(true);
 
@@ -174,8 +176,7 @@ const TraineeCompletedAssessments = ({ traineeId, courseId, subjectId }) => {
   };
 
   const handleViewAssessment = (assessment) => {
-    console.log('View completed assessment:', assessment.id);
-    // TODO: Navigate to assessment results/details
+    navigate(`/trainee/${traineeId}/assessment/${assessment.id}`);
   };
 
   if (loading) {

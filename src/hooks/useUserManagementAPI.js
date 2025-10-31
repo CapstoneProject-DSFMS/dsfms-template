@@ -351,6 +351,17 @@ export const useUserManagementAPI = () => {
           yearsOfExp: userData.yearsOfExperience ? parseInt(userData.yearsOfExperience) : 0,
           bio: '' // Default empty, can be added to form later
         };
+        
+        // Add departmentId for TRAINER role
+        if (userData.department) {
+          // Find department ID from departments list
+          const selectedDepartment = departments.find(dept => dept.name === userData.department);
+          if (selectedDepartment) {
+            apiPayload.departmentId = selectedDepartment.id;
+          } else {
+            throw new Error(`Department '${userData.department}' not found`);
+          }
+        }
           } else if (userData.role === 'TRAINEE') {
             // Only add traineeProfile if we have meaningful data
             const hasTraineeData = userData.dateOfBirth || userData.trainingBatch || userData.passportNo || userData.nation;
