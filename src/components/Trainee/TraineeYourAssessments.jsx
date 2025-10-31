@@ -231,15 +231,11 @@ const TraineeYourAssessments = ({ traineeId }) => {
   };
 
   const handleStartAssessment = (assessment) => {
-    console.log('Start assessment:', assessment.id);
-    // TODO: Navigate to assessment or open assessment modal
-    toast.info('Assessment functionality coming soon');
+    navigate(`/trainee/${traineeId}/assessment/${assessment.id}`);
   };
 
   const handleViewAssessment = (assessment) => {
-    console.log('View assessment:', assessment.id);
-    // TODO: Navigate to assessment details
-    toast.info('Assessment details functionality coming soon');
+    navigate(`/trainee/${traineeId}/assessment/${assessment.id}`);
   };
 
   if (loading) {

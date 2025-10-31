@@ -1,21 +1,40 @@
 import React from 'react';
 import { Container } from 'react-bootstrap';
-import { useParams } from 'react-router-dom';
+import { useParams, useNavigate } from 'react-router-dom';
 import SignaturePad from '../../components/Trainee/SignaturePad';
+import { toast } from 'react-toastify';
 
 const SignaturePadPage = () => {
   const { traineeId, documentId } = useParams();
+  const navigate = useNavigate();
+
+  const handleSave = async (signatureData) => {
+    try {
+      // TODO: Save signature to API
+      console.log('Signature saved:', signatureData);
+      toast.success('Signature saved successfully');
+      
+      // Navigate to assessment detail if documentId is an assessment, otherwise go back
+      // Try to navigate to assessment detail first, fallback to back navigation
+      navigate(`/trainee/${traineeId}/assessment/${documentId}`, { replace: true });
+    } catch (error) {
+      console.error('Error saving signature:', error);
+      toast.error('Failed to save signature');
+    }
+  };
+
+  const handleClose = () => {
+    // Navigate back or to assessment detail
+    navigate(`/trainee/${traineeId}/assessment/${documentId}`, { replace: true });
+  };
 
   return (
     <Container className="py-3">
       <SignaturePad 
         show={true}
         documentName={`Document ${documentId}`}
-        onClose={() => window.history.back()}
-        onSave={(signatureData) => {
-          console.log('Signature saved:', signatureData);
-          // TODO: Save signature to API
-        }}
+        onClose={handleClose}
+        onSave={handleSave}
       />
     </Container>
   );

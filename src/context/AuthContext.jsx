@@ -330,6 +330,13 @@ export const AuthProvider = ({ children }) => {
           department: tokenPayload.department || 'IT',
           lastLogin: new Date().toISOString()
         };
+
+        // TEMPORARY: Force DEPARTMENT_HEAD role for testing
+        // Remove this after creating proper DEPARTMENT_HEAD user
+        if (credentials.email === 'depthead@test.com') {
+          userInfo.role = 'DEPARTMENT_HEAD';
+          userInfo.roleId = 'dept-head-001';
+        }
       } catch (error) {
         console.error('Error decoding token:', error);
         throw new Error('Invalid token format or missing required fields');

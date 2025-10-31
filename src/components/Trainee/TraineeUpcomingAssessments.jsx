@@ -1,11 +1,13 @@
 import React, { useState, useEffect } from 'react';
 import { Table, Badge, Button, Spinner } from 'react-bootstrap';
 import { ClipboardCheck, Clock, Calendar } from 'react-bootstrap-icons';
+import { useNavigate } from 'react-router-dom';
 import { toast } from 'react-toastify';
 import traineeAPI from '../../api/trainee';
 import '../../styles/scrollable-table.css';
 
 const TraineeUpcomingAssessments = ({ traineeId, courseId }) => {
+  const navigate = useNavigate();
   const [assessments, setAssessments] = useState([]);
   const [loading, setLoading] = useState(true);
 
@@ -82,9 +84,16 @@ const TraineeUpcomingAssessments = ({ traineeId, courseId }) => {
     return <Badge bg={config.variant}>{config.text}</Badge>;
   };
 
-  const handleStartAssessment = (assessmentId) => {
-    // TODO: Navigate to assessment or open assessment modal
-    console.log('Start assessment:', assessmentId);
+  const handleStartAssessment = async (assessmentId) => {
+    try {
+      // Load assessment to get first section
+      // For now, navigate to detail page with auto-start flag
+      // The detail page will handle auto-starting the first section
+      navigate(`/trainee/${traineeId}/assessment/${assessmentId}?action=start`);
+    } catch (error) {
+      console.error('Error starting assessment:', error);
+      toast.error('Failed to start assessment');
+    }
   };
 
   if (loading) {

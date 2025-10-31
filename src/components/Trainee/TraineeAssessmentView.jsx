@@ -122,23 +122,19 @@ const TraineeAssessmentView = ({ traineeId }) => {
   };
 
   const handleStartAssessment = (assessmentId) => {
-    // TODO: Navigate to assessment or open assessment modal
-    console.log('Start assessment:', assessmentId);
+    navigate(`/trainee/${traineeId}/assessment/${assessmentId}`);
   };
 
   const handleViewAssessment = (assessmentId) => {
-    // TODO: Navigate to assessment details
-    console.log('View assessment:', assessmentId);
+    navigate(`/trainee/${traineeId}/assessment/${assessmentId}`);
   };
 
   const handleSignaturePad = (itemId) => {
-    // TODO: Open signature pad modal
-    console.log('Open signature pad for:', itemId);
+    navigate(`/trainee/${traineeId}/signature-pad/${itemId}`);
   };
 
   const handleCompleteSection = (sectionId) => {
-    // TODO: Navigate to section completion
-    console.log('Complete section:', sectionId);
+    navigate(`/trainee/${traineeId}/assessment-section/${sectionId}`);
   };
 
   if (loading) {

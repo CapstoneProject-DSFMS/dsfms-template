@@ -1,6 +1,6 @@
 import React, { useRef, useState } from 'react';
 import { Card, Button, Badge, Spinner, Image } from 'react-bootstrap';
-import { Person, Key } from 'react-bootstrap-icons';
+import { Person, Key, Pen } from 'react-bootstrap-icons';
 import profileAPI from '../../api/profile';
 import { toast } from 'react-toastify';
 
@@ -8,7 +8,8 @@ const ProfileAvatar = ({
   profileData, 
   user, 
   onResetPassword,
-  onAvatarUpdated
+  onAvatarUpdated,
+  onConfigureSignature
 }) => {
   const fileInputRef = useRef(null);
   const [uploading, setUploading] = useState(false);
@@ -196,12 +197,12 @@ const ProfileAvatar = ({
             </div>
           )}
           
-          <div className="d-flex justify-content-center">
+          <div className="d-flex flex-column gap-2">
             <Button
               variant="outline-primary"
               size="sm"
               onClick={onResetPassword}
-              className="d-flex align-items-center"
+              className="d-flex align-items-center justify-content-center"
               style={{ 
                 minWidth: '140px',
                 borderRadius: '20px',
@@ -210,6 +211,21 @@ const ProfileAvatar = ({
             >
               <Key size={14} className="me-2" />
               Reset Password
+            </Button>
+            
+            <Button
+              variant="outline-secondary"
+              size="sm"
+              onClick={onConfigureSignature}
+              className="d-flex align-items-center justify-content-center"
+              style={{ 
+                minWidth: '140px',
+                borderRadius: '20px',
+                fontWeight: '500'
+              }}
+            >
+              <Pen size={14} className="me-2" />
+              Configure Signature
             </Button>
           </div>
         </div>

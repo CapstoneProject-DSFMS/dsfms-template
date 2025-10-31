@@ -159,7 +159,7 @@ const TraineeDashboardPage = () => {
                 <Button 
                   variant="outline-primary" 
                   size="sm"
-                  onClick={() => navigate('/trainee/assessment-pending/signature-required')}
+                  onClick={() => navigate('/trainee/signature-required')}
                   className="d-flex align-items-center justify-content-center mx-auto"
                 >
                   <ClipboardCheck size={16} className="me-2" />

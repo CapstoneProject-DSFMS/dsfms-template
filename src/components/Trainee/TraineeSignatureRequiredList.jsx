@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Table, Badge, Spinner, Card } from 'react-bootstrap';
 import { Pen, ThreeDotsVertical } from 'react-bootstrap-icons';
+import { useNavigate } from 'react-router-dom';
 import { toast } from 'react-toastify';
 import { LoadingSkeleton } from '../Common';
 import PortalUnifiedDropdown from '../Common/PortalUnifiedDropdown';
@@ -38,6 +39,7 @@ if (typeof document !== 'undefined') {
 }
 
 const TraineeSignatureRequiredList = ({ traineeId }) => {
+  const navigate = useNavigate();
   const [signatureRequired, setSignatureRequired] = useState([]);
   const [loading, setLoading] = useState(true);
 
@@ -107,9 +109,11 @@ const TraineeSignatureRequiredList = ({ traineeId }) => {
   };
 
   const handleSignaturePad = (documentId) => {
-    console.log('Open signature pad for document:', documentId);
-    // TODO: Implement signature pad functionality
-    toast.info('Signature pad functionality coming soon');
+    if (traineeId) {
+      navigate(`/trainee/${traineeId}/signature-pad/${documentId}`);
+    } else {
+      toast.error('Unable to open signature pad: Trainee ID not found');
+    }
   };
 
   if (loading) {

@@ -9,7 +9,7 @@ import {
   ThreeDotsVertical
 } from 'react-bootstrap-icons';
 import { useNavigate } from 'react-router-dom';
-import { LoadingSkeleton, SearchBar, SortIcon, PermissionWrapper } from '../../components/Common';
+import { LoadingSkeleton, SearchBar, PermissionWrapper, AdminTable } from '../../components/Common';
 import PortalUnifiedDropdown from '../../components/Common/PortalUnifiedDropdown';
 import useTableSort from '../../hooks/useTableSort';
 import { API_PERMISSIONS } from '../../constants/apiPermissions';
@@ -155,171 +155,129 @@ const FeedbackListPage = () => {
   }
 
   return (
-    <Container className="py-4">
-      {/* Header */}
-      <Row className="mb-4">
-        <Col>
-          <div className="d-flex justify-content-between align-items-center">
-            <div>
-              <h2 className="mb-1">Feedback List</h2>
-              <p className="text-muted mb-0">Review and acknowledge user feedback</p>
-            </div>
-            <div className="d-flex gap-2">
-              <Button variant="outline-primary" size="sm">
-                Export Feedback
-              </Button>
-            </div>
-          </div>
-        </Col>
-      </Row>
-
-      {/* Filters */}
-      <Row className="mb-4">
-        <Col md={8}>
-          <SearchBar
-            placeholder="Search feedback by title, description, or submitter..."
-            value={searchTerm}
-            onChange={setSearchTerm}
-          />
-        </Col>
-        <Col md={4}>
-          <select 
-            className="form-select"
-            value={filterStatus}
-            onChange={(e) => setFilterStatus(e.target.value)}
-          >
-            <option value="all">All Status</option>
-            <option value="pending">Pending</option>
-            <option value="acknowledged">Acknowledged</option>
-            <option value="reviewed">Reviewed</option>
-          </select>
-        </Col>
-      </Row>
-
-      {/* Feedback Table */}
-      <Row>
-        <Col>
-          <Card className="border-0 shadow-sm">
-            <Card.Body className="p-0">
-              <div className="scrollable-table-container admin-table">
-                <table className="table table-hover mb-0 table-mobile-responsive" style={{ fontSize: '0.875rem' }}>
-                  <thead className="sticky-header">
-                    <tr>
-                      <th className="border-neutral-200 text-primary-custom fw-semibold show-mobile">
-                        <SortIcon 
-                          title="Feedback Title" 
-                          sortKey="title" 
-                          sortConfig={sortConfig} 
-                          onSort={handleSort} 
-                        />
-                      </th>
-                      <th className="border-neutral-200 text-primary-custom fw-semibold show-mobile">
-                        Submitter
-                      </th>
-                      <th className="border-neutral-200 text-primary-custom fw-semibold show-mobile">
-                        Category
-                      </th>
-                      <th className="border-neutral-200 text-primary-custom fw-semibold show-mobile">
-                        Rating
-                      </th>
-                      <th className="border-neutral-200 text-primary-custom fw-semibold show-mobile">
-                        <SortIcon 
-                          title="Status" 
-                          sortKey="status" 
-                          sortConfig={sortConfig} 
-                          onSort={handleSort} 
-                        />
-                      </th>
-                      <th className="border-neutral-200 text-primary-custom fw-semibold show-mobile">
-                        <SortIcon 
-                          title="Created Date" 
-                          sortKey="createdAt" 
-                          sortConfig={sortConfig} 
-                          onSort={handleSort} 
-                        />
-                      </th>
-                      <th className="border-neutral-200 text-primary-custom fw-semibold text-center show-mobile" width="80">
-                        Actions
-                      </th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {filteredFeedback.length === 0 ? (
-                      <tr>
-                        <td colSpan="7" className="text-center py-5">
-                          <ChatDots size={48} className="text-muted mb-3" />
-                          <h5 className="text-muted">No feedback found</h5>
-                          <p className="text-muted">No feedback matches your current filters.</p>
-                        </td>
-                      </tr>
-                    ) : (
-                      filteredFeedback.map((item) => (
-                        <tr key={item.id}>
-                          <td>
-                            <div>
-                              <h6 className="mb-1">{item.title}</h6>
-                              <p className="text-muted small mb-0" style={{
-                                display: '-webkit-box',
-                                WebkitLineClamp: 2,
-                                WebkitBoxOrient: 'vertical',
-                                overflow: 'hidden'
-                              }}>
-                                {item.description}
-                              </p>
-                            </div>
-                          </td>
-                          <td>
-                            <div>
-                              <div className="fw-medium">{item.submitter}</div>
-                              <div className="text-muted small">{item.submitterEmail}</div>
-                            </div>
-                          </td>
-                          <td>
-                            {getCategoryBadge(item.category)}
-                          </td>
-                          <td>
-                            <div className="d-flex align-items-center">
-                              <span className="me-2">{getRatingStars(item.rating)}</span>
-                              <span className="text-muted small">({item.rating}/5)</span>
-                            </div>
-                          </td>
-                          <td>
-                            {getStatusBadge(item.status)}
-                          </td>
-                          <td>
-                            <div className="text-muted small">
-                              {new Date(item.createdAt).toLocaleDateString()}
-                            </div>
-                          </td>
-                          <td className="border-neutral-200 align-middle text-center show-mobile">
-                            <PermissionWrapper 
-                              permissions={[API_PERMISSIONS.SQA.VIEW_TEMPLATES]}
-                              fallback={null}
-                            >
-                              <PortalUnifiedDropdown
-                                align="end"
-                                className="table-dropdown"
-                                placement="bottom-end"
-                                trigger={{
-                                  variant: 'link',
-                                  className: 'btn btn-link p-0 text-primary-custom',
-                                  style: { border: 'none', background: 'transparent' },
-                                  children: <ThreeDotsVertical size={16} />
-                                }}
-                                items={getActionItems(item)}
-                              />
-                            </PermissionWrapper>
-                          </td>
-                        </tr>
-                      ))
-                    )}
-                  </tbody>
-                </table>
+    <Container fluid className="py-4 feedback-list-page">
+      <Card className="border-neutral-200 shadow-sm">
+        <Card.Header className="bg-light-custom border-neutral-200">
+          <Row className="align-items-center">
+            <Col xs={12} className="mt-2 mt-md-0 mb-3">
+              <div className="d-flex justify-content-end gap-2">
+                <Button variant="outline-primary" size="sm">
+                  Export Feedback
+                </Button>
               </div>
-            </Card.Body>
-          </Card>
-        </Col>
-      </Row>
+            </Col>
+          </Row>
+        </Card.Header>
+
+        <Card.Body>
+          {/* Search and Filters */}
+          <Row className="mb-3 form-mobile-stack search-filter-section">
+            <Col xs={12} lg={6} md={5} className="mb-2 mb-lg-0">
+              <SearchBar
+                placeholder="Search feedback by title, description, or submitter..."
+                value={searchTerm}
+                onChange={setSearchTerm}
+                className="search-bar-mobile"
+              />
+            </Col>
+            <Col xs={12} lg={3} md={4} className="mb-2 mb-lg-0 position-relative">
+              <select 
+                className="form-select filter-panel-mobile"
+                value={filterStatus}
+                onChange={(e) => setFilterStatus(e.target.value)}
+              >
+                <option value="all">All Status</option>
+                <option value="pending">Pending</option>
+                <option value="acknowledged">Acknowledged</option>
+                <option value="reviewed">Reviewed</option>
+              </select>
+            </Col>
+            <Col xs={12} lg={3} md={3}>
+              <div className="text-end text-mobile-center">
+                <small className="text-muted">
+                  {filteredFeedback.length} feedback{filteredFeedback.length !== 1 ? '' : ''}
+                </small>
+              </div>
+            </Col>
+          </Row>
+
+          {/* Feedback Table */}
+          <AdminTable
+            data={filteredFeedback}
+            loading={loading}
+            columns={[
+              { key: 'title', title: 'Feedback Title', className: 'show-mobile', sortable: true },
+              { key: 'submitter', title: 'Submitter', className: 'hide-mobile', sortable: true },
+              { key: 'status', title: 'Status', className: 'show-mobile', sortable: true },
+              { key: 'category', title: 'Category', className: 'hide-mobile', sortable: true },
+              { key: 'createdAt', title: 'Created Date', className: 'hide-mobile', sortable: true },
+              { title: 'Actions', className: 'text-center show-mobile', sortable: false }
+            ]}
+            renderRow={(item, index) => (
+              <tr 
+                key={item.id}
+                className={`${index % 2 === 0 ? 'bg-white' : 'bg-neutral-50'} transition-all`}
+                style={{
+                  transition: 'background-color 0.2s ease'
+                }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.backgroundColor = 'var(--bs-neutral-100)';
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.backgroundColor = index % 2 === 0 ? 'white' : 'var(--bs-neutral-50)';
+                }}
+              >
+                <td className="align-middle show-mobile">
+                  <div>
+                    <h6 className="mb-1 fw-medium">{item.title}</h6>
+                    <small className="text-muted">
+                      {item.description}
+                    </small>
+                  </div>
+                </td>
+                <td className="align-middle hide-mobile">
+                  <div>
+                    <div className="fw-medium">{item.submitter}</div>
+                    <small className="text-muted">{item.submitterEmail}</small>
+                  </div>
+                </td>
+                <td className="align-middle show-mobile">
+                  {getStatusBadge(item.status)}
+                </td>
+                <td className="align-middle hide-mobile">
+                  {getCategoryBadge(item.category)}
+                </td>
+                <td className="align-middle hide-mobile">
+                  <div className="text-muted small">
+                    {new Date(item.createdAt).toLocaleDateString()}
+                  </div>
+                </td>
+                <td className="align-middle text-center show-mobile">
+                  <PermissionWrapper 
+                    permissions={[API_PERMISSIONS.SQA.VIEW_TEMPLATES]}
+                    fallback={null}
+                  >
+                    <PortalUnifiedDropdown
+                      align="end"
+                      className="table-dropdown"
+                      placement="bottom-end"
+                      trigger={{
+                        variant: 'link',
+                        className: 'btn btn-link p-0 text-primary-custom',
+                        style: { border: 'none', background: 'transparent' },
+                        children: <ThreeDotsVertical size={16} />
+                      }}
+                      items={getActionItems(item)}
+                    />
+                  </PermissionWrapper>
+                </td>
+              </tr>
+            )}
+            emptyMessage="No feedback found"
+            emptyDescription="Try adjusting your search criteria."
+          />
+        </Card.Body>
+      </Card>
     </Container>
   );
 };

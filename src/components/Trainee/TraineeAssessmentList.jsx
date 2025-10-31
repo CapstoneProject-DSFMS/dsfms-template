@@ -1,10 +1,12 @@
 import React, { useState, useEffect } from 'react';
 import { Table, Badge, Button, Spinner } from 'react-bootstrap';
 import { ClipboardCheck, Clock, CheckCircle, ExclamationTriangle } from 'react-bootstrap-icons';
+import { useNavigate } from 'react-router-dom';
 import { toast } from 'react-toastify';
 import traineeAPI from '../../api/trainee';
 
 const TraineeAssessmentList = ({ traineeId }) => {
+  const navigate = useNavigate();
   const [assessments, setAssessments] = useState([]);
   const [loading, setLoading] = useState(true);
 
@@ -58,13 +60,11 @@ const TraineeAssessmentList = ({ traineeId }) => {
   };
 
   const handleStartAssessment = (assessmentId) => {
-    // TODO: Navigate to assessment or open assessment modal
-    console.log('Start assessment:', assessmentId);
+    navigate(`/trainee/${traineeId}/assessment/${assessmentId}`);
   };
 
   const handleViewAssessment = (assessmentId) => {
-    // TODO: Navigate to assessment details
-    console.log('View assessment:', assessmentId);
+    navigate(`/trainee/${traineeId}/assessment/${assessmentId}`);
   };
 
   if (loading) {

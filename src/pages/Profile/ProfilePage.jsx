@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Container, Row, Col } from 'react-bootstrap';
+import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../hooks/useAuth';
 import profileAPI from '../../api/profile';
 import ResetPasswordModal from '../../components/Common/ResetPasswordModal';
@@ -9,6 +10,7 @@ import { toast } from 'react-toastify';
 
 const ProfilePage = () => {
   const { user } = useAuth();
+  const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
   const [showResetPasswordModal, setShowResetPasswordModal] = useState(false);
   const [profileData, setProfileData] = useState(null);
@@ -66,6 +68,17 @@ const ProfilePage = () => {
     }
   };
 
+  const handleConfigureSignature = () => {
+    // Navigate to Configure Signature page based on user role
+    if (user?.role === 'TRAINER') {
+      navigate('/trainer/configure-signature');
+    } else {
+      // For other roles, navigate to a general configure signature page
+      // You can create a general configure signature page or redirect to trainer page
+      navigate('/trainer/configure-signature');
+    }
+  };
+
 
   if (profileLoading) {
     return (
@@ -94,6 +107,7 @@ const ProfilePage = () => {
             user={user}
             onResetPassword={() => setShowResetPasswordModal(true)}
             onAvatarUpdated={refreshProfile}
+            onConfigureSignature={handleConfigureSignature}
           />
         </Col>
 
