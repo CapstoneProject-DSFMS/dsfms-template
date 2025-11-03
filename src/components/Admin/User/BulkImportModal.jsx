@@ -529,7 +529,8 @@ const BulkImportModal = ({ show, onClose, onImport, loading = false }) => {
           // Validate role-specific required fields
           const actualRoleName = getActualRoleName(userData.role);
           if (actualRoleName === 'TRAINER') {
-            // Trainer requires specialization, years of experience, and department
+            // Trainer requires specialization and years of experience
+            // Department is NOT allowed for Trainer role
             if (!userData.specialization || userData.specialization.trim() === '') {
               hasError = true;
               rowErrors.push('Trainer requires specialization');
@@ -538,9 +539,10 @@ const BulkImportModal = ({ show, onClose, onImport, loading = false }) => {
               hasError = true;
               rowErrors.push('Trainer requires years of experience');
             }
-            if (!userData.department || userData.department.trim() === '') {
+            // Department is NOT allowed for Trainer - validate that it's empty
+            if (userData.department && userData.department.trim() !== '' && userData.department.trim() !== '-') {
               hasError = true;
-              rowErrors.push('Trainer requires department');
+              rowErrors.push('Department is not allowed for Trainer role');
             }
           } else if (actualRoleName === 'TRAINEE') {
             // Trainee requires date of birth, training batch, passport number, and nation
@@ -636,12 +638,26 @@ const BulkImportModal = ({ show, onClose, onImport, loading = false }) => {
         }
       };
 
-      // Add department if provided
-      if (user.department) {
-        userData.department = {
-          id: user.department // Assuming department is provided as ID
-        };
+      // Handle department based on role
+      // TRAINER: Department is NOT allowed - do not include departmentId
+      // DEPARTMENT_HEAD: Department is optional (nullable) - include departmentId only if provided
+      if (actualRoleName === 'DEPARTMENT_HEAD') {
+        // DEPARTMENT_HEAD can have department (nullable)
+        if (user.department && user.department.trim() !== '' && user.department.trim() !== '-') {
+          // If department is provided, find department ID from departments list
+          // Note: user.department might be name or ID, need to find matching department
+          // For now, assuming it's provided as ID or we need to lookup by name
+          userData.departmentId = user.department;
+        } else {
+          // Department is optional - send null explicitly
+          userData.departmentId = null;
+        }
       }
+      // For other roles (except TRAINER), add department if provided
+      else if (actualRoleName !== 'TRAINER' && user.department && user.department.trim() !== '' && user.department.trim() !== '-') {
+        userData.departmentId = user.department;
+      }
+      // TRAINER: Explicitly do NOT add departmentId field
 
       // Add role-specific profiles based on actual role name
       if (actualRoleName === 'TRAINER') {

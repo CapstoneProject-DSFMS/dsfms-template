@@ -37,12 +37,12 @@ const FormsPage = () => {
   return (
     <Container fluid className="py-4 forms-page form-component">
       <Card className="border-neutral-200 shadow-sm">
-        <Card.Header className="bg-light-custom border-neutral-200">
+        <Card.Header className="border-neutral-200 forms-page-header" style={{backgroundColor: '#1b3c53'}}>
           <Row className="align-items-center">
             <Col>
               <div className="d-flex align-items-center">
-                <FileText className="me-2 text-primary-custom" size={24} />
-                <h4 className="mb-0 text-primary-custom">Form Templates</h4>
+                <FileText className="me-2 text-white" size={24} />
+                <h4 className="mb-0 text-white">Form Templates</h4>
               </div>
             </Col>
           </Row>
@@ -68,7 +68,7 @@ const FormsPage = () => {
                       className="d-flex align-items-center"
                     >
                       <Plus className="me-2" size={16} />
-                      Create New Form
+                      Create New Template's Version
                     </Button>
                   </PermissionWrapper>
                   
@@ -82,7 +82,7 @@ const FormsPage = () => {
                       className="d-flex align-items-center"
                     >
                       <Upload className="me-2" size={16} />
-                      Import File
+                      Create New Template
                     </Button>
                   </PermissionWrapper>
                 </div>

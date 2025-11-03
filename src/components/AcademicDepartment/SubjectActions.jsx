@@ -1,6 +1,6 @@
 import React from 'react';
 import PortalUnifiedDropdown from '../Common/PortalUnifiedDropdown';
-import { Eye, SlashCircle, ThreeDotsVertical } from 'react-bootstrap-icons';
+import { Eye, Archive, ThreeDotsVertical } from 'react-bootstrap-icons';
 import { PermissionWrapper } from '../Common';
 import { API_PERMISSIONS } from '../../constants/apiPermissions';
 
@@ -37,11 +37,11 @@ const SubjectActions = ({ subject, onView, onEdit, onDelete }) => {
           },
           { type: 'divider' },
           {
-            label: 'Disable Subject',
-            icon: <SlashCircle />,
+            label: 'Archive Subject',
+            icon: <Archive />,
             className: 'text-warning',
             onClick: handleDeleteClick,
-            permission: API_PERMISSIONS.SUBJECTS.DELETE
+            permission: API_PERMISSIONS.SUBJECTS.ARCHIVE
           }
         ]}
       />

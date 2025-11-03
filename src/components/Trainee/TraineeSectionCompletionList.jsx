@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Table, Badge, Spinner, Card } from 'react-bootstrap';
 import { CheckCircle, Eye, ThreeDotsVertical } from 'react-bootstrap-icons';
+import { useNavigate } from 'react-router-dom';
 import { toast } from 'react-toastify';
 import { LoadingSkeleton } from '../Common';
 import PortalUnifiedDropdown from '../Common/PortalUnifiedDropdown';
@@ -38,6 +39,7 @@ if (typeof document !== 'undefined') {
 }
 
 const TraineeSectionCompletionList = ({ traineeId }) => {
+  const navigate = useNavigate();
   const [sectionCompletion, setSectionCompletion] = useState([]);
   const [loading, setLoading] = useState(true);
 
@@ -114,9 +116,11 @@ const TraineeSectionCompletionList = ({ traineeId }) => {
   };
 
   const handleCompleteSection = (sectionId) => {
-    console.log('Complete section:', sectionId);
-    // TODO: Implement section completion functionality
-    toast.info('Section completion functionality coming soon');
+    if (traineeId) {
+      navigate(`/trainee/${traineeId}/assessment-section/${sectionId}`);
+    } else {
+      toast.error('Unable to open section: Trainee ID not found');
+    }
   };
 
   if (loading) {

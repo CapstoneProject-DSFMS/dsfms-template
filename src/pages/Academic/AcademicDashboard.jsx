@@ -1,11 +1,8 @@
 import React from 'react';
-import { Container, Row, Col, Card, Button, Badge } from 'react-bootstrap';
+import { Container, Row, Col, Card, Button } from 'react-bootstrap';
 import { 
   Book, 
-  People, 
   Calendar,
-  GraphUp,
-  Clock,
   Award,
   ArrowRight,
   Building,
@@ -13,19 +10,10 @@ import {
   FileText
 } from 'react-bootstrap-icons';
 import { useNavigate } from 'react-router-dom';
+import '../../styles/academic-department.css';
 
 const AcademicDashboard = () => {
   const navigate = useNavigate();
-
-  // Mock data for dashboard
-  const dashboardStats = {
-    totalCourses: 24,
-    activeCourses: 18,
-    totalTrainees: 156,
-    completedCourses: 89,
-    upcomingSessions: 12,
-    averageCompletion: 78
-  };
 
   const recentActivities = [
     {
@@ -79,83 +67,14 @@ const AcademicDashboard = () => {
   ];
 
   return (
-    <div style={{ paddingBottom: '2rem' }}>
+    <div className="academic-dashboard-page" style={{ paddingBottom: '2rem' }}>
       <Container className="py-4">
-        {/* Header */}
-        <Row className="mb-4">
-          <Col>
-            <div className="d-flex justify-content-between align-items-center">
-              <div>
-                <h2 className="mb-1">Academic Dashboard</h2>
-              </div>
-            </div>
-          </Col>
-        </Row>
-
-        {/* Stats Cards */}
-        <Row className="mb-4">
-          <Col md={6} lg={2} className="mb-3">
-            <Card className="h-100 border-0 shadow-sm">
-              <Card.Body className="text-center">
-                <Book size={32} className="text-primary mb-2" />
-                <h4 className="mb-1">{dashboardStats.totalCourses}</h4>
-                <p className="text-muted mb-0 small">Total Courses</p>
-              </Card.Body>
-            </Card>
-          </Col>
-          <Col md={6} lg={2} className="mb-3">
-            <Card className="h-100 border-0 shadow-sm">
-              <Card.Body className="text-center">
-                <GraphUp size={32} className="text-success mb-2" />
-                <h4 className="mb-1">{dashboardStats.activeCourses}</h4>
-                <p className="text-muted mb-0 small">Active Courses</p>
-              </Card.Body>
-            </Card>
-          </Col>
-          <Col md={6} lg={2} className="mb-3">
-            <Card className="h-100 border-0 shadow-sm">
-              <Card.Body className="text-center">
-                <People size={32} className="text-info mb-2" />
-                <h4 className="mb-1">{dashboardStats.totalTrainees}</h4>
-                <p className="text-muted mb-0 small">Total Trainees</p>
-              </Card.Body>
-            </Card>
-          </Col>
-          <Col md={6} lg={2} className="mb-3">
-            <Card className="h-100 border-0 shadow-sm">
-              <Card.Body className="text-center">
-                <Award size={32} className="text-warning mb-2" />
-                <h4 className="mb-1">{dashboardStats.completedCourses}</h4>
-                <p className="text-muted mb-0 small">Completed</p>
-              </Card.Body>
-            </Card>
-          </Col>
-          <Col md={6} lg={2} className="mb-3">
-            <Card className="h-100 border-0 shadow-sm">
-              <Card.Body className="text-center">
-                <Calendar size={32} className="text-danger mb-2" />
-                <h4 className="mb-1">{dashboardStats.upcomingSessions}</h4>
-                <p className="text-muted mb-0 small">Upcoming</p>
-              </Card.Body>
-            </Card>
-          </Col>
-          <Col md={6} lg={2} className="mb-3">
-            <Card className="h-100 border-0 shadow-sm">
-              <Card.Body className="text-center">
-                <Clock size={32} className="text-secondary mb-2" />
-                <h4 className="mb-1">{dashboardStats.averageCompletion}%</h4>
-                <p className="text-muted mb-0 small">Avg. Completion</p>
-              </Card.Body>
-            </Card>
-          </Col>
-        </Row>
-
         <Row>
           {/* Quick Actions */}
           <Col lg={8} className="mb-4">
             <Card className="h-100 border-0 shadow-sm">
-              <Card.Header className="bg-white border-bottom">
-                <h5 className="mb-0">Quick Actions</h5>
+              <Card.Header className="academic-dashboard-section-header bg-primary text-white border-0">
+                <h5 className="mb-0 text-white">Quick Actions</h5>
               </Card.Header>
               <Card.Body>
                 <Row>
@@ -183,8 +102,8 @@ const AcademicDashboard = () => {
           {/* Recent Activities */}
           <Col lg={4} className="mb-4">
             <Card className="h-100 border-0 shadow-sm">
-              <Card.Header className="bg-white border-bottom">
-                <h5 className="mb-0">Recent Activities</h5>
+              <Card.Header className="academic-dashboard-section-header bg-primary text-white border-0">
+                <h5 className="mb-0 text-white">Recent Activities</h5>
               </Card.Header>
               <Card.Body>
                 {recentActivities.map((activity) => (

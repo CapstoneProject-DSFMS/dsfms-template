@@ -29,7 +29,7 @@ const UserTable = ({ users, loading, onView, onEdit, onDisable }) => {
     
     return (
       <th 
-        className={`border-neutral-200 text-primary-custom fw-semibold ${className} ${isActive ? 'text-primary' : 'text-muted'}`}
+        className={`text-primary-custom fw-semibold ${className} ${isActive ? 'text-primary' : 'text-muted'}`}
         style={{ 
           cursor: 'pointer',
           userSelect: 'none',
@@ -109,7 +109,7 @@ const UserTable = ({ users, loading, onView, onEdit, onDisable }) => {
             <SortableHeader columnKey="status" className="show-mobile">
               Status
             </SortableHeader>
-            <th className="border-neutral-200 text-primary-custom fw-semibold text-center show-mobile">
+            <th className="text-primary-custom fw-semibold text-center show-mobile">
               Actions
             </th>
           </tr>

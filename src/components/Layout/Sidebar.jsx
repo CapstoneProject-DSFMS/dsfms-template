@@ -18,6 +18,11 @@ import {
   ExclamationTriangle,
   ChatDots,
   FileEarmarkText,
+  CalendarEvent,
+  CheckCircle,
+  Book,
+  ClipboardCheck,
+  Clock,
 } from "react-bootstrap-icons";
 import logo from "../../assets/logo-light.png";
 import { usePermissions } from "../../hooks/usePermissions";
@@ -56,177 +61,220 @@ const Sidebar = ({ collapsed, onClose }) => {
     }
   }, [isDepartmentDropdownOpen, departments]);
 
-  const allNavItems = [
-    {
-      id: "dashboard",
-      label: "Dashboard",
-      icon: House,
-      path: "/admin/dashboard",
-      permission: API_PERMISSIONS.DASHBOARD.VIEW,
-      module: "DASHBOARD"
-    },
-    {
-      id: "users",
-      label: "User Management",
-      icon: People,
-      path: "/admin/users",
-      permission: API_PERMISSIONS.USERS.VIEW_ALL,
-      module: "USERS"
-    },
-    {
-      id: "roles",
-      label: "Role Management",
-      icon: Shield,
-      path: "/admin/roles",
-      permission: API_PERMISSIONS.ROLES.VIEW_ALL,
-      module: "ROLES"
-    },
-    {
-      id: "departments",
-      label: "Departments",
-      icon: Building,
-      path: "/admin/departments",
-      permission: API_PERMISSIONS.DEPARTMENTS.VIEW_ALL,
-      module: "DEPARTMENTS"
-    },
-    {
-      id: "forms",
-      label: "Form Templates",
-      icon: FileText,
-      path: "/admin/forms",
-      permission: API_PERMISSIONS.TEMPLATES.VIEW_ALL,
-      module: "TEMPLATES"
-    },
-    {
-      id: "system-config",
-      label: "System Configuration",
-      icon: Gear,
-      path: "/admin/system-config",
-      permission: API_PERMISSIONS.GLOBAL_FIELDS.VIEW_ALL,
-      module: "GLOBAL_FIELDS"
-    },
-    {
-      id: "trainee-dashboard",
-      label: "Trainee Dashboard",
-      icon: PersonCheck,
-      path: "/trainee/dashboard",
-      permission: API_PERMISSIONS.TRAINEES.VIEW_DETAIL,
-      module: "TRAINEES"
-    },
-    {
-      id: "enrolled-courses",
-      label: "Enrolled Course List",
-      icon: PersonCheck,
-      path: "/trainee/enrolled-courses",
-      permission: API_PERMISSIONS.TRAINEES.VIEW_COURSES,
-      module: "TRAINEES"
-    },
-    {
-      id: "all-assessments",
-      label: "All Assessments",
-      icon: PersonCheck,
-      path: "/trainee/all-assessments",
-      permission: API_PERMISSIONS.TRAINEES.VIEW_ASSESSMENTS,
-      module: "TRAINEES",
-      children: [
-        {
-          id: "your-assessments",
-          label: "Your Assessments",
-          path: "/trainee/your-assessments",
-          permission: API_PERMISSIONS.TRAINEES.VIEW_ASSESSMENTS,
-          module: "TRAINEES"
-        },
-        {
-          id: "signature-required",
-          label: "Signature Required List",
-          path: "/trainee/signature-required",
-          permission: API_PERMISSIONS.TRAINEES.VIEW_ASSESSMENTS,
-          module: "TRAINEES"
-        },
-        {
-          id: "completion-required",
-          label: "Section Completion Required List",
-          path: "/trainee/completion-required",
-          permission: API_PERMISSIONS.TRAINEES.VIEW_ASSESSMENTS,
-          module: "TRAINEES"
-        }
-      ]
-    },
-    {
-      id: "create-issue",
-      label: "Create Incident/Feedback Report",
-      icon: PersonCheck,
-      path: "/trainee/create-incident-feedback-report",
-      permission: API_PERMISSIONS.TRAINEES.VIEW_ALL,
-      module: "TRAINEES"
-    },
-    // SQA Navigation Items
-    {
-      id: "sqa-dashboard",
-      label: "SQA Dashboard",
-      icon: House,
-      path: "/sqa/dashboard",
-      permission: API_PERMISSIONS.SQA.VIEW_TEMPLATES,
-      module: "SQA"
-    },
-    {
-      id: "issue-list",
-      label: "Issue List",
-      icon: ExclamationTriangle,
-      path: "/sqa/issues",
-      permission: API_PERMISSIONS.SQA.VIEW_TEMPLATES,
-      module: "SQA"
-    },
-    {
-      id: "feedback-list",
-      label: "Feedback List",
-      icon: ChatDots,
-      path: "/sqa/feedback",
-      permission: API_PERMISSIONS.SQA.VIEW_TEMPLATES,
-      module: "SQA"
-    },
-    {
-      id: "template-list",
-      label: "Template List",
-      icon: FileEarmarkText,
-      path: "/sqa/templates",
-      permission: API_PERMISSIONS.SQA.VIEW_TEMPLATES,
-      module: "SQA",
-      children: [
-        {
-          id: "template-history",
-          label: "List History Version",
-          path: "/sqa/templates/history",
-          permission: API_PERMISSIONS.SQA.VIEW_TEMPLATE_DETAIL,
-          module: "SQA"
-        },
-        {
-          id: "template-sections",
-          label: "Section List",
-          path: "/sqa/templates/sections",
-          permission: API_PERMISSIONS.SQA.VIEW_TEMPLATE_DETAIL,
-          module: "SQA"
-        },
-        {
-          id: "template-fields",
-          label: "Field List",
-          path: "/sqa/templates/fields",
-          permission: API_PERMISSIONS.SQA.VIEW_TEMPLATE_DETAIL,
-          module: "SQA"
-        },
-        {
-          id: "template-export",
-          label: "PDF Preview for Export",
-          path: "/sqa/templates/export",
-          permission: API_PERMISSIONS.SQA.VIEW_TEMPLATE_DETAIL,
-          module: "SQA"
-        }
-      ]
-    },
-  ];
-
   // Filter nav items based on user permissions and role
-  const navItems = useMemo(() => allNavItems.filter(item => {
+  const navItems = useMemo(() => {
+    const allNavItems = [
+      {
+        id: "users",
+        label: "User Management",
+        icon: People,
+        path: "/admin/users",
+        permission: API_PERMISSIONS.USERS.VIEW_ALL,
+        module: "USERS"
+      },
+      {
+        id: "roles",
+        label: "Role Management",
+        icon: Shield,
+        path: "/admin/roles",
+        permission: API_PERMISSIONS.ROLES.VIEW_ALL,
+        module: "ROLES"
+      },
+      {
+        id: "departments",
+        label: "Departments",
+        icon: Building,
+        path: "/admin/departments",
+        permission: API_PERMISSIONS.DEPARTMENTS.VIEW_ALL,
+        module: "DEPARTMENTS"
+      },
+      {
+        id: "forms",
+        label: "Form Templates",
+        icon: FileText,
+        path: "/admin/forms",
+        permission: API_PERMISSIONS.TEMPLATES.VIEW_ALL,
+        module: "TEMPLATES"
+      },
+      {
+        id: "system-config",
+        label: "System Configuration",
+        icon: Gear,
+        path: "/admin/system-config",
+        permission: API_PERMISSIONS.GLOBAL_FIELDS.VIEW_ALL,
+        module: "GLOBAL_FIELDS"
+      },
+      {
+        id: "academic-dashboard",
+        label: "Academic Dashboard",
+        icon: Building,
+        path: "/academic/dashboard",
+        permission: API_PERMISSIONS.DASHBOARD.VIEW,
+        module: "ACADEMIC"
+      },
+      {
+        id: "trainee-dashboard",
+        label: "Trainee Dashboard",
+        icon: PersonCheck,
+        path: "/trainee/dashboard",
+        permission: API_PERMISSIONS.TRAINEES.VIEW_DETAIL,
+        module: "TRAINEES"
+      },
+      {
+        id: "enrolled-courses",
+        label: "Enrolled Course List",
+        icon: PersonCheck,
+        path: "/trainee/enrolled-courses",
+        permission: API_PERMISSIONS.TRAINEES.VIEW_COURSES,
+        module: "TRAINEES"
+      },
+      {
+        id: "all-assessments",
+        label: "All Assessments",
+        icon: PersonCheck,
+        path: "/trainee/all-assessments",
+        permission: API_PERMISSIONS.TRAINEES.VIEW_ASSESSMENTS,
+        module: "TRAINEES",
+        children: [
+          {
+            id: "your-assessments",
+            label: "Your Assessments",
+            path: "/trainee/your-assessments",
+            permission: API_PERMISSIONS.TRAINEES.VIEW_ASSESSMENTS,
+            module: "TRAINEES"
+          },
+          {
+            id: "signature-required",
+            label: "Signature Required List",
+            path: "/trainee/signature-required",
+            permission: API_PERMISSIONS.TRAINEES.VIEW_ASSESSMENTS,
+            module: "TRAINEES"
+          },
+          {
+            id: "completion-required",
+            label: "Section Completion Required List",
+            path: "/trainee/completion-required",
+            permission: API_PERMISSIONS.TRAINEES.VIEW_ASSESSMENTS,
+            module: "TRAINEES"
+          }
+        ]
+      },
+      {
+        id: "create-issue",
+        label: "Create Incident/Feedback Report",
+        icon: PersonCheck,
+        path: "/trainee/create-incident-feedback-report",
+        permission: API_PERMISSIONS.TRAINEES.VIEW_ALL,
+        module: "TRAINEES"
+      },
+      // Trainer Navigation Items
+      {
+        id: "upcoming-assessments",
+        label: "List Upcoming Assessment",
+        icon: Clock,
+        path: "/trainer/upcoming-assessments",
+        permission: API_PERMISSIONS.ASSESSMENTS.VIEW_ALL,
+        module: "TRAINER"
+      },
+      {
+        id: "assessment-results",
+        label: "List Assessment Result",
+        icon: CheckCircle,
+        path: "/trainer/assessment-results",
+        permission: API_PERMISSIONS.ASSESSMENTS.VIEW_RESULTS,
+        module: "TRAINER"
+      },
+      {
+        id: "instructed-courses",
+        label: "List Instructed Course",
+        icon: Book,
+        path: "/trainer/instructed-courses",
+        permission: API_PERMISSIONS.COURSES.VIEW_ALL,
+        module: "TRAINER"
+      },
+      // Department Head Navigation Items
+      {
+        id: "department-dashboard",
+        label: "Department Dashboard",
+        icon: Building,
+        path: "/department-head/dashboard",
+        permission: API_PERMISSIONS.DASHBOARD.VIEW,
+        module: "DEPARTMENT_HEAD"
+      },
+      {
+        id: "my-department-details",
+        label: "My Department Details",
+        icon: Book,
+        path: "/department-head/my-department-details",
+        permission: API_PERMISSIONS.DEPARTMENTS.VIEW_DETAIL,
+        module: "DEPARTMENT_HEAD"
+      },
+      {
+        id: "assessment-review-requests",
+        label: "List Assessment Review Requests",
+        icon: ClipboardCheck,
+        path: "/department-head/assessment-review-requests",
+        permission: API_PERMISSIONS.ASSESSMENTS.VIEW_ALL,
+        module: "DEPARTMENT_HEAD"
+      },
+      // SQA Navigation Items
+      {
+        id: "issue-list",
+        label: "Issue List",
+        icon: ExclamationTriangle,
+        path: "/sqa/issues",
+        permission: API_PERMISSIONS.SQA.VIEW_TEMPLATES,
+        module: "SQA"
+      },
+      {
+        id: "feedback-list",
+        label: "Feedback List",
+        icon: ChatDots,
+        path: "/sqa/feedback",
+        permission: API_PERMISSIONS.SQA.VIEW_TEMPLATES,
+        module: "SQA"
+      },
+      {
+        id: "template-list",
+        label: "Template List",
+        icon: FileEarmarkText,
+        path: "/sqa/templates",
+        permission: API_PERMISSIONS.SQA.VIEW_TEMPLATES,
+        module: "SQA",
+        children: [
+          {
+            id: "template-history",
+            label: "List History Version",
+            path: "/sqa/templates/history",
+            permission: API_PERMISSIONS.SQA.VIEW_TEMPLATE_DETAIL,
+            module: "SQA"
+          },
+          {
+            id: "template-sections",
+            label: "Section List",
+            path: "/sqa/templates/sections",
+            permission: API_PERMISSIONS.SQA.VIEW_TEMPLATE_DETAIL,
+            module: "SQA"
+          },
+          {
+            id: "template-fields",
+            label: "Field List",
+            path: "/sqa/templates/fields",
+            permission: API_PERMISSIONS.SQA.VIEW_TEMPLATE_DETAIL,
+            module: "SQA"
+          },
+          {
+            id: "template-export",
+            label: "PDF Preview for Export",
+            path: "/sqa/templates/export",
+            permission: API_PERMISSIONS.SQA.VIEW_TEMPLATE_DETAIL,
+            module: "SQA"
+          }
+        ]
+      },
+    ];
+
+    return allNavItems.filter(item => {
     // Debug logging - Commented out to reduce console noise
     // console.log(`🔍 Filtering item: ${item.id}`, {
     //   userRole: user?.role,
@@ -236,27 +284,28 @@ const Sidebar = ({ collapsed, onClose }) => {
     //   hasPermission: hasPermission(item.permission)
     // });
     
-    // For ADMINISTRATOR role, show all items based on permissions
-    // But completely exclude SQA items for ADMINISTRATOR
+    // For ADMINISTRATOR role, show only admin-specific items
     if (user?.role === 'ADMINISTRATOR') {
-      // Check if this is an SQA item - ADMINISTRATOR should never see SQA items
-      const isSQAItem = ['sqa-dashboard', 'issue-list', 'feedback-list', 'template-list'].includes(item.id);
+      // Define admin-specific items that should be visible
+      const adminItems = ['users', 'roles', 'departments', 'forms', 'system-config'];
       
-      if (isSQAItem) {
-        // console.log(`🔍 ADMINISTRATOR role - SQA item ${item.id}: BLOCKED (ADMINISTRATOR should not see SQA items)`);
-        return false; // Always block SQA items for ADMINISTRATOR
+      // Check if this is an admin item
+      const isAdminItem = adminItems.includes(item.id);
+      
+      if (!isAdminItem) {
+        // console.log(`🔍 ADMINISTRATOR role - Non-admin item ${item.id}: BLOCKED (ADMINISTRATOR should only see admin items)`);
+        return false; // Block all non-admin items for ADMINISTRATOR
       }
       
-      // For non-SQA items, use normal permission check
+      // For admin items, use normal permission check
       const hasAccess = hasModuleAccess(item.module) || hasPermission(item.permission);
       // console.log(`🔍 ADMINISTRATOR role - ${item.id}: ${hasAccess}`);
       return hasAccess;
     }
-    // For ACADEMIC_DEPARTMENT role, only show dashboard
+    // For ACADEMIC_DEPARTMENT role, show academic-specific items
     if (user?.role === 'ACADEMIC_DEPARTMENT') {
-      const isDashboard = item.id === 'dashboard';
-      // console.log(`🔍 ACADEMIC_DEPARTMENT role - ${item.id}: ${isDashboard}`);
-      return isDashboard;
+      const isAcademicItem = ['academic-dashboard'].includes(item.id);
+      return isAcademicItem;
     }
     // For TRAINEE role, show all trainee-related items
     if (user?.role === 'TRAINEE') {
@@ -264,27 +313,30 @@ const Sidebar = ({ collapsed, onClose }) => {
       // console.log(`🔍 TRAINEE role - ${item.id}: ${isTraineeItem}`);
       return isTraineeItem;
     }
+    // For TRAINER role, show only trainer-specific items (no trainee dashboard)
+    if (user?.role === 'TRAINER') {
+      const isTrainerItem = ['upcoming-assessments', 'assessment-results', 'instructed-courses'].includes(item.id);
+      // console.log(`🔍 TRAINER role - ${item.id}: ${isTrainerItem}`);
+      return isTrainerItem;
+    }
     // For SQA_AUDITOR role, show all SQA-related items
     if (user?.role === 'SQA_AUDITOR') {
-      const isSQAItem = ['sqa-dashboard', 'issue-list', 'feedback-list', 'template-list'].includes(item.id);
+      const isSQAItem = ['issue-list', 'feedback-list', 'template-list'].includes(item.id);
       // console.log(`🔍 SQA_AUDITOR role - ${item.id}: ${isSQAItem}`);
       return isSQAItem;
+    }
+    // For DEPARTMENT_HEAD role, show department head-specific items
+    if (user?.role === 'DEPARTMENT_HEAD') {
+      const isDepartmentHeadItem = ['department-dashboard', 'my-department-details', 'assessment-review-requests'].includes(item.id);
+      // console.log(`🔍 DEPARTMENT_HEAD role - ${item.id}: ${isDepartmentHeadItem}`);
+      return isDepartmentHeadItem;
     }
     // Default behavior for other roles
     const hasAccess = hasModuleAccess(item.module) || hasPermission(item.permission);
     // console.log(`🔍 Default role - ${item.id}: ${hasAccess}`);
     return hasAccess;
-  }).map(item => {
-    // Override dashboard path and label for ACADEMIC_DEPARTMENT role
-    if (user?.role === 'ACADEMIC_DEPARTMENT' && item.id === 'dashboard') {
-      return {
-        ...item,
-        path: '/academic/dashboard',
-        label: 'Academic Dashboard'
-      };
-    }
-    return item;
-  }), [user?.role, hasModuleAccess, hasPermission]);
+  });
+  }, [user?.role, hasModuleAccess, hasPermission]);
 
   // Debug log after navItems is initialized - Commented out to reduce console noise
   // console.log('🔍 Sidebar - Filtered navItems:', navItems);

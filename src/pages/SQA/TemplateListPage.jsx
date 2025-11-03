@@ -1,10 +1,9 @@
 import React, { useState, useEffect } from 'react';
-import { Container, Row, Col, Button, Badge, Card, Form } from 'react-bootstrap';
+import { Container, Row, Col, Button, Badge, Card, Form, Table } from 'react-bootstrap';
 import { 
   FileText, 
-  ClockHistory, 
-  List,
-  Grid3x3Gap,
+  Eye,
+  XCircle,
   FileEarmarkPdf,
   ThreeDotsVertical,
   Clock,
@@ -99,37 +98,14 @@ const TemplateListPage = () => {
     }
   };
 
-  const getCategoryConfig = (category) => {
-    switch (category) {
-      case 'SAFETY':
-        return { variant: 'danger', text: 'SAFETY' };
-      case 'TECHNICAL':
-        return { variant: 'info', text: 'TECHNICAL' };
-      case 'COMPLIANCE':
-        return { variant: 'dark', text: 'COMPLIANCE' };
-      default:
-        return { variant: 'secondary', text: category };
-    }
+  const handleViewDetail = (templateId) => {
+    console.log('View detail for template:', templateId);
+    navigate(`/sqa/templates/${templateId}`);
   };
 
-  const handleViewHistory = (templateId) => {
-    console.log('View history for template:', templateId);
-    // Navigate to history page
-  };
-
-  const handleViewSections = (templateId) => {
-    console.log('View sections for template:', templateId);
-    // Navigate to sections page
-  };
-
-  const handleViewFields = (templateId) => {
-    console.log('View fields for template:', templateId);
-    // Navigate to fields page
-  };
-
-  const handleExportPDF = (templateId) => {
-    console.log('Export PDF for template:', templateId);
-    // Export PDF functionality
+  const handleDisableTemplate = (templateId) => {
+    console.log('Disable template:', templateId);
+    // Disable template functionality
   };
 
   const filteredTemplates = templates.filter(template => {
@@ -218,8 +194,6 @@ const TemplateListPage = () => {
           <Row className="align-items-center">
             <Col xs={12} md={6}>
               <div>
-                <h2 className="mb-1 text-dark">Template List</h2>
-                <p className="text-muted mb-0">Manage assessment templates and their versions</p>
               </div>
             </Col>
             <Col xs={12} md={6} className="mt-2 mt-md-0">
@@ -278,22 +252,22 @@ const TemplateListPage = () => {
                     <SortableHeader columnKey="name" className="show-mobile">
                       Template Name
                     </SortableHeader>
-                    <SortableHeader columnKey="version" className="show-mobile">
+                    <SortableHeader columnKey="version" className="hide-mobile">
                       Version
                     </SortableHeader>
-                    <th className="border-neutral-200 text-primary-custom fw-semibold show-mobile">
-                      Category
-                    </th>
-                    <th className="border-neutral-200 text-primary-custom fw-semibold show-mobile">
+                    <th className="text-primary-custom fw-semibold hide-mobile">
                       Sections/Fields
                     </th>
                     <SortableHeader columnKey="status" className="show-mobile">
                       Status
                     </SortableHeader>
-                    <SortableHeader columnKey="createdBy" className="show-mobile">
+                    <SortableHeader columnKey="createdBy" className="hide-mobile">
                       Created By
                     </SortableHeader>
-                    <th className="border-neutral-200 text-primary-custom fw-semibold text-center show-mobile" width="80">
+                    <SortableHeader columnKey="createdAt" className="hide-mobile">
+                      Created Date
+                    </SortableHeader>
+                    <th className="text-primary-custom fw-semibold text-center show-mobile">
                       Actions
                     </th>
                   </tr>
@@ -310,7 +284,6 @@ const TemplateListPage = () => {
                   ) : (
                     filteredTemplates.map((template, index) => {
                       const statusConfig = getStatusConfig(template.status);
-                      const categoryConfig = getCategoryConfig(template.category);
                       const StatusIcon = statusConfig.icon;
                       
                       return (
@@ -327,7 +300,7 @@ const TemplateListPage = () => {
                             e.currentTarget.style.backgroundColor = index % 2 === 0 ? 'white' : 'var(--bs-neutral-50)';
                           }}
                         >
-                          <td className="border-neutral-200 align-middle show-mobile">
+                          <td className="align-middle">
                             <div>
                               <div className="fw-medium text-dark">
                                 {template.name}
@@ -343,7 +316,7 @@ const TemplateListPage = () => {
                             </div>
                           </td>
                           
-                          <td className="border-neutral-200 align-middle show-mobile">
+                          <td className="align-middle hide-mobile">
                             <Badge 
                               bg="info" 
                               className="px-2 py-1"
@@ -357,26 +330,14 @@ const TemplateListPage = () => {
                             </Badge>
                           </td>
                           
-                          <td className="border-neutral-200 align-middle show-mobile">
-                            <Badge 
-                              bg={categoryConfig.variant} 
-                              className="px-2 py-1"
-                              style={{ 
-                                fontSize: '0.75rem'
-                              }}
-                            >
-                              {categoryConfig.text}
-                            </Badge>
-                          </td>
-                          
-                          <td className="border-neutral-200 align-middle show-mobile">
+                          <td className="align-middle hide-mobile">
                             <div className="text-muted small">
                               <div>{template.sections} sections</div>
                               <div>{template.fields} fields</div>
                             </div>
                           </td>
                           
-                          <td className="border-neutral-200 align-middle show-mobile">
+                          <td className="align-middle">
                             <Badge 
                               bg={statusConfig.variant} 
                               className="px-2 py-1 d-flex align-items-center"
@@ -390,14 +351,19 @@ const TemplateListPage = () => {
                             </Badge>
                           </td>
                           
-                          <td className="border-neutral-200 align-middle show-mobile">
+                          <td className="align-middle hide-mobile">
                             <div className="text-muted small">
-                              <div>{template.createdBy}</div>
-                              <div>{new Date(template.createdAt).toLocaleDateString()}</div>
+                              {template.createdBy}
                             </div>
                           </td>
                           
-                          <td className="border-neutral-200 align-middle text-center show-mobile">
+                          <td className="align-middle hide-mobile">
+                            <div className="text-muted small">
+                              {new Date(template.createdAt).toLocaleDateString()}
+                            </div>
+                          </td>
+                          
+                          <td className="align-middle text-center">
                             <PermissionWrapper 
                               permissions={[API_PERMISSIONS.SQA.VIEW_TEMPLATES, API_PERMISSIONS.SQA.VIEW_TEMPLATE_DETAIL]}
                               fallback={null}
@@ -414,27 +380,15 @@ const TemplateListPage = () => {
                                 }}
                                 items={[
                                   {
-                                    label: 'List History Version',
-                                    icon: <ClockHistory />,
-                                    onClick: () => handleViewHistory(template.id),
+                                    label: 'View Detail',
+                                    icon: <Eye />,
+                                    onClick: () => handleViewDetail(template.id),
                                     permission: API_PERMISSIONS.SQA.VIEW_TEMPLATE_DETAIL
                                   },
                                   {
-                                    label: 'Section List',
-                                    icon: <List />,
-                                    onClick: () => handleViewSections(template.id),
-                                    permission: API_PERMISSIONS.SQA.VIEW_TEMPLATE_SCHEMA
-                                  },
-                                  {
-                                    label: 'Field List',
-                                    icon: <Grid3x3Gap />,
-                                    onClick: () => handleViewFields(template.id),
-                                    permission: API_PERMISSIONS.SQA.EXTRACT_TEMPLATE_FIELDS
-                                  },
-                                  {
-                                    label: 'PDF Preview for Export',
-                                    icon: <FileEarmarkPdf />,
-                                    onClick: () => handleExportPDF(template.id),
+                                    label: 'Disable Template',
+                                    icon: <XCircle />,
+                                    onClick: () => handleDisableTemplate(template.id),
                                     permission: API_PERMISSIONS.SQA.VIEW_TEMPLATES
                                   }
                                 ]}

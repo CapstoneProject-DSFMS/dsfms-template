@@ -8,6 +8,7 @@ import {
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../hooks/useAuth';
 import useDepartmentManagement from '../../hooks/useDepartmentManagement';
+import '../../styles/academic-department.css';
 
 const CourseSelectionView = () => {
   const { user } = useAuth();
@@ -52,37 +53,28 @@ const CourseSelectionView = () => {
             activeDepartments.map((department) => (
               <Col key={department.id} md={6} lg={4} className="mb-4">
                 <Card className="h-100 border-0 shadow-sm course-card d-flex flex-column">
-                  <Card.Body className="p-4 d-flex flex-column">
+                  <Card.Body className="p-4 d-flex flex-column h-100">
                     <div className="d-flex align-items-center mb-3">
                       <div className="course-icon me-3">
                         <Book size={24} className="text-primary" />
                       </div>
-                      <div>
-                        <h5 className="mb-1">{department.name}</h5>
+                      <div className="flex-grow-1">
+                        <h5 className="mb-1">
+                          {department.name}
+                        </h5>
                         <Badge bg="secondary" className="text-white">
                           {department.code}
                         </Badge>
                       </div>
                     </div>
                     
-                    <p 
-                      className="text-muted mb-3 flex-grow-1" 
-                      style={{
-                        display: '-webkit-box',
-                        WebkitLineClamp: 3,
-                        WebkitBoxOrient: 'vertical',
-                        overflow: 'hidden',
-                        textOverflow: 'ellipsis',
-                        lineHeight: '1.4',
-                        maxHeight: '4.2em' // 3 lines * 1.4 line-height
-                      }}
-                    >
-                      {department.description}
-                    </p>
+                    <div className="text-muted description-container">
+                      {department.description || <span className="text-muted fst-italic">No description available</span>}
+                    </div>
                     
                     <Button 
                       variant="outline-primary" 
-                      className="w-100 mt-auto"
+                      className="w-100"
                       onClick={() => handleDepartmentSelect(department.id)}
                     >
                       View Details
