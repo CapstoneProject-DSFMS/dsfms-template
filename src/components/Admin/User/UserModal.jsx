@@ -193,11 +193,10 @@ const UserModal = ({ show, user, mode, onSave, onClose }) => {
 
     // Department head validation
     if (formData.role === 'DEPARTMENT_HEAD') {
-      // First check if department is provided
-      if (!formData.department.trim()) {
-        newErrors.department = 'Department is required for department heads';
-      } else {
-        // Then check if this department already has a head (excluding current user in edit mode)
+      // Department is optional (nullable) for department heads
+      // Only validate if department is provided
+      if (formData.department && formData.department.trim()) {
+        // Check if this department already has a head (excluding current user in edit mode)
         const existingHead = existingDepartmentHeads.find(dept => {
           // From departments API, department name is in dept.name
           const deptName = dept.name;
@@ -216,6 +215,7 @@ const UserModal = ({ show, user, mode, onSave, onClose }) => {
           newErrors.department = `Department "${formData.department}" already has a head: ${headName}`;
         }
       }
+      // If department is empty/null, that's fine - allow nullable
     }
 
     // Role-specific validation
@@ -225,6 +225,10 @@ const UserModal = ({ show, user, mode, onSave, onClose }) => {
       }
       if (!formData.certificationNumber.trim()) {
         newErrors.certificationNumber = 'Certification number is required for trainers';
+      }
+      // Department is NOT allowed for Trainer role
+      if (formData.department && formData.department.trim() !== '') {
+        newErrors.department = 'Department is not allowed for Trainer role';
       }
     }
     
@@ -308,11 +312,16 @@ const UserModal = ({ show, user, mode, onSave, onClose }) => {
       if (field === 'department') {
         delete newErrors.department;
         
+        // Real-time validation for TRAINER - department is NOT allowed
+        if (formData.role === 'TRAINER') {
+          if (value && value.trim() !== '') {
+            newErrors.department = 'Department is not allowed for Trainer role';
+          }
+        }
         // Real-time validation for department head
-        if (formData.role === 'DEPARTMENT_HEAD') {
-          if (!value.trim()) {
-            newErrors.department = 'Department is required for department heads';
-          } else {
+        else if (formData.role === 'DEPARTMENT_HEAD') {
+          // Department is optional (nullable) - only validate if value is provided
+          if (value && value.trim()) {
             const existingHead = existingDepartmentHeads.find(dept => {
               // From departments API, department name is in dept.name
               const deptName = dept.name;
@@ -329,7 +338,17 @@ const UserModal = ({ show, user, mode, onSave, onClose }) => {
               newErrors.department = `Department "${value}" already has a head: ${headName}`;
             }
           }
+          // If value is empty, clear any previous errors (allow nullable)
         }
+      }
+      
+      // Clear department when role changes to TRAINER (not allowed)
+      if (field === 'role' && value === 'TRAINER') {
+        // Clear department field for TRAINER
+        setFormData(prev => ({
+          ...prev,
+          department: ''
+        }));
       }
       
       return newErrors;
@@ -548,8 +567,8 @@ const UserModal = ({ show, user, mode, onSave, onClose }) => {
               </Form.Group>
             </Col>
 
-                {/* Only show Department field for DEPARTMENT_HEAD and TRAINER */}
-                {(formData.role === 'DEPARTMENT_HEAD' || formData.role === 'TRAINER') && (
+                {/* Only show Department field for DEPARTMENT_HEAD (Trainer is NOT allowed to have department) */}
+                {formData.role === 'DEPARTMENT_HEAD' && (
               <Col md={6}>
                 <Form.Group className="mb-4">
                   <Form.Label className="text-primary-custom fw-semibold">

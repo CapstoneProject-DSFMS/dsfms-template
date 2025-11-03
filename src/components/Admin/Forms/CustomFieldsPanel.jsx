@@ -12,6 +12,7 @@ const CustomFieldsPanel = ({
   onRemoveField,
   onInsertField,
   exportEditedDoc,
+  exportAndUploadEditedDoc,
   readOnly = false,
   className = ""
 }) => {
@@ -282,24 +283,57 @@ const CustomFieldsPanel = ({
     try {
       setIsSubmitting(true);
       const meta = readTemplateMetaFromStorage();
-      // Try to export edited docx and upload to get latest URL
-      let uploadedUrl = null;
-      if (exportEditedDoc) {
+      
+      // Step: Export → Fetch → Upload → Get S3 URL for templateConfig
+      let templateConfigUrl = null; // URL của file đã chỉnh sửa
+      const originalTemplateContent = meta.templateContent; // URL file import ban đầu
+      
+      console.log('📋 Original templateContent (file import):', originalTemplateContent);
+      
+      if (exportAndUploadEditedDoc) {
         try {
-          uploadedUrl = await exportEditedDoc();
-        } catch {
-          uploadedUrl = null;
+          console.log('📤 Step 1: Starting export and upload flow...');
+          console.log('📤 Step 2: Calling editor.downloadAs("docx")...');
+          
+          templateConfigUrl = await exportAndUploadEditedDoc();
+          
+          console.log('✅ Step 3: Export and upload SUCCESS!');
+          console.log('✅ templateConfig URL (file đã chỉnh sửa):', templateConfigUrl);
+          console.log('📊 Export flow status: ✅ HOẠT ĐỘNG');
+        } catch (err) {
+          console.error('❌ Export/Upload failed:', err);
+          console.log('📊 Export flow status: ❌ KHÔNG HOẠT ĐỘNG - Using fallback');
+          toast.warning('Could not upload edited document, templateConfig will be null');
+          templateConfigUrl = null;
         }
+      } else {
+        console.log('⚠️ exportAndUploadEditedDoc function not available');
+        console.log('📊 Export flow status: ⚠️ FUNCTION KHÔNG TỒN TẠI');
+        templateConfigUrl = null;
       }
-      const effectiveMeta = uploadedUrl ? { ...meta, templateContent: uploadedUrl } : meta;
+      
+      // Build payload:
+      // - templateContent: URL file import ban đầu
+      // - templateConfig: URL file đã chỉnh sửa (nếu export thành công)
+      const effectiveMeta = { 
+        ...meta, 
+        templateContent: originalTemplateContent, // Giữ nguyên file import
+        templateConfig: templateConfigUrl // URL file đã chỉnh sửa
+      };
+      
       const payload = buildTemplatePayload(effectiveMeta, sections);
-      console.log('🧩 Template payload built:\n', JSON.stringify(payload, null, 2));
+      
+      console.log('🧩 Template payload built:');
+      console.log('  📄 templateContent (file import):', payload.templateContent);
+      console.log('  ✏️ templateConfig (file đã chỉnh sửa):', payload.templateConfig || 'null');
+      console.log('🧩 Full payload:\n', JSON.stringify(payload, null, 2));
+      
       const res = await apiClient.post('/templates', payload);
       toast.success('Template submitted successfully');
       console.log('✅ Backend response:', res?.data ?? res);
     } catch (err) {
       console.error('❌ Submit template failed:', err);
-      toast.error('Failed to submit template');
+      toast.error('Failed to submit template: ' + (err.message || 'Unknown error'));
     } finally {
       setIsSubmitting(false);
     }

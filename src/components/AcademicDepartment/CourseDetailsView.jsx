@@ -20,6 +20,7 @@ import CourseActions from './CourseActions';
 import AddCourseModal from './AddCourseModal';
 import ArchiveCourseModal from './ArchiveCourseModal';
 import DepartmentHeadModal from './DepartmentHeadModal';
+import '../../styles/academic-department.css';
 
 const CourseDetailsView = ({ courseId }) => {
   const navigate = useNavigate();
@@ -207,6 +208,20 @@ const CourseDetailsView = ({ courseId }) => {
     }
   };
 
+  const handleRestoreCourse = async (courseId) => {
+    try {
+      await courseAPI.restoreCourse(courseId);
+      toast.success('Course restored successfully');
+      
+      // Update course status in the list
+      setCourses(prev => prev.map(c => 
+        c.id === courseId ? { ...c, status: 'ACTIVE' } : c
+      ));
+    } catch (error) {
+      toast.error(error.response?.data?.message || 'Failed to restore course. Please try again.');
+    }
+  };
+
   const handleViewCourse = (courseId) => {
     navigate(`/academic/course-detail/${courseId}`, {
       state: {
@@ -373,14 +388,14 @@ const CourseDetailsView = ({ courseId }) => {
       <Row className="mt-3">
         <Col>
           <Card className="border-0 shadow-sm">
-            <Card.Header className="bg-white border-bottom flex-shrink-0">
+            <Card.Header className="academic-course-section-header bg-primary text-white border-0 flex-shrink-0">
               <div className="d-flex justify-content-between align-items-center">
-                <h5 className="mb-0">
+                <h5 className="mb-0 text-white">
                   <FileText className="me-2" />
                   Courses ({courses.length})
                 </h5>
                 <PermissionWrapper permission={API_PERMISSIONS.COURSES.CREATE}>
-                  <Button variant="primary-custom" size="sm" onClick={handleCreateCourse}>
+                  <Button variant="light" size="sm" onClick={handleCreateCourse} className="academic-course-add-btn">
                     <Plus size={16} className="me-1" />
                     Add New Course
                   </Button>
@@ -394,6 +409,7 @@ const CourseDetailsView = ({ courseId }) => {
                 actionsComponent={CourseActions}
                 onView={handleViewCourse}
                 onDisable={handleArchiveCourse}
+                onRestore={handleRestoreCourse}
               />
             </div>
           </Card>

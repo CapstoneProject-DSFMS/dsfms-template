@@ -317,39 +317,50 @@ const MyDepartmentDetailsPage = () => {
         </Card.Header>
 
         <Card.Body>
-          {/* Search and Filters */}
-          <Row className="mb-3 form-mobile-stack search-filter-section">
-            <Col xs={12} lg={6} md={5} className="mb-2 mb-lg-0">
-              <SearchBar
-                placeholder="Search courses by title, code, or description..."
-                value={searchTerm}
-                onChange={setSearchTerm}
-                className="search-bar-mobile"
-              />
-            </Col>
-            <Col xs={12} lg={3} md={4} className="mb-2 mb-lg-0 position-relative">
-              <select 
-                className="form-select filter-panel-mobile"
-                value={filterStatus}
-                onChange={(e) => setFilterStatus(e.target.value)}
-              >
-                <option value="all">All Status</option>
-                <option value="active">Active</option>
-                <option value="inactive">Inactive</option>
-                <option value="pending">Pending</option>
-              </select>
-            </Col>
-            <Col xs={12} lg={3} md={3}>
-              <div className="text-end text-mobile-center">
-                <small className="text-muted">
-                  {filteredCourses.length} course{filteredCourses.length !== 1 ? 's' : ''}
-                </small>
+          {/* Courses Section */}
+          <Card className="border-0 shadow-sm mb-0">
+            <Card.Header className="department-head-section-header bg-primary text-white border-0">
+              <div className="d-flex justify-content-between align-items-center">
+                <h5 className="mb-0 text-white">
+                  <Book className="me-2" />
+                  Courses ({filteredCourses.length})
+                </h5>
               </div>
-            </Col>
-          </Row>
+            </Card.Header>
+            <Card.Body>
+              {/* Search and Filters */}
+              <Row className="mb-3 form-mobile-stack search-filter-section">
+                <Col xs={12} lg={6} md={5} className="mb-2 mb-lg-0">
+                  <SearchBar
+                    placeholder="Search courses by title, code, or description..."
+                    value={searchTerm}
+                    onChange={setSearchTerm}
+                    className="search-bar-mobile"
+                  />
+                </Col>
+                <Col xs={12} lg={3} md={4} className="mb-2 mb-lg-0 position-relative">
+                  <select 
+                    className="form-select filter-panel-mobile"
+                    value={filterStatus}
+                    onChange={(e) => setFilterStatus(e.target.value)}
+                  >
+                    <option value="all">All Status</option>
+                    <option value="active">Active</option>
+                    <option value="inactive">Inactive</option>
+                    <option value="pending">Pending</option>
+                  </select>
+                </Col>
+                <Col xs={12} lg={3} md={3}>
+                  <div className="text-end text-mobile-center">
+                    <small className="text-muted">
+                      {filteredCourses.length} course{filteredCourses.length !== 1 ? 's' : ''}
+                    </small>
+                  </div>
+                </Col>
+              </Row>
 
-          {/* Courses Table */}
-          <AdminTable
+              {/* Courses Table */}
+              <AdminTable
             data={filteredCourses}
             loading={loading}
             columns={[
@@ -372,6 +383,8 @@ const MyDepartmentDetailsPage = () => {
             emptyMessage="No courses found"
             emptyDescription="Try adjusting your search criteria."
           />
+            </Card.Body>
+          </Card>
         </Card.Body>
       </Card>
     </Container>

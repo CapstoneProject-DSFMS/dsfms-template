@@ -3,6 +3,12 @@ import { roleAPI } from '../api';
 import { mapError } from '../utils/errorMapping';
 import { toast } from 'react-toastify';
 
+// Helper function to check if role is active
+// API returns isActive as boolean (true/false) or string ('ACTIVE'/'INACTIVE')
+const isRoleActive = (isActive) => {
+  return isActive === true || isActive === 'ACTIVE';
+};
+
 export const useRoleManagement = () => {
   const [roles, setRoles] = useState([]);
   const [searchTerm, setSearchTerm] = useState('');
@@ -27,7 +33,7 @@ export const useRoleManagement = () => {
           name: role.name,
           description: role.description || '',
           assignedUsers: role.userCount || 0,
-          status: role.isActive === 'ACTIVE' ? 'Active' : 'Inactive',
+          status: isRoleActive(role.isActive) ? 'Active' : 'Inactive',
           createdAt: role.createdAt ? role.createdAt.split('T')[0] : '',
           lastModified: role.updatedAt ? role.updatedAt.split('T')[0] : '',
           isActive: role.isActive,
@@ -97,7 +103,7 @@ export const useRoleManagement = () => {
         name: roleDetail.name,
         description: roleDetail.description || '',
         assignedUsers: roleDetail.userCount || 0,
-        status: roleDetail.isActive ? 'Active' : 'Inactive',
+        status: isRoleActive(roleDetail.isActive) ? 'Active' : 'Inactive',
         createdAt: roleDetail.createdAt ? roleDetail.createdAt.split('T')[0] : '',
         lastModified: roleDetail.updatedAt ? roleDetail.updatedAt.split('T')[0] : '',
         isActive: roleDetail.isActive,
@@ -163,7 +169,7 @@ export const useRoleManagement = () => {
         name: role.name,
         description: role.description || '',
         assignedUsers: role.userCount || 0,
-        status: role.isActive === 'ACTIVE' ? 'Active' : 'Inactive',
+        status: isRoleActive(role.isActive) ? 'Active' : 'Inactive',
         createdAt: role.createdAt ? role.createdAt.split('T')[0] : '',
         lastModified: role.updatedAt ? role.updatedAt.split('T')[0] : '',
         isActive: role.isActive,
@@ -195,8 +201,11 @@ export const useRoleManagement = () => {
       let response;
       let action;
       
+      // Check current status
+      const isCurrentlyActive = isRoleActive(role.isActive);
+      
       // Call appropriate API based on current status
-      if (role.isActive === 'ACTIVE') {
+      if (isCurrentlyActive) {
         // Disable role
         response = await roleAPI.disableRole(roleId);
         action = 'disabled';
@@ -215,7 +224,7 @@ export const useRoleManagement = () => {
         name: role.name,
         description: role.description || '',
         assignedUsers: role.userCount || 0,
-        status: role.isActive === 'ACTIVE' ? 'Active' : 'Inactive',
+        status: isRoleActive(role.isActive) ? 'Active' : 'Inactive',
         createdAt: role.createdAt ? role.createdAt.split('T')[0] : '',
         lastModified: role.updatedAt ? role.updatedAt.split('T')[0] : '',
         isActive: role.isActive,
@@ -230,7 +239,7 @@ export const useRoleManagement = () => {
     } catch (err) {
       const errorMessage = mapError(err, { context: 'toggle_role_status' });
       setError(errorMessage);
-      toast.error(errorMessage);
+      // Don't call toast.error here - let the page component handle it via useEffect
     } finally {
       setLoading(false);
     }

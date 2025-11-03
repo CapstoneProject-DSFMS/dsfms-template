@@ -4,7 +4,6 @@ import { ProtectedRoute, ErrorBoundary, PermissionRoute } from '../components/Co
 import RoleBasedRedirect from '../components/Common/RoleBasedRedirect'
 import Login from '../pages/Auth/Login'
 import ResetPasswordPage from '../pages/Auth/ResetPasswordPage'
-import Dashboard from '../pages/Admin/Dashboard'
 import UserManagementPage from '../pages/Admin/UserManagement/UserManagementPage'
 import RoleManagementPage from '../pages/Admin/RoleManagement/RoleManagementPage'
 import DepartmentManagementPage from '../pages/Admin/DepartmentManagement/DepartmentManagementPage'
@@ -40,8 +39,8 @@ import UpcomingAssessmentsPage from '../pages/Trainer/UpcomingAssessmentsPage'
 import AssessmentResultsPage from '../pages/Trainer/AssessmentResultsPage'
 import InstructedCoursesPage from '../pages/Trainer/InstructedCoursesPage'
 import TrainerCourseDetailPage from '../pages/Trainer/CourseDetailPage'
-import TraineeDetailsPage from '../pages/Trainer/TraineeDetailsPage'
-import SubjectDetailsPage from '../pages/Trainer/SubjectDetailsPage'
+import TrainerTraineeDetailsPage from '../pages/Trainer/TraineeDetailsPage'
+import TrainerSubjectDetailsPage from '../pages/Trainer/SubjectDetailsPage'
 import ConfigureSignaturePage from '../pages/Trainer/ConfigureSignaturePage'
 import AssessmentResultDetailsPage from '../pages/Trainer/AssessmentResultDetailsPage'
 import ResultApprovalNotePage from '../pages/Trainer/ResultApprovalNotePage'
@@ -49,6 +48,8 @@ import DepartmentHeadDashboardPage from '../pages/DepartmentHead/DepartmentHeadD
 import MyDepartmentDetailsPage from '../pages/DepartmentHead/MyDepartmentDetailsPage'
 import AssessmentReviewRequestsPage from '../pages/DepartmentHead/AssessmentReviewRequestsPage'
 import CourseDetailsPage from '../pages/DepartmentHead/CourseDetailsPage'
+import DepartmentHeadSubjectDetailsPage from '../pages/DepartmentHead/SubjectDetailsPage'
+import DepartmentHeadTraineeDetailsPage from '../pages/DepartmentHead/TraineeDetailsPage'
 import { API_PERMISSIONS } from '../constants/apiPermissions'
 import { getCurrentBasename } from '../utils/navigation'
 
@@ -81,17 +82,6 @@ export const router = createBrowserRouter([
       {
         path: "",
         element: <RoleBasedRedirect />
-      },
-      {
-        path: "dashboard",
-        element: (
-          <PermissionRoute 
-            permission={API_PERMISSIONS.DASHBOARD.VIEW}
-            fallback={<div className="p-4 text-center text-muted">You don't have permission to access the dashboard.</div>}
-          >
-            <Dashboard />
-          </PermissionRoute>
-        )
       },
       {
         path: "users",
@@ -580,7 +570,7 @@ export const router = createBrowserRouter([
             permission={API_PERMISSIONS.TRAINEES.VIEW_DETAIL}
             fallback={<div className="p-4 text-center text-muted">You don't have permission to view trainee details.</div>}
           >
-            <TraineeDetailsPage />
+            <TrainerTraineeDetailsPage />
           </PermissionRoute>
         )
       },
@@ -591,7 +581,7 @@ export const router = createBrowserRouter([
             permission={API_PERMISSIONS.SUBJECTS.VIEW_DETAIL}
             fallback={<div className="p-4 text-center text-muted">You don't have permission to view subject details.</div>}
           >
-            <SubjectDetailsPage />
+            <TrainerSubjectDetailsPage />
           </PermissionRoute>
         )
       }
@@ -662,6 +652,28 @@ export const router = createBrowserRouter([
             fallback={<div className="p-4 text-center text-muted">You don't have permission to view assessment request details.</div>}
           >
             <AssessmentReviewRequestsPage />
+          </PermissionRoute>
+        )
+      },
+      {
+        path: "courses/:courseId/subjects/:subjectId",
+        element: (
+          <PermissionRoute 
+            permission={API_PERMISSIONS.SUBJECTS.VIEW_DETAIL}
+            fallback={<div className="p-4 text-center text-muted">You don't have permission to view subject details.</div>}
+          >
+            <DepartmentHeadSubjectDetailsPage />
+          </PermissionRoute>
+        )
+      },
+      {
+        path: "trainees/:traineeId",
+        element: (
+          <PermissionRoute 
+            permission={API_PERMISSIONS.TRAINEES.VIEW_DETAIL}
+            fallback={<div className="p-4 text-center text-muted">You don't have permission to view trainee details.</div>}
+          >
+            <DepartmentHeadTraineeDetailsPage />
           </PermissionRoute>
         )
       }

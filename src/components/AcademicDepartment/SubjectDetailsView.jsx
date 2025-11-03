@@ -84,20 +84,55 @@ const SubjectDetailsView = ({ subjectId, courseId }) => {
   // Load subject data from API
   useEffect(() => {
     const loadSubjectData = async () => {
-      if (!subjectId) return;
+      if (!subjectId) {
+        console.warn('⚠️ No subjectId provided to SubjectDetailsView');
+        setSubject(null);
+        setLoading(false);
+        return;
+      }
       
       setLoading(true);
       try {
+        console.log('📡 Fetching subject data for subjectId:', subjectId);
         const response = await subjectAPI.getSubjectById(subjectId);
+        console.log('✅ Subject data received:', response);
         
         if (response) {
           setSubject(response);
           // Load trainers from subject data (instructors field)
           loadSubjectTrainers(response);
         } else {
+          console.warn('⚠️ API returned null/undefined response for subjectId:', subjectId);
           setSubject(null);
         }
-      } catch {
+      } catch (error) {
+        console.error('❌ Error loading subject data:', error);
+        console.error('❌ Error response:', error.response);
+        console.error('❌ Error status:', error.response?.status);
+        console.error('❌ Error data:', error.response?.data);
+        console.error('❌ Error message:', error.response?.data?.message || error.message);
+        
+        // Log detailed validation errors
+        if (error.response?.data?.errors && Array.isArray(error.response.data.errors)) {
+          console.error('❌ Detailed validation errors:', JSON.stringify(error.response.data.errors, null, 2));
+          error.response.data.errors.forEach((err, index) => {
+            console.error(`❌ Validation error ${index + 1}:`, {
+              field: err.field,
+              message: err.message,
+              code: err.code,
+              value: err.value
+            });
+          });
+        }
+        
+        // Show user-friendly error message with validation details
+        let errorMessage = error.response?.data?.message || error.message || 'Failed to load subject details';
+        if (error.response?.data?.errors && Array.isArray(error.response.data.errors) && error.response.data.errors.length > 0) {
+          const firstError = error.response.data.errors[0];
+          errorMessage = `${errorMessage}: ${firstError.message || firstError.field}`;
+        }
+        toast.error(errorMessage);
+        
         setSubject(null);
       } finally {
         setLoading(false);
@@ -302,7 +337,7 @@ const SubjectDetailsView = ({ subjectId, courseId }) => {
       {/* Tab Interface */}
       <Card className="border-0 shadow-sm">
         <Tab.Container activeKey={activeTab} onSelect={setActiveTab}>
-          <Card.Header className="border-bottom py-2">
+          <Card.Header className="border-bottom py-2 bg-primary">
             <Nav variant="tabs" className="border-0">
               <Nav.Item>
                 <Nav.Link 
@@ -310,8 +345,11 @@ const SubjectDetailsView = ({ subjectId, courseId }) => {
                   className="d-flex align-items-center"
                   style={{ 
                     border: 'none',
-                    color: activeTab === 'subject-info' ? '#0d6efd' : '#6c757d',
-                    fontWeight: activeTab === 'subject-info' ? '600' : '400'
+                    backgroundColor: 'transparent',
+                    color: '#ffffff',
+                    fontWeight: activeTab === 'subject-info' ? '600' : '400',
+                    opacity: activeTab === 'subject-info' ? '1' : '0.7',
+                    borderRadius: '4px 4px 0 0'
                   }}
                 >
                   <FileTextFill className="me-2" size={16} />
@@ -324,8 +362,11 @@ const SubjectDetailsView = ({ subjectId, courseId }) => {
                   className="d-flex align-items-center"
                   style={{ 
                     border: 'none',
-                    color: activeTab === 'trainers' ? '#0d6efd' : '#6c757d',
-                    fontWeight: activeTab === 'trainers' ? '600' : '400'
+                    backgroundColor: 'transparent',
+                    color: '#ffffff',
+                    fontWeight: activeTab === 'trainers' ? '600' : '400',
+                    opacity: activeTab === 'trainers' ? '1' : '0.7',
+                    borderRadius: '4px 4px 0 0'
                   }}
                 >
                   <PersonCheckFill className="me-2" size={16} />

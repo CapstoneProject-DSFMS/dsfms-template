@@ -42,8 +42,16 @@ const RoleModal = ({ show, role, mode, onSave, onClose }) => {
         };
       }
       
+      // Extract permission ID - support multiple formats
+      // From useAllPermissions, permissions are created with id: permission.permissionId
+      const permissionId = permission.id || permission.permissionId;
+      
+      if (!permissionId) {
+        return; // Skip permissions without ID
+      }
+      
       featureGroups[moduleId].permissions.push({
-        id: permission.id,
+        id: permissionId,
         title: permission.viewName || permission.name,
         description: permission.description || '',
         isActive: permission.isActive,
@@ -77,14 +85,9 @@ const RoleModal = ({ show, role, mode, onSave, onClose }) => {
   }, [getPermissionGroups, mode, role?.permissions]);
 
   useEffect(() => {
-    console.log('RoleModal useEffect - Role:', role);
-    console.log('RoleModal useEffect - Mode:', mode);
-    console.log('RoleModal useEffect - Role permissions:', role?.permissions);
-    
     if (role && mode !== 'add') {
       // For both view and edit mode, use the role's assigned permissions
       const rolePermissions = role.permissions ? role.permissions.map(p => p.id || p) : [];
-      console.log('RoleModal useEffect - Mapped permission IDs:', rolePermissions);
       
       setFormData({
         name: role.name || '',
@@ -183,12 +186,23 @@ const RoleModal = ({ show, role, mode, onSave, onClose }) => {
   };
 
   const handlePermissionToggle = (permissionId) => {
-    setFormData(prev => ({
-      ...prev,
-      permissionIds: prev.permissionIds.includes(permissionId)
-        ? prev.permissionIds.filter(p => p !== permissionId)
-        : [...prev.permissionIds, permissionId]
-    }));
+    // Validate permissionId
+    if (!permissionId || permissionId === null || permissionId === undefined) {
+      return;
+    }
+    
+    setFormData(prev => {
+      const currentIds = prev.permissionIds || [];
+      // Use strict comparison and handle type coercion
+      const isSelected = currentIds.some(id => String(id) === String(permissionId));
+      
+      return {
+        ...prev,
+        permissionIds: isSelected
+          ? currentIds.filter(p => String(p) !== String(permissionId))
+          : [...currentIds, permissionId]
+      };
+    });
     
     // Clear error when permissions are selected
     if (errors.permissionIds) {
@@ -350,95 +364,111 @@ const RoleModal = ({ show, role, mode, onSave, onClose }) => {
                       <Spinner animation="border" size="sm" className="me-2" />
                       Loading permissions...
                     </div>
-                  ) : (
+                  ) : permissionGroups.length > 0 ? (
                     <>
-                      
                       {permissionGroups.map((group) => {
-                    const isExpanded = expandedGroups[group.id];
-                    
-                    return (
-                      <div key={group.id} className="mb-3">
-                        {/* Feature Group Header */}
-                        <div 
-                          className={`d-flex align-items-center p-2 bg-light rounded permission-group-header ${!isReadOnly ? 'cursor-pointer' : ''}`}
-                          onClick={() => !isReadOnly && handleGroupToggle(group.id)}
-                          role={!isReadOnly ? "button" : undefined}
-                          tabIndex={!isReadOnly ? 0 : undefined}
-                          onKeyDown={!isReadOnly ? (e) => {
-                            if (e.key === 'Enter' || e.key === ' ') {
-                              e.preventDefault();
-                              handleGroupToggle(group.id);
-                            }
-                          } : undefined}
-                          aria-expanded={!isReadOnly ? isExpanded : undefined}
-                        >
-                          <div className="d-flex align-items-center">
-                            {!isReadOnly && (
-                              isExpanded ? <ChevronDown className="me-2" size={16} /> : <ChevronRight className="me-2" size={16} />
-                            )}
-                            <div>
-                              <div className="fw-bold text-primary-custom">
-                                {group.name}
-                              </div>
-                              <small className="text-muted">
-                                {group.description}
-                              </small>
-                            </div>
-                          </div>
-                        </div>
+                        const isExpanded = expandedGroups[group.id];
                         
-                        {/* UC Items List */}
-                        {isExpanded && (
-                          <div className="ms-3 mt-2">
-                            <ListGroup variant="flush">
-                              {group.permissions.map((permission) => (
-                                <ListGroup.Item
-                                  key={permission.id}
-                                  className={`border-0 px-0 py-2 permission-item ${!isReadOnly ? 'cursor-pointer' : ''}`}
-                                  onClick={() => !isReadOnly && handlePermissionToggle(permission.id)}
-                                  role={!isReadOnly ? "button" : undefined}
-                                  tabIndex={!isReadOnly ? 0 : undefined}
-                                  onKeyDown={!isReadOnly ? (e) => {
-                                    if (e.key === 'Enter' || e.key === ' ') {
-                                      e.preventDefault();
-                                      handlePermissionToggle(permission.id);
-                                    }
-                                  } : undefined}
-                                >
-                                  <div className="d-flex align-items-center">
-                                    <Form.Check
-                                      type="checkbox"
-                                      id={`permission-${permission.id}`}
-                                      checked={formData.permissionIds.includes(permission.id)}
-                                      onChange={() => handlePermissionToggle(permission.id)}
-                                      disabled={isReadOnly}
-                                      className="me-3"
-                                      style={{ pointerEvents: isReadOnly ? 'none' : 'auto' }}
-                                      aria-label={`${permission.title}: ${permission.description}`}
-                                    />
-                                    <div className="flex-grow-1">
-                                      <div className="fw-medium text-dark">
-                                        {permission.title}
-                                      </div>
-                                      <small className="text-muted">
-                                        {permission.description}
-                                      </small>
-                                    </div>
-                                    {!isReadOnly && formData.permissionIds.includes(permission.id) && (
-                                      <Badge bg="primary" className="ms-2">
-                                        Selected
-                                      </Badge>
-                                    )}
+                        return (
+                          <div key={group.id} className="mb-3">
+                            {/* Feature Group Header */}
+                            <div 
+                              className={`d-flex align-items-center p-2 bg-light rounded permission-group-header ${!isReadOnly ? 'cursor-pointer' : ''}`}
+                              onClick={() => !isReadOnly && handleGroupToggle(group.id)}
+                              role={!isReadOnly ? "button" : undefined}
+                              tabIndex={!isReadOnly ? 0 : undefined}
+                              onKeyDown={!isReadOnly ? (e) => {
+                                if (e.key === 'Enter' || e.key === ' ') {
+                                  e.preventDefault();
+                                  handleGroupToggle(group.id);
+                                }
+                              } : undefined}
+                              aria-expanded={!isReadOnly ? isExpanded : undefined}
+                            >
+                              <div className="d-flex align-items-center">
+                                {!isReadOnly && (
+                                  isExpanded ? <ChevronDown className="me-2" size={16} /> : <ChevronRight className="me-2" size={16} />
+                                )}
+                                <div>
+                                  <div className="fw-bold text-primary-custom">
+                                    {group.name}
                                   </div>
-                                </ListGroup.Item>
-                              ))}
-                            </ListGroup>
+                                  <small className="text-muted">
+                                    {group.description}
+                                  </small>
+                                </div>
+                              </div>
+                            </div>
+                            
+                            {/* UC Items List */}
+                            {isExpanded && group.permissions.length > 0 && (
+                              <div className="ms-3 mt-2">
+                                <ListGroup variant="flush">
+                                  {group.permissions.map((permission) => {
+                                    // Ensure we have a valid permission ID
+                                    const permissionId = permission.id;
+                                    
+                                    if (!permissionId) {
+                                      return null; // Skip rendering if no ID
+                                    }
+                                    
+                                    return (
+                                      <ListGroup.Item
+                                        key={`${group.id}-${permissionId}`}
+                                        className="border-0 px-0 py-2 permission-item"
+                                      >
+                                        <div className="d-flex align-items-center">
+                                          <div className="form-check me-3">
+                                            <input
+                                              type="checkbox"
+                                              className="form-check-input"
+                                              id={`permission-${permissionId}`}
+                                              checked={formData.permissionIds.some(id => String(id) === String(permissionId))}
+                                              onChange={(e) => {
+                                                e.stopPropagation();
+                                                if (!isReadOnly && permissionId) {
+                                                  handlePermissionToggle(permissionId);
+                                                }
+                                              }}
+                                              onClick={(e) => {
+                                                e.stopPropagation();
+                                              }}
+                                              disabled={isReadOnly}
+                                              style={{ 
+                                                cursor: isReadOnly ? 'not-allowed' : 'pointer',
+                                                width: '1.25rem',
+                                                height: '1.25rem'
+                                              }}
+                                            />
+                                          </div>
+                                          <div className="flex-grow-1">
+                                            <div className="fw-medium text-dark">
+                                              {permission.title}
+                                            </div>
+                                            <small className="text-muted">
+                                              {permission.description}
+                                            </small>
+                                          </div>
+                                          {!isReadOnly && formData.permissionIds.some(id => String(id) === String(permissionId)) && (
+                                            <Badge bg="primary" className="ms-2">
+                                              Selected
+                                            </Badge>
+                                          )}
+                                        </div>
+                                      </ListGroup.Item>
+                                    );
+                                  })}
+                                </ListGroup>
+                              </div>
+                            )}
                           </div>
-                        )}
-                      </div>
-                    );
-                  })}
+                        );
+                      })}
                     </>
+                  ) : (
+                    <div className="text-center py-4 text-muted">
+                      No permissions available
+                    </div>
                   )}
                 </div>
                 

@@ -3,6 +3,8 @@ import { Card, Row, Col, Alert, Spinner } from 'react-bootstrap';
 import { toast } from 'react-toastify';
 import EditorWithCustomFields from './EditorWithCustomFields';
 import EditorWithMergeFields from './EditorWithMergeFields';
+import { uploadAPI } from '../../../api';
+
 
 const OnlyOfficeFormEditor = ({
   initialContent = '',
@@ -204,7 +206,7 @@ const OnlyOfficeFormEditor = ({
             },
             customization: {
               autosave: false, // Disable autosave for testing
-              forcesave: false,
+              forcesave: true, // Enable forcesave to trigger callbacks
               comments: false,
               help: false,
               hideRightMenu: false
@@ -234,13 +236,53 @@ const OnlyOfficeFormEditor = ({
               console.log('ℹ️ OnlyOffice opened in mode:', event.data?.mode);
             },
             onRequestSaveAs: async (event) => {
-              const data = event?.data || {};
-              const tempUrl = data.url || data.downloadUrl || (Array.isArray(data.files) ? data.files[0]?.url : undefined);
-              console.log('🧾 onRequestSaveAs payload:', data);
-              console.log('🧾 Temporary DOCX URL:', tempUrl);
-              if (exportResolverRef.current) {
-                exportResolverRef.current.resolve(tempUrl || null);
-                exportResolverRef.current = null;
+              try {
+                const data = event?.data || {};
+                console.log('🧾 onRequestSaveAs event received:', data);
+                
+                // Try multiple possible URL fields
+                const tempUrl = data.url 
+                  || data.downloadUrl 
+                  || data.fileUrl
+                  || (Array.isArray(data.files) ? data.files[0]?.url : undefined)
+                  || (data.file && data.file.url);
+                
+                console.log('🧾 Extracted temporary DOCX URL:', tempUrl);
+                
+                if (!tempUrl) {
+                  console.warn('⚠️ onRequestSaveAs received but no URL found in payload');
+                  console.warn('📋 Full event data:', JSON.stringify(data, null, 2));
+                }
+                
+                if (exportResolverRef.current) {
+                  if (tempUrl) {
+                    exportResolverRef.current.resolve(tempUrl);
+                  } else {
+                    exportResolverRef.current.reject(new Error('onRequestSaveAs event received but no URL found'));
+                  }
+                  exportResolverRef.current = null;
+                }
+              } catch (err) {
+                console.error('❌ Error in onRequestSaveAs handler:', err);
+                if (exportResolverRef.current) {
+                  exportResolverRef.current.reject(err);
+                  exportResolverRef.current = null;
+                }
+              }
+            },
+            onRequestSave: (event) => {
+              // Also listen to onRequestSave (different event)
+              try {
+                const data = event?.data || {};
+                console.log('💾 onRequestSave event received:', data);
+                const tempUrl = data.url || data.downloadUrl || data.fileUrl;
+                if (tempUrl && exportResolverRef.current) {
+                  console.log('✅ Using URL from onRequestSave:', tempUrl);
+                  exportResolverRef.current.resolve(tempUrl);
+                  exportResolverRef.current = null;
+                }
+              } catch (err) {
+                console.error('❌ Error in onRequestSave handler:', err);
               }
             }
           }
@@ -357,21 +399,143 @@ const OnlyOfficeFormEditor = ({
     }
   };
 
-  // Expose export method to child panels
+  // Expose export method to child panels - returns temp URL
+  // Try both downloadAs() and forceSave() methods
   const exportEditedDoc = useCallback(() => {
     return new Promise((resolve, reject) => {
       try {
-        exportResolverRef.current = { resolve, reject };
-        if (editorRef.current && typeof editorRef.current.downloadAs === 'function') {
-          editorRef.current.downloadAs('docx');
-        } else {
-          reject(new Error('Editor not ready to export'));
+        if (!editorRef.current) {
+          reject(new Error('Editor not initialized'));
+          return;
         }
+
+        exportResolverRef.current = { resolve, reject };
+        
+        // Method 1: Try forceSave() first (more reliable with forcesave enabled)
+        if (typeof editorRef.current.downloadDocument === 'function') {
+          console.log('🔄 Attempting export via downloadDocument()...');
+          try {
+            editorRef.current.downloadDocument();
+          } catch (e) {
+            console.warn('downloadDocument() failed, trying downloadAs()...', e);
+          }
+        }
+        
+        // Method 2: Try downloadAs() 
+        if (typeof editorRef.current.downloadAs === 'function') {
+          console.log('🔄 Attempting export via downloadAs("docx")...');
+          try {
+            editorRef.current.downloadAs('docx');
+          } catch (e) {
+            console.warn('downloadAs() failed:', e);
+          }
+        }
+
+        // Method 3: Try direct forceSave via API
+        if (typeof editorRef.current.save === 'function') {
+          console.log('🔄 Attempting export via save()...');
+          try {
+            editorRef.current.save();
+          } catch (e) {
+            console.warn('save() failed:', e);
+          }
+        }
+
+        // Timeout after 20 seconds (increased from 15)
+        setTimeout(() => {
+          if (exportResolverRef.current) {
+            const error = new Error('Export timeout: onRequestSaveAs not received after 20s. OnlyOffice Cloud may not support this method without callbackUrl.');
+            exportResolverRef.current.reject(error);
+            exportResolverRef.current = null;
+          }
+        }, 20000);
       } catch (err) {
-        reject(err);
+        if (exportResolverRef.current) {
+          exportResolverRef.current.reject(err);
+          exportResolverRef.current = null;
+        } else {
+          reject(err);
+        }
       }
     });
   }, []);
+
+  // Complete flow: Export → Fetch → Upload → Return S3 URL
+  const exportAndUploadEditedDoc = useCallback(async () => {
+    try {
+      if (!editorRef.current || !isEditorReady) {
+        throw new Error('Editor not ready');
+      }
+
+      toast.info('Exporting document...');
+      
+      // Step 1: Export and get temp URL
+      const tempUrl = await exportEditedDoc();
+      if (!tempUrl) {
+        throw new Error('No temporary URL received from OnlyOffice');
+      }
+
+      console.log('📥 Got temp URL:', tempUrl);
+      toast.info('Downloading file...');
+
+      // Step 2: Fetch file from temp URL
+      const response = await fetch(tempUrl);
+      if (!response.ok) {
+        throw new Error(`Failed to fetch file: ${response.statusText}`);
+      }
+
+      const blob = await response.blob();
+      console.log('📦 Downloaded blob:', blob.size, 'bytes');
+
+      // Step 3: Create File from Blob
+      const fileNameWithExt = fileName.endsWith('.docx') ? fileName : `${fileName}.docx`;
+      const file = new File([blob], fileNameWithExt, {
+        type: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'
+      });
+
+      toast.info('Uploading to S3...');
+
+      // Step 4: Upload to S3 using existing API
+      const docsType = uploadAPI.getDocsType(fileNameWithExt) || 'tem';
+      const uploadResult = await uploadAPI.uploadDocument(file, docsType);
+
+      // Step 5: Extract S3 URL from response
+      console.log('📦 Upload API response:', uploadResult);
+      
+      let s3Url = null;
+      if (uploadResult?.data?.[0]?.url) {
+        s3Url = uploadResult.data[0].url;
+        console.log('✅ Found S3 URL in uploadResult.data[0].url:', s3Url);
+      } else if (uploadResult?.data?.url) {
+        s3Url = uploadResult.data.url;
+        console.log('✅ Found S3 URL in uploadResult.data.url:', s3Url);
+      } else if (uploadResult?.url) {
+        s3Url = uploadResult.url;
+        console.log('✅ Found S3 URL in uploadResult.url:', s3Url);
+      } else if (uploadResult?.fileUrl) {
+        s3Url = uploadResult.fileUrl;
+        console.log('✅ Found S3 URL in uploadResult.fileUrl:', s3Url);
+      } else if (uploadResult?.path) {
+        s3Url = uploadResult.path;
+        console.log('✅ Found S3 URL in uploadResult.path:', s3Url);
+      }
+
+      if (!s3Url) {
+        console.error('❌ Upload response structure:', JSON.stringify(uploadResult, null, 2));
+        throw new Error('No S3 URL returned from upload API');
+      }
+
+      console.log('🎯 Final S3 URL to be used in templateContent:', s3Url);
+      console.log('🌐 Full S3 URL:', s3Url);
+      toast.success(`Document uploaded successfully!\nURL: ${s3Url}`);
+
+      return s3Url;
+    } catch (error) {
+      console.error('❌ Export and upload failed:', error);
+      toast.error(`Failed: ${error.message}`);
+      throw error;
+    }
+  }, [exportEditedDoc, fileName, isEditorReady]);
 
   // Debug logging removed to prevent console spam
 
@@ -485,6 +649,7 @@ const OnlyOfficeFormEditor = ({
                 onRemoveField={handleRemoveCustomField}
                 onInsertField={handleInsertField}
                 exportEditedDoc={exportEditedDoc}
+                exportAndUploadEditedDoc={exportAndUploadEditedDoc}
                 readOnly={readOnly}
                 className="h-100"
               />

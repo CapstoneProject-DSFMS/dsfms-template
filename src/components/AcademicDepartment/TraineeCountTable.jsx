@@ -20,70 +20,50 @@ const TraineeCountTable = ({ course, loading = false, onView, onRemove }) => {
 
   const { sortedData, sortConfig, handleSort } = useTableSort(trainees);
 
-  // Load enrolled trainees using same logic as EnrolledTraineesTable
+  // Load enrolled trainees for the current course
   const loadEnrolledTrainees = useCallback(async () => {
+    if (!courseId) {
+      setTrainees([]);
+      setApiLoading(false);
+      return;
+    }
+    
     setApiLoading(true);
     setError(null);
     
     try {
-      // Step 1: Get all available trainees
-      const traineesResponse = await traineeAPI.getTraineesForEnrollment();
+      // Get enrolled trainees using the course-specific endpoint
+      const response = await courseAPI.getCourseTrainees(courseId);
       
-      if (!traineesResponse || !traineesResponse.data) {
+      // Transform trainees from API response
+      if (response.trainees && Array.isArray(response.trainees)) {
+        const transformedTrainees = response.trainees.map(trainee => ({
+          id: trainee.id,
+          eid: trainee.eid,
+          name: `${trainee.firstName || ''} ${trainee.lastName || ''}`.trim(),
+          email: trainee.email,
+          subjects: [], // Subjects are not included in this response
+          userId: trainee.id,
+          department: trainee.department,
+          enrollmentCount: trainee.enrollmentCount || 0,
+          enrollDate: 'N/A', // Not in response
+          enrollBatch: trainee.batches && trainee.batches.length > 0 ? trainee.batches[0] : 'N/A',
+          batches: trainee.batches || []
+        }));
+        
+        setTrainees(transformedTrainees);
+      } else {
         setTrainees([]);
-        return;
       }
       
-      // Step 2: For each trainee, check if they have enrollments
-      const enrolledTrainees = [];
-      
-      for (const trainee of traineesResponse.data) {
-        try {
-          // Call API to get trainee's enrollment details
-          const enrollmentData = await courseAPI.getTraineeEnrollments(trainee.id);
-          
-          // Check if trainee has any ENROLLED enrollments
-          if (enrollmentData && enrollmentData.enrollments && enrollmentData.enrollments.length > 0) {
-            // Filter only ENROLLED enrollments
-            const enrolledEnrollments = enrollmentData.enrollments.filter(
-              enrollment => enrollment.enrollment?.status === 'ENROLLED'
-            );
-            
-            if (enrolledEnrollments.length > 0) {
-              // Transform enrollment data to get subject IDs (only ENROLLED ones)
-              const subjectIds = enrolledEnrollments.map(enrollment => enrollment.subject.id);
-              
-              const enrolledTrainee = {
-                id: trainee.id,
-                eid: trainee.eid,
-                name: `${trainee.firstName} ${trainee.lastName}`.trim(),
-                email: trainee.email,
-                subjects: subjectIds,
-                userId: trainee.id,
-                department: trainee.department,
-                enrollmentCount: enrolledEnrollments.length,
-                enrollDate: enrolledEnrollments[0]?.enrollment?.enrollmentDate ? 
-                  new Date(enrolledEnrollments[0].enrollment.enrollmentDate).toLocaleDateString() : 'N/A',
-                enrollBatch: enrolledEnrollments[0]?.enrollment?.batchCode || 'N/A'
-              };
-              
-              enrolledTrainees.push(enrolledTrainee);
-            }
-          }
-        } catch {
-          // Continue to next trainee
-        }
-      }
-      
-      setTrainees(enrolledTrainees);
-      
-    } catch {
-      // Fallback to empty array if API fails
+    } catch (error) {
+      console.error('Error loading enrolled trainees:', error);
+      setError('Failed to load trainees');
       setTrainees([]);
     } finally {
       setApiLoading(false);
     }
-  }, []);
+  }, [courseId]);
 
   useEffect(() => {
     if (courseId) {
@@ -93,34 +73,18 @@ const TraineeCountTable = ({ course, loading = false, onView, onRemove }) => {
 
   const handleViewDetails = async (trainee) => {
     try {
-      // Call API to get trainee's enrollment details
-      const enrollmentData = await courseAPI.getTraineeEnrollments(trainee.userId);
-      
-      // Transform API data to match component format (only ENROLLED enrollments)
-      const enrolledEnrollments = enrollmentData.enrollments?.filter(
-        enrollment => enrollment.enrollment?.status === 'ENROLLED'
-      ) || [];
-      
+      // For now, use the trainee data we already have
+      // If we need enrollment details, we should use a course-specific endpoint
+      // that takes courseId + traineeId, not just traineeId
       const transformedTrainee = {
         ...trainee,
-        enrollmentDetails: enrollmentData,
-        subjects: enrolledEnrollments.map(enrollment => ({
-          id: enrollment.subject.id,
-          name: enrollment.subject.name,
-          code: enrollment.subject.code,
-          status: enrollment.subject.status,
-          type: enrollment.subject.type,
-          method: enrollment.subject.method,
-          startDate: enrollment.subject.startDate,
-          endDate: enrollment.subject.endDate,
-          course: enrollment.subject.course,
-          enrollment: enrollment.enrollment
-        }))
+        subjects: trainee.subjects || []
       };
       
       setSelectedTrainee(transformedTrainee);
       setShowDetailsModal(true);
-    } catch {
+    } catch (error) {
+      console.error('Error loading trainee details:', error);
       // Fallback to basic trainee data
       setSelectedTrainee(trainee);
       setShowDetailsModal(true);
@@ -135,33 +99,15 @@ const TraineeCountTable = ({ course, loading = false, onView, onRemove }) => {
   const handleRemoveTrainee = async (trainee) => {
     if (window.confirm(`Are you sure you want to remove ${trainee.name} from this course?`)) {
       try {
-        // Get the trainee's enrollment details to find all subjects
-        const enrollmentData = await courseAPI.getTraineeEnrollments(trainee.userId);
+        // TODO: Use proper course-specific endpoint to remove trainee from course
+        // For now, we'll need to remove from each subject individually
+        // This requires knowing which subjects the trainee is enrolled in
+        console.log('Removing trainee:', trainee);
+        console.warn('handleRemoveTrainee: Need proper API endpoint to remove trainee from course');
         
-        if (enrollmentData && enrollmentData.enrollments && enrollmentData.enrollments.length > 0) {
-          
-          // Remove trainee from each subject
-          const removePromises = enrollmentData.enrollments.map(async (enrollment) => {
-            const subjectId = enrollment.subject.id;
-            const batchCode = enrollment.enrollment?.batchCode || 'TEST0012025';
-            
-            // Check if enrollment status is ENROLLED
-            if (enrollment.enrollment?.status !== 'ENROLLED') {
-              return null; // Skip this enrollment
-            }
-            
-            return subjectAPI.removeTraineeFromSubject(subjectId, trainee.userId, batchCode);
-          });
-          
-          // Wait for all removals to complete (filter out null values)
-          const validPromises = removePromises.filter(promise => promise !== null);
-          if (validPromises.length > 0) {
-            await Promise.all(validPromises);
-          }
-          
-          // Refresh the enrolled trainees data
-          await loadEnrolledTrainees();
-        }
+        // For now, just refresh the list
+        // In the future, we should call an API like: DELETE /courses/{courseId}/trainees/{traineeId}
+        await loadEnrolledTrainees();
       } catch (error) {
         console.error('Error removing trainee:', error);
         // You can add toast notification here
@@ -224,7 +170,7 @@ const TraineeCountTable = ({ course, loading = false, onView, onRemove }) => {
         <div className="text-danger">
           <h5>Error loading trainees</h5>
           <p>{error}</p>
-          <button className="btn btn-outline-primary" onClick={fetchTrainees}>
+          <button className="btn btn-outline-primary" onClick={loadEnrolledTrainees}>
             Try Again
           </button>
         </div>
