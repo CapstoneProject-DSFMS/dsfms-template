@@ -8,7 +8,7 @@ const RoleBasedRedirect = () => {
 
   useEffect(() => {
     if (user?.role) {
-      let redirectPath = '/admin/dashboard'; // default
+      let redirectPath = '/admin/users'; // default - redirect to user management instead of dashboard
       
       switch (user.role) {
         case 'ACADEMIC_DEPARTMENT':
@@ -29,7 +29,7 @@ const RoleBasedRedirect = () => {
         case 'ADMIN':
         case 'ADMINISTRATOR':
         default:
-          redirectPath = '/admin/dashboard';
+          redirectPath = '/admin/users';
           break;
       }
       

@@ -65,14 +65,6 @@ const Sidebar = ({ collapsed, onClose }) => {
   const navItems = useMemo(() => {
     const allNavItems = [
       {
-        id: "dashboard",
-        label: "Dashboard",
-        icon: House,
-        path: "/admin/dashboard",
-        permission: API_PERMISSIONS.DASHBOARD.VIEW,
-        module: "DASHBOARD"
-      },
-      {
         id: "users",
         label: "User Management",
         icon: People,
@@ -111,6 +103,14 @@ const Sidebar = ({ collapsed, onClose }) => {
         path: "/admin/system-config",
         permission: API_PERMISSIONS.GLOBAL_FIELDS.VIEW_ALL,
         module: "GLOBAL_FIELDS"
+      },
+      {
+        id: "academic-dashboard",
+        label: "Academic Dashboard",
+        icon: Building,
+        path: "/academic/dashboard",
+        permission: API_PERMISSIONS.DASHBOARD.VIEW,
+        module: "ACADEMIC"
       },
       {
         id: "trainee-dashboard",
@@ -287,7 +287,7 @@ const Sidebar = ({ collapsed, onClose }) => {
     // For ADMINISTRATOR role, show only admin-specific items
     if (user?.role === 'ADMINISTRATOR') {
       // Define admin-specific items that should be visible
-      const adminItems = ['dashboard', 'users', 'roles', 'departments', 'forms', 'system-config'];
+      const adminItems = ['users', 'roles', 'departments', 'forms', 'system-config'];
       
       // Check if this is an admin item
       const isAdminItem = adminItems.includes(item.id);
@@ -302,11 +302,10 @@ const Sidebar = ({ collapsed, onClose }) => {
       // console.log(`🔍 ADMINISTRATOR role - ${item.id}: ${hasAccess}`);
       return hasAccess;
     }
-    // For ACADEMIC_DEPARTMENT role, only show dashboard
+    // For ACADEMIC_DEPARTMENT role, show academic-specific items
     if (user?.role === 'ACADEMIC_DEPARTMENT') {
-      const isDashboard = item.id === 'dashboard';
-      // console.log(`🔍 ACADEMIC_DEPARTMENT role - ${item.id}: ${isDashboard}`);
-      return isDashboard;
+      const isAcademicItem = ['academic-dashboard'].includes(item.id);
+      return isAcademicItem;
     }
     // For TRAINEE role, show all trainee-related items
     if (user?.role === 'TRAINEE') {
@@ -336,16 +335,6 @@ const Sidebar = ({ collapsed, onClose }) => {
     const hasAccess = hasModuleAccess(item.module) || hasPermission(item.permission);
     // console.log(`🔍 Default role - ${item.id}: ${hasAccess}`);
     return hasAccess;
-  }).map(item => {
-    // Override dashboard path and label for ACADEMIC_DEPARTMENT role
-    if (user?.role === 'ACADEMIC_DEPARTMENT' && item.id === 'dashboard') {
-      return {
-        ...item,
-        path: '/academic/dashboard',
-        label: 'Academic Dashboard'
-      };
-    }
-    return item;
   });
   }, [user?.role, hasModuleAccess, hasPermission]);
 

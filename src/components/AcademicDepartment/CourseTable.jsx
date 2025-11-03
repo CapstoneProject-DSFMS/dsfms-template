@@ -10,6 +10,7 @@ const CourseTable = ({
   actionsComponent: ActionsComponent,
   onView,
   onDisable,
+  onRestore,
 }) => {
   const { sortedData, sortConfig, handleSort, getSortIcon, getSortClass } = useTableSort(courses);
 
@@ -195,6 +196,7 @@ const CourseTable = ({
                   course={course} 
                   onView={onView}
                   onDisable={onDisable}
+                  onRestore={onRestore}
                 />
               </td>
             </tr>

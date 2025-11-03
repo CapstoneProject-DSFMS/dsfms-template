@@ -36,49 +36,27 @@ const InPageCourseDetail = ({ course, department }) => {
   // Active tab state
   const [activeTab, setActiveTab] = useState('course-info');
   
-  // Load subjects from API
-  const loadSubjects = useCallback(async () => {
-    console.log('🔍 Loading subjects...');
-    
-    try {
-      const response = await subjectAPI.getSubjects();
-      console.log('🔍 API Response:', response);
-      
-      if (response && response.subjects) {
-        console.log('🔍 Found subjects:', response.subjects.length, 'subjects');
-        setSubjects(response.subjects);
-      } else {
-        console.log('🔍 No subjects found in response');
-        setSubjects([]);
-      }
-    } catch (error) {
-      console.error('❌ Error loading subjects:', error);
-      console.error('❌ Error details:', error.response?.data);
-      console.error('❌ Error status:', error.response?.status);
-      // Keep existing subjects if API fails (fallback behavior)
-    }
-  }, []);
-
-  // Load courses from API - This function is not needed for course detail page
-  const loadCourses = useCallback(async () => {
-    // This function is not needed for course detail page
-    // We already load course details in the main useEffect
-    return;
-  }, []);
-
-  // Load courses when component mounts
-  useEffect(() => {
-    loadCourses();
-  }, [courseId, loadCourses]);
-
-  // Fetch course details from API
+  // Fetch course details from API - includes subjects
   useEffect(() => {
     const loadCourseDetails = async () => {
-      if (!courseId) return;
+      if (!courseId) {
+        console.log('⚠️ No courseId provided, skipping API call');
+        return;
+      }
       
+      console.log('🔄 Starting to load course details for courseId:', courseId);
       setLoading(true);
       try {
+        console.log('📡 Calling API: courseAPI.getCourseById(', courseId, ')');
         const response = await courseAPI.getCourseById(courseId);
+        console.log('✅ API Response received:', response);
+        console.log('📋 Response keys:', Object.keys(response || {}));
+        
+        // Check response structure
+        if (!response) {
+          console.error('❌ API returned null/undefined response');
+          throw new Error('Invalid API response');
+        }
         
         // Transform API data to match component format
         const transformedCourseDetails = {
@@ -96,36 +74,71 @@ const InPageCourseDetail = ({ course, department }) => {
           department: response.department,
           subjectCount: response.subjectCount || 0,
           traineeCount: response.traineeCount || 0,
-          trainerCount: response.trainerCount || 0,
-          subjects: response.subjects || []
+          trainerCount: response.trainerCount || 0
         };
         
         setCourseDetails(transformedCourseDetails);
-        setLoading(false);
-      } catch {
-        setLoading(false);
         
-        // Fallback to hardcoded data if API fails
-        const fallbackCourseDetails = {
-          name: course?.name || 'Course Name',
-          code: course?.code || 'COURSE001',
-          description: "Comprehensive safety procedures training covering emergency protocols, evacuation procedures, and safety equipment usage. This course ensures all personnel are equipped with essential safety knowledge and skills required for aviation operations.",
-          maxTrainees: 50,
-          venue: "Training Center A - Room 101",
-          note: "",
-          passScore: 80,
-          startDate: "2024-01-15",
-          endDate: "2024-01-29",
-          level: "Intermediate",
-          status: "ACTIVE"
-        };
-        setCourseDetails(fallbackCourseDetails);
+        // Extract and set subjects from API response
+        console.log('🔍 Checking for subjects in response...');
+        console.log('🔍 response.subjects:', response.subjects);
+        console.log('🔍 response.subjects type:', typeof response.subjects);
+        console.log('🔍 response.subjects isArray?:', Array.isArray(response.subjects));
+        console.log('🔍 response.subjectCount:', response.subjectCount);
+        
+        if (response.subjects && Array.isArray(response.subjects)) {
+          console.log('✅ Found subjects array with', response.subjects.length, 'subjects');
+          console.log('📋 First subject sample:', response.subjects[0]);
+          setSubjects(response.subjects);
+        } else if (response.subjectCount > 0 && !response.subjects) {
+          console.warn('⚠️ subjectCount > 0 but subjects array not found in response. Response structure:', response);
+          setSubjects([]);
+        } else {
+          console.log('ℹ️ No subjects in course (subjectCount:', response.subjectCount, ')');
+          setSubjects([]);
+        }
+        
+        setLoading(false);
+      } catch (error) {
+        console.error('Error loading course details:', error);
+        
+        // If API fails (404 or other errors), use course prop if available
+        if (course && course.id && course.name) {
+          console.log('✅ Using course prop data as fallback (API failed):', course);
+          const fallbackCourseDetails = {
+            name: course.name,
+            code: course.code || 'N/A',
+            description: course.description || "Course information not available.",
+            maxTrainees: course.maxNumTrainee || course.maxTrainees || 50,
+            venue: course.venue || 'N/A',
+            note: course.note || '',
+            passScore: course.passScore || 80,
+            startDate: course.startDate ? (typeof course.startDate === 'string' ? course.startDate.split('T')[0] : new Date(course.startDate).toISOString().split('T')[0]) : 'N/A',
+            endDate: course.endDate ? (typeof course.endDate === 'string' ? course.endDate.split('T')[0] : new Date(course.endDate).toISOString().split('T')[0]) : 'N/A',
+            level: course.level || 'N/A',
+            status: course.status || 'ACTIVE',
+            department: course.department || department,
+            subjectCount: course.subjectCount || 0,
+            traineeCount: course.traineeCount || 0,
+            trainerCount: course.trainerCount || 0
+          };
+          setCourseDetails(fallbackCourseDetails);
+          setSubjects([]); // Subjects not available from course prop
+        } else {
+          // No course prop available - show error state
+          console.warn('❌ Course not found and no course prop available');
+          setCourseDetails(null);
+          setSubjects([]);
+        }
+        
+        setLoading(false);
       }
     };
 
-    loadCourseDetails();
-    loadSubjects(); // Load subjects from API
-  }, [courseId, course, loadSubjects]);
+    if (courseId) {
+      loadCourseDetails();
+    }
+  }, [courseId, course, department]);
   
   const handleBack = () => {
     // Navigate back to department details using the correct route
@@ -189,17 +202,20 @@ const InPageCourseDetail = ({ course, department }) => {
     
     setIsDisabling(true);
     try {
-      // Call API to disable subject
-      await subjectAPI.deleteSubject(selectedSubject.id);
+      // Call API to archive subject
+      await subjectAPI.archiveSubject(selectedSubject.id);
       
-      // Reload subjects to get updated data
-      await loadSubjects();
+      // Reload course details to get updated subjects
+      const response = await courseAPI.getCourseById(courseId);
+      if (response.subjects && Array.isArray(response.subjects)) {
+        setSubjects(response.subjects);
+      }
       
       // Close modal
       setShowDisableSubject(false);
       setSelectedSubject(null);
     } catch (error) {
-      console.error('Error disabling subject:', error);
+      console.error('Error archiving subject:', error);
       // Handle error - could show toast notification
     } finally {
       setIsDisabling(false);
@@ -219,8 +235,11 @@ const InPageCourseDetail = ({ course, department }) => {
         courseId: courseId
       });
       
-      // Reload subjects to get updated data
-      await loadSubjects();
+      // Reload course details to get updated subjects
+      const response = await courseAPI.getCourseById(courseId);
+      if (response.subjects && Array.isArray(response.subjects)) {
+        setSubjects(response.subjects);
+      }
       
       setShowAddSubject(false);
     } catch (error) {
@@ -234,8 +253,11 @@ const InPageCourseDetail = ({ course, department }) => {
       // Call bulk import API
       await subjectAPI.bulkImportSubjects(subjectsData);
       
-      // Reload subjects from API to get updated data
-      await loadSubjects();
+      // Reload course details to get updated subjects
+      const response = await courseAPI.getCourseById(courseId);
+      if (response.subjects && Array.isArray(response.subjects)) {
+        setSubjects(response.subjects);
+      }
       
       setShowBulkImport(false);
     } catch (error) {
@@ -327,7 +349,7 @@ const InPageCourseDetail = ({ course, department }) => {
       {/* Tab Interface */}
       <Card className="border-0 shadow-sm mb-2">
         <Tab.Container activeKey={activeTab} onSelect={setActiveTab}>
-          <Card.Header className="border-bottom py-2">
+          <Card.Header className="border-bottom py-2 bg-primary">
             <Nav variant="tabs" className="border-0">
               <Nav.Item>
                 <Nav.Link 
@@ -335,8 +357,11 @@ const InPageCourseDetail = ({ course, department }) => {
                   className="d-flex align-items-center"
                   style={{ 
                     border: 'none',
-                    color: activeTab === 'course-info' ? '#0d6efd' : '#6c757d',
-                    fontWeight: activeTab === 'course-info' ? '600' : '400'
+                    backgroundColor: 'transparent',
+                    color: '#ffffff',
+                    fontWeight: activeTab === 'course-info' ? '600' : '400',
+                    opacity: activeTab === 'course-info' ? '1' : '0.7',
+                    borderRadius: '4px 4px 0 0'
                   }}
                 >
                   <Book className="me-2" size={16} />
@@ -349,8 +374,11 @@ const InPageCourseDetail = ({ course, department }) => {
                   className="d-flex align-items-center"
                   style={{ 
                     border: 'none',
-                    color: activeTab === 'subjects' ? '#0d6efd' : '#6c757d',
-                    fontWeight: activeTab === 'subjects' ? '600' : '400'
+                    backgroundColor: 'transparent',
+                    color: '#ffffff',
+                    fontWeight: activeTab === 'subjects' ? '600' : '400',
+                    opacity: activeTab === 'subjects' ? '1' : '0.7',
+                    borderRadius: '4px 4px 0 0'
                   }}
                 >
                   <FileText className="me-2" size={16} />
@@ -363,8 +391,11 @@ const InPageCourseDetail = ({ course, department }) => {
                   className="d-flex align-items-center"
                   style={{ 
                     border: 'none',
-                    color: activeTab === 'trainees' ? '#0d6efd' : '#6c757d',
-                    fontWeight: activeTab === 'trainees' ? '600' : '400'
+                    backgroundColor: 'transparent',
+                    color: '#ffffff',
+                    fontWeight: activeTab === 'trainees' ? '600' : '400',
+                    opacity: activeTab === 'trainees' ? '1' : '0.7',
+                    borderRadius: '4px 4px 0 0'
                   }}
                 >
                   <People className="me-2" size={16} />

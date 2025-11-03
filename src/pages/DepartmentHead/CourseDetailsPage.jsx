@@ -460,19 +460,21 @@ const CourseDetailsPage = () => {
   }, [courseId]);
 
   const handleViewSubject = (subject) => {
-    navigate(`/department-head/my-department-details/${courseId}/subjects/${subject.id}`);
+    navigate(`/department-head/courses/${courseId}/subjects/${subject.id}`);
   };
 
   const handleEditSubject = (subject) => {
     console.log('Edit subject:', subject);
+    // TODO: Implement edit subject functionality
   };
 
   const handleViewTrainee = (trainee) => {
-    navigate(`/department-head/my-department-details/${courseId}/trainees/${trainee.id}`);
+    navigate(`/department-head/trainees/${trainee.id}`);
   };
 
   const handleEditTrainee = (trainee) => {
     console.log('Edit trainee:', trainee);
+    // TODO: Implement edit trainee functionality
   };
 
   const tabs = [
@@ -515,7 +517,7 @@ const CourseDetailsPage = () => {
   }
 
   return (
-    <Container fluid className="py-4">
+    <Container fluid className="py-4 course-details-page">
       {/* Header */}
       <Row className="mb-4">
         <Col>
@@ -538,7 +540,7 @@ const CourseDetailsPage = () => {
       <Row className="mb-4">
         <Col>
           <Card className="border-0">
-            <Card.Header className="bg-primary text-white p-0">
+            <Card.Header className="department-head-section-header bg-primary text-white border-0 p-0">
               <div className="custom-tabs-container">
                 {tabs.map((tab) => {
                   const IconComponent = tab.icon;

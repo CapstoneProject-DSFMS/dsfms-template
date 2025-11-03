@@ -270,6 +270,16 @@ const Header = ({ onToggleSidebar }) => {
       return 'Result Approval Note';
     }
     
+    // Check for department head subject details (pattern: /department-head/courses/:courseId/subjects/:subjectId)
+    if (path.includes('/department-head/courses/') && path.includes('/subjects/')) {
+      return 'Subject Details';
+    }
+    
+    // Check for department head trainee details (pattern: /department-head/trainees/:traineeId)
+    if (path.startsWith('/department-head/trainees/')) {
+      return 'Trainee Details';
+    }
+    
     // Check for trainee detail pages (pattern: /trainee/:traineeId) - must be last
     if (path.startsWith('/trainee/') && path !== '/trainee' && 
         !path.startsWith('/trainee/dashboard') &&

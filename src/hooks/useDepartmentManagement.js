@@ -17,7 +17,7 @@ const transformDepartmentData = (departmentsData) => {
       email: dept.headUser.email,
       role: dept.headUser.role
     } : null,
-    status: dept.isActive,
+    status: dept.isActive === true ? 'ACTIVE' : 'INACTIVE',
     coursesCount: dept.courseCount || dept.coursesCount || 0,
     traineesCount: dept.traineeCount || dept.traineesCount || 0,
     trainersCount: dept.trainerCount || dept.trainersCount || 0,

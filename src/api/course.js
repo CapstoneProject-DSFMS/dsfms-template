@@ -59,10 +59,21 @@ const courseAPI = {
   // Archive course
   archiveCourse: async (courseId) => {
     try {
-      const response = await apiClient.post(`/courses/${courseId}/archive`);
+      const response = await apiClient.patch(`/courses/${courseId}/archive`);
       return response.data;
     } catch (error) {
       console.error('Error archiving course:', error);
+      throw error;
+    }
+  },
+
+  // Restore course
+  restoreCourse: async (courseId) => {
+    try {
+      const response = await apiClient.post(`/courses/${courseId}/restore`);
+      return response.data;
+    } catch (error) {
+      console.error('Error restoring course:', error);
       throw error;
     }
   },
@@ -109,6 +120,17 @@ const courseAPI = {
   getTraineeEnrollments: async (traineeId) => {
     const response = await apiClient.get(`/courses/trainees/${traineeId}/enrollments`);
     return response.data;
+  },
+
+  // Get enrolled trainees for a course
+  getCourseTrainees: async (courseId) => {
+    try {
+      const response = await apiClient.get(`/courses/${courseId}/trainees`);
+      return response.data;
+    } catch (error) {
+      console.error('Error fetching course trainees:', error);
+      throw error;
+    }
   }
 };
 

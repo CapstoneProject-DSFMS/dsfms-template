@@ -7,6 +7,7 @@ const EditorWithCustomFields = ({
   onRemoveField,
   onInsertField,
   exportEditedDoc,
+  exportAndUploadEditedDoc,
   readOnly = false,
   className = ''
 }) => {
@@ -17,6 +18,7 @@ const EditorWithCustomFields = ({
       onRemoveField={onRemoveField}
       onInsertField={onInsertField}
       exportEditedDoc={exportEditedDoc}
+      exportAndUploadEditedDoc={exportAndUploadEditedDoc}
       readOnly={readOnly}
       className={className}
     />

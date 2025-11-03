@@ -113,6 +113,7 @@ export function buildTemplatePayload(meta, sections) {
     description: meta.description,
     departmentId: meta.departmentId,
     templateContent: meta.templateContent,
+    templateConfig: meta.templateConfig || null,
     sections: normalizedSections
   };
 }
