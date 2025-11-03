@@ -1,16 +1,46 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { Modal, Button, Form, Row, Col, Card, Alert } from 'react-bootstrap';
 import { X, Upload, FileEarmark, FileEarmarkText, Download } from 'react-bootstrap-icons';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'react-toastify';
 import { uploadAPI } from '../../../api';
+import { departmentAPI } from '../../../api/department';
 
 const ImportFileModal = ({ show, onHide, onImportSuccess, onImportError }) => {
   const navigate = useNavigate();
   const [importType, setImportType] = useState('with-fields'); // 'with-fields' or 'without-fields'
   const [selectedFile, setSelectedFile] = useState(null);
   const [isUploading, setIsUploading] = useState(false);
+  const [templateInfo, setTemplateInfo] = useState({
+    name: '',
+    description: '',
+    departmentId: ''
+  });
+  const [departments, setDepartments] = useState([]);
+  const [loadingDepartments, setLoadingDepartments] = useState(false);
   const fileInputRef = useRef(null);
+
+  // Load departments when modal opens
+  useEffect(() => {
+    if (show) {
+      loadDepartments();
+    }
+  }, [show]);
+
+  const loadDepartments = async () => {
+    try {
+      setLoadingDepartments(true);
+      const response = await departmentAPI.getDepartments();
+      const departmentsData = response.departments || response.data || [];
+      setDepartments(departmentsData);
+    } catch (error) {
+      console.error('Error loading departments:', error);
+      toast.error('Failed to load departments');
+      setDepartments([]);
+    } finally {
+      setLoadingDepartments(false);
+    }
+  };
 
   const handleFileSelect = (event) => {
     const file = event.target.files[0];
@@ -57,21 +87,48 @@ const ImportFileModal = ({ show, onHide, onImportSuccess, onImportError }) => {
         throw new Error('Invalid response format from upload API');
       }
       
-      // Navigate to editor with document URL
-      navigate('/admin/forms/editor', {
-        state: {
-          documentUrl: documentUrl,
+      // Xử lý 2 luồng khác nhau
+      if (importType === 'with-fields') {
+        // Luồng 1: File with fields - Navigate trực tiếp
+        navigate('/admin/forms/editor', {
+          state: {
+            documentUrl: documentUrl,
+            fileName: selectedFile.name.replace('.docx', ''),
+            importType: 'File with fields'
+          }
+        });
+        
+        handleClose();
+        onImportSuccess('File with fields', selectedFile.name);
+      } else {
+        // Luồng 2: File without fields - Lưu thông tin và navigate
+        const templateData = {
+          name: templateInfo.name,
+          description: templateInfo.description,
+          departmentId: templateInfo.departmentId,
+          templateContent: documentUrl,
           fileName: selectedFile.name.replace('.docx', ''),
-          importType: importType === 'with-fields' ? 'File with fields' : 'File without fields'
-        }
-      });
-      
-      // Close modal
-      handleClose();
-      
-      // Call success callback
-      const importTypeLabel = importType === 'with-fields' ? 'File with fields' : 'File without fields';
-      onImportSuccess(importTypeLabel, selectedFile.name);
+          importType: 'File without fields',
+          createdAt: new Date().toISOString()
+        };
+
+        // Lưu vào localStorage
+        localStorage.setItem('templateInfo', JSON.stringify(templateData));
+        console.log('💾 Template info saved to localStorage:', templateData);
+
+        // Navigate đến editor
+        navigate('/admin/forms/editor', {
+          state: {
+            documentUrl: documentUrl,
+            fileName: templateData.fileName,
+            importType: 'File without fields',
+            templateInfo: templateData
+          }
+        });
+
+        handleClose();
+        onImportSuccess('File without fields', selectedFile.name);
+      }
     } catch (error) {
       onImportError(error.message || 'Import failed');
     } finally {
@@ -80,9 +137,15 @@ const ImportFileModal = ({ show, onHide, onImportSuccess, onImportError }) => {
   };
 
 
+
   const handleClose = () => {
     setSelectedFile(null);
     setImportType('with-fields');
+    setTemplateInfo({
+      name: '',
+      description: '',
+      departmentId: ''
+    });
     if (fileInputRef.current) {
       fileInputRef.current.value = '';
     }
@@ -93,6 +156,7 @@ const ImportFileModal = ({ show, onHide, onImportSuccess, onImportError }) => {
     // Simulate template download
     toast.info(`Downloading ${type} template...`);
   };
+
 
 
 
@@ -194,7 +258,72 @@ const ImportFileModal = ({ show, onHide, onImportSuccess, onImportError }) => {
           </Alert>
         )}
 
-        {/* File Upload Section - Only show after import type is selected */}
+        {/* Template Information Form - Show for "without-fields" */}
+        {importType === 'without-fields' && (
+          <div className="mb-4">
+            <h6 className="text-primary-custom mb-3">Fill in Basic Template Information</h6>
+            <Form>
+              <Row className="g-3">
+                <Col md={12}>
+                  <Form.Group>
+                    <Form.Label className="text-primary-custom">Template Name <span className="text-danger">*</span></Form.Label>
+                    <Form.Control
+                      type="text"
+                      placeholder="e.g., Flight Training Assessment Form"
+                      value={templateInfo.name}
+                      onChange={(e) => setTemplateInfo(prev => ({ ...prev, name: e.target.value }))}
+                      required
+                    />
+                  </Form.Group>
+                </Col>
+                <Col md={12}>
+                  <Form.Group>
+                    <Form.Label className="text-primary-custom">Description <span className="text-danger">*</span></Form.Label>
+                    <Form.Control
+                      as="textarea"
+                      rows={3}
+                      placeholder="e.g., Comprehensive flight training evaluation form with competency assessment"
+                      value={templateInfo.description}
+                      onChange={(e) => setTemplateInfo(prev => ({ ...prev, description: e.target.value }))}
+                      required
+                    />
+                  </Form.Group>
+                </Col>
+                <Col md={12}>
+                  <Form.Group>
+                    <Form.Label className="text-primary-custom">Department <span className="text-danger">*</span></Form.Label>
+                    <Form.Select
+                      value={templateInfo.departmentId}
+                      onChange={(e) => setTemplateInfo(prev => ({ ...prev, departmentId: e.target.value }))}
+                      required
+                      disabled={loadingDepartments}
+                    >
+                      <option value="">Select Department</option>
+                      {departments.map((dept) => (
+                        <option key={dept.id} value={dept.id}>
+                          {dept.name}
+                        </option>
+                      ))}
+                    </Form.Select>
+                    {loadingDepartments && (
+                      <Form.Text className="text-muted">
+                        Loading departments...
+                      </Form.Text>
+                    )}
+                    {templateInfo.templateContent && (
+                      <Form.Text className="text-muted">
+                        Template Content: {templateInfo.templateContent}
+                      </Form.Text>
+                    )}
+                  </Form.Group>
+                </Col>
+              </Row>
+            </Form>
+
+          </div>
+        )}
+
+        {/* File Upload Section - Show for both types */}
         {importType && (
           <>
             <div className="mb-4">
@@ -228,28 +357,6 @@ const ImportFileModal = ({ show, onHide, onImportSuccess, onImportError }) => {
                 </div>
               </Alert>
             )}
-
-            {/* Import Instructions */}
-            <Alert variant="light" className="mb-0">
-              <h6 className="text-primary-custom mb-2">Import Instructions</h6>
-                     {importType === 'with-fields' ? (
-                       <ul className="mb-0 small">
-                         <li><strong>Automatic Processing:</strong> System will parse Word document and create form templates automatically</li>
-                         <li>Document should contain predefined form fields and structure</li>
-                         <li>Form fields will be automatically mapped and validated</li>
-                         <li>Content will be converted to editable form template</li>
-                         <li>Download the template above for the correct format</li>
-                       </ul>
-                            ) : (
-                              <ul className="mb-0 small">
-                                <li><strong>Manual Processing:</strong> You will manually define form fields and structure</li>
-                                <li>Document content will be parsed and converted to editable format</li>
-                                <li>Use merge field buttons to add dynamic fields to the content</li>
-                                <li>Perfect for documents that need custom field mapping</li>
-                                <li>Full control over form structure and field placement</li>
-                              </ul>
-                            )}
-            </Alert>
           </>
         )}
       </Modal.Body>
@@ -264,7 +371,7 @@ const ImportFileModal = ({ show, onHide, onImportSuccess, onImportError }) => {
           Cancel
         </Button>
         
-        {importType && (
+        {importType === 'with-fields' && (
           <Button
             variant="primary-custom"
             onClick={handleImport}
@@ -283,7 +390,28 @@ const ImportFileModal = ({ show, onHide, onImportSuccess, onImportError }) => {
             )}
           </Button>
         )}
+
+        {importType === 'without-fields' && (
+          <Button
+            variant="primary-custom"
+            onClick={handleImport}
+            disabled={!selectedFile || !templateInfo.name || !templateInfo.description || !templateInfo.departmentId || isUploading}
+          >
+            {isUploading ? (
+              <>
+                <span className="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true" style={{ width: '1rem', height: '1rem' }}></span>
+                Importing...
+              </>
+            ) : (
+              <>
+                <Upload className="me-2" size={16} />
+                Import File
+              </>
+            )}
+          </Button>
+        )}
       </Modal.Footer>
+
     </Modal>
   );
 };

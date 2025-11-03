@@ -36,10 +36,53 @@ const subjectAPI = {
   // Get single subject by ID
   getSubjectById: async (subjectId) => {
     try {
-      const response = await apiClient.get(`/subjects/${subjectId}`);
+      console.log('📡 Fetching subject by ID:', subjectId);
+      console.log('📡 SubjectId type:', typeof subjectId);
+      console.log('📡 SubjectId length:', subjectId?.length);
+      
+      // Ensure GET request has no body and clear any data property
+      const response = await apiClient.get(`/subjects/${subjectId}`, {
+        data: undefined, // Explicitly remove any data
+        transformRequest: [(data, headers) => {
+          // Remove Content-Type for GET requests to avoid body validation
+          delete headers['Content-Type'];
+          return undefined; // No body for GET
+        }]
+      });
+      
+      console.log('✅ Subject detail response:', response);
+      console.log('✅ Response data:', response.data);
+      
+      // Handle nested data structure if exists (some APIs return { data: {...} })
+      if (response.data && response.data.data) {
+        return response.data.data;
+      }
+      
       return response.data;
     } catch (error) {
-      console.error('Error fetching subject:', error);
+      console.error('❌ Error fetching subject:', error);
+      console.error('❌ Error response:', error.response?.data);
+      console.error('❌ Error status:', error.response?.status);
+      console.error('❌ Error config:', {
+        url: error.config?.url,
+        method: error.config?.method,
+        data: error.config?.data,
+        headers: error.config?.headers
+      });
+      
+      // Log detailed validation errors
+      if (error.response?.data?.errors && Array.isArray(error.response.data.errors)) {
+        console.error('❌ Validation errors:', JSON.stringify(error.response.data.errors, null, 2));
+        error.response.data.errors.forEach((err, index) => {
+          console.error(`❌ Error ${index + 1}:`, {
+            field: err.field,
+            message: err.message,
+            code: err.code,
+            value: err.value
+          });
+        });
+      }
+      
       throw error;
     }
   },
@@ -73,6 +116,17 @@ const subjectAPI = {
       return response.data;
     } catch (error) {
       console.error('Error deleting subject:', error);
+      throw error;
+    }
+  },
+
+  // Archive subject
+  archiveSubject: async (subjectId) => {
+    try {
+      const response = await apiClient.patch(`/subjects/${subjectId}/archive`);
+      return response.data;
+    } catch (error) {
+      console.error('Error archiving subject:', error);
       throw error;
     }
   },

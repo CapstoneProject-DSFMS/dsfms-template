@@ -1,13 +1,15 @@
 import React, { useEffect, useState, useRef, useCallback } from 'react';
 import { Card, Row, Col, Alert, Spinner } from 'react-bootstrap';
 import { toast } from 'react-toastify';
-import MergeFieldsPanel from './MergeFieldsPanel';
+import EditorWithCustomFields from './EditorWithCustomFields';
+import EditorWithMergeFields from './EditorWithMergeFields';
+import { uploadAPI } from '../../../api';
+
 
 const OnlyOfficeFormEditor = ({
   initialContent = '',
   fileName = 'Untitled Document',
   readOnly = false,
-  mergeFields = [],
   showMergeFields = true,
   showImportInfo = false,
   importType = '',
@@ -16,8 +18,11 @@ const OnlyOfficeFormEditor = ({
   const [isLoading, setIsLoading] = useState(true);
   const [editor, setEditor] = useState(null);
   const [isEditorReady, setIsEditorReady] = useState(false);
+  const [customFields, setCustomFields] = useState([]);
+  const [showCustomFieldsPanel, setShowCustomFieldsPanel] = useState(true);
   const isInitialized = useRef(false);
   const editorRef = useRef(null);
+  const exportResolverRef = useRef(null);
 
   // Memoize cleanup function to avoid dependency issues
   const cleanupEditor = useCallback(() => {
@@ -201,7 +206,7 @@ const OnlyOfficeFormEditor = ({
             },
             customization: {
               autosave: false, // Disable autosave for testing
-              forcesave: false,
+              forcesave: true, // Enable forcesave to trigger callbacks
               comments: false,
               help: false,
               hideRightMenu: false
@@ -215,21 +220,70 @@ const OnlyOfficeFormEditor = ({
             onAppReady: () => {
               console.log('✅ OnlyOffice Document Editor is ready');
               setIsEditorReady(true);
-              toast.success('Document editor loaded successfully!');
             },
             onDocumentReady: () => {
               console.log('✅ Document is loaded');
-              toast.success('Document loaded successfully!');
+              // Remove duplicate toast - already shown in onAppReady
             },
             onError: (event) => {
               console.error('❌ OnlyOffice Error:', event);
-              toast.error('Error loading document: ' + event.data?.errorDescription || 'Unknown error');
+              toast.error('Error loading document: ' + (event.data?.errorDescription || 'Unknown error'));
             },
             onDocumentStateChange: (event) => {
               console.log('📄 Document state changed:', event);
             },
             onInfo: (event) => {
               console.log('ℹ️ OnlyOffice opened in mode:', event.data?.mode);
+            },
+            onRequestSaveAs: async (event) => {
+              try {
+                const data = event?.data || {};
+                console.log('🧾 onRequestSaveAs event received:', data);
+                
+                // Try multiple possible URL fields
+                const tempUrl = data.url 
+                  || data.downloadUrl 
+                  || data.fileUrl
+                  || (Array.isArray(data.files) ? data.files[0]?.url : undefined)
+                  || (data.file && data.file.url);
+                
+                console.log('🧾 Extracted temporary DOCX URL:', tempUrl);
+                
+                if (!tempUrl) {
+                  console.warn('⚠️ onRequestSaveAs received but no URL found in payload');
+                  console.warn('📋 Full event data:', JSON.stringify(data, null, 2));
+                }
+                
+                if (exportResolverRef.current) {
+                  if (tempUrl) {
+                    exportResolverRef.current.resolve(tempUrl);
+                  } else {
+                    exportResolverRef.current.reject(new Error('onRequestSaveAs event received but no URL found'));
+                  }
+                  exportResolverRef.current = null;
+                }
+              } catch (err) {
+                console.error('❌ Error in onRequestSaveAs handler:', err);
+                if (exportResolverRef.current) {
+                  exportResolverRef.current.reject(err);
+                  exportResolverRef.current = null;
+                }
+              }
+            },
+            onRequestSave: (event) => {
+              // Also listen to onRequestSave (different event)
+              try {
+                const data = event?.data || {};
+                console.log('💾 onRequestSave event received:', data);
+                const tempUrl = data.url || data.downloadUrl || data.fileUrl;
+                if (tempUrl && exportResolverRef.current) {
+                  console.log('✅ Using URL from onRequestSave:', tempUrl);
+                  exportResolverRef.current.resolve(tempUrl);
+                  exportResolverRef.current = null;
+                }
+              } catch (err) {
+                console.error('❌ Error in onRequestSave handler:', err);
+              }
             }
           }
         };
@@ -276,105 +330,64 @@ const OnlyOfficeFormEditor = ({
     return cleanupEditor;
   }, [initialContent, fileName, cleanupEditor]); // Include cleanupEditor dependency
 
-  const handleInsertField = (fieldName) => {
+  const handleInsertField = (fieldOrTemplate) => {
     if (editor && isEditorReady) {
       try {
-        console.log('🔧 Attempting to insert field at cursor position:', fieldName);
-        
-        // Debug: Check editor state and available methods
-        console.log('🔍 Editor debug info:', {
-          editor: !!editor,
-          isEditorReady,
-          editorMethods: Object.getOwnPropertyNames(editor),
-          hasInsertTextAtCursor: typeof editor.insertTextAtCursor,
-          hasInsertText: typeof editor.insertText,
-          hasExecuteCommand: typeof editor.executeCommand,
-          hasServiceCommand: typeof editor.serviceCommand
-        });
-        
-        // Method 0: Focus editor first (important for OnlyOffice Dev)
-        try {
-          const iframe = document.getElementById('onlyoffice-editor');
-          if (iframe && iframe.contentWindow) {
-            iframe.focus();
-            console.log('✅ Focused editor iframe');
-            
-             // Try to click inside the editor to ensure cursor is active
-             const clickEvent = new MouseEvent('click', {
-               bubbles: true,
-               cancelable: true,
-               view: iframe.contentWindow,
-               passive: true
-             });
-             iframe.contentWindow.dispatchEvent(clickEvent);
-            console.log('✅ Clicked inside editor');
-          }
-        } catch (e) {
-          console.log('❌ Failed to focus editor:', e);
-        }
-        
-            // Method 0: Try OnlyOffice Automation API - createConnector (Official Automation API)
-            if (typeof editor.createConnector === 'function') {
+        // Method 0: Try OnlyOffice Automation API - createConnector (Official Automation API)
+        if (typeof editor.createConnector === 'function') {
+          try {
+            const connector = editor.createConnector();
+
+            // Enable key events first (as per documentation)
+            if (typeof editor.asc_enableKeyEvents === 'function') {
               try {
-                const connector = editor.createConnector();
-                console.log('🔗 Created connector:', connector);
-                console.log('🔍 Connector methods:', connector ? Object.getOwnPropertyNames(connector) : 'No connector');
-                console.log('🔍 Connector prototype methods:', connector ? Object.getOwnPropertyNames(Object.getPrototypeOf(connector)) : 'No connector');
-                console.log('🔍 Connector events:', connector.events);
-                console.log('🔍 Connector isConnected:', connector.isConnected);
-                console.log('🔍 Connector frame:', connector.frame);
-                
-                // Enable key events first (as per documentation)
-                if (typeof editor.asc_enableKeyEvents === 'function') {
-                  try {
-                    editor.asc_enableKeyEvents(true);
-                    console.log('✅ Enabled key events for focus');
-                  } catch (e) {
-                    console.log('❌ Failed to enable key events:', e);
-                  }
-                }
-                
-                // Wait a bit for connector to be ready
-                setTimeout(() => {
-                  console.log('⏰ Connector ready after delay');
-                }, 100);
-            
+                editor.asc_enableKeyEvents(true);
+              } catch {
+                // Silent fail
+              }
+            }
+
             // ONLY OnlyOffice Automation API - Official method
             if (connector && connector.isConnected) {
               try {
-                console.log('🔧 Using OnlyOffice Automation API - callCommand (Official method)...');
-                
                 // Set the fieldName in Asc.scope for the command function
+                // Support raw template text or plain field name
                 // eslint-disable-next-line no-undef
-                Asc.scope.fieldName = fieldName;
-                
+                Asc.scope.__templateText =
+                  typeof fieldOrTemplate === 'string' && fieldOrTemplate.includes('{')
+                    ? fieldOrTemplate
+                    : `{${fieldOrTemplate}}`;
+
                 connector.callCommand(function() {
-                  // eslint-disable-next-line no-undef
-                  const oDocument = Api.GetDocument();
-                  // eslint-disable-next-line no-undef
-                  const oParagraph = Api.CreateParagraph();
-                  // eslint-disable-next-line no-undef
-                  oParagraph.AddText(`{{${Asc.scope.fieldName}}}`);
-                  oDocument.InsertContent([oParagraph]);
+                  try {
+                    // eslint-disable-next-line no-undef
+                    const oDocument = Api.GetDocument();
+                    // eslint-disable-next-line no-undef
+                    const oParagraph = Api.CreateParagraph();
+                    // eslint-disable-next-line no-undef
+                    oParagraph.AddText(Asc.scope.__templateText);
+                    oDocument.InsertContent([oParagraph]);
+                  } catch (error) {
+                    console.error('Error inside callCommand:', error);
+                  }
                  }, function() {
-                   console.log('✅ Used OnlyOffice Automation API - callCommand successfully');
-                   // Use requestAnimationFrame for better performance
                    requestAnimationFrame(() => {
-                     toast.success(`Inserted {{${fieldName}}} field at cursor position`);
+                     toast.success('Inserted template at cursor position');
                    });
+                 }, function(error) {
+                   toast.error('Failed to insert field: ' + error.message);
                  });
-                
+
                 return;
-              } catch (e) {
-                console.log('❌ OnlyOffice Automation API - callCommand failed:', e);
+              } catch {
                 toast.error('Failed to insert field using OnlyOffice Automation API');
               }
             }
-          } catch (e) {
-            console.log('❌ createConnector failed:', e);
+          } catch {
+            // Silent fail
           }
         }
-        
+
       } catch (error) {
         console.error('Error inserting field:', error);
         toast.error('Failed to insert field: ' + error.message);
@@ -385,6 +398,144 @@ const OnlyOfficeFormEditor = ({
       toast.warning('Editor is still loading, please wait...');
     }
   };
+
+  // Expose export method to child panels - returns temp URL
+  // Try both downloadAs() and forceSave() methods
+  const exportEditedDoc = useCallback(() => {
+    return new Promise((resolve, reject) => {
+      try {
+        if (!editorRef.current) {
+          reject(new Error('Editor not initialized'));
+          return;
+        }
+
+        exportResolverRef.current = { resolve, reject };
+        
+        // Method 1: Try forceSave() first (more reliable with forcesave enabled)
+        if (typeof editorRef.current.downloadDocument === 'function') {
+          console.log('🔄 Attempting export via downloadDocument()...');
+          try {
+            editorRef.current.downloadDocument();
+          } catch (e) {
+            console.warn('downloadDocument() failed, trying downloadAs()...', e);
+          }
+        }
+        
+        // Method 2: Try downloadAs() 
+        if (typeof editorRef.current.downloadAs === 'function') {
+          console.log('🔄 Attempting export via downloadAs("docx")...');
+          try {
+            editorRef.current.downloadAs('docx');
+          } catch (e) {
+            console.warn('downloadAs() failed:', e);
+          }
+        }
+
+        // Method 3: Try direct forceSave via API
+        if (typeof editorRef.current.save === 'function') {
+          console.log('🔄 Attempting export via save()...');
+          try {
+            editorRef.current.save();
+          } catch (e) {
+            console.warn('save() failed:', e);
+          }
+        }
+
+        // Timeout after 20 seconds (increased from 15)
+        setTimeout(() => {
+          if (exportResolverRef.current) {
+            const error = new Error('Export timeout: onRequestSaveAs not received after 20s. OnlyOffice Cloud may not support this method without callbackUrl.');
+            exportResolverRef.current.reject(error);
+            exportResolverRef.current = null;
+          }
+        }, 20000);
+      } catch (err) {
+        if (exportResolverRef.current) {
+          exportResolverRef.current.reject(err);
+          exportResolverRef.current = null;
+        } else {
+          reject(err);
+        }
+      }
+    });
+  }, []);
+
+  // Complete flow: Export → Fetch → Upload → Return S3 URL
+  const exportAndUploadEditedDoc = useCallback(async () => {
+    try {
+      if (!editorRef.current || !isEditorReady) {
+        throw new Error('Editor not ready');
+      }
+
+      toast.info('Exporting document...');
+      
+      // Step 1: Export and get temp URL
+      const tempUrl = await exportEditedDoc();
+      if (!tempUrl) {
+        throw new Error('No temporary URL received from OnlyOffice');
+      }
+
+      console.log('📥 Got temp URL:', tempUrl);
+      toast.info('Downloading file...');
+
+      // Step 2: Fetch file from temp URL
+      const response = await fetch(tempUrl);
+      if (!response.ok) {
+        throw new Error(`Failed to fetch file: ${response.statusText}`);
+      }
+
+      const blob = await response.blob();
+      console.log('📦 Downloaded blob:', blob.size, 'bytes');
+
+      // Step 3: Create File from Blob
+      const fileNameWithExt = fileName.endsWith('.docx') ? fileName : `${fileName}.docx`;
+      const file = new File([blob], fileNameWithExt, {
+        type: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'
+      });
+
+      toast.info('Uploading to S3...');
+
+      // Step 4: Upload to S3 using existing API
+      const docsType = uploadAPI.getDocsType(fileNameWithExt) || 'tem';
+      const uploadResult = await uploadAPI.uploadDocument(file, docsType);
+
+      // Step 5: Extract S3 URL from response
+      console.log('📦 Upload API response:', uploadResult);
+      
+      let s3Url = null;
+      if (uploadResult?.data?.[0]?.url) {
+        s3Url = uploadResult.data[0].url;
+        console.log('✅ Found S3 URL in uploadResult.data[0].url:', s3Url);
+      } else if (uploadResult?.data?.url) {
+        s3Url = uploadResult.data.url;
+        console.log('✅ Found S3 URL in uploadResult.data.url:', s3Url);
+      } else if (uploadResult?.url) {
+        s3Url = uploadResult.url;
+        console.log('✅ Found S3 URL in uploadResult.url:', s3Url);
+      } else if (uploadResult?.fileUrl) {
+        s3Url = uploadResult.fileUrl;
+        console.log('✅ Found S3 URL in uploadResult.fileUrl:', s3Url);
+      } else if (uploadResult?.path) {
+        s3Url = uploadResult.path;
+        console.log('✅ Found S3 URL in uploadResult.path:', s3Url);
+      }
+
+      if (!s3Url) {
+        console.error('❌ Upload response structure:', JSON.stringify(uploadResult, null, 2));
+        throw new Error('No S3 URL returned from upload API');
+      }
+
+      console.log('🎯 Final S3 URL to be used in templateContent:', s3Url);
+      console.log('🌐 Full S3 URL:', s3Url);
+      toast.success(`Document uploaded successfully!\nURL: ${s3Url}`);
+
+      return s3Url;
+    } catch (error) {
+      console.error('❌ Export and upload failed:', error);
+      toast.error(`Failed: ${error.message}`);
+      throw error;
+    }
+  }, [exportEditedDoc, fileName, isEditorReady]);
 
   // Debug logging removed to prevent console spam
 
@@ -419,26 +570,53 @@ const OnlyOfficeFormEditor = ({
     );
   }
 
+  const handleAddCustomField = (field, options) => {
+    // Check if field is an array (for update) or single field (for add)
+    if (Array.isArray(field)) {
+      setCustomFields(field);
+      if (!options?.silent) toast.success('Fields updated successfully');
+    } else {
+      setCustomFields(prev => [...prev, field]);
+      if (!options?.silent) toast.success(`Added field: ${field.label}`);
+    }
+  };
+
+  const handleRemoveCustomField = (index) => {
+    setCustomFields(prev => prev.filter((_, i) => i !== index));
+    toast.success('Field removed');
+  };
+
   return (
     <div className={`onlyoffice-form-editor ${className}`}>
       <div className="p-0">
         {showImportInfo && (
           <Alert variant="info" className="mb-0 rounded-0">
             You are editing an imported form: <strong>{importType}</strong>
+            {importType === 'File without fields' && (
+              <div className="mt-2">
+                <button 
+                  className="btn btn-sm btn-outline-primary"
+                  onClick={() => setShowCustomFieldsPanel(!showCustomFieldsPanel)}
+                >
+                  {showCustomFieldsPanel ? 'Hide Custom Fields' : 'Show Custom Fields'}
+                </button>
+              </div>
+            )}
           </Alert>
         )}
 
-        <Row className="g-0">
+        <Row className="g-0" style={{ minHeight: '90vh' }}>
           {/* OnlyOffice Editor */}
-          <Col md={showMergeFields ? 9 : 12}>
-            <div className="p-3 h-100">
+          <Col md={showMergeFields && ((importType === 'File without fields' && showCustomFieldsPanel) || (importType !== 'File without fields')) ? 9 : 12}>
+            <div className="p-3" style={{ height: '90vh' }}>
+          <div className="d-flex justify-content-end mb-2" />
               
               {/* OnlyOffice Editor Container */}
               <div 
                 id="onlyoffice-editor" 
                 style={{ 
                   width: '100%', 
-                  height: '90vh',
+                  height: '100%',
                   border: '1px solid #ddd',
                   borderRadius: '4px'
                 }}
@@ -446,17 +624,38 @@ const OnlyOfficeFormEditor = ({
             </div>
           </Col>
 
-          {/* Merge Fields Panel - Moved to right side */}
-          {showMergeFields && (
-            <Col md={3} className="border-start">
-              <MergeFieldsPanel
-                mergeFields={mergeFields}
+        {/* Merge Fields Flow (File with fields) - RIGHT sidebar */}
+        {showMergeFields && importType !== 'File without fields' && (
+          <Col md={3} className="border-start" style={{ overflow: 'hidden' }}>
+            <div style={{ height: '90vh', overflowY: 'auto' }}>
+              <EditorWithMergeFields
                 onInsertField={handleInsertField}
+                exportEditedDoc={exportEditedDoc}
+                initialUrl={initialContent}
                 readOnly={readOnly}
                 className="h-100"
               />
-            </Col>
-          )}
+            </div>
+          </Col>
+        )}
+
+        {/* Custom Fields Flow (File without fields) - Collapsible */}
+        {showMergeFields && importType === 'File without fields' && showCustomFieldsPanel && (
+          <Col md={3} className="border-start">
+            <div style={{ height: '90vh', overflowY: 'auto' }}>
+              <EditorWithCustomFields
+                customFields={customFields}
+                onAddField={handleAddCustomField}
+                onRemoveField={handleRemoveCustomField}
+                onInsertField={handleInsertField}
+                exportEditedDoc={exportEditedDoc}
+                exportAndUploadEditedDoc={exportAndUploadEditedDoc}
+                readOnly={readOnly}
+                className="h-100"
+              />
+            </div>
+          </Col>
+        )}
         </Row>
       </div>
     </div>

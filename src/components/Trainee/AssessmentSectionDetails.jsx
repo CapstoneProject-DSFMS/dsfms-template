@@ -114,13 +114,21 @@ const AssessmentSectionDetails = ({ traineeId, sectionId }) => {
   };
 
   const handleStartAssessment = () => {
-    // TODO: Navigate to assessment interface
-    console.log('Start assessment section:', sectionId);
+    // Navigate to assessment interface - for now, stay on section details
+    // In the future, this could navigate to a question-by-question interface
+    toast.info('Starting assessment section...');
   };
 
   const handleContinueAssessment = () => {
-    // TODO: Navigate to assessment interface with current progress
-    console.log('Continue assessment section:', sectionId);
+    // Navigate to assessment interface with current progress
+    toast.info('Continuing assessment section...');
+  };
+
+  const handleSectionComplete = () => {
+    // After completing section, navigate back to assessment detail
+    // Extract assessmentId from section data if available
+    // For now, navigate back to your assessments
+    navigate('/trainee/your-assessments');
   };
 
   if (loading) {

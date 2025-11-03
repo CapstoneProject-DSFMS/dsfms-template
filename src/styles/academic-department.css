@@ -708,3 +708,124 @@ div.subject-details .card {
 .course-actions-dropdown .dropdown-item.text-warning:hover {
   background-color: rgba(255, 193, 7, 0.1) !important;
 }
+
+/* Course Selection Card Styles - Uniform Height */
+.course-selection .course-card {
+  min-height: 280px;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.course-selection .course-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15) !important;
+}
+
+.course-selection .course-card .card-body {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  flex-grow: 1;
+}
+
+.course-selection .course-card .course-icon {
+  flex-shrink: 0;
+}
+
+.course-selection .course-card h5 {
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  line-height: 1.3;
+  min-height: 2.6em;
+  max-height: 2.6em;
+  margin-bottom: 0.5rem;
+}
+
+.course-selection .course-card .description-container {
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  line-height: 1.4;
+  min-height: 4.2em;
+  max-height: 4.2em;
+  flex-grow: 1;
+  margin-bottom: 1rem;
+}
+
+.course-selection .course-card .btn {
+  margin-top: auto;
+  flex-shrink: 0;
+}
+
+/* Ensure all cards in row have same height */
+.course-selection .row {
+  display: flex;
+  flex-wrap: wrap;
+}
+
+.course-selection .row > [class*='col-'] {
+  display: flex;
+  flex-direction: column;
+}
+
+.course-selection .row > [class*='col-'] > .course-card {
+  flex: 1;
+}
+
+/* Academic Dashboard Specific Styles */
+.academic-dashboard-page .academic-dashboard-section-header {
+  background-color: var(--bs-primary) !important; /* System primary color #1b3c53 */
+  color: white !important;
+  padding: 1rem 1.5rem !important;
+  border-radius: 0 !important;
+}
+
+.academic-dashboard-page .academic-dashboard-section-header h5 {
+  color: white !important;
+  font-weight: 600 !important;
+  margin: 0 !important;
+}
+
+.academic-dashboard-page .academic-dashboard-section-header.bg-primary {
+  background-color: var(--bs-primary) !important;
+}
+
+/* Academic Course Section Header Styles */
+.academic-course-section-header {
+  background-color: var(--bs-primary) !important; /* System primary color #1b3c53 */
+  color: white !important;
+  padding: 1rem 1.5rem !important;
+  border-radius: 0 !important;
+}
+
+.academic-course-section-header h5 {
+  color: white !important;
+  font-weight: 600 !important;
+  margin: 0 !important;
+}
+
+.academic-course-section-header.bg-primary {
+  background-color: var(--bs-primary) !important;
+}
+
+.academic-course-section-header .academic-course-add-btn {
+  background-color: white !important;
+  border-color: white !important;
+  color: var(--bs-primary) !important;
+  font-weight: 500 !important;
+}
+
+.academic-course-section-header .academic-course-add-btn:hover {
+  background-color: #f8f9fa !important;
+  border-color: #f8f9fa !important;
+  color: var(--bs-primary) !important;
+  transform: translateY(-1px);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15) !important;
+}

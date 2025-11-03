@@ -6,7 +6,7 @@ const DisableSubjectModal = ({ show, onClose, onDisable, subject, loading = fals
   const [confirmText, setConfirmText] = useState('');
   const [error, setError] = useState('');
 
-  const expectedText = 'DISABLE';
+  const expectedText = 'ARCHIVE';
   const isConfirmValid = confirmText === expectedText;
 
   const handleClose = () => {
@@ -39,7 +39,7 @@ const DisableSubjectModal = ({ show, onClose, onDisable, subject, loading = fals
       <Modal.Header className="bg-warning text-dark border-0">
         <Modal.Title className="d-flex align-items-center">
           <ExclamationTriangle className="me-2" size={20} />
-          Disable Subject
+          Archive Subject
         </Modal.Title>
       </Modal.Header>
 
@@ -52,7 +52,7 @@ const DisableSubjectModal = ({ show, onClose, onDisable, subject, loading = fals
 
         <div className="mb-3">
           <p className="mb-2">
-            You are about to disable the following subject:
+            You are about to archive the following subject:
           </p>
           <div className="bg-light p-3 rounded">
             <strong>Subject Code:</strong> {subject?.code}<br />
@@ -78,7 +78,7 @@ const DisableSubjectModal = ({ show, onClose, onDisable, subject, loading = fals
 
         <div className="mb-3">
           <label htmlFor="confirmText" className="form-label">
-            To confirm, please type <strong>DISABLE</strong> in the box below:
+            To confirm, please type <strong>ARCHIVE</strong> in the box below:
           </label>
           <input
             type="text"
@@ -86,12 +86,12 @@ const DisableSubjectModal = ({ show, onClose, onDisable, subject, loading = fals
             id="confirmText"
             value={confirmText}
             onChange={handleConfirmTextChange}
-            placeholder="Type DISABLE here"
+            placeholder="Type ARCHIVE here"
             disabled={loading}
           />
           {confirmText && !isConfirmValid && (
             <div className="invalid-feedback">
-              Please type "DISABLE" exactly as shown
+              Please type "ARCHIVE" exactly as shown
             </div>
           )}
         </div>
@@ -114,12 +114,12 @@ const DisableSubjectModal = ({ show, onClose, onDisable, subject, loading = fals
           {loading ? (
             <>
               <span className="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
-              Disabling...
+              Archiving...
             </>
           ) : (
             <>
               <ExclamationTriangle className="me-2" size={16} />
-              Disable Subject
+              Archive Subject
             </>
           )}
         </Button>

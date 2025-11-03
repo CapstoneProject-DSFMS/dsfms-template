@@ -155,8 +155,29 @@ const Header = ({ onToggleSidebar }) => {
       '/trainee/completion-required': 'Section Completion Required List',
       '/trainee/your-assessments': 'Your Assessments',
       '/trainee/create-incident-feedback-report': 'Create Incident/Feedback Report',
-      '/trainee/assessment-pending/signature-required': 'Signature Required List',
-      '/trainee/assessment-pending/section-completion': 'Section Completion Required List'
+      '/trainee/assessment-pending/section-completion': 'Section Completion Required List',
+      
+      // Trainer routes
+      '/trainer': 'Trainer Dashboard',
+      '/trainer/dashboard': 'Trainer Dashboard',
+      '/trainer/upcoming-assessments': 'Upcoming Assessments',
+      '/trainer/assessment-results': 'Assessment Results',
+      '/trainer/instructed-courses': 'Instructed Courses',
+      '/trainer/courses': 'Course Details',
+      '/trainer/configure-signature': 'Configure Signature',
+      '/trainer/section-completion': 'Section Completion',
+      '/trainer/assessment-details': 'Assessment Result Details',
+      '/trainer/approval-notes': 'Result Approval Note',
+      
+      // SQA routes
+      '/sqa': 'Issue List',
+      '/sqa/issues': 'Issue List',
+      '/sqa/feedback': 'Feedback List',
+      '/sqa/templates': 'Template List',
+      '/sqa/templates/history': 'Template History',
+      '/sqa/templates/sections': 'Template Sections',
+      '/sqa/templates/fields': 'Template Fields',
+      '/sqa/templates/pdf-preview': 'PDF Preview'
     };
     
     // Check for department detail page (pattern: /admin/departments/:id)
@@ -217,6 +238,46 @@ const Header = ({ onToggleSidebar }) => {
     // Check for assessment section (pattern: /trainee/:traineeId/assessment-section/:sectionId)
     if (path.match(/^\/trainee\/[^/]+\/assessment-section\/[^/]+$/)) {
       return 'Assessment Section';
+    }
+    
+    // Check for SQA template detail pages (pattern: /sqa/templates/:templateId)
+    if (path.startsWith('/sqa/templates/') && path !== '/sqa/templates') {
+      return 'Template Detail';
+    }
+    
+    // Check for trainer trainee details (pattern: /trainer/trainees/:traineeId)
+    if (path.startsWith('/trainer/trainees/')) {
+      return 'Trainee Details';
+    }
+    
+    // Check for trainer subject details (pattern: /trainer/subjects/:subjectId)
+    if (path.startsWith('/trainer/subjects/')) {
+      return 'Subject Details';
+    }
+    
+    // Check for trainer course details (pattern: /trainer/courses/:courseId)
+    if (path.startsWith('/trainer/courses/')) {
+      return 'Course Details';
+    }
+    
+    // Check for trainer assessment details (pattern: /trainer/assessment-details/:resultId)
+    if (path.startsWith('/trainer/assessment-details/')) {
+      return 'Assessment Result Details';
+    }
+    
+    // Check for trainer approval notes (pattern: /trainer/approval-notes/:resultId)
+    if (path.startsWith('/trainer/approval-notes/')) {
+      return 'Result Approval Note';
+    }
+    
+    // Check for department head subject details (pattern: /department-head/courses/:courseId/subjects/:subjectId)
+    if (path.includes('/department-head/courses/') && path.includes('/subjects/')) {
+      return 'Subject Details';
+    }
+    
+    // Check for department head trainee details (pattern: /department-head/trainees/:traineeId)
+    if (path.startsWith('/department-head/trainees/')) {
+      return 'Trainee Details';
     }
     
     // Check for trainee detail pages (pattern: /trainee/:traineeId) - must be last

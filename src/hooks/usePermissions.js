@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import { useAuth } from './useAuth';
+import { permissionAPI } from '../api/permission';
 
 // Helper function to format API endpoint names to be more user-friendly
 const formatPermissionName = (name) => {
@@ -92,23 +93,23 @@ export const usePermissions = () => {
   const [error, setError] = useState(null);
   const { userPermissions, userRole } = useAuth();
 
-  // Use userPermissions as the source of permissions instead of fetching from API
+  // Always use userPermissions from AuthContext (fetched via role detail API)
   const fetchPermissions = useCallback(async () => {
     setLoading(true);
     setError(null);
     
     try {
-      // Use userPermissions from AuthContext instead of calling API
+      // All roles use userPermissions from AuthContext (fetched via role detail API)
       if (userPermissions && userPermissions.length > 0) {
         setPermissions(userPermissions);
-        // console.log('✅ Using userPermissions from AuthContext:', userPermissions.length, 'permissions'); // Commented out to reduce console noise
       } else {
         setPermissions([]);
-        // console.log('⚠️ No userPermissions available'); // Commented out to reduce console noise
+        console.log('⚠️ No userPermissions available');
       }
     } catch (err) {
+      console.error('Error setting permissions:', err);
       setError(err);
-      console.error('Error setting permissions from userPermissions:', err);
+      setPermissions([]);
     } finally {
       setLoading(false);
     }
@@ -191,32 +192,86 @@ export const usePermissions = () => {
   // Check if user has specific permission - optimized with Set lookup
   const hasPermission = useCallback((permissionName) => {
     if (!userPermissions || userPermissions.length === 0) {
-      // console.log('🔍 hasPermission: No user permissions available'); // Commented out to reduce console noise
       return false;
     }
     
-    // Check against name, path, or id using Set for O(1) lookup
+    // Parse permissionName if it's in format "METHOD /path"
+    const parsePermission = (perm) => {
+      const parts = perm.trim().split(/\s+/);
+      if (parts.length >= 2) {
+        const method = parts[0]; // GET, POST, PUT, PATCH, DELETE
+        const path = parts.slice(1).join(' '); // /courses/:id
+        return { method, path };
+      }
+      return { method: null, path: perm };
+    };
+    
+    const parsed = parsePermission(permissionName);
+    
+    // Check direct matches first (name, path, id)
     const hasName = userPermissionNames.has(permissionName);
     const hasPath = userPermissionPaths.has(permissionName);
     const hasId = userPermissionIds.has(permissionName);
     
-    const result = hasName || hasPath || hasId;
+    if (hasName || hasPath || hasId) {
+      return true;
+    }
     
-    // Debug log for role update permission - Commented out to reduce console noise
-    // if (permissionName === 'PUT /roles/:roleId' || permissionName.includes('roles')) {
-    //   console.log('🔍 hasPermission check for role update:', {
-    //     permissionName,
-    //     hasName,
-    //     hasPath,
-    //     hasId,
-    //     result,
-    //     userPermissionNames: Array.from(userPermissionNames),
-    //     userPermissionPaths: Array.from(userPermissionPaths),
-    //     userPermissionIds: Array.from(userPermissionIds)
-    //   });
-    // }
+    // If permissionName is in format "METHOD /path", check against user permissions
+    // by matching method + path separately
+    if (parsed.method && parsed.path) {
+      const matched = userPermissions.some(perm => {
+        // Check if method matches
+        const methodMatch = perm.method && perm.method.toUpperCase() === parsed.method.toUpperCase();
+        
+        // Check if path matches (handle :id vs :courseId variations)
+        let pathMatch = false;
+        if (perm.path) {
+          // Direct path match
+          if (perm.path === parsed.path) {
+            pathMatch = true;
+          } else {
+            // Normalize paths for comparison (replace :id, :courseId, :departmentId, etc. with :param)
+            const normalizePath = (p) => p.replace(/:\w+/g, ':param');
+            if (normalizePath(perm.path) === normalizePath(parsed.path)) {
+              pathMatch = true;
+            }
+            // Also check if parsed path matches permission name format (for backward compatibility)
+            else if (perm.name && perm.name.includes(parsed.path.replace('/', ''))) {
+              pathMatch = true;
+            }
+          }
+        }
+        
+        return methodMatch && pathMatch;
+      });
+      
+      if (matched) {
+        return true;
+      }
+    }
     
-    return result;
+    // Fallback: Check if permissionName matches any part of permission name or description
+    // This handles cases where backend returns descriptive names like "View Course Detail"
+    const normalizedPermissionName = permissionName.toLowerCase().replace(/\s+/g, ' ');
+    const matchedByName = userPermissions.some(perm => {
+      if (!perm.name) return false;
+      const normalizedPermName = perm.name.toLowerCase();
+      
+      // Check if permission name contains key parts of the requested permission
+      // e.g., "View Course Detail" matches "GET /courses/:id" (contains "view", "course", "detail")
+      const keyWords = normalizedPermissionName
+        .split(/[\s/:]+/)
+        .filter(word => word.length > 2 && !['get', 'post', 'put', 'patch', 'delete'].includes(word));
+      
+      if (keyWords.length > 0) {
+        return keyWords.some(keyword => normalizedPermName.includes(keyword));
+      }
+      
+      return false;
+    });
+    
+    return matchedByName;
   }, [userPermissions, userPermissionNames, userPermissionPaths, userPermissionIds]);
 
   // Check if user has any of the specified permissions
@@ -307,12 +362,10 @@ export const usePermissions = () => {
     return Object.values(featureGroups).sort((a, b) => a.name.localeCompare(b.name));
   }, [userPermissions]);
 
-  // Initialize permissions when userPermissions change
+  // Initialize permissions on mount
   useEffect(() => {
-    if (userPermissions && userPermissions.length > 0) {
-      fetchPermissions();
-    }
-  }, [fetchPermissions, userPermissions]);
+    fetchPermissions();
+  }, [fetchPermissions]);
 
   return {
     permissions,
@@ -333,5 +386,96 @@ export const usePermissions = () => {
     // User data
     userPermissions,
     userRole
+  };
+};
+
+// Hook specifically for getting ALL permissions in the system
+// Used in Role Management to view/assign permissions
+export const useAllPermissions = () => {
+  const [allPermissions, setAllPermissions] = useState([]);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
+
+  const fetchAllPermissions = useCallback(async () => {
+    setLoading(true);
+    setError(null);
+    
+    try {
+      // Call API to get all permissions in the system
+      const response = await permissionAPI.getPermissions({ includeDeleted: true });
+      
+      // permissionAPI.getPermissions() already returns response.data
+      // API response structure:
+      // {
+      //   message: "Permissions fetched successfully",
+      //   data: {
+      //     modules: [{module: {...}}],  // ← Array nằm trong data.modules
+      //     totalItems: 89
+      //   }
+      // }
+      
+      let dataToProcess = null;
+      
+      // Check if response.data.modules exists (most common case from API)
+      if (response && response.data && response.data.modules && Array.isArray(response.data.modules)) {
+        dataToProcess = response.data.modules;
+      }
+      // Check if response is an array directly
+      else if (Array.isArray(response)) {
+        dataToProcess = response;
+      } 
+      // Check if response.data is an array
+      else if (response && response.data && Array.isArray(response.data)) {
+        dataToProcess = response.data;
+      }
+      // Check if response is an object with array-like structure
+      else if (response && typeof response === 'object') {
+        // Try to find array property (modules, data, etc.)
+        const possibleKeys = Object.keys(response);
+        const arrayKey = possibleKeys.find(key => Array.isArray(response[key]));
+        if (arrayKey) {
+          dataToProcess = response[arrayKey];
+        }
+      }
+      
+      if (dataToProcess && Array.isArray(dataToProcess)) {
+        // Extract permissions from nested structure
+        const permissions = [];
+        dataToProcess.forEach(module => {
+          if (module.module && module.module.listPermissions) {
+            module.module.listPermissions.forEach((permission) => {
+              // Extract permission ID - API returns 'id' field (see Postman response)
+              const permissionId = permission.id || permission.permissionId;
+              
+              permissions.push({
+                id: permissionId, // Use permissionId from API
+                name: permission.name,
+                module: module.module.name,
+                viewName: permission.name,
+                viewModule: module.module.name,
+                isActive: true // Assume active if not specified
+              });
+            });
+          }
+        });
+        
+        setAllPermissions(permissions);
+      } else {
+        setAllPermissions([]);
+      }
+    } catch (err) {
+      console.error('Error fetching all permissions from API:', err);
+      setError(err);
+      setAllPermissions([]);
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  return {
+    allPermissions,
+    loading,
+    error,
+    fetchAllPermissions
   };
 };
