@@ -55,9 +55,11 @@ const AdminTable = ({
         }}
       >
         <div className="d-flex align-items-center justify-content-between position-relative">
-          <span style={{ 
+          <span style={{
             transition: 'all 0.3s ease',
-            fontWeight: isActive ? '600' : '500'
+            fontWeight: '700', // Always bold for uppercase text
+            textTransform: 'uppercase', // Ensure uppercase
+            letterSpacing: '0.5px' // Better readability
           }}>
             {children}
           </span>
@@ -108,7 +110,8 @@ const AdminTable = ({
               ) : (
                 <th 
                   key={index}
-                  className={`text-primary-custom fw-semibold ${column.className || ""}`}
+                  className={`text-primary-custom fw-bold ${column.className || ""}`}
+                  style={{ textTransform: 'uppercase', letterSpacing: '0.5px' }}
                 >
                   {column.title}
                 </th>

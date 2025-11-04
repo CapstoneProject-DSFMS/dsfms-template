@@ -182,7 +182,7 @@ const Header = ({ onToggleSidebar }) => {
     
     // Check for department detail page (pattern: /admin/departments/:id)
     if (path.startsWith('/admin/departments/') && path !== '/admin/departments') {
-      return 'Edit Department Detail';
+      return 'Department Details';
     }
     
     // Check for academic department pages (pattern: /academic/departments/:id)

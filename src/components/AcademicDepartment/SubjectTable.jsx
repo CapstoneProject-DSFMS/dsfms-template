@@ -8,14 +8,8 @@ import { mapApiSubjectsToTable, getStatusBadgeColor, getMethodBadgeColor } from 
 
 
 const SubjectTable = ({ subjects = [], loading = false, onView, onEdit, onDelete }) => {
-  console.log('🔍 SubjectTable - Received subjects:', subjects);
-  console.log('🔍 SubjectTable - subjects length:', subjects.length);
-  console.log('🔍 SubjectTable - loading:', loading);
-  
   // Map API subjects to table format
   const mappedApiSubjects = mapApiSubjectsToTable(subjects);
-  console.log('🔍 SubjectTable - mappedApiSubjects:', mappedApiSubjects);
-  console.log('🔍 SubjectTable - mappedApiSubjects length:', mappedApiSubjects.length);
   
   const { sortedData, sortConfig, handleSort } = useTableSort(mappedApiSubjects);
 
@@ -65,7 +59,9 @@ const SubjectTable = ({ subjects = [], loading = false, onView, onEdit, onDelete
         <div className="d-flex align-items-center justify-content-between position-relative w-100">
           <span style={{
             transition: 'all 0.3s ease',
-            fontWeight: isActive ? '700' : '600',
+            fontWeight: '700', // Always bold for uppercase text
+            textTransform: 'uppercase', // Ensure uppercase
+            letterSpacing: '0.5px', // Better readability
             flex: '1',
             whiteSpace: 'nowrap',
             overflow: 'hidden',
@@ -136,11 +132,13 @@ const SubjectTable = ({ subjects = [], loading = false, onView, onEdit, onDelete
             <SortableHeader columnKey="status" className="show-mobile">
               Status
             </SortableHeader>
-            <th className="border-neutral-200 text-primary-custom fw-bold letter-spacing px-3 py-3 text-center show-mobile" style={{ minWidth: '80px', maxWidth: '150px' }}>
+            <th className="border-neutral-200 text-primary-custom fw-bold letter-spacing px-3 py-3 text-center show-mobile" style={{ minWidth: '80px', maxWidth: '150px', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
               <div className="d-flex align-items-center justify-content-center position-relative w-100">
                 <span style={{
                   transition: 'all 0.3s ease',
-                  fontWeight: '600',
+                  fontWeight: '700', // Bold for uppercase text
+                  textTransform: 'uppercase', // Ensure uppercase
+                  letterSpacing: '0.5px', // Better readability
                   whiteSpace: 'nowrap',
                   overflow: 'hidden',
                   textOverflow: 'ellipsis'

@@ -8,11 +8,6 @@
  * @returns {Object} Mapped subject data for UI
  */
 export const mapApiSubjectToTable = (apiSubject) => {
-  // Debug log to see API field names
-  console.log('🔍 mapApiSubjectToTable - API subject fields:', Object.keys(apiSubject));
-  console.log('🔍 mapApiSubjectToTable - start_date:', apiSubject.start_date, 'startDate:', apiSubject.startDate);
-  console.log('🔍 mapApiSubjectToTable - end_date:', apiSubject.end_date, 'endDate:', apiSubject.endDate);
-  
   return {
     id: apiSubject.id,
     name: apiSubject.name,
@@ -48,14 +43,7 @@ export const mapApiSubjectToTable = (apiSubject) => {
  * @returns {Array} Array of mapped subjects for UI
  */
 export const mapApiSubjectsToTable = (apiSubjects) => {
-  console.log('🔍 mapApiSubjectsToTable - Input:', apiSubjects);
-  console.log('🔍 mapApiSubjectsToTable - Input length:', apiSubjects.length);
-  
-  const result = apiSubjects.map(mapApiSubjectToTable);
-  console.log('🔍 mapApiSubjectsToTable - Output:', result);
-  console.log('🔍 mapApiSubjectsToTable - Output length:', result.length);
-  
-  return result;
+  return apiSubjects.map(mapApiSubjectToTable);
 };
 
 /**
@@ -93,7 +81,6 @@ const formatDate = (dateString) => {
     const date = new Date(dateString);
     return date.toISOString().split('T')[0]; // Returns YYYY-MM-DD
   } catch (error) {
-    console.error('Error formatting date:', error);
     return 'Invalid Date';
   }
 };

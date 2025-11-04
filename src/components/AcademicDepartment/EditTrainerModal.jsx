@@ -4,14 +4,18 @@ import { X, Pencil } from 'react-bootstrap-icons';
 
 const EditTrainerModal = ({ show, onClose, onSave, trainer, loading = false }) => {
   const [formData, setFormData] = useState({
-    roleInSubject: 'ASSISTANT_INSTRUCTOR'
+    roleInSubject: 'EXAMINER'
   });
   const [errors, setErrors] = useState([]);
 
   useEffect(() => {
     if (trainer && show) {
+      // Only allow EXAMINER or ASSESSMENT_REVIEWER (backend validation)
+      const validRole = (trainer.role === 'EXAMINER' || trainer.role === 'ASSESSMENT_REVIEWER') 
+        ? trainer.role 
+        : 'EXAMINER';
       setFormData({
-        roleInSubject: trainer.role || 'ASSISTANT_INSTRUCTOR'
+        roleInSubject: validRole
       });
       setErrors([]);
     }
@@ -29,7 +33,7 @@ const EditTrainerModal = ({ show, onClose, onSave, trainer, loading = false }) =
     const newErrors = [];
     
     if (!formData.roleInSubject) {
-      newErrors.push('Role in subject is required');
+      newErrors.push('Role in assessment is required');
     }
     
     setErrors(newErrors);
@@ -52,7 +56,7 @@ const EditTrainerModal = ({ show, onClose, onSave, trainer, loading = false }) =
 
   const handleClose = () => {
     setFormData({
-      roleInSubject: 'ASSISTANT_INSTRUCTOR'
+      roleInSubject: 'EXAMINER'
     });
     setErrors([]);
     onClose();
@@ -111,20 +115,18 @@ const EditTrainerModal = ({ show, onClose, onSave, trainer, loading = false }) =
           <Row>
             <Col md={12}>
               <Form.Group className="mb-3">
-                <Form.Label>Role in Subject *</Form.Label>
+                <Form.Label>Role in Assessment *</Form.Label>
                 <Form.Select
                   name="roleInSubject"
                   value={formData.roleInSubject}
                   onChange={handleInputChange}
                   disabled={loading}
                 >
-                  <option value="PRIMARY_INSTRUCTOR">Primary Instructor - Main course instructor</option>
                   <option value="EXAMINER">Examiner - Conducts exams and assessments</option>
                   <option value="ASSESSMENT_REVIEWER">Assessment Reviewer - Reviews and grades assessments</option>
-                  <option value="ASSISTANT_INSTRUCTOR">Assistant Instructor - Supports primary instructor</option>
                 </Form.Select>
                 <Form.Text className="text-muted">
-                  Select the appropriate role for this trainer in the subject
+                  Select the appropriate role for this trainer in assessments (EXAMINER or ASSESSMENT_REVIEWER only)
                 </Form.Text>
               </Form.Group>
             </Col>
