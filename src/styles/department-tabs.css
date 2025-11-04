@@ -99,17 +99,115 @@
   padding: 1rem 0;
 }
 
+.department-info h4 {
+  font-weight: 600 !important; /* Not too bold, just semibold */
+  color: var(--bs-primary);
+}
+
 .info-card {
-  background: #ffffff;
+  background: linear-gradient(135deg, #ffffff 0%, #f9f3ef 100%);
   border: 1px solid #e9ecef;
-  border-radius: 8px;
-  padding: 1.5rem;
+  border-radius: 12px;
+  padding: 0;
   height: 100%;
-  transition: box-shadow 0.3s ease;
+  transition: all 0.3s ease;
+  overflow: hidden;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
 }
 
 .info-card:hover {
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 6px 20px rgba(27, 60, 83, 0.15);
+  transform: translateY(-2px);
+}
+
+/* Basic Information Card - Primary gradient */
+.info-card-basic {
+  background: linear-gradient(135deg, #ffffff 0%, rgba(27, 60, 83, 0.05) 50%, #f9f3ef 100%);
+}
+
+.info-card-basic .info-header {
+  background: linear-gradient(135deg, var(--bs-primary) 0%, #2a4f6b 100%);
+  color: white;
+  padding: 1rem 1.5rem;
+  margin-bottom: 0;
+  border-bottom: none;
+  border-radius: 12px 12px 0 0;
+}
+
+.info-card-basic .info-header h6 {
+  color: white;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.info-card-basic .info-icon {
+  color: white;
+}
+
+.info-card-basic .info-content {
+  padding: 1.5rem;
+  background: linear-gradient(135deg, #ffffff 0%, rgba(27, 60, 83, 0.02) 100%);
+}
+
+/* Department Statistics Card - Secondary gradient */
+.info-card-statistics {
+  background: linear-gradient(135deg, #ffffff 0%, rgba(69, 104, 130, 0.05) 50%, #f9f3ef 100%);
+}
+
+.info-card-statistics .info-header {
+  background: linear-gradient(135deg, var(--bs-secondary) 0%, #5a7a94 100%);
+  color: white;
+  padding: 1rem 1.5rem;
+  margin-bottom: 0;
+  border-bottom: none;
+  border-radius: 12px 12px 0 0;
+}
+
+.info-card-statistics .info-header h6 {
+  color: white;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.info-card-statistics .info-icon {
+  color: white;
+}
+
+.info-card-statistics .info-content {
+  padding: 1.5rem;
+  background: linear-gradient(135deg, #ffffff 0%, rgba(69, 104, 130, 0.02) 100%);
+}
+
+/* Timeline Card - Neutral gradient */
+.info-card-timeline {
+  background: linear-gradient(135deg, #ffffff 0%, rgba(210, 193, 182, 0.1) 50%, #f9f3ef 100%);
+}
+
+.info-card-timeline .info-header {
+  background: linear-gradient(135deg, var(--bs-neutral) 0%, #d9c8b8 100%);
+  color: var(--bs-dark);
+  padding: 1rem 1.5rem;
+  margin-bottom: 0;
+  border-bottom: none;
+  border-radius: 12px 12px 0 0;
+}
+
+.info-card-timeline .info-header h6 {
+  color: var(--bs-dark);
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.info-card-timeline .info-icon {
+  color: var(--bs-dark);
+}
+
+.info-card-timeline .info-content {
+  padding: 1.5rem;
+  background: linear-gradient(135deg, #ffffff 0%, rgba(210, 193, 182, 0.05) 100%);
 }
 
 .info-header {
@@ -122,13 +220,12 @@
 }
 
 .info-icon {
-  color: #0056b3;
   font-size: 1.25rem;
+  flex-shrink: 0;
 }
 
 .info-header h6 {
   margin: 0;
-  color: #495057;
   font-weight: 600;
 }
 
@@ -146,17 +243,18 @@
 
 .info-label {
   font-size: 0.8rem;
-  color: #6c757d;
-  font-weight: 500;
+  color: #495057;
+  font-weight: 600;
   text-transform: uppercase;
   letter-spacing: 0.5px;
 }
 
 .info-value {
   font-size: 0.95rem;
-  color: #495057;
+  color: var(--bs-dark);
   font-weight: 500;
   word-break: break-word;
+  margin-top: 0.25rem;
 }
 
 /* Responsive Design */
@@ -185,6 +283,18 @@
   
   .info-card {
     margin-bottom: 1rem;
+  }
+  
+  .info-card-basic .info-header,
+  .info-card-statistics .info-header,
+  .info-card-timeline .info-header {
+    padding: 0.75rem 1rem;
+  }
+  
+  .info-card-basic .info-content,
+  .info-card-statistics .info-content,
+  .info-card-timeline .info-content {
+    padding: 1rem;
   }
 }
 

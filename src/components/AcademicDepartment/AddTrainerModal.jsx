@@ -1,12 +1,12 @@
 import React, { useState, useEffect } from 'react';
-import { Modal, Button, Form, Alert, Row, Col, Spinner } from 'react-bootstrap';
+import { Modal, Button, Form, Alert, Row, Col, Spinner, Dropdown } from 'react-bootstrap';
 import { X, Plus } from 'react-bootstrap-icons';
 import { userAPI } from '../../api/user';
 
 const AddTrainerModal = ({ show, onClose, onSave, loading = false }) => {
   const [formData, setFormData] = useState({
     trainer_user_id: '',
-    role_in_subject: 'ASSISTANT_INSTRUCTOR'
+    role_in_subject: 'EXAMINER'
   });
   const [errors, setErrors] = useState([]);
   const [trainers, setTrainers] = useState([]);
@@ -34,7 +34,7 @@ const AddTrainerModal = ({ show, onClose, onSave, loading = false }) => {
       // Reset form when modal opens
       setFormData({
         trainer_user_id: '',
-        role_in_subject: 'ASSISTANT_INSTRUCTOR'
+        role_in_subject: 'EXAMINER'
       });
       setErrors([]);
       // Load trainers when modal opens
@@ -58,7 +58,7 @@ const AddTrainerModal = ({ show, onClose, onSave, loading = false }) => {
     }
     
     if (!formData.role_in_subject) {
-      newErrors.push('Role in subject is required');
+      newErrors.push('Role in assessment is required');
     }
     
     setErrors(newErrors);
@@ -82,7 +82,7 @@ const AddTrainerModal = ({ show, onClose, onSave, loading = false }) => {
   const handleClose = () => {
     setFormData({
       trainer_user_id: '',
-      role_in_subject: 'ASSISTANT_INSTRUCTOR'
+      role_in_subject: 'EXAMINER'
     });
     setErrors([]);
     onClose();
@@ -116,21 +116,84 @@ const AddTrainerModal = ({ show, onClose, onSave, loading = false }) => {
             <Col md={6}>
               <Form.Group className="mb-3">
                 <Form.Label>Select Trainer *</Form.Label>
-                <Form.Select
-                  name="trainer_user_id"
-                  value={formData.trainer_user_id}
-                  onChange={handleInputChange}
-                  disabled={loading || loadingTrainers}
-                >
-                  <option value="">
-                    {loadingTrainers ? 'Loading trainers...' : 'Choose a trainer...'}
-                  </option>
-                  {trainers.map((trainer) => (
-                    <option key={trainer.id} value={trainer.id}>
-                      {trainer.firstName} {trainer.lastName} - {trainer.department?.name || 'General'}
-                    </option>
-                  ))}
-                </Form.Select>
+                <Dropdown onSelect={(trainerId) => {
+                  setFormData(prev => ({
+                    ...prev,
+                    trainer_user_id: trainerId || ''
+                  }));
+                }}>
+                  <Dropdown.Toggle
+                    variant="outline-secondary"
+                    className="w-100 text-start d-flex justify-content-between align-items-center"
+                    disabled={loading || loadingTrainers}
+                    style={{
+                      border: '1px solid #ced4da',
+                      backgroundColor: (loading || loadingTrainers) ? '#e9ecef' : '#fff',
+                      minWidth: 0
+                    }}
+                  >
+                    <span className="flex-grow-1 text-truncate" style={{ minWidth: 0, overflow: 'hidden' }}>
+                      {formData.trainer_user_id
+                        ? trainers.find(t => t.id === formData.trainer_user_id)
+                          ? `${trainers.find(t => t.id === formData.trainer_user_id).firstName} ${trainers.find(t => t.id === formData.trainer_user_id).lastName} - ${trainers.find(t => t.id === formData.trainer_user_id).department?.name || 'General'}`
+                          : 'Choose a trainer...'
+                        : loadingTrainers
+                          ? 'Loading trainers...'
+                          : 'Choose a trainer...'}
+                    </span>
+                  </Dropdown.Toggle>
+                  <Dropdown.Menu
+                    align="start"
+                    className="w-100"
+                    style={{
+                      maxHeight: '250px',
+                      overflowY: 'auto'
+                    }}
+                    popperConfig={{
+                      modifiers: [
+                        {
+                          name: 'preventOverflow',
+                          options: {
+                            boundary: 'clippingParents',
+                            padding: 8
+                          }
+                        },
+                        {
+                          name: 'flip',
+                          options: {
+                            fallbackPlacements: [],
+                            boundary: 'clippingParents',
+                            padding: 8
+                          }
+                        },
+                        {
+                          name: 'offset',
+                          options: {
+                            offset: [0, 4]
+                          }
+                        }
+                      ]
+                    }}
+                  >
+                    {loadingTrainers ? (
+                      <Dropdown.Item disabled>
+                        <Spinner animation="border" size="sm" className="me-2" />
+                        Loading trainers...
+                      </Dropdown.Item>
+                    ) : trainers.length === 0 ? (
+                      <Dropdown.Item disabled>No trainers available</Dropdown.Item>
+                    ) : (
+                      trainers.map((trainer) => (
+                        <Dropdown.Item
+                          key={trainer.id}
+                          eventKey={trainer.id}
+                        >
+                          {trainer.firstName} {trainer.lastName} - {trainer.department?.name || 'General'}
+                        </Dropdown.Item>
+                      ))
+                    )}
+                  </Dropdown.Menu>
+                </Dropdown>
                 {loadingTrainers && (
                   <div className="mt-2 text-center">
                     <Spinner animation="border" size="sm" className="me-2" />
@@ -141,20 +204,71 @@ const AddTrainerModal = ({ show, onClose, onSave, loading = false }) => {
             </Col>
             <Col md={6}>
               <Form.Group className="mb-3">
-                <Form.Label>Role in Subject *</Form.Label>
-                <Form.Select
-                  name="role_in_subject"
-                  value={formData.role_in_subject}
-                  onChange={handleInputChange}
-                  disabled={loading}
-                >
-                  <option value="PRIMARY_INSTRUCTOR">Primary Instructor - Main course instructor</option>
-                  <option value="EXAMINER">Examiner - Conducts exams and assessments</option>
-                  <option value="ASSESSMENT_REVIEWER">Assessment Reviewer - Reviews and grades assessments</option>
-                  <option value="ASSISTANT_INSTRUCTOR">Assistant Instructor - Supports primary instructor</option>
-                </Form.Select>
+                <Form.Label>Role in Assessment *</Form.Label>
+                <Dropdown onSelect={(role) => {
+                  setFormData(prev => ({
+                    ...prev,
+                    role_in_subject: role || 'EXAMINER'
+                  }));
+                }}>
+                  <Dropdown.Toggle
+                    variant="outline-secondary"
+                    className="w-100 text-start d-flex justify-content-between align-items-center"
+                    disabled={loading}
+                    style={{
+                      border: '1px solid #ced4da',
+                      backgroundColor: loading ? '#e9ecef' : '#fff',
+                      minWidth: 0
+                    }}
+                  >
+                    <span className="flex-grow-1 text-truncate" style={{ minWidth: 0, overflow: 'hidden' }}>
+                      {formData.role_in_subject === 'EXAMINER' && 'Examiner - Conducts exams and assessments'}
+                      {formData.role_in_subject === 'ASSESSMENT_REVIEWER' && 'Assessment Reviewer - Reviews and grades assessments'}
+                    </span>
+                  </Dropdown.Toggle>
+                  <Dropdown.Menu
+                    align="start"
+                    className="w-100"
+                    style={{
+                      maxHeight: '250px',
+                      overflowY: 'auto'
+                    }}
+                    popperConfig={{
+                      modifiers: [
+                        {
+                          name: 'preventOverflow',
+                          options: {
+                            boundary: 'clippingParents',
+                            padding: 8
+                          }
+                        },
+                        {
+                          name: 'flip',
+                          options: {
+                            fallbackPlacements: [],
+                            boundary: 'clippingParents',
+                            padding: 8
+                          }
+                        },
+                        {
+                          name: 'offset',
+                          options: {
+                            offset: [0, 4]
+                          }
+                        }
+                      ]
+                    }}
+                  >
+                    <Dropdown.Item eventKey="EXAMINER">
+                      Examiner - Conducts exams and assessments
+                    </Dropdown.Item>
+                    <Dropdown.Item eventKey="ASSESSMENT_REVIEWER">
+                      Assessment Reviewer - Reviews and grades assessments
+                    </Dropdown.Item>
+                  </Dropdown.Menu>
+                </Dropdown>
                 <Form.Text className="text-muted">
-                  Select the appropriate role for this trainer in the subject
+                  Select the appropriate role for this trainer in assessments (EXAMINER or ASSESSMENT_REVIEWER only)
                 </Form.Text>
               </Form.Group>
             </Col>

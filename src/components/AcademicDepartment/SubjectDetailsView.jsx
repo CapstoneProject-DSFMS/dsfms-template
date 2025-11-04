@@ -59,11 +59,7 @@ const SubjectDetailsView = ({ subjectId, courseId }) => {
 
   // Load trainers from subject data (instructors field)
   const loadSubjectTrainers = useCallback((subjectData) => {
-    console.log('🆕 NEW CODE: Loading trainers from subject data:', subjectData);
-    
     if (subjectData && subjectData.instructors) {
-      console.log('📋 Raw instructors data:', subjectData.instructors);
-      
       // Transform instructor data to match our UI format
       const transformedTrainers = subjectData.instructors.map(trainer => ({
         id: trainer.id,
@@ -73,10 +69,8 @@ const SubjectDetailsView = ({ subjectId, courseId }) => {
         assignedAt: trainer.assignedAt
       }));
       
-      console.log('✨ Transformed trainers:', transformedTrainers);
       setTrainers(transformedTrainers);
     } else {
-      console.log('❌ No instructors data in subject');
       setTrainers([]);
     }
   }, []);
@@ -85,7 +79,6 @@ const SubjectDetailsView = ({ subjectId, courseId }) => {
   useEffect(() => {
     const loadSubjectData = async () => {
       if (!subjectId) {
-        console.warn('⚠️ No subjectId provided to SubjectDetailsView');
         setSubject(null);
         setLoading(false);
         return;
@@ -93,37 +86,16 @@ const SubjectDetailsView = ({ subjectId, courseId }) => {
       
       setLoading(true);
       try {
-        console.log('📡 Fetching subject data for subjectId:', subjectId);
         const response = await subjectAPI.getSubjectById(subjectId);
-        console.log('✅ Subject data received:', response);
         
         if (response) {
           setSubject(response);
           // Load trainers from subject data (instructors field)
           loadSubjectTrainers(response);
         } else {
-          console.warn('⚠️ API returned null/undefined response for subjectId:', subjectId);
           setSubject(null);
         }
       } catch (error) {
-        console.error('❌ Error loading subject data:', error);
-        console.error('❌ Error response:', error.response);
-        console.error('❌ Error status:', error.response?.status);
-        console.error('❌ Error data:', error.response?.data);
-        console.error('❌ Error message:', error.response?.data?.message || error.message);
-        
-        // Log detailed validation errors
-        if (error.response?.data?.errors && Array.isArray(error.response.data.errors)) {
-          console.error('❌ Detailed validation errors:', JSON.stringify(error.response.data.errors, null, 2));
-          error.response.data.errors.forEach((err, index) => {
-            console.error(`❌ Validation error ${index + 1}:`, {
-              field: err.field,
-              message: err.message,
-              code: err.code,
-              value: err.value
-            });
-          });
-        }
         
         // Show user-friendly error message with validation details
         let errorMessage = error.response?.data?.message || error.message || 'Failed to load subject details';
@@ -210,7 +182,6 @@ const SubjectDetailsView = ({ subjectId, courseId }) => {
       toast.success('Trainer added successfully!');
       setShowAddTrainer(false);
     } catch (error) {
-      console.error('Error adding trainer:', error);
       
       // Display specific error message from API response
       const errorMessage = error?.message || error?.error || 'Failed to add trainer';

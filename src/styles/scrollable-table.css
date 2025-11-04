@@ -439,7 +439,9 @@
 .bulk-import-preview .table thead th {
   background-color: #f8f9fa;
   border-bottom: 2px solid #dee2e6;
-  font-weight: 600;
+  font-weight: 700 !important; /* Bold */
+  text-transform: uppercase !important; /* Uppercase */
+  letter-spacing: 0.5px !important; /* Better readability for uppercase */
   white-space: nowrap;
   position: sticky;
   top: 0;

@@ -480,3 +480,5 @@ const TraineeDetailsPage = () => {
 export default TraineeDetailsPage;
 
 
+
+
