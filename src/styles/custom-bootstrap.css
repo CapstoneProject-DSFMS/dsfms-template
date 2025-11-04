@@ -732,9 +732,15 @@ button,
   background-color: var(--bs-neutral-100) !important;
 }
 
-.table thead th {
+/* Global Table Header Styling - UPPERCASE and BOLD for all table headers */
+.table thead th,
+table thead th,
+.table th,
+table th {
   border-bottom: 2px solid var(--bs-neutral-200) !important;
-  font-weight: 600 !important;
+  font-weight: 700 !important; /* Bold */
+  text-transform: uppercase !important; /* Uppercase */
+  letter-spacing: 0.5px !important; /* Better readability for uppercase */
 }
 
 /* Admin table - completely remove all borders */
@@ -813,6 +819,9 @@ html body .forms-page .forms-page-header .text-white {
   background-color: var(--bs-primary) !important;
   color: white !important;
   border-color: rgba(255, 255, 255, 0.2) !important;
+  font-weight: 700 !important; /* Bold */
+  text-transform: uppercase !important; /* Uppercase */
+  letter-spacing: 0.5px !important; /* Better readability for uppercase */
 }
 
 /* Course Details card header overrides */
@@ -852,6 +861,42 @@ html body .forms-page .forms-page-header .text-white {
 
 .dropdown-item:hover {
   background-color: var(--bs-neutral-100) !important;
+}
+
+/* Dropdown trong modal - luôn mở xuống và nằm gọn trong khung */
+.modal .dropdown-menu {
+  max-height: 250px !important;
+  overflow-y: auto !important;
+  position: absolute !important;
+}
+
+/* Đảm bảo dropdown menu trong modal không tràn ra ngoài viewport */
+.modal .dropdown-menu[data-bs-popper] {
+  transform: translate(0, 0) !important;
+  top: auto !important;
+  bottom: auto !important;
+}
+
+/* Đảm bảo dropdown luôn mở xuống trong modal */
+.modal .dropdown.show .dropdown-menu {
+  display: block !important;
+  margin-top: 0 !important;
+  margin-bottom: 0 !important;
+}
+
+/* Loại bỏ màu xanh cho active items trong modal dropdowns - đồng nhất với Select Trainer */
+.modal .dropdown-menu .dropdown-item.active,
+.modal .dropdown-menu .dropdown-item:active,
+.modal .dropdown-menu .dropdown-item.active:hover,
+.modal .dropdown-menu .dropdown-item:active:hover {
+  background-color: transparent !important;
+  color: inherit !important;
+}
+
+/* Đảm bảo hover effect giống nhau cho cả 2 dropdowns */
+.modal .dropdown-menu .dropdown-item:hover {
+  background-color: rgba(0, 0, 0, 0.05) !important;
+  color: inherit !important;
 }
 
 /* Alert enhancements */

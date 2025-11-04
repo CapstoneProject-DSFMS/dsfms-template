@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Card, Button, Row, Col, Container, Badge, Nav, Tab } from 'react-bootstrap';
 import { Plus, Upload, Pencil, ArrowLeft, People, Calendar, GeoAlt, FileText, Award, PersonCheck, Book } from 'react-bootstrap-icons';
 import { useNavigate, useParams } from 'react-router-dom';
@@ -14,10 +14,6 @@ import DisableSubjectModal from '../../components/AcademicDepartment/DisableSubj
 const InPageCourseDetail = ({ course, department }) => {
   const navigate = useNavigate();
   const { courseId } = useParams();
-  
-  console.log('🔍 InPageCourseDetail - courseId from URL params:', courseId);
-  console.log('🔍 InPageCourseDetail - course prop:', course);
-  console.log('🔍 InPageCourseDetail - department prop:', department);
   
   // Modal states
   const [showAddSubject, setShowAddSubject] = useState(false);
@@ -40,21 +36,15 @@ const InPageCourseDetail = ({ course, department }) => {
   useEffect(() => {
     const loadCourseDetails = async () => {
       if (!courseId) {
-        console.log('⚠️ No courseId provided, skipping API call');
         return;
       }
       
-      console.log('🔄 Starting to load course details for courseId:', courseId);
       setLoading(true);
       try {
-        console.log('📡 Calling API: courseAPI.getCourseById(', courseId, ')');
         const response = await courseAPI.getCourseById(courseId);
-        console.log('✅ API Response received:', response);
-        console.log('📋 Response keys:', Object.keys(response || {}));
         
         // Check response structure
         if (!response) {
-          console.error('❌ API returned null/undefined response');
           throw new Error('Invalid API response');
         }
         
@@ -80,31 +70,18 @@ const InPageCourseDetail = ({ course, department }) => {
         setCourseDetails(transformedCourseDetails);
         
         // Extract and set subjects from API response
-        console.log('🔍 Checking for subjects in response...');
-        console.log('🔍 response.subjects:', response.subjects);
-        console.log('🔍 response.subjects type:', typeof response.subjects);
-        console.log('🔍 response.subjects isArray?:', Array.isArray(response.subjects));
-        console.log('🔍 response.subjectCount:', response.subjectCount);
-        
         if (response.subjects && Array.isArray(response.subjects)) {
-          console.log('✅ Found subjects array with', response.subjects.length, 'subjects');
-          console.log('📋 First subject sample:', response.subjects[0]);
           setSubjects(response.subjects);
         } else if (response.subjectCount > 0 && !response.subjects) {
-          console.warn('⚠️ subjectCount > 0 but subjects array not found in response. Response structure:', response);
           setSubjects([]);
         } else {
-          console.log('ℹ️ No subjects in course (subjectCount:', response.subjectCount, ')');
           setSubjects([]);
         }
         
         setLoading(false);
-      } catch (error) {
-        console.error('Error loading course details:', error);
-        
+      } catch {
         // If API fails (404 or other errors), use course prop if available
         if (course && course.id && course.name) {
-          console.log('✅ Using course prop data as fallback (API failed):', course);
           const fallbackCourseDetails = {
             name: course.name,
             code: course.code || 'N/A',
@@ -126,7 +103,6 @@ const InPageCourseDetail = ({ course, department }) => {
           setSubjects([]); // Subjects not available from course prop
         } else {
           // No course prop available - show error state
-          console.warn('❌ Course not found and no course prop available');
           setCourseDetails(null);
           setSubjects([]);
         }
@@ -214,8 +190,7 @@ const InPageCourseDetail = ({ course, department }) => {
       // Close modal
       setShowDisableSubject(false);
       setSelectedSubject(null);
-    } catch (error) {
-      console.error('Error archiving subject:', error);
+      } catch {
       // Handle error - could show toast notification
     } finally {
       setIsDisabling(false);
@@ -242,8 +217,7 @@ const InPageCourseDetail = ({ course, department }) => {
       }
       
       setShowAddSubject(false);
-    } catch (error) {
-      console.error('Error adding subject:', error);
+      } catch {
       // Handle error - could show toast notification
     }
   };
@@ -260,8 +234,7 @@ const InPageCourseDetail = ({ course, department }) => {
       }
       
       setShowBulkImport(false);
-    } catch (error) {
-      console.error('Error bulk importing subjects:', error);
+      } catch {
       // Handle error - could show toast notification
       // Don't close modal on error so user can retry
     }
@@ -295,8 +268,7 @@ const InPageCourseDetail = ({ course, department }) => {
       setCourseDetails(transformedCourseDetails);
       
       setShowEditCourse(false);
-    } catch (error) {
-      console.error('Error updating course:', error);
+      } catch {
       // Handle error - could show toast notification
     }
   };
@@ -509,13 +481,11 @@ const InPageCourseDetail = ({ course, department }) => {
                 <TraineeCountTable 
                   course={course}
                   loading={false}
-                  onView={(trainee) => {
+                  onView={() => {
                     // Handle view trainee details
-                    console.log('View trainee:', trainee);
                   }}
-                  onRemove={(trainee) => {
+                  onRemove={() => {
                     // Handle remove trainee from course
-                    console.log('Remove trainee:', trainee);
                   }}
                 />
               </Tab.Pane>
