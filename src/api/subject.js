@@ -7,7 +7,6 @@ const subjectAPI = {
       const response = await apiClient.get('/subjects', { params });
       return response.data;
     } catch (error) {
-      console.error('Error fetching subjects:', error);
       throw error;
     }
   },
@@ -15,20 +14,11 @@ const subjectAPI = {
   // Get subjects by course ID
   getSubjectsByCourse: async (courseId, params = {}) => {
     const url = `/subjects/course/${courseId}`;
-    console.log('🔍 API Call - URL:', url);
-    console.log('🔍 API Call - courseId:', courseId);
-    console.log('🔍 API Call - params:', params);
     
     try {
       const response = await apiClient.get(url, { params });
-      console.log('🔍 API Call - Response:', response);
-      console.log('🔍 API Call - Response data:', response.data);
       return response.data;
     } catch (error) {
-      console.error('❌ API Call - Error:', error);
-      console.error('❌ API Call - Error response:', error.response);
-      console.error('❌ API Call - Error status:', error.response?.status);
-      console.error('❌ API Call - Error data:', error.response?.data);
       throw error;
     }
   },
@@ -36,10 +26,6 @@ const subjectAPI = {
   // Get single subject by ID
   getSubjectById: async (subjectId) => {
     try {
-      console.log('📡 Fetching subject by ID:', subjectId);
-      console.log('📡 SubjectId type:', typeof subjectId);
-      console.log('📡 SubjectId length:', subjectId?.length);
-      
       // Ensure GET request has no body and clear any data property
       const response = await apiClient.get(`/subjects/${subjectId}`, {
         data: undefined, // Explicitly remove any data
@@ -50,9 +36,6 @@ const subjectAPI = {
         }]
       });
       
-      console.log('✅ Subject detail response:', response);
-      console.log('✅ Response data:', response.data);
-      
       // Handle nested data structure if exists (some APIs return { data: {...} })
       if (response.data && response.data.data) {
         return response.data.data;
@@ -60,29 +43,6 @@ const subjectAPI = {
       
       return response.data;
     } catch (error) {
-      console.error('❌ Error fetching subject:', error);
-      console.error('❌ Error response:', error.response?.data);
-      console.error('❌ Error status:', error.response?.status);
-      console.error('❌ Error config:', {
-        url: error.config?.url,
-        method: error.config?.method,
-        data: error.config?.data,
-        headers: error.config?.headers
-      });
-      
-      // Log detailed validation errors
-      if (error.response?.data?.errors && Array.isArray(error.response.data.errors)) {
-        console.error('❌ Validation errors:', JSON.stringify(error.response.data.errors, null, 2));
-        error.response.data.errors.forEach((err, index) => {
-          console.error(`❌ Error ${index + 1}:`, {
-            field: err.field,
-            message: err.message,
-            code: err.code,
-            value: err.value
-          });
-        });
-      }
-      
       throw error;
     }
   },
@@ -93,7 +53,6 @@ const subjectAPI = {
       const response = await apiClient.post('/subjects', subjectData);
       return response.data;
     } catch (error) {
-      console.error('Error creating subject:', error);
       throw error;
     }
   },
@@ -104,7 +63,6 @@ const subjectAPI = {
       const response = await apiClient.put(`/subjects/${subjectId}`, subjectData);
       return response.data;
     } catch (error) {
-      console.error('Error updating subject:', error);
       throw error;
     }
   },
@@ -115,7 +73,6 @@ const subjectAPI = {
       const response = await apiClient.delete(`/subjects/${subjectId}`);
       return response.data;
     } catch (error) {
-      console.error('Error deleting subject:', error);
       throw error;
     }
   },
@@ -126,7 +83,6 @@ const subjectAPI = {
       const response = await apiClient.patch(`/subjects/${subjectId}/archive`);
       return response.data;
     } catch (error) {
-      console.error('Error archiving subject:', error);
       throw error;
     }
   },
@@ -134,17 +90,6 @@ const subjectAPI = {
   // Bulk import subjects
   bulkImportSubjects: async (subjectsData) => {
     try {
-      console.log('🔍 Sending bulk import data to API:', subjectsData);
-      console.log('🔍 Data type check:', {
-        isArray: Array.isArray(subjectsData),
-        length: subjectsData.length,
-        firstItem: subjectsData[0],
-        firstItemKeys: Object.keys(subjectsData[0] || {}),
-        firstItemTypes: Object.keys(subjectsData[0] || {}).reduce((acc, key) => {
-          acc[key] = typeof subjectsData[0][key];
-          return acc;
-        }, {})
-      });
       // Use the working format: Object with courseId and subjects
       const courseId = subjectsData[0]?.courseId;
       const payload = {
@@ -154,17 +99,9 @@ const subjectAPI = {
           return rest;
         })
       };
-      console.log('🔍 Using working format:', payload);
       const response = await apiClient.post('/subjects/bulk', payload);
-      console.log('✅ Bulk import API response:', response.data);
       return response.data;
     } catch (error) {
-      console.error('❌ Error bulk importing subjects:', error);
-      console.error('❌ Error details:', error.response?.data);
-      console.error('❌ Error status:', error.response?.status);
-      console.error('❌ Error message:', error.response?.data?.message);
-      console.error('❌ Validation errors:', error.response?.data?.errors);
-      console.error('❌ Full error response:', JSON.stringify(error.response?.data, null, 2));
       throw error;
     }
   },
@@ -172,29 +109,9 @@ const subjectAPI = {
   // Assign trainees to subject
   assignTrainees: async (subjectId, traineeData) => {
     try {
-      console.log('🔍 Assigning trainees to subject:', subjectId);
-      console.log('🔍 Trainee data being sent:', JSON.stringify(traineeData, null, 2));
-      console.log('🔍 Data validation:', {
-        subjectId: subjectId,
-        subjectIdType: typeof subjectId,
-        traineeDataKeys: Object.keys(traineeData),
-        enrolledCount: traineeData.enrolledCount,
-        enrolledArray: traineeData.enrolled,
-        enrolledLength: traineeData.enrolled?.length,
-        firstTrainee: traineeData.enrolled?.[0],
-        firstTraineeKeys: traineeData.enrolled?.[0] ? Object.keys(traineeData.enrolled[0]) : null
-      });
-      
       const response = await apiClient.post(`/subjects/${subjectId}/assign-trainees`, traineeData);
-      console.log('✅ Assign trainees API response:', response.data);
       return response.data;
     } catch (error) {
-      console.error('❌ Error assigning trainees to subject:', error);
-      console.error('❌ Error status:', error.response?.status);
-      console.error('❌ Error details:', error.response?.data);
-      console.error('❌ Error message:', error.response?.data?.message);
-      console.error('❌ Validation errors:', error.response?.data?.errors);
-      console.error('❌ Full error response:', JSON.stringify(error.response?.data, null, 2));
       throw error;
     }
   },
@@ -202,25 +119,16 @@ const subjectAPI = {
   // Remove trainee from subject
   removeTraineeFromSubject: async (subjectId, traineeId, batchCode) => {
     try {
-      console.log('🔍 Removing trainee from subject:', { subjectId, traineeId, batchCode });
-      
       const requestData = {
         batchCode: batchCode
       };
-      
-      console.log('🔍 Request data:', JSON.stringify(requestData, null, 2));
       
       const response = await apiClient.delete(`/subjects/${subjectId}/trainees/${traineeId}`, {
         data: requestData
       });
       
-      console.log('✅ Remove trainee from subject API response:', response.data);
       return response.data;
     } catch (error) {
-      console.error('❌ Error removing trainee from subject:', error);
-      console.error('❌ Error status:', error.response?.status);
-      console.error('❌ Error details:', error.response?.data);
-      console.error('❌ Error message:', error.response?.data?.message);
       throw error;
     }
   },
@@ -228,15 +136,125 @@ const subjectAPI = {
   // Add trainer to subject
   addTrainerToSubject: async (subjectId, trainerData) => {
     try {
-      const requestData = {
-        trainerUserId: trainerData.trainer_user_id,
-        roleInSubject: trainerData.role_in_subject
+      // Validate input data
+      if (!trainerData || typeof trainerData !== 'object') {
+        throw new Error('Trainer data is required and must be an object');
+      }
+
+      if (!trainerData.trainer_user_id) {
+        throw new Error('trainer_user_id is required');
+      }
+
+      if (!trainerData.role_in_subject) {
+        throw new Error('role_in_subject is required');
+      }
+
+      // Validate role value
+      const validRoles = ['EXAMINER', 'ASSESSMENT_REVIEWER'];
+      if (!validRoles.includes(trainerData.role_in_subject)) {
+        throw new Error(`Invalid role_in_subject: ${trainerData.role_in_subject}. Must be one of: ${validRoles.join(', ')}`);
+      }
+
+      // Backend expects camelCase: trainerUserId and roleInSubject
+      // Create a clean plain object (no prototype methods)
+      const trainerUserId = String(trainerData.trainer_user_id).trim();
+      const roleInSubject = String(trainerData.role_in_subject).trim();
+
+      // Validate values before creating object
+      if (!trainerUserId || trainerUserId === '') {
+        throw new Error('trainerUserId cannot be empty');
+      }
+
+      if (!roleInSubject || roleInSubject === '') {
+        throw new Error('roleInSubject cannot be empty');
+      }
+
+      // Backend might expect request body wrapped or with specific structure
+      // Try wrapping in 'data' key first, if that fails, try direct object
+      const requestBody = {
+        trainerUserId: trainerUserId,
+        roleInSubject: roleInSubject
       };
+
+      // Debug: Log request data before sending
+      if (process.env.NODE_ENV === 'development') {
+        console.log('📤 Add Trainer Request:', {
+          url: `/subjects/${subjectId}/trainers`,
+          method: 'POST',
+          requestBody: requestBody,
+          requestBodyStringified: JSON.stringify(requestBody),
+          subjectId,
+          originalTrainerData: trainerData
+        });
+      }
       
-      const response = await apiClient.post(`/subjects/${subjectId}/trainers`, requestData);
+      // Try /instructors endpoint first (from API_PERMISSIONS: ADD_INSTRUCTOR: "POST /subjects/:id/instructors")
+      // If that doesn't work, fall back to /trainers
+      let response;
+      try {
+        response = await apiClient.post(
+          `/subjects/${subjectId}/instructors`, 
+          requestBody,
+          {
+            headers: {
+              'Content-Type': 'application/json'
+            }
+          }
+        );
+      } catch (instructorError) {
+        // If /instructors fails, try /trainers endpoint
+        if (instructorError.response?.status === 404 || instructorError.response?.status === 422) {
+          console.warn('⚠️ /instructors endpoint failed, trying /trainers...');
+          response = await apiClient.post(
+            `/subjects/${subjectId}/trainers`, 
+            requestBody,
+            {
+              headers: {
+                'Content-Type': 'application/json'
+              }
+            }
+          );
+        } else {
+          throw instructorError;
+        }
+      }
       return response.data;
     } catch (error) {
-      throw error.response?.data || error.message;
+      // Log detailed error for debugging
+      if (process.env.NODE_ENV === 'development') {
+        console.error('❌ Add Trainer Error:', {
+          status: error.response?.status,
+          statusText: error.response?.statusText,
+          data: error.response?.data,
+          dataStringified: JSON.stringify(error.response?.data, null, 2),
+          errors: error.response?.data?.errors,
+          errorsDetailed: error.response?.data?.errors?.map((err, idx) => ({
+            index: idx,
+            field: err.field,
+            message: err.message,
+            code: err.code,
+            fullError: err
+          })),
+          message: error.message,
+          config: {
+            url: error.config?.url,
+            method: error.config?.method,
+            data: error.config?.data,
+            dataStringified: JSON.stringify(error.config?.data, null, 2),
+            headers: error.config?.headers
+          }
+        });
+        
+        // Also log full error response for detailed inspection
+        console.error('🔍 Full Error Response:', JSON.stringify(error.response?.data, null, 2));
+      }
+      
+      // Return detailed error from API response
+      if (error.response?.data) {
+        throw error.response.data;
+      }
+      
+      throw new Error(error.message || 'Failed to add trainer to subject');
     }
   },
 
@@ -254,7 +272,7 @@ const subjectAPI = {
   updateTrainerRole: async (subjectId, trainerId, roleData) => {
     try {
       const requestData = {
-        roleInSubject: roleData.roleInSubject
+        roleInSubject: roleData.roleInSubject // Backend expects roleInSubject (maps to role_in_assessment in DB)
       };
       
       const response = await apiClient.put(`/subjects/${subjectId}/trainers/${trainerId}`, requestData);

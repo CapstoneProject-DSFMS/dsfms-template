@@ -58,7 +58,9 @@ const CourseTable = ({
         <div className="d-flex align-items-center justify-content-between position-relative">
           <span style={{ 
             transition: 'all 0.3s ease',
-            fontWeight: isActive ? '700' : '600'
+            fontWeight: '700', // Always bold for uppercase text
+            textTransform: 'uppercase', // Ensure uppercase
+            letterSpacing: '0.5px' // Better readability
           }}>
             {children}
           </span>
@@ -118,7 +120,7 @@ const CourseTable = ({
             <SortableHeader columnKey="status" className="show-mobile">
               Status
             </SortableHeader>
-            <th className="border-neutral-200 text-primary-custom fw-bold letter-spacing px-3 py-3 text-center show-mobile">
+            <th className="border-neutral-200 text-primary-custom fw-bold letter-spacing px-3 py-3 text-center show-mobile" style={{ textTransform: 'uppercase', letterSpacing: '0.5px' }}>
               Actions
             </th>
           </tr>

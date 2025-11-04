@@ -19,7 +19,7 @@ const DepartmentInfo = ({ department }) => {
       
       <Row className="g-4">
         <Col md={6}>
-          <div className="info-card">
+          <div className="info-card info-card-basic">
             <div className="info-header">
               <Book className="info-icon" />
               <h6>Basic Information</h6>
@@ -42,7 +42,7 @@ const DepartmentInfo = ({ department }) => {
         </Col>
 
         <Col md={6}>
-          <div className="info-card">
+          <div className="info-card info-card-statistics">
             <div className="info-header">
               <People className="info-icon" />
               <h6>Department Statistics</h6>
@@ -80,7 +80,7 @@ const DepartmentInfo = ({ department }) => {
         </Col>
 
         <Col md={6}>
-          <div className="info-card">
+          <div className="info-card info-card-timeline">
             <div className="info-header">
               <Calendar className="info-icon" />
               <h6>Timeline</h6>

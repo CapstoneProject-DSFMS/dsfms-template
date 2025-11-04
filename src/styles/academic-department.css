@@ -105,7 +105,9 @@ div.subject-details .card {
 .subjects-table thead th {
   background-color: #f8f9fa;
   border-bottom: 3px solid #dee2e6;
-  font-weight: 600;
+  font-weight: 700 !important; /* Bold */
+  text-transform: uppercase !important; /* Uppercase */
+  letter-spacing: 0.5px !important; /* Better readability for uppercase */
   color: #495057;
   padding: 1rem;
   border-right: 1px solid #dee2e6;
@@ -487,7 +489,9 @@ div.subject-details .card {
   border-bottom: 3px solid var(--bs-neutral);
   border-right: 1px solid var(--bs-neutral);
   background-color: var(--bs-light);
-  font-weight: 600;
+  font-weight: 700 !important; /* Bold */
+  text-transform: uppercase !important; /* Uppercase */
+  letter-spacing: 0.5px !important; /* Better readability for uppercase */
   color: var(--bs-primary);
 }
 
@@ -519,7 +523,9 @@ div.subject-details .card {
   border-bottom: 3px solid var(--bs-neutral);
   border-right: 1px solid var(--bs-neutral);
   background-color: var(--bs-light);
-  font-weight: 600;
+  font-weight: 700 !important; /* Bold */
+  text-transform: uppercase !important; /* Uppercase */
+  letter-spacing: 0.5px !important; /* Better readability for uppercase */
   color: var(--bs-primary);
 }
 
