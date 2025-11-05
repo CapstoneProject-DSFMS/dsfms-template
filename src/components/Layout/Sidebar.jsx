@@ -35,8 +35,28 @@ const Sidebar = ({ collapsed, onClose }) => {
   const { user } = useAuth();
   const location = useLocation();
   const navigate = useNavigate();
-  // Only load departments for ACADEMIC_DEPARTMENT role
-  const { departments, loading: departmentsLoading } = useDepartmentManagement(user?.role === 'ACADEMIC_DEPARTMENT');
+  
+  // Normalize role name - handle both string and object, and different variants
+  // This is used throughout the component for role checks
+  // Normalize: convert space to underscore, uppercase, and handle both variants
+  const rawRoleName = typeof user?.role === 'string' 
+    ? user.role 
+    : (user?.role?.name || '');
+  
+  // Normalize role name: 'ACADEMIC DEPARTMENT' -> 'ACADEMIC_DEPARTMENT'
+  // Also handle 'ACADEMIC_DEPT' -> 'ACADEMIC_DEPARTMENT'
+  const userRoleName = rawRoleName
+    .toUpperCase()
+    .replace(/\s+/g, '_') // Replace spaces with underscores
+    .trim();
+  
+  // Check if user is Academic Department role (handle variants)
+  const isAcademicRole = userRoleName === 'ACADEMIC_DEPARTMENT' || 
+                        userRoleName === 'ACADEMIC_DEPT' ||
+                        userRoleName.startsWith('ACADEMIC');
+  
+  // Only load departments for ACADEMIC_DEPARTMENT role (handle both variants)
+  const { departments, loading: departmentsLoading } = useDepartmentManagement(isAcademicRole);
   const [isDepartmentDropdownOpen, setIsDepartmentDropdownOpen] = useState(false);
   const [isAssessmentDropdownOpen, setIsAssessmentDropdownOpen] = useState(false);
   const [isScrollable, setIsScrollable] = useState(false);
@@ -63,6 +83,16 @@ const Sidebar = ({ collapsed, onClose }) => {
 
   // Filter nav items based on user permissions and role
   const navItems = useMemo(() => {
+    // Re-normalize role name inside useMemo to ensure consistency
+    const rawRoleName = typeof user?.role === 'string' 
+      ? user.role 
+      : (user?.role?.name || '');
+    
+    const normalizedRoleName = rawRoleName
+      .toUpperCase()
+      .replace(/\s+/g, '_')
+      .trim();
+    
     const allNavItems = [
       {
         id: "users",
@@ -107,7 +137,7 @@ const Sidebar = ({ collapsed, onClose }) => {
       {
         id: "academic-dashboard",
         label: "Academic Dashboard",
-        icon: Building,
+        icon: House,
         path: "/academic/dashboard",
         permission: API_PERMISSIONS.DASHBOARD.VIEW,
         module: "ACADEMIC"
@@ -285,7 +315,7 @@ const Sidebar = ({ collapsed, onClose }) => {
     // });
     
     // For ADMINISTRATOR role, show only admin-specific items
-    if (user?.role === 'ADMINISTRATOR') {
+    if (normalizedRoleName === 'ADMINISTRATOR') {
       // Define admin-specific items that should be visible
       const adminItems = ['users', 'roles', 'departments', 'forms', 'system-config'];
       
@@ -302,31 +332,37 @@ const Sidebar = ({ collapsed, onClose }) => {
       // console.log(`🔍 ADMINISTRATOR role - ${item.id}: ${hasAccess}`);
       return hasAccess;
     }
-    // For ACADEMIC_DEPARTMENT role, show academic-specific items
-    if (user?.role === 'ACADEMIC_DEPARTMENT') {
+    // For ACADEMIC_DEPARTMENT role (handle variants: ACADEMIC_DEPARTMENT, ACADEMIC_DEPT, ACADEMIC DEPARTMENT)
+    // Normalize and check if starts with ACADEMIC
+    const isAcademicRole = normalizedRoleName === 'ACADEMIC_DEPARTMENT' || 
+                          normalizedRoleName === 'ACADEMIC_DEPT' ||
+                          normalizedRoleName.startsWith('ACADEMIC');
+    
+    if (isAcademicRole) {
       const isAcademicItem = ['academic-dashboard'].includes(item.id);
+      // Block all other items - only show academic-dashboard
       return isAcademicItem;
     }
     // For TRAINEE role, show all trainee-related items
-    if (user?.role === 'TRAINEE') {
+    if (normalizedRoleName === 'TRAINEE') {
       const isTraineeItem = ['trainee-dashboard', 'enrolled-courses', 'all-assessments', 'create-issue'].includes(item.id);
       // console.log(`🔍 TRAINEE role - ${item.id}: ${isTraineeItem}`);
       return isTraineeItem;
     }
     // For TRAINER role, show only trainer-specific items (no trainee dashboard)
-    if (user?.role === 'TRAINER') {
+    if (normalizedRoleName === 'TRAINER') {
       const isTrainerItem = ['upcoming-assessments', 'assessment-results', 'instructed-courses'].includes(item.id);
       // console.log(`🔍 TRAINER role - ${item.id}: ${isTrainerItem}`);
       return isTrainerItem;
     }
     // For SQA_AUDITOR role, show all SQA-related items
-    if (user?.role === 'SQA_AUDITOR') {
+    if (normalizedRoleName === 'SQA_AUDITOR') {
       const isSQAItem = ['issue-list', 'feedback-list', 'template-list'].includes(item.id);
       // console.log(`🔍 SQA_AUDITOR role - ${item.id}: ${isSQAItem}`);
       return isSQAItem;
     }
     // For DEPARTMENT_HEAD role, show department head-specific items
-    if (user?.role === 'DEPARTMENT_HEAD') {
+    if (normalizedRoleName === 'DEPARTMENT_HEAD') {
       const isDepartmentHeadItem = ['department-dashboard', 'my-department-details', 'assessment-review-requests'].includes(item.id);
       // console.log(`🔍 DEPARTMENT_HEAD role - ${item.id}: ${isDepartmentHeadItem}`);
       return isDepartmentHeadItem;
@@ -336,7 +372,7 @@ const Sidebar = ({ collapsed, onClose }) => {
     // console.log(`🔍 Default role - ${item.id}: ${hasAccess}`);
     return hasAccess;
   });
-  }, [user?.role, hasModuleAccess, hasPermission]);
+  }, [user, hasModuleAccess, hasPermission]);
 
   // Debug log after navItems is initialized - Commented out to reduce console noise
   // console.log('🔍 Sidebar - Filtered navItems:', navItems);
@@ -535,7 +571,7 @@ const Sidebar = ({ collapsed, onClose }) => {
         })}
 
         {/* Department dropdown */}
-        {user?.role === 'ACADEMIC_DEPARTMENT' && (
+        {isAcademicRole && (
           <Nav.Item className="mb-3">
             <div className="position-relative">
               {/* Department dropdown trigger */}

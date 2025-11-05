@@ -1,5 +1,5 @@
 import React from 'react';
-import { Pencil, PersonPlus, InfoCircle } from 'react-bootstrap-icons';
+import { Pencil, InfoCircle } from 'react-bootstrap-icons';
 
 const DepartmentTabs = ({ activeTab, onTabChange }) => {
   const tabs = [
@@ -8,12 +8,6 @@ const DepartmentTabs = ({ activeTab, onTabChange }) => {
       label: 'Department Info',
       icon: InfoCircle,
       description: 'View department overview'
-    },
-    {
-      id: 'trainers',
-      label: 'Manage Trainers',
-      icon: PersonPlus,
-      description: 'Assign trainers to department'
     },
     {
       id: 'edit',

@@ -26,8 +26,11 @@ const DisableRoleModal = ({
     >
       <Modal.Header
         closeButton
-        className={`text-white ${isDisabling ? 'bg-warning' : 'bg-success'}`}
-        style={{ borderBottom: 'none' }}
+        className="text-white border-0"
+        style={{ 
+          backgroundColor: isDisabling ? 'var(--bs-secondary)' : '#28a745',
+          borderBottom: 'none'
+        }}
       >
         <Modal.Title className="d-flex align-items-center">
           <ActionIcon size={24} className="me-2" />
@@ -37,11 +40,11 @@ const DisableRoleModal = ({
       <Modal.Body className="py-4">
         <div className="d-flex align-items-center mb-3">
           <div
-            className={`rounded-circle d-flex align-items-center justify-content-center me-3 text-white`}
+            className="rounded-circle d-flex align-items-center justify-content-center me-3 text-white"
             style={{
               width: '50px',
               height: '50px',
-              backgroundColor: isDisabling ? 'var(--bs-warning)' : 'var(--bs-success)',
+              backgroundColor: isDisabling ? 'var(--bs-secondary)' : '#28a745',
               fontSize: '1.5rem',
               fontWeight: 'bold'
             }}
@@ -50,14 +53,21 @@ const DisableRoleModal = ({
           </div>
           <div>
             <h6 className="mb-0">{role.name}</h6>
-            <small className="text-muted">{role.description}</small>
           </div>
         </div>
 
         {isDisabling ? (
-          <Alert variant="warning" className="mb-3">
+          <Alert 
+            variant="warning" 
+            className="mb-3"
+            style={{
+              backgroundColor: '#f0e8e0',
+              borderColor: 'var(--bs-secondary)',
+              color: 'var(--bs-dark)'
+            }}
+          >
             <h6 className="alert-heading d-flex align-items-center">
-              <ExclamationTriangle className="me-2" /> Warning: Disabling Role
+              <ExclamationTriangle className="me-2" style={{ color: 'var(--bs-secondary)' }} /> Warning: Disabling Role
             </h6>
             <p className="mb-1">
               This action will disable the <span className="fw-bold">{role.name}</span> role.
@@ -95,14 +105,23 @@ const DisableRoleModal = ({
             Cancel
           </Button>
           <Button
-            variant={isDisabling ? 'warning' : 'success'}
+            variant={isDisabling ? 'secondary' : 'success'}
             onClick={onConfirm}
             disabled={loading}
             className="d-flex align-items-center"
+            style={isDisabling ? {
+              backgroundColor: 'var(--bs-secondary)',
+              borderColor: 'var(--bs-secondary)',
+              color: '#fff'
+            } : {}}
           >
             {loading ? (
               <>
-                <div className="spinner-border spinner-border-sm me-2" role="status">
+                <div 
+                  className="spinner-border spinner-border-sm me-2" 
+                  role="status"
+                  style={{ width: '0.8rem', height: '0.8rem', borderWidth: '0.15em' }}
+                >
                   <span className="visually-hidden">Loading...</span>
                 </div>
                 {isDisabling ? 'Disabling...' : 'Enabling...'}

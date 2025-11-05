@@ -369,7 +369,11 @@ const CourseDetailsView = ({ courseId }) => {
                               color: '#0d6efd' // Bootstrap primary color
                             }}
                           >
-                            {departmentHead.firstName} {departmentHead.lastName}
+                            {[
+                              departmentHead.firstName,
+                              departmentHead.middleName,
+                              departmentHead.lastName
+                            ].filter(Boolean).join(' ')}
                           </Button>
                         ) : (
                           'Not assigned'

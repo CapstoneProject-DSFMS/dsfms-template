@@ -57,10 +57,35 @@ const BulkImportModal = ({ show, onClose, onImport, loading = false }) => {
     try {
       setRolesLoading(true);
       const response = await userAPI.getRoles();
-      setRoles(response.roles || []);
+      
+      // Handle different response formats
+      // Format 1: { roles: [...] }
+      // Format 2: { message: "...", data: { roles: [...] } }
+      // Format 3: [...] (direct array)
+      
+      let rolesArray = [];
+      if (Array.isArray(response)) {
+        rolesArray = response;
+      } else if (response?.data?.roles) {
+        rolesArray = response.data.roles;
+      } else if (response?.roles) {
+        rolesArray = response.roles;
+      } else if (response?.data && Array.isArray(response.data)) {
+        rolesArray = response.data;
+      }
+      
+      console.log('📦 Roles fetched:', {
+        responseType: typeof response,
+        responseKeys: response ? Object.keys(response) : 'null',
+        rolesCount: rolesArray.length,
+        roles: rolesArray.map(r => ({ id: r.id, name: r.name }))
+      });
+      
+      setRoles(rolesArray);
     } catch (error) {
       console.error('Failed to fetch roles:', error);
       setErrors(['Failed to load roles. Please refresh the page.']);
+      setRoles([]);
     } finally {
       setRolesLoading(false);
     }
@@ -182,49 +207,121 @@ const BulkImportModal = ({ show, onClose, onImport, loading = false }) => {
     return `Invalid gender value. Accepted values: MALE, FEMALE, M, F`;
   };
 
+  // Helper function to normalize role name for comparison
+  // Converts spaces to underscores and uppercases
+  const normalizeRoleName = (name) => {
+    if (!name) return '';
+    return name.toString().toUpperCase().trim().replace(/\s+/g, '_');
+  };
+
   // Smart role mapping function
   const findRoleId = (roleName) => {
-    if (!roleName || !roles.length) return null;
+    if (!roleName || !roles.length) {
+      console.warn('⚠️ findRoleId: No roleName or roles not loaded', { roleName, rolesCount: roles.length });
+      return null;
+    }
     
-    const normalizedInput = roleName.toUpperCase().trim();
+    const normalizedInput = normalizeRoleName(roleName);
     
-    // Direct match first
-    const directMatch = roles.find(role => 
-      role.name.toUpperCase() === normalizedInput
-    );
-    if (directMatch) return directMatch.id;
+    console.log('🔍 Finding role:', { 
+      input: roleName, 
+      normalized: normalizedInput,
+      availableRoles: roles.map(r => ({ 
+        name: r.name, 
+        normalized: normalizeRoleName(r.name),
+        id: r.id
+      }))
+    });
     
-    // Partial match for common variations
+    // Direct match first - normalize both input and role names
+    // This should match "DEPARTMENT_HEAD" with "DEPARTMENT HEAD" after normalization
+    const directMatch = roles.find(role => {
+      const normalizedRoleName = normalizeRoleName(role.name);
+      const isMatch = normalizedRoleName === normalizedInput;
+      if (isMatch) {
+        console.log('✅ Direct match:', {
+          input: roleName,
+          inputNormalized: normalizedInput,
+          dbRole: role.name,
+          dbRoleNormalized: normalizedRoleName,
+          match: isMatch
+        });
+      }
+      return isMatch;
+    });
+    
+    if (directMatch) {
+      console.log('✅ Direct match found:', directMatch.name, directMatch.id);
+      return directMatch.id;
+    }
+    
+    // If direct match fails, try partial match (for variations like ADMIN -> ADMINISTRATOR)
+    // But first, let's check if the issue is with normalization
+    console.log('⚠️ Direct match failed, checking normalization...');
+    roles.forEach(role => {
+      const normalizedRoleName = normalizeRoleName(role.name);
+      if (normalizedRoleName === normalizedInput) {
+        console.log('🔍 Found potential match:', {
+          input: roleName,
+          inputNormalized: normalizedInput,
+          dbRole: role.name,
+          dbRoleNormalized: normalizedRoleName,
+          match: normalizedRoleName === normalizedInput
+        });
+      }
+    });
+    
+    // Partial match for common variations (only for special cases like ADMIN -> ADMINISTRATOR)
     const partialMatches = {
       'ADMIN': 'ADMINISTRATOR',
       'ADMINISTRATOR': 'ADMINISTRATOR',
       'TRAINER': 'TRAINER',
-      'TRAINEE': 'TRAINEE',
-      'DEPT_HEAD': 'DEPARTMENT_HEAD',
-      'DEPARTMENT_HEAD': 'DEPARTMENT_HEAD',
-      'DEPT HEAD': 'DEPARTMENT_HEAD',
-      'SQA_AUDITOR': 'SQA_AUDITOR',
-      'SQA AUDITOR': 'SQA_AUDITOR',
-      'ACADEMIC_DEPARTMENT': 'ACADEMIC_DEPARTMENT',
-      'ACADEMIC_DEPT': 'ACADEMIC_DEPARTMENT',
-      'ACADEMIC DEPT': 'ACADEMIC_DEPARTMENT'
+      'TRAINEE': 'TRAINEE'
+      // Removed DEPARTMENT_HEAD, SQA_AUDITOR, ACADEMIC_DEPARTMENT mappings
+      // because they should be handled by direct match after normalization
     };
     
     const mappedName = partialMatches[normalizedInput];
     if (mappedName) {
-      const mappedRole = roles.find(role => 
-        role.name.toUpperCase() === mappedName
-      );
-      if (mappedRole) return mappedRole.id;
+      const mappedRole = roles.find(role => {
+        const normalizedRoleName = normalizeRoleName(role.name);
+        return normalizedRoleName === mappedName;
+      });
+      if (mappedRole) {
+        console.log('✅ Partial match found:', mappedRole.name, mappedRole.id);
+        return mappedRole.id;
+      }
     }
     
-    // Fuzzy match - find roles that contain the input
-    const fuzzyMatch = roles.find(role => 
-      role.name.toUpperCase().includes(normalizedInput) ||
-      normalizedInput.includes(role.name.toUpperCase())
-    );
-    if (fuzzyMatch) return fuzzyMatch.id;
+    // Fuzzy match - normalize both sides for comparison (fallback)
+    const fuzzyMatch = roles.find(role => {
+      const normalizedRoleName = normalizeRoleName(role.name);
+      const isFuzzyMatch = normalizedRoleName.includes(normalizedInput) ||
+                           normalizedInput.includes(normalizedRoleName);
+      if (isFuzzyMatch) {
+        console.log('🔍 Fuzzy match candidate:', {
+          input: roleName,
+          inputNormalized: normalizedInput,
+          dbRole: role.name,
+          dbRoleNormalized: normalizedRoleName
+        });
+      }
+      return isFuzzyMatch;
+    });
     
+    if (fuzzyMatch) {
+      console.log('✅ Fuzzy match found:', fuzzyMatch.name, fuzzyMatch.id);
+      return fuzzyMatch.id;
+    }
+    
+    console.warn('❌ No role match found for:', {
+      input: roleName,
+      normalized: normalizedInput,
+      availableRoles: roles.map(r => ({
+        name: r.name,
+        normalized: normalizeRoleName(r.name)
+      }))
+    });
     return null;
   };
 
@@ -232,12 +329,13 @@ const BulkImportModal = ({ show, onClose, onImport, loading = false }) => {
   const getActualRoleName = (roleName) => {
     if (!roleName || !roles.length) return null;
     
-    const normalizedInput = roleName.toUpperCase().trim();
+    const normalizedInput = normalizeRoleName(roleName);
     
-    // Direct match first
-    const directMatch = roles.find(role => 
-      role.name.toUpperCase() === normalizedInput
-    );
+    // Direct match first - normalize both input and role names
+    const directMatch = roles.find(role => {
+      const normalizedRoleName = normalizeRoleName(role.name);
+      return normalizedRoleName === normalizedInput;
+    });
     if (directMatch) return directMatch.name;
     
     // Partial match for common variations
@@ -248,27 +346,31 @@ const BulkImportModal = ({ show, onClose, onImport, loading = false }) => {
       'TRAINEE': 'TRAINEE',
       'DEPT_HEAD': 'DEPARTMENT_HEAD',
       'DEPARTMENT_HEAD': 'DEPARTMENT_HEAD',
-      'DEPT HEAD': 'DEPARTMENT_HEAD',
+      'DEPARTMENT HEAD': 'DEPARTMENT_HEAD',
       'SQA_AUDITOR': 'SQA_AUDITOR',
       'SQA AUDITOR': 'SQA_AUDITOR',
       'ACADEMIC_DEPARTMENT': 'ACADEMIC_DEPARTMENT',
       'ACADEMIC_DEPT': 'ACADEMIC_DEPARTMENT',
-      'ACADEMIC DEPT': 'ACADEMIC_DEPARTMENT'
+      'ACADEMIC DEPT': 'ACADEMIC_DEPARTMENT',
+      'ACADEMIC DEPARTMENT': 'ACADEMIC_DEPARTMENT'
     };
     
     const mappedName = partialMatches[normalizedInput];
     if (mappedName) {
-      const mappedRole = roles.find(role => 
-        role.name.toUpperCase() === mappedName
-      );
+      // Find role by comparing normalized names
+      const mappedRole = roles.find(role => {
+        const normalizedRoleName = normalizeRoleName(role.name);
+        return normalizedRoleName === mappedName;
+      });
       if (mappedRole) return mappedRole.name;
     }
     
-    // Fuzzy match - find roles that contain the input
-    const fuzzyMatch = roles.find(role => 
-      role.name.toUpperCase().includes(normalizedInput) ||
-      normalizedInput.includes(role.name.toUpperCase())
-    );
+    // Fuzzy match - normalize both sides for comparison
+    const fuzzyMatch = roles.find(role => {
+      const normalizedRoleName = normalizeRoleName(role.name);
+      return normalizedRoleName.includes(normalizedInput) ||
+             normalizedInput.includes(normalizedRoleName);
+    });
     if (fuzzyMatch) return fuzzyMatch.name;
     
     return null;
@@ -351,6 +453,23 @@ const BulkImportModal = ({ show, onClose, onImport, loading = false }) => {
     setErrors([]);
     setValidationErrors([]);
     setPreviewData([]);
+
+    // CRITICAL: Check if roles are loaded before processing file
+    // If roles are still loading, wait for them
+    if (rolesLoading) {
+      setValidationErrors(['Roles are still loading. Please wait a moment and try again.']);
+      return;
+    }
+    
+    if (roles.length === 0) {
+      setValidationErrors(['Roles are not loaded yet. Please refresh the page and try again.']);
+      return;
+    }
+
+    console.log('📋 Processing file with roles loaded:', {
+      rolesCount: roles.length,
+      roles: roles.map(r => r.name)
+    });
 
     const reader = new FileReader();
     reader.onload = (e) => {
@@ -446,6 +565,13 @@ const BulkImportModal = ({ show, onClose, onImport, loading = false }) => {
         }
 
         // Process data rows
+        // IMPORTANT: Check if roles are loaded before processing
+        if (roles.length === 0) {
+          console.warn('⚠️ Roles not loaded yet, validation may fail');
+          // Don't block file processing, but warn user
+          setValidationErrors(['⚠️ Roles are still loading. Role validation may fail. Please wait and try again if you see role errors.']);
+        }
+
         const processedData = dataRows.map((row, index) => {
           const userData = {};
           let hasError = false;
@@ -497,10 +623,30 @@ const BulkImportModal = ({ show, onClose, onImport, loading = false }) => {
 
             // Validate role
             if (header === 'role' && value) {
-              const roleId = findRoleId(value);
-              if (!roleId) {
-                hasError = true;
-                rowErrors.push('Invalid role');
+              // Only validate if roles are loaded
+              if (roles.length > 0) {
+                const roleId = findRoleId(value);
+                if (!roleId) {
+                  hasError = true;
+                  // Show normalized comparison for debugging
+                  const normalizedInput = normalizeRoleName(value);
+                  const availableNormalized = roles.map(r => ({
+                    original: r.name,
+                    normalized: normalizeRoleName(r.name)
+                  }));
+                  console.error('❌ Role validation failed:', {
+                    input: value,
+                    normalizedInput: normalizedInput,
+                    availableRoles: roles.map(r => r.name),
+                    availableNormalized: availableNormalized
+                  });
+                  rowErrors.push(`Invalid role: "${value}". Available roles: ${roles.map(r => r.name).join(', ')}`);
+                } else {
+                  console.log('✅ Role validated successfully:', value, '→', roleId);
+                }
+              } else {
+                // Roles not loaded yet, show warning but don't mark as error
+                console.warn('⚠️ Roles not loaded, cannot validate role:', value);
               }
             }
 
