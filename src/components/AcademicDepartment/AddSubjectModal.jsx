@@ -3,11 +3,9 @@ import { Modal, Button, Form, Alert, Row, Col } from 'react-bootstrap';
 import { X, Plus } from 'react-bootstrap-icons';
 import { toast } from 'react-toastify';
 import apiClient from '../../api/config';
-import courseAPI from '../../api/course';
 
 const AddSubjectModal = ({ show, onClose, onSave, loading = false, courseId }) => {
   const [formData, setFormData] = useState({
-    courseId: courseId || '',
     name: '',
     code: '',
     description: '',
@@ -24,31 +22,28 @@ const AddSubjectModal = ({ show, onClose, onSave, loading = false, courseId }) =
   });
   const [errors, setErrors] = useState([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [courses, setCourses] = useState([]);
-  const [loadingCourses, setLoadingCourses] = useState(false);
 
-  // Load courses when modal opens
+  // Reset form when courseId changes or modal opens
   useEffect(() => {
-    if (show) {
-      loadCourses();
+    if (show && courseId) {
+      setFormData({
+        name: '',
+        code: '',
+        description: '',
+        method: 'CLASSROOM',
+        duration: '',
+        type: 'UNLIMIT',
+        roomName: '',
+        remarkNote: '',
+        timeSlot: '',
+        isSIM: false,
+        passScore: '',
+        startDate: '',
+        endDate: ''
+      });
+      setErrors([]);
     }
-  }, [show]);
-
-  const loadCourses = async () => {
-    setLoadingCourses(true);
-    try {
-      const response = await courseAPI.getCourses();
-      if (response && response.courses) {
-        setCourses(response.courses);
-      } else if (Array.isArray(response)) {
-        setCourses(response);
-      }
-    } catch (error) {
-      toast.error('Failed to load courses');
-    } finally {
-      setLoadingCourses(false);
-    }
-  };
+  }, [show, courseId]);
 
   const handleInputChange = (e) => {
     const { name, value, type, checked } = e.target;
@@ -61,10 +56,12 @@ const AddSubjectModal = ({ show, onClose, onSave, loading = false, courseId }) =
   const validateForm = () => {
     const newErrors = [];
     
-    if (!formData.courseId.trim()) {
-      newErrors.push('Course is required');
+    // Validate courseId (must be provided from prop)
+    if (!courseId) {
+      newErrors.push('Course ID is required');
     }
     
+    // Mandatory fields (NN in schema)
     if (!formData.name.trim()) {
       newErrors.push('Subject name is required');
     }
@@ -72,23 +69,17 @@ const AddSubjectModal = ({ show, onClose, onSave, loading = false, courseId }) =
     if (!formData.code.trim()) {
       newErrors.push('Subject code is required');
     }
-    
-    if (!formData.description.trim()) {
-      newErrors.push('Description is required');
-    }
-    
-    if (!formData.duration.trim()) {
-      newErrors.push('Duration is required');
-    } else if (isNaN(formData.duration) || parseInt(formData.duration) <= 0) {
+
+    // Optional fields validation (Y in schema) - only validate format if provided
+    if (formData.duration.trim() && (isNaN(formData.duration) || parseInt(formData.duration) <= 0)) {
       newErrors.push('Duration must be a positive number');
     }
 
-    if (!formData.passScore.trim()) {
-      newErrors.push('Pass score is required');
-    } else if (isNaN(formData.passScore) || parseInt(formData.passScore) < 0 || parseInt(formData.passScore) > 100) {
+    if (formData.passScore.trim() && (isNaN(formData.passScore) || parseFloat(formData.passScore) < 0 || parseFloat(formData.passScore) > 100)) {
       newErrors.push('Pass score must be between 0 and 100');
     }
 
+    // Mandatory date fields (NN in schema)
     if (!formData.startDate.trim()) {
       newErrors.push('Start date is required');
     }
@@ -116,18 +107,18 @@ const AddSubjectModal = ({ show, onClose, onSave, loading = false, courseId }) =
     try {
       // Prepare data for API call
       const subjectData = {
-        courseId: courseId,
+        courseId: courseId, // Always use current course ID from prop
         name: formData.name.trim(),
         code: formData.code.trim(),
-        description: formData.description.trim(),
+        description: formData.description.trim() || null, // Optional (Y in schema)
         method: formData.method,
-        duration: parseInt(formData.duration),
+        duration: formData.duration.trim() ? parseInt(formData.duration) : null, // Optional (Y in schema)
         type: formData.type,
-        roomName: formData.roomName.trim(),
-        remarkNote: formData.remarkNote.trim(),
-        timeSlot: formData.timeSlot.trim(),
+        roomName: formData.roomName.trim() || null, // Optional (Y in schema)
+        remarkNote: formData.remarkNote.trim() || null, // Optional (Y in schema)
+        timeSlot: formData.timeSlot.trim() || null, // Optional (Y in schema)
         isSIM: formData.isSIM,
-        passScore: parseInt(formData.passScore),
+        passScore: formData.passScore.trim() ? parseFloat(formData.passScore) : null, // Optional (Y in schema)
         startDate: new Date(formData.startDate).toISOString(),
         endDate: new Date(formData.endDate).toISOString()
       };
@@ -158,7 +149,6 @@ const AddSubjectModal = ({ show, onClose, onSave, loading = false, courseId }) =
 
   const handleClose = () => {
     setFormData({
-      courseId: courseId || '',
       name: '',
       code: '',
       description: '',
@@ -203,24 +193,6 @@ const AddSubjectModal = ({ show, onClose, onSave, loading = false, courseId }) =
         )}
 
         <Form onSubmit={handleSubmit}>
-          <Form.Group className="mb-3">
-            <Form.Label>Course *</Form.Label>
-            <Form.Select
-              name="courseId"
-              value={formData.courseId}
-              onChange={handleInputChange}
-              required
-              disabled={loadingCourses}
-            >
-              <option value="">{loadingCourses ? 'Loading courses...' : 'Select a course'}</option>
-              {courses.map((course) => (
-                <option key={course.id} value={course.id}>
-                  {course.name} ({course.code})
-                </option>
-              ))}
-            </Form.Select>
-          </Form.Group>
-
           <Row>
             <Col md={6}>
               <Form.Group className="mb-3">
@@ -251,7 +223,7 @@ const AddSubjectModal = ({ show, onClose, onSave, loading = false, courseId }) =
           </Row>
 
           <Form.Group className="mb-3">
-            <Form.Label>Description *</Form.Label>
+            <Form.Label>Description</Form.Label>
             <Form.Control
               as="textarea"
               rows={3}
@@ -259,7 +231,6 @@ const AddSubjectModal = ({ show, onClose, onSave, loading = false, courseId }) =
               value={formData.description}
               onChange={handleInputChange}
               placeholder="Enter subject description"
-              required
             />
           </Form.Group>
 
@@ -281,7 +252,7 @@ const AddSubjectModal = ({ show, onClose, onSave, loading = false, courseId }) =
             </Col>
             <Col md={6}>
               <Form.Group className="mb-3">
-                <Form.Label>Duration (days) *</Form.Label>
+                <Form.Label>Duration (days)</Form.Label>
                 <Form.Control
                   type="number"
                   name="duration"
@@ -289,7 +260,6 @@ const AddSubjectModal = ({ show, onClose, onSave, loading = false, courseId }) =
                   onChange={handleInputChange}
                   placeholder="Enter duration in days"
                   min="1"
-                  required
                 />
               </Form.Group>
             </Col>
@@ -339,7 +309,7 @@ const AddSubjectModal = ({ show, onClose, onSave, loading = false, courseId }) =
             </Col>
             <Col md={6}>
               <Form.Group className="mb-3">
-                <Form.Label>Pass Score *</Form.Label>
+                <Form.Label>Pass Score</Form.Label>
                 <Form.Control
                   type="number"
                   name="passScore"
@@ -348,7 +318,7 @@ const AddSubjectModal = ({ show, onClose, onSave, loading = false, courseId }) =
                   placeholder="Enter pass score (0-100)"
                   min="0"
                   max="100"
-                  required
+                  step="0.01"
                 />
               </Form.Group>
             </Col>

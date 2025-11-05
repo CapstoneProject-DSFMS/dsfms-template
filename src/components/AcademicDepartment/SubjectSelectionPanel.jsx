@@ -65,7 +65,7 @@ const SubjectSelectionPanel = ({ selectedSubjects, onSelectionChange }) => {
   const isAllSelected = filteredSubjects.length > 0 && selectedSubjects.length === filteredSubjects.length;
 
   return (
-    <Card className="d-flex flex-column h-100" style={{ border: '1px solid #e9ecef', boxShadow: '0 2px 4px rgba(0,0,0,0.1)', overflow: 'hidden' }}>
+    <Card className="d-flex flex-column h-100" style={{ border: '1px solid #e9ecef', boxShadow: '0 4px 8px rgba(0,0,0,0.15)', overflow: 'hidden', marginBottom: '1.5rem' }}>
       <Card.Header className="bg-gradient-primary-custom text-white border-0">
         <div className="d-flex justify-content-between align-items-center">
           <h6 className="mb-0 text-white">Select Subjects</h6>

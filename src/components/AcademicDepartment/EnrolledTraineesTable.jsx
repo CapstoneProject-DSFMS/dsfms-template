@@ -233,9 +233,9 @@ const EnrolledTraineesTable = ({ courseId, loading = false }) => {
 
   if (loading || loadingEnrolled) {
     return (
-      <Card className="h-100">
-        <Card.Header className="bg-white border-bottom">
-          <h6 className="mb-0">Enrolled Trainees</h6>
+      <Card style={{ width: '100%' }}>
+        <Card.Header className="bg-gradient-primary-custom text-white border-0">
+          <h6 className="mb-0 text-white">Enrolled Trainees</h6>
         </Card.Header>
         <Card.Body className="p-0">
           <LoadingSkeleton rows={4} columns={4} />
@@ -246,9 +246,9 @@ const EnrolledTraineesTable = ({ courseId, loading = false }) => {
 
   if (enrolledTrainees.length === 0) {
     return (
-      <Card className="h-100">
-        <Card.Header className="bg-white border-bottom">
-          <h6 className="mb-0">Enrolled Trainees (0)</h6>
+      <Card style={{ width: '100%' }}>
+        <Card.Header className="bg-gradient-primary-custom text-white border-0">
+          <h6 className="mb-0 text-white">Enrolled Trainees (0)</h6>
         </Card.Header>
         <Card.Body className="p-0">
           <div className="text-center py-5">
@@ -327,19 +327,12 @@ const EnrolledTraineesTable = ({ courseId, loading = false }) => {
 
   return (
     <>
-      <Card 
-        className="d-flex flex-column mb-5" 
-        style={{ 
-          height: '400px',
-          marginBottom: '2rem',
-          marginTop: '12rem'
-        }}  
-      >
+      <Card className="d-flex flex-column" style={{ height: '400px', width: '100%' }}>
         <Card.Header 
-          className="bg-white border-bottom" 
+          className="bg-gradient-primary-custom text-white border-0" 
           style={{ flexShrink: 0 }}
         >
-          <h6 className="mb-0">Enrolled Trainees ({enrolledTrainees.length})</h6>
+          <h6 className="mb-0 text-white">Enrolled Trainees ({enrolledTrainees.length})</h6>
         </Card.Header>
         <Card.Body 
           className="p-0" 

@@ -130,7 +130,6 @@ export const traineeAPI = {
     try {
       const response = await apiClient.get('/users', { 
         params: {
-          includeDeleted: true,
           roleName: 'TRAINEE',
           ...params
         }

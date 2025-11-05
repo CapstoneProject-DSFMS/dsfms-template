@@ -569,8 +569,145 @@ table .department-table-container .badge {
   margin-bottom: 0.25rem !important;
 }
 
+.enroll-page .row.enrolled-trainees-container {
+  margin-bottom: 2rem !important;
+  margin-top: 2rem !important;
+}
+
 .enroll-page .col {
   padding-bottom: 0.25rem !important;
+}
+
+/* Ensure Enrolled Trainees Table is at bottom and doesn't overlap */
+.enroll-page.container-fluid {
+  min-height: 100% !important;
+  height: 100% !important;
+  display: flex !important;
+  flex-direction: column !important;
+  overflow: visible !important;
+  position: relative !important;
+}
+
+.enroll-page .enrolled-trainees-container {
+  position: relative !important;
+  float: none !important;
+  clear: both !important;
+  width: 100% !important;
+  margin-top: 0 !important;
+  margin-bottom: 2rem !important;
+  z-index: 100 !important;
+  display: block !important;
+  overflow: visible !important;
+  flex-shrink: 0 !important;
+  order: 999 !important;
+}
+
+.enroll-page .enrolled-trainees-container .card {
+  position: relative !important;
+  float: none !important;
+  clear: both !important;
+  width: 100% !important;
+  margin-left: 0 !important;
+  margin-right: 0 !important;
+  margin-bottom: 0 !important;
+  z-index: 100 !important;
+}
+
+/* Ensure main content doesn't overlap */
+.enroll-page > div.mb-4 {
+  position: relative !important;
+  z-index: 1 !important;
+  margin-bottom: 3rem !important;
+  overflow: visible !important;
+  flex-shrink: 0 !important;
+}
+
+/* Ensure Subject Selection Panel doesn't overflow or overlap */
+.enroll-page .col-lg-6 > div {
+  overflow: visible !important;
+  position: relative !important;
+  z-index: 1 !important;
+}
+
+/* Ensure SubjectSelectionPanel Card doesn't overlap */
+.enroll-page .col-lg-6 .card {
+  position: relative !important;
+  z-index: 1 !important;
+  overflow: visible !important;
+}
+
+/* Ensure Enrolled Trainees is always visible and on top */
+.enroll-page #enrolled-trainees-section,
+.enroll-page #enrolled-trainees-section * {
+  position: relative !important;
+  z-index: 100 !important;
+}
+
+/* Prevent Enrolled Trainees header from appearing in wrong places */
+.enroll-page .enrolled-trainees-container .card-header {
+  position: relative !important;
+  float: none !important;
+  clear: both !important;
+  width: 100% !important;
+  display: block !important;
+  overflow: visible !important;
+}
+
+/* Ensure Enrolled Trainees Card is not inside SubjectSelectionPanel */
+.enroll-page .col-lg-6:first-child .enrolled-trainees-container,
+.enroll-page .col-lg-6:first-child .enrolled-trainees-container * {
+  display: none !important;
+}
+
+/* Only show Enrolled Trainees in its designated container */
+.enroll-page .enrolled-trainees-container:not(#enrolled-trainees-section) {
+  display: none !important;
+}
+
+/* Ensure Enrolled Trainees section is visible and properly positioned */
+.enroll-page #enrolled-trainees-section {
+  display: block !important;
+  position: relative !important;
+  width: 100% !important;
+  clear: both !important;
+  margin-top: 0 !important;
+  margin-bottom: 2rem !important;
+  z-index: 1000 !important;
+}
+
+/* Ensure Enrolled Trainees Row is separate from main content */
+.enroll-page .enrolled-trainees-row {
+  position: relative !important;
+  z-index: 1000 !important;
+  margin-top: auto !important;
+  margin-bottom: 2rem !important;
+  width: 100% !important;
+  clear: both !important;
+  flex-shrink: 0 !important;
+}
+
+/* Ensure main content section doesn't overlap */
+.enroll-page .main-content-section {
+  position: relative !important;
+  z-index: 1 !important;
+  margin-bottom: 3rem !important;
+  overflow: visible !important;
+  flex-shrink: 0 !important;
+}
+
+/* Ensure main content Row doesn't create stacking context */
+.enroll-page .main-content-section .row {
+  position: relative !important;
+  z-index: 1 !important;
+  overflow: visible !important;
+}
+
+/* Ensure Subject Selection Panel is contained */
+.enroll-page .main-content-section .col-lg-6 > div {
+  overflow: hidden !important;
+  position: relative !important;
+  z-index: 1 !important;
+  isolation: isolate !important;
 }
 
 /* Remove all internal spacing from enroll page components */
