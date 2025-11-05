@@ -193,17 +193,15 @@ const CourseDetailsView = ({ courseId }) => {
   const handleConfirmArchiveCourse = async (courseId) => {
     try {
       await courseAPI.archiveCourse(courseId);
-      toast.success('Course archived successfully');
+      toast.success('Course deleted successfully');
       
-      // Update course status in the list
-      setCourses(prev => prev.map(c => 
-        c.id === courseId ? { ...c, status: 'ARCHIVED' } : c
-      ));
+      // Remove course from the list after deletion
+      setCourses(prev => prev.filter(c => c.id !== courseId));
       
       setShowArchiveCourse(false);
       setCourseToArchive(null);
     } catch (error) {
-      toast.error('Failed to archive course. Please try again.');
+      toast.error('Failed to delete course. Please try again.');
       throw error;
     }
   };

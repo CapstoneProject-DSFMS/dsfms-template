@@ -70,9 +70,18 @@ const TraineeSelectionPanel = ({ selectedTrainees, onSelectionChange }) => {
     trainee.eid.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
+  // Auto-open dropdown when search term is entered
+  useEffect(() => {
+    if (searchTerm.trim().length > 0) {
+      setShowAvailableDropdown(true);
+    }
+  }, [searchTerm]);
+
   const handleAddTrainee = (trainee) => {
     if (!selectedTrainees.find(t => t.id === trainee.id)) {
       onSelectionChange([...selectedTrainees, trainee]);
+      // Optionally close dropdown after adding
+      // setShowAvailableDropdown(false);
     }
   };
 
@@ -83,7 +92,7 @@ const TraineeSelectionPanel = ({ selectedTrainees, onSelectionChange }) => {
   
 
   return (
-    <Card className="d-flex flex-column h-100" style={{ border: '1px solid #e9ecef', boxShadow: '0 2px 4px rgba(0,0,0,0.1)', overflow: 'hidden' }}>
+    <Card className="d-flex flex-column h-100" style={{ border: '1px solid #e9ecef', boxShadow: '0 4px 8px rgba(0,0,0,0.15)', overflow: 'hidden', marginBottom: '1.5rem' }}>
       <Card.Header className="bg-gradient-primary-custom text-white border-0">
         <div className="d-flex justify-content-between align-items-center">
           <h6 className="mb-0 text-white">Add Trainees</h6>
@@ -92,7 +101,7 @@ const TraineeSelectionPanel = ({ selectedTrainees, onSelectionChange }) => {
       <Card.Body className="p-0 d-flex flex-column" style={{ height: '500px' }}>
 
         {/* Available Trainees - Top Section */}
-        <div className="flex-shrink-0" style={{ position: 'relative' }} ref={dropdownRef}>
+        <div className="flex-shrink-0" style={{ position: 'relative', paddingBottom: '1rem' }} ref={dropdownRef}>
           {/* Search Bar */}
           <div className="p-2 border-bottom">
             <Form.Control
@@ -115,7 +124,10 @@ const TraineeSelectionPanel = ({ selectedTrainees, onSelectionChange }) => {
             >
               <span>
                 <People className="me-2" size={16} />
-                {loadingTrainees ? 'Loading...' : `Show All Available Trainees (${allTrainees.length})`}
+                {loadingTrainees ? 'Loading...' : searchTerm.trim().length > 0 
+                  ? `Available Trainees (${filteredTrainees.length})`
+                  : `Show All Available Trainees (${allTrainees.length})`
+                }
               </span>
               <ChevronDown size={16} />
             </Button>
@@ -124,16 +136,17 @@ const TraineeSelectionPanel = ({ selectedTrainees, onSelectionChange }) => {
           {/* Dropdown List */}
           {showAvailableDropdown && (
             <div 
-              className="border bg-white shadow-sm" 
+              className="border bg-white" 
               style={{ 
                 position: 'absolute',
-                top: '100%',
+                top: 'calc(100% + 8px)', // Add gap between input and dropdown
                 left: 0,
                 right: 0,
                 zIndex: 1050,
-                maxHeight: '200px', 
+                maxHeight: '350px', // Increased height
                 overflowY: 'auto',
-                borderRadius: '0 0 8px 8px'
+                borderRadius: '8px',
+                boxShadow: '0 8px 16px rgba(0, 0, 0, 0.15), 0 4px 8px rgba(0, 0, 0, 0.1)' // Enhanced shadow for floating effect
               }}
             >
               {loadingTrainees ? (
@@ -173,9 +186,9 @@ const TraineeSelectionPanel = ({ selectedTrainees, onSelectionChange }) => {
         </div>
 
         {/* Selected Trainees - Main Focus at Bottom */}
-        <div className="border-top flex-grow-1 d-flex flex-column" style={{ minHeight: 0 }}>
-          <div className="p-2 bg-light border-bottom">
-            <small className="text-muted fw-semibold">Selected Trainees ({selectedTrainees.length})</small>
+        <div className="border-top flex-grow-1 d-flex flex-column" style={{ minHeight: 0, marginTop: '1rem' }}>
+          <div className="p-2 bg-gradient-primary-custom text-white border-bottom">
+            <small className="text-white fw-semibold">Selected Trainees ({selectedTrainees.length})</small>
           </div>
           <div style={{ overflowY: 'auto', flex: 1, minHeight: 0 }}>
             {selectedTrainees.length === 0 ? (

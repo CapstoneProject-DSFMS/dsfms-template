@@ -133,28 +133,35 @@ const EnrollTraineesPage = () => {
     setShowBatchCodeModal(false);
     
     try {
-      // Prepare data for API call - Backend expects batchCode and traineeUserIds
+      // Prepare data for API call - Backend expects batch_code and trainee_user_ids (snake_case)
       console.log('🔍 Selected trainees for enrollment:', selectedTrainees);
       console.log('🔍 Using batch code:', batchCode);
       
+      // Validate trainee IDs
+      const traineeIds = selectedTrainees.map(trainee => {
+        console.log('🔍 Processing trainee:', {
+          id: trainee.id,
+          eid: trainee.eid,
+          name: `${trainee.firstName} ${trainee.lastName}`
+        });
+        
+        if (!trainee.id) {
+          throw new Error(`Trainee ${trainee.eid} (${trainee.firstName} ${trainee.lastName}) is missing UUID`);
+        }
+        
+        return trainee.id; // Just the user IDs as array
+      });
+      
+      // Backend expects camelCase format
       const traineeData = {
-        batchCode: batchCode, // Use batch code from modal
-        traineeUserIds: selectedTrainees.map(trainee => {
-          console.log('🔍 Processing trainee:', {
-            id: trainee.id,
-            eid: trainee.eid,
-            name: `${trainee.firstName} ${trainee.lastName}`
-          });
-          
-          if (!trainee.id) {
-            throw new Error(`Trainee ${trainee.eid} (${trainee.firstName} ${trainee.lastName}) is missing UUID`);
-          }
-          
-          return trainee.id; // Just the user IDs as array
-        })
+        batchCode: String(batchCode).trim(), // Ensure it's a string
+        traineeUserIds: traineeIds // Array of UUIDs
       };
       
-      console.log('🔍 Final trainee data for API:', traineeData);
+      console.log('🔍 Final trainee data for API (camelCase):', traineeData);
+      console.log('🔍 Trainee IDs array:', traineeIds);
+      console.log('🔍 Batch code type:', typeof traineeData.batchCode, 'value:', traineeData.batchCode);
+      console.log('🔍 Trainee IDs type:', Array.isArray(traineeData.traineeUserIds), 'length:', traineeData.traineeUserIds?.length);
 
       // Check for potential duplicates (this is just a warning, server will handle actual validation)
       console.log('⚠️ Note: Server will validate for duplicate enrollments');
@@ -179,19 +186,47 @@ const EnrollTraineesPage = () => {
       setTableRefreshKey(prev => prev + 1);
       
       // Clear selected trainees and subjects
+      const enrolledCount = selectedTrainees.length;
+      const subjectCount = selectedSubjects.length;
       setSelectedTrainees([]);
       setSelectedSubjects([]);
       
-      toast.success(`Successfully enrolled ${selectedTrainees.length} trainees to ${selectedSubjects.length} subject(s) with batch code: ${batchCode}`);
+      toast.success(`Successfully enrolled ${enrolledCount} trainees to ${subjectCount} subject(s) with batch code: ${batchCode}`);
       
     } catch (error) {
+      // Log detailed error for debugging
+      console.error('❌ Enrollment Error:', {
+        status: error.response?.status,
+        statusText: error.response?.statusText,
+        data: error.response?.data,
+        errors: error.response?.data?.errors,
+        errorsDetailed: error.response?.data?.errors?.map((err, idx) => ({
+          index: idx,
+          field: err.field,
+          message: err.message,
+          code: err.code,
+          value: err.value,
+          fullError: err
+        })),
+        message: error.response?.data?.message,
+        fullErrorResponse: JSON.stringify(error.response?.data, null, 2),
+        fullError: error
+      });
       
       // Show more specific error message
       let errorMessage = 'Failed to enroll trainees. Please try again.';
       if (error.response?.data?.message) {
         errorMessage = error.response.data.message;
       } else if (error.response?.data?.errors) {
-        errorMessage = `Validation errors: ${JSON.stringify(error.response.data.errors)}`;
+        // Format validation errors more clearly
+        const errors = error.response.data.errors;
+        if (Array.isArray(errors)) {
+          errorMessage = `Validation errors: ${errors.map(e => e.message || e).join(', ')}`;
+        } else if (typeof errors === 'object') {
+          errorMessage = `Validation errors: ${JSON.stringify(errors, null, 2)}`;
+        } else {
+          errorMessage = `Validation errors: ${errors}`;
+        }
       } else if (error.message) {
         errorMessage = error.message;
       }
@@ -203,10 +238,9 @@ const EnrollTraineesPage = () => {
   };
 
   return (
-    <Container fluid className="py-4 px-4 enroll-page">
-      <div className="d-flex flex-column">
-        {/* Header - Fixed */}
-        <div className="flex-shrink-0 mb-3">
+    <Container fluid className="py-4 px-4 enroll-page" style={{ minHeight: '100%', display: 'flex', flexDirection: 'column' }}>
+      {/* Header - Fixed */}
+      <div className="mb-3 flex-shrink-0">
           <div className="d-flex align-items-center mb-2">
             <Button 
               variant="outline-secondary" 
@@ -226,7 +260,7 @@ const EnrollTraineesPage = () => {
 
           {/* Course Info */}
           <Card className="mb-2">
-            <Card.Body className="py-2">
+            <Card.Body className="py-3 px-3">
               <Row>
                 <Col md={8}>
                   <p className="mb-0 text-muted">{course.description}</p>
@@ -262,43 +296,60 @@ const EnrollTraineesPage = () => {
               </Row>
             </Card.Body>
           </Card>
-        </div>
-
-        {/* Main Content */}
-        <div className="mb-4">
-          <Row className="g-3">
-            {/* Panel 1: Subject Selection */}
-            <Col lg={6}>
-              <div style={{ height: '500px' }}>
-                <SubjectSelectionPanel 
-                  selectedSubjects={selectedSubjects}
-                  onSelectionChange={setSelectedSubjects}
-                />
-              </div>
-            </Col>
-
-            {/* Panel 2: Trainee Selection */}
-            <Col lg={6}>
-              <div style={{ height: '500px' }}>
-                <TraineeSelectionPanel 
-                  selectedTrainees={selectedTrainees}
-                  onSelectionChange={setSelectedTrainees}
-                />
-              </div>
-            </Col>
-          </Row>
-        </div>
-
-
-        {/* Enrolled Trainees Table - Full Width at Bottom */}
-        <div className="mt-4">
-          <EnrolledTraineesTable 
-            key={tableRefreshKey}
-            courseId={courseId}
-            loading={false}
-          />
-        </div>
       </div>
+
+      {/* Main Content - Two Columns */}
+      <div className="mb-4 flex-shrink-0 main-content-section" style={{ position: 'relative', zIndex: 1, marginBottom: '3rem' }}>
+        <Row className="g-4">
+          {/* Panel 1: Subject Selection */}
+          <Col lg={6}>
+            <div style={{ height: '500px', position: 'relative', zIndex: 1, overflow: 'hidden' }}>
+              <SubjectSelectionPanel 
+                selectedSubjects={selectedSubjects}
+                onSelectionChange={setSelectedSubjects}
+              />
+            </div>
+          </Col>
+
+          {/* Panel 2: Trainee Selection */}
+          <Col lg={6}>
+            <div style={{ height: '500px', position: 'relative', zIndex: 1, overflow: 'hidden' }}>
+              <TraineeSelectionPanel 
+                selectedTrainees={selectedTrainees}
+                onSelectionChange={setSelectedTrainees}
+              />
+            </div>
+          </Col>
+        </Row>
+      </div>
+
+      {/* Spacer to push Enrolled Trainees to bottom */}
+      <div className="flex-spacer" style={{ flex: '1 1 auto', minHeight: '2rem' }}></div>
+
+      {/* Enrolled Trainees Table - Full Width at Bottom - OUTSIDE of Row */}
+      <Row className="enrolled-trainees-row">
+        <Col xs={12}>
+          <div 
+            className="enrolled-trainees-container flex-shrink-0" 
+            id="enrolled-trainees-section"
+            style={{ 
+              marginTop: '0', 
+              marginBottom: '2rem', 
+              clear: 'both',
+              width: '100%',
+              position: 'relative',
+              zIndex: 1000,
+              display: 'block'
+            }}
+          >
+            <EnrolledTraineesTable 
+              key={tableRefreshKey}
+              courseId={courseId}
+              loading={false}
+            />
+          </div>
+        </Col>
+      </Row>
 
       {/* Bulk Import Modal */}
       <BulkImportTraineesModal

@@ -395,43 +395,44 @@ const BulkImportTraineesModal = ({ show, onClose, onImport, loading = false }) =
           </Card.Body>
         </Card>
 
-        {/* Uploaded Identifiers - Always show when available */}
+        {/* Preview Table */}
         {previewData.length > 0 && (
           <Card className="mb-4">
-            <Card.Header className="bg-light">
-              <h6 className="mb-0">
-                Uploaded Identifiers ({previewData.length} entries)
-                <span className="ms-2">
-                  <CheckCircle className="text-success me-1" size={16} />
-                  {previewData.filter(t => !t.hasError).length} valid
-                  <XCircle className="text-danger ms-2 me-1" size={16} />
-                  {previewData.filter(t => t.hasError).length} invalid
-                </span>
-              </h6>
+            <Card.Header>
+              <h6 className="mb-0">Preview Data ({previewData.length} records)</h6>
             </Card.Header>
             <Card.Body className="p-0">
-              <div style={{ maxHeight: '200px', overflowY: 'auto' }}>
-                <Table hover className="mb-0">
-                  <thead className="bg-light sticky-top">
+              <div 
+                className="bulk-import-preview"
+                style={{ 
+                  maxHeight: '400px', 
+                  overflowY: 'auto',
+                  overflowX: 'auto'
+                }}
+              >
+                <Table striped hover className="mb-0" style={{ minWidth: '800px' }}>
+                  <thead className="table-light">
                     <tr>
-                      <th>Status</th>
-                      <th>EID</th>
-                      <th>Email</th>
-                      <th>Errors</th>
+                      <th style={{ minWidth: '50px' }}>NO.</th>
+                      <th style={{ minWidth: '150px' }}>EID</th>
+                      <th style={{ minWidth: '250px' }}>EMAIL</th>
+                      <th style={{ minWidth: '80px' }}>STATUS</th>
+                      <th style={{ minWidth: '300px' }}>ERROR ENCOUNTERED</th>
                     </tr>
                   </thead>
                   <tbody>
-                    {previewData.map((item, index) => (
-                      <tr key={item.id} className={item.hasError ? 'table-danger' : 'table-success'}>
-                        <td>
+                    {previewData.map((item) => (
+                      <tr key={item.id} className={item.hasError ? 'table-danger' : ''}>
+                        <td>{item.rowNumber || item.id}</td>
+                        <td>{item.eid || '-'}</td>
+                        <td>{item.email || '-'}</td>
+                        <td className="text-center">
                           {getStatusIcon(item.hasError ? 'invalid' : 'valid')}
                         </td>
-                        <td>{item.eid}</td>
-                        <td>{item.email}</td>
                         <td>
                           {item.errors.length > 0 && (
                             <small className="text-danger">
-                              {item.errors.join(', ')}
+                              {item.errors.length > 1 ? `${item.errors[0]} (+${item.errors.length - 1} more)` : item.errors[0]}
                             </small>
                           )}
                         </td>
@@ -450,7 +451,16 @@ const BulkImportTraineesModal = ({ show, onClose, onImport, loading = false }) =
               >
                 {isLookingUp ? (
                   <>
-                    <span className="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true" style={{ width: '1rem', height: '1rem' }}></span>
+                    <span 
+                      className="spinner-border me-2" 
+                      role="status" 
+                      aria-hidden="true"
+                      style={{ 
+                        width: '1rem', 
+                        height: '1rem',
+                        borderWidth: '0.15em'
+                      }}
+                    ></span>
                     Looking up...
                   </>
                 ) : (

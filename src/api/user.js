@@ -144,7 +144,6 @@ export const userAPI = {
     try {
       const response = await apiClient.get('/users', { 
         params: {
-          includeDeleted: true,
           roleName: 'TRAINER',
           ...params
         }

@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Card, Button, Row, Col, Container, Badge, Nav, Tab } from 'react-bootstrap';
 import { Plus, Upload, Pencil, ArrowLeft, People, Calendar, GeoAlt, FileText, Award, PersonCheck, Book } from 'react-bootstrap-icons';
-import { useNavigate, useParams } from 'react-router-dom';
+import { useNavigate, useParams, useLocation } from 'react-router-dom';
 import courseAPI from '../../api/course';
 import subjectAPI from '../../api/subject';
 import SubjectTable from '../../components/AcademicDepartment/SubjectTable';
@@ -14,6 +14,7 @@ import DisableSubjectModal from '../../components/AcademicDepartment/DisableSubj
 const InPageCourseDetail = ({ course, department }) => {
   const navigate = useNavigate();
   const { courseId } = useParams();
+  const location = useLocation();
   
   // Modal states
   const [showAddSubject, setShowAddSubject] = useState(false);
@@ -29,8 +30,23 @@ const InPageCourseDetail = ({ course, department }) => {
   const [loading, setLoading] = useState(true);
   // const [hasApiData, setHasApiData] = useState(false); // Track if we have API data
   
-  // Active tab state
-  const [activeTab, setActiveTab] = useState('course-info');
+  // Active tab state - check location state for initial tab
+  const [activeTab, setActiveTab] = useState(() => {
+    // Check if location state has activeTab (from redirect)
+    if (location.state?.activeTab) {
+      return location.state.activeTab;
+    }
+    return 'course-info';
+  });
+  
+  // Update activeTab when location state changes (e.g., after redirect)
+  useEffect(() => {
+    if (location.state?.activeTab) {
+      setActiveTab(location.state.activeTab);
+      // Clear the state to prevent it from persisting
+      window.history.replaceState({}, document.title);
+    }
+  }, [location.state]);
   
   // Fetch course details from API - includes subjects
   useEffect(() => {
@@ -386,56 +402,126 @@ const InPageCourseDetail = ({ course, department }) => {
               {/* Course Information Tab */}
               <Tab.Pane eventKey="course-info">
                 <div className="p-4">
+                  {/* Description - Full Width Row */}
+                  <Row className="mb-4">
+                    <Col>
+                      <div className="mb-4">
+                        <h6 className="mb-3" style={{ 
+                          color: '#1b3c53', 
+                          fontWeight: '800', 
+                          fontSize: '1.3rem',
+                          letterSpacing: '0.5px',
+                          textTransform: 'uppercase',
+                          borderBottom: '2px solid #d2c1b6',
+                          paddingBottom: '0.5rem'
+                        }}>Description</h6>
+                        <p className="mb-0 text-muted" style={{ fontSize: '0.95rem' }}>{courseDetails.description}</p>
+                      </div>
+                    </Col>
+                  </Row>
+
+                  {/* Other Fields - Two Columns */}
                   <Row className="g-4">
-                    {/* Basic Information */}
+                    {/* Left Column */}
                     <Col md={6}>
                       <div className="mb-4">
-                        <h6 className="text-muted mb-2">Course Name</h6>
-                        <p className="mb-0 fw-semibold">{courseDetails.name}</p>
+                        <h6 className="mb-2" style={{ 
+                          color: '#456882', 
+                          fontWeight: '800', 
+                          fontSize: '1.15rem',
+                          letterSpacing: '0.5px',
+                          textTransform: 'uppercase'
+                        }}>Course Name</h6>
+                        <p className="mb-0 text-dark" style={{ fontSize: '0.9rem' }}>{courseDetails.name}</p>
                       </div>
                       <div className="mb-4">
-                        <h6 className="text-muted mb-2">Course Code</h6>
+                        <h6 className="mb-2" style={{ 
+                          color: '#456882', 
+                          fontWeight: '800', 
+                          fontSize: '1.15rem',
+                          letterSpacing: '0.5px',
+                          textTransform: 'uppercase'
+                        }}>Course Code</h6>
                         <Badge bg="secondary" className="px-2 py-1">
                           {courseDetails.code}
                         </Badge>
                       </div>
                       <div className="mb-4">
-                        <h6 className="text-muted mb-2">Description</h6>
-                        <p className="mb-0 text-muted small">{courseDetails.description}</p>
-                      </div>
-                      <div className="mb-4">
-                        <h6 className="text-muted mb-2">Level</h6>
+                        <h6 className="mb-2" style={{ 
+                          color: '#456882', 
+                          fontWeight: '800', 
+                          fontSize: '1.15rem',
+                          letterSpacing: '0.5px',
+                          textTransform: 'uppercase'
+                        }}>Level</h6>
                         <Badge bg="info" className="px-2 py-1">
                           {courseDetails.level}
                         </Badge>
                       </div>
+                      <div className="mb-4">
+                        <h6 className="mb-2" style={{ 
+                          color: '#456882', 
+                          fontWeight: '800', 
+                          fontSize: '1.15rem',
+                          letterSpacing: '0.5px',
+                          textTransform: 'uppercase'
+                        }}>Start Date</h6>
+                        <div className="d-flex align-items-center">
+                          <Calendar size={16} className="me-2 text-primary" />
+                          <span className="text-dark" style={{ fontSize: '0.9rem' }}>{courseDetails.startDate || 'N/A'}</span>
+                        </div>
+                      </div>
                     </Col>
 
-                    {/* Training Details */}
+                    {/* Right Column */}
                     <Col md={6}>
                       <div className="mb-4">
-                        <h6 className="text-muted mb-2">Max Number of Trainees</h6>
+                        <h6 className="mb-2" style={{ 
+                          color: '#456882', 
+                          fontWeight: '800', 
+                          fontSize: '1.15rem',
+                          letterSpacing: '0.5px',
+                          textTransform: 'uppercase'
+                        }}>Max Number of Trainees</h6>
                         <div className="d-flex align-items-center">
                           <PersonCheck size={16} className="me-2 text-primary" />
-                          <span className="fw-semibold">{courseDetails.maxTrainees}</span>
+                          <span className="text-dark" style={{ fontSize: '0.9rem' }}>{courseDetails.maxTrainees}</span>
                         </div>
                       </div>
                       <div className="mb-4">
-                        <h6 className="text-muted mb-2">Venue</h6>
+                        <h6 className="mb-2" style={{ 
+                          color: '#456882', 
+                          fontWeight: '800', 
+                          fontSize: '1.15rem',
+                          letterSpacing: '0.5px',
+                          textTransform: 'uppercase'
+                        }}>Venue</h6>
                         <div className="d-flex align-items-center">
                           <GeoAlt size={16} className="me-2 text-primary" />
-                          <span className="fw-semibold">{courseDetails.venue}</span>
+                          <span className="text-dark" style={{ fontSize: '0.9rem' }}>{courseDetails.venue}</span>
                         </div>
                       </div>
                       <div className="mb-4">
-                        <h6 className="text-muted mb-2">Pass Score</h6>
+                        <h6 className="mb-2" style={{ 
+                          color: '#456882', 
+                          fontWeight: '800', 
+                          fontSize: '1.15rem',
+                          letterSpacing: '0.5px',
+                          textTransform: 'uppercase'
+                        }}>Pass Score</h6>
                         <div className="d-flex align-items-center">
                           <Award size={16} className="me-2 text-primary" />
-                          <span className="fw-semibold">{courseDetails.passScore}%</span>
+                          <span className="text-dark" style={{ fontSize: '0.9rem' }}>{courseDetails.passScore}%</span>
                         </div>
                       </div>
                       <div className="mb-4">
-                        <h6 className="text-muted mb-2">Status</h6>
+                        <h6 className="mb-2" style={{ 
+                          color: '#456882', 
+                          fontWeight: '800', 
+                          fontSize: '1.15rem',
+                          letterSpacing: '0.5px',
+                          textTransform: 'uppercase'
+                        }}>Status</h6>
                         <Badge 
                           bg={courseDetails.status === 'ACTIVE' ? 'success' : courseDetails.status === 'ARCHIVED' ? 'warning' : 'secondary'}
                           className="px-2 py-1"
@@ -443,28 +529,20 @@ const InPageCourseDetail = ({ course, department }) => {
                           {courseDetails.status}
                         </Badge>
                       </div>
-                    </Col>
-
-                    {/* Date Information */}
-                    <Col md={6}>
                       <div className="mb-4">
-                        <h6 className="text-muted mb-2">Start Date</h6>
+                        <h6 className="mb-2" style={{ 
+                          color: '#456882', 
+                          fontWeight: '800', 
+                          fontSize: '1.15rem',
+                          letterSpacing: '0.5px',
+                          textTransform: 'uppercase'
+                        }}>End Date</h6>
                         <div className="d-flex align-items-center">
                           <Calendar size={16} className="me-2 text-primary" />
-                          <span className="fw-semibold">{courseDetails.startDate || 'N/A'}</span>
+                          <span className="text-dark" style={{ fontSize: '0.9rem' }}>{courseDetails.endDate || 'N/A'}</span>
                         </div>
                       </div>
                     </Col>
-                    <Col md={6}>
-                      <div className="mb-4">
-                        <h6 className="text-muted mb-2">End Date</h6>
-                        <div className="d-flex align-items-center">
-                          <Calendar size={16} className="me-2 text-primary" />
-                          <span className="fw-semibold">{courseDetails.endDate || 'N/A'}</span>
-                        </div>
-                      </div>
-                    </Col>
-
                   </Row>
                 </div>
               </Tab.Pane>
