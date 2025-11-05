@@ -7,7 +7,6 @@ import { departmentAPI } from '../../../api';
 import DepartmentHeader from '../../../components/DepartmentManagement/DepartmentHeader';
 import DepartmentTabs from '../../../components/DepartmentManagement/DepartmentTabs';
 import EditDepartmentDetails from '../../../components/DepartmentManagement/EditDepartmentDetails';
-import AddTrainersToDepartment from '../../../components/DepartmentManagement/AddTrainersToDepartment';
 import DepartmentInfo from '../../../components/DepartmentManagement/DepartmentInfo';
 import '../../../styles/department-tabs.css';
 
@@ -37,7 +36,7 @@ const DepartmentDetailPage = () => {
   const [department, setDepartment] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  const [activeTab, setActiveTab] = useState('info'); // 'info', 'trainers', or 'edit'
+  const [activeTab, setActiveTab] = useState('info'); // 'info' or 'edit'
 
   const loadDepartment = useCallback(async () => {
     if (!id) {
@@ -126,13 +125,6 @@ const DepartmentDetailPage = () => {
         return (
           <DepartmentInfo 
             department={department}
-          />
-        );
-      case 'trainers':
-        return (
-          <AddTrainersToDepartment 
-            department={department}
-            onDepartmentUpdate={loadDepartment}
           />
         );
       case 'edit':

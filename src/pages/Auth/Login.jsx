@@ -55,9 +55,15 @@ function Login() {
       const result = await login({ email, password });
       
       if (result.success) {
-        // Navigate to intended destination or admin dashboard
-        const from = location.state?.from?.pathname || "/admin";
-        navigate(from, { replace: true });
+        // Let RoleBasedRedirect handle the redirect based on user role
+        // Navigate to intended destination if exists, otherwise let RoleBasedRedirect handle it
+        const from = location.state?.from?.pathname;
+        if (from) {
+          navigate(from, { replace: true });
+        } else {
+          // Navigate to root admin route which will trigger RoleBasedRedirect
+          navigate("/admin", { replace: true });
+        }
       } else {
         toast.error(result.error || "Email or password is incorrect. Please try again.");
       }

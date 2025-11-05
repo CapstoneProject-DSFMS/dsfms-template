@@ -71,6 +71,28 @@ export const router = createBrowserRouter([
     errorElement: <ErrorBoundary />
   },
   {
+    path: "/profile",
+    element: (
+      <ProtectedRoute>
+        <LayoutWrapper />
+      </ProtectedRoute>
+    ),
+    errorElement: <ErrorBoundary />,
+    children: [
+      {
+        path: "",
+        element: (
+          <PermissionRoute 
+            permission={API_PERMISSIONS.PROFILES.VIEW}
+            fallback={<div className="p-4 text-center text-muted">You don't have permission to access your profile.</div>}
+          >
+            <ProfilePage />
+          </PermissionRoute>
+        )
+      }
+    ]
+  },
+  {
     path: "/admin",
     element: (
       <ProtectedRoute>
@@ -124,17 +146,6 @@ export const router = createBrowserRouter([
             fallback={<div className="p-4 text-center text-muted">You don't have permission to view department details.</div>}
           >
             <DepartmentDetailPage />
-          </PermissionRoute>
-        )
-      },
-      {
-        path: "profile",
-        element: (
-          <PermissionRoute 
-            permission={API_PERMISSIONS.PROFILES.VIEW}
-            fallback={<div className="p-4 text-center text-muted">You don't have permission to access your profile.</div>}
-          >
-            <ProfilePage />
           </PermissionRoute>
         )
       },

@@ -27,8 +27,16 @@ export const useRoleManagement = () => {
           includeDeleted: true
         });
         
+        // Handle different response formats
+        // Format 1: { roles: [...] }
+        // Format 2: { message: "...", data: { roles: [...] } } → normalized to { roles: [...] }
+        // Format 3: [...] (direct array)
+        const rolesArray = Array.isArray(response) 
+          ? response 
+          : (response?.roles || []);
+        
         // Transform API data to match component format
-        const transformedRoles = response.roles.map(role => ({
+        const transformedRoles = rolesArray.map(role => ({
           id: role.id,
           name: role.name,
           description: role.description || '',
@@ -164,7 +172,11 @@ export const useRoleManagement = () => {
       const response = await roleAPI.getRoles({
           includeDeleted: true
         });
-      const transformedRoles = response.roles.map(role => ({
+      // Handle different response formats
+      const rolesArray = Array.isArray(response) 
+        ? response 
+        : (response?.roles || []);
+      const transformedRoles = rolesArray.map(role => ({
         id: role.id,
         name: role.name,
         description: role.description || '',
@@ -219,7 +231,11 @@ export const useRoleManagement = () => {
       const rolesResponse = await roleAPI.getRoles({
           includeDeleted: true
         });
-      const transformedRoles = rolesResponse.roles.map(role => ({
+      // Handle different response formats
+      const rolesArray = Array.isArray(rolesResponse) 
+        ? rolesResponse 
+        : (rolesResponse?.roles || []);
+      const transformedRoles = rolesArray.map(role => ({
         id: role.id,
         name: role.name,
         description: role.description || '',

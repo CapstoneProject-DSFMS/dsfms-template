@@ -59,14 +59,43 @@ const EditDepartmentDetails = ({ department, onUpdate }) => {
     setLoading(true);
 
     try {
+      // Validate form data
+      if (!formData.name || formData.name.trim() === '') {
+        toast.error('Department name is required');
+        setLoading(false);
+        return;
+      }
+
+      console.log('📝 Submitting department update:', {
+        departmentId: department.id,
+        formData: formData
+      });
+
       const response = await departmentAPI.updateDepartment(department.id, formData);
+      
       // Transform response to match expected format
       const transformedDepartment = transformDepartmentData(response);
       onUpdate(transformedDepartment);
       toast.success('Department updated successfully!');
     } catch (err) {
-      console.error('Error updating department:', err);
-      toast.error('Failed to update department');
+      console.error('❌ Error updating department:', err);
+      
+      // Show more specific error messages
+      let errorMessage = 'Failed to update department';
+      
+      if (err.code === 'NETWORK_ERROR') {
+        errorMessage = 'Network error: Unable to connect to server. Please check your connection.';
+      } else if (err.code === 'BAD_GATEWAY') {
+        errorMessage = 'Server error (502): The server is temporarily unavailable. Please try again later.';
+      } else if (err.code === 'PERMISSION_DENIED') {
+        errorMessage = 'Permission denied: You do not have permission to update this department.';
+      } else if (err.response?.data?.message) {
+        errorMessage = err.response.data.message;
+      } else if (err.message) {
+        errorMessage = err.message;
+      }
+      
+      toast.error(errorMessage);
     } finally {
       setLoading(false);
     }
@@ -112,14 +141,6 @@ const EditDepartmentDetails = ({ department, onUpdate }) => {
                   </option>
                 ))}
               </select>
-              {formData.headUserId && (() => {
-                const selectedUser = Array.isArray(availableUsers) ? availableUsers.find(u => u.id === formData.headUserId) : null;
-                return selectedUser ? (
-                  <div className="form-text">
-                    Current selection: [{selectedUser.eid}] - {selectedUser.firstName} {selectedUser.lastName}
-                  </div>
-                ) : null;
-              })()}
             </div>
           </Col>
         </Row>

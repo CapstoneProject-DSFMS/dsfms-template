@@ -100,8 +100,36 @@ const subjectAPI = {
         })
       };
       const response = await apiClient.post('/subjects/bulk', payload);
+      
+      // Handle 304 Not Modified - subjects already exist
+      if (response.status === 304) {
+        // Return a response indicating subjects already exist
+        return {
+          summary: {
+            created: 0,
+            failed: 0,
+            skipped: subjectsData.length,
+            total: subjectsData.length
+          },
+          message: 'All subjects already exist'
+        };
+      }
+      
       return response.data;
     } catch (error) {
+      // Handle 304 in error response
+      if (error.response?.status === 304) {
+        // Return a response indicating subjects already exist
+        return {
+          summary: {
+            created: 0,
+            failed: 0,
+            skipped: subjectsData.length,
+            total: subjectsData.length
+          },
+          message: 'All subjects already exist'
+        };
+      }
       throw error;
     }
   },

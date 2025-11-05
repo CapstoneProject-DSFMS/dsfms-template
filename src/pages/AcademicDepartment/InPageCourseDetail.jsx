@@ -50,15 +50,17 @@ const InPageCourseDetail = ({ course, department }) => {
         
         // Transform API data to match component format
         const transformedCourseDetails = {
+          id: response.id || courseId,
           name: response.name,
           code: response.code,
           description: response.description,
           maxTrainees: response.maxNumTrainee,
+          maxNumTrainee: response.maxNumTrainee,
           venue: response.venue,
           note: response.note,
           passScore: response.passScore,
-          startDate: response.startDate ? new Date(response.startDate).toISOString().split('T')[0] : 'N/A',
-          endDate: response.endDate ? new Date(response.endDate).toISOString().split('T')[0] : 'N/A',
+          startDate: response.startDate ? new Date(response.startDate).toISOString().split('T')[0] : '',
+          endDate: response.endDate ? new Date(response.endDate).toISOString().split('T')[0] : '',
           level: response.level,
           status: response.status,
           department: response.department,
@@ -83,15 +85,17 @@ const InPageCourseDetail = ({ course, department }) => {
         // If API fails (404 or other errors), use course prop if available
         if (course && course.id && course.name) {
           const fallbackCourseDetails = {
+            id: course.id,
             name: course.name,
             code: course.code || 'N/A',
             description: course.description || "Course information not available.",
             maxTrainees: course.maxNumTrainee || course.maxTrainees || 50,
+            maxNumTrainee: course.maxNumTrainee || course.maxTrainees || 50,
             venue: course.venue || 'N/A',
             note: course.note || '',
             passScore: course.passScore || 80,
-            startDate: course.startDate ? (typeof course.startDate === 'string' ? course.startDate.split('T')[0] : new Date(course.startDate).toISOString().split('T')[0]) : 'N/A',
-            endDate: course.endDate ? (typeof course.endDate === 'string' ? course.endDate.split('T')[0] : new Date(course.endDate).toISOString().split('T')[0]) : 'N/A',
+            startDate: course.startDate ? (typeof course.startDate === 'string' ? course.startDate.split('T')[0] : new Date(course.startDate).toISOString().split('T')[0]) : '',
+            endDate: course.endDate ? (typeof course.endDate === 'string' ? course.endDate.split('T')[0] : new Date(course.endDate).toISOString().split('T')[0]) : '',
             level: course.level || 'N/A',
             status: course.status || 'ACTIVE',
             department: course.department || department,
@@ -223,21 +227,19 @@ const InPageCourseDetail = ({ course, department }) => {
   };
 
   const handleBulkImportSubjects = async (subjectsData) => {
-    try {
-      // Call bulk import API
-      await subjectAPI.bulkImportSubjects(subjectsData);
-      
-      // Reload course details to get updated subjects
-      const response = await courseAPI.getCourseById(courseId);
-      if (response.subjects && Array.isArray(response.subjects)) {
-        setSubjects(response.subjects);
-      }
-      
-      setShowBulkImport(false);
-      } catch {
-      // Handle error - could show toast notification
-      // Don't close modal on error so user can retry
+    // Call bulk import API and return response
+    const result = await subjectAPI.bulkImportSubjects(subjectsData);
+    
+    // Reload course details to get updated subjects
+    const response = await courseAPI.getCourseById(courseId);
+    if (response.subjects && Array.isArray(response.subjects)) {
+      setSubjects(response.subjects);
     }
+    
+    setShowBulkImport(false);
+    
+    // Return result so modal can display appropriate message
+    return result;
   };
 
   const handleEditCourse = async (updatedCourseData) => {
@@ -248,15 +250,17 @@ const InPageCourseDetail = ({ course, department }) => {
       // Reload course details to get updated data
       const response = await courseAPI.getCourseById(courseId);
       const transformedCourseDetails = {
+        id: response.id || courseId,
         name: response.name,
         code: response.code,
         description: response.description,
         maxTrainees: response.maxNumTrainee,
+        maxNumTrainee: response.maxNumTrainee,
         venue: response.venue,
         note: response.note,
         passScore: response.passScore,
-        startDate: response.startDate ? new Date(response.startDate).toISOString().split('T')[0] : 'N/A',
-        endDate: response.endDate ? new Date(response.endDate).toISOString().split('T')[0] : 'N/A',
+        startDate: response.startDate ? new Date(response.startDate).toISOString().split('T')[0] : '',
+        endDate: response.endDate ? new Date(response.endDate).toISOString().split('T')[0] : '',
         level: response.level,
         status: response.status,
         department: response.department,
@@ -447,7 +451,7 @@ const InPageCourseDetail = ({ course, department }) => {
                         <h6 className="text-muted mb-2">Start Date</h6>
                         <div className="d-flex align-items-center">
                           <Calendar size={16} className="me-2 text-primary" />
-                          <span className="fw-semibold">{courseDetails.startDate}</span>
+                          <span className="fw-semibold">{courseDetails.startDate || 'N/A'}</span>
                         </div>
                       </div>
                     </Col>
@@ -456,7 +460,7 @@ const InPageCourseDetail = ({ course, department }) => {
                         <h6 className="text-muted mb-2">End Date</h6>
                         <div className="d-flex align-items-center">
                           <Calendar size={16} className="me-2 text-primary" />
-                          <span className="fw-semibold">{courseDetails.endDate}</span>
+                          <span className="fw-semibold">{courseDetails.endDate || 'N/A'}</span>
                         </div>
                       </div>
                     </Col>
@@ -513,7 +517,7 @@ const InPageCourseDetail = ({ course, department }) => {
         show={showEditCourse}
         onClose={() => setShowEditCourse(false)}
         onSave={handleEditCourse}
-        course={course}
+        course={courseDetails || course}
       />
 
       <DisableSubjectModal

@@ -20,8 +20,28 @@ const EditCourseModal = ({ show, onClose, onSave, course, loading = false }) => 
   });
   const [errors, setErrors] = useState({});
 
+  // Helper function to format date for input type="date" (YYYY-MM-DD)
+  const formatDateForInput = (dateValue) => {
+    if (!dateValue) return '';
+    
+    // If already in YYYY-MM-DD format, return as is
+    if (typeof dateValue === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(dateValue)) {
+      return dateValue;
+    }
+    
+    // If it's an ISO string or Date object, convert to YYYY-MM-DD
+    try {
+      const date = new Date(dateValue);
+      if (isNaN(date.getTime())) return '';
+      return date.toISOString().split('T')[0];
+    } catch (error) {
+      return '';
+    }
+  };
+
   useEffect(() => {
-    if (course) {
+    // Only load data when modal is shown and course is available
+    if (show && course) {
       setFormData({
         name: course.name || '',
         code: course.code || '',
@@ -30,28 +50,32 @@ const EditCourseModal = ({ show, onClose, onSave, course, loading = false }) => 
         venue: course.venue || '',
         note: course.note || '',
         passScore: course.passScore || '',
-        startDate: course.startDate || '',
-        endDate: course.endDate || '',
+        startDate: formatDateForInput(course.startDate),
+        endDate: formatDateForInput(course.endDate),
         level: course.level || 'BEGINNER',
         status: course.status || 'ACTIVE'
       });
+    } else if (!show) {
+      // Reset form when modal is closed
+      setFormData({
+        name: '',
+        code: '',
+        description: '',
+        maxTrainees: '',
+        venue: '',
+        note: '',
+        passScore: '',
+        startDate: '',
+        endDate: '',
+        level: 'Beginner',
+        status: 'ACTIVE'
+      });
+      setErrors({});
     }
-  }, [course]);
+  }, [show, course]);
 
   const handleClose = () => {
-    setFormData({
-      name: '',
-      code: '',
-      description: '',
-      maxTrainees: '',
-      venue: '',
-      note: '',
-      passScore: '',
-      startDate: '',
-      endDate: '',
-      level: 'Beginner',
-      status: 'ACTIVE'
-    });
+    // Clear errors when closing (form data will be reset by useEffect when show becomes false)
     setErrors({});
     onClose();
   };

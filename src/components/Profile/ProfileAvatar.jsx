@@ -21,6 +21,7 @@ const ProfileAvatar = ({
       'TRAINER': 'info',
       'TRAINEE': 'success',
       'ACADEMIC_DEPT': 'warning',
+      'ACADEMIC_DEPARTMENT': 'warning', // Handle both variants
       'SQA_AUDITOR': 'secondary'
     };
     return variants[role] || 'secondary';
@@ -40,7 +41,12 @@ const ProfileAvatar = ({
   };
 
   const getRole = () => {
-    return profileData?.role?.name || user?.role || 'USER';
+    const role = profileData?.role?.name || user?.role || 'USER';
+    // Normalize role name - handle both ACADEMIC_DEPT and ACADEMIC_DEPARTMENT
+    if (role === 'ACADEMIC_DEPARTMENT' || role === 'ACADEMIC_DEPT') {
+      return 'ACADEMIC_DEPT';
+    }
+    return role;
   };
 
 
@@ -213,20 +219,29 @@ const ProfileAvatar = ({
               Reset Password
             </Button>
             
-            <Button
-              variant="outline-secondary"
-              size="sm"
-              onClick={onConfigureSignature}
-              className="d-flex align-items-center justify-content-center"
-              style={{ 
-                minWidth: '140px',
-                borderRadius: '20px',
-                fontWeight: '500'
-              }}
-            >
-              <Pen size={14} className="me-2" />
-              Configure Signature
-            </Button>
+            {(() => {
+              const role = getRole();
+              // Hide Configure Signature for ACADEMIC_DEPT or ACADEMIC_DEPARTMENT
+              if (role === 'ACADEMIC_DEPT' || role === 'ACADEMIC_DEPARTMENT') {
+                return null;
+              }
+              return (
+                <Button
+                  variant="outline-secondary"
+                  size="sm"
+                  onClick={onConfigureSignature}
+                  className="d-flex align-items-center justify-content-center"
+                  style={{ 
+                    minWidth: '140px',
+                    borderRadius: '20px',
+                    fontWeight: '500'
+                  }}
+                >
+                  <Pen size={14} className="me-2" />
+                  Configure Signature
+                </Button>
+              );
+            })()}
           </div>
         </div>
       </Card.Body>
