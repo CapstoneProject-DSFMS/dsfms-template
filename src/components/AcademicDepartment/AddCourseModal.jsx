@@ -180,13 +180,13 @@ const AddCourseModal = ({ show, onClose, onSave, loading = false }) => {
       </Modal.Header>
 
       <Form onSubmit={handleSubmit}>
-        <Modal.Body className="p-4" style={{ maxHeight: '70vh', overflowY: 'auto' }}>
+        <Modal.Body className="p-4" style={{ maxHeight: '70vh', overflowY: 'auto', paddingTop: '1.5rem' }}>
           
           {/* Basic Information */}
-          <Row className="mb-3">
+          <Row className="mb-5">
             <Col md={6}>
-              <Form.Group>
-                <Form.Label>Course Name *</Form.Label>
+              <Form.Group className="mb-0">
+                <Form.Label className="fw-bold mb-2 d-block" style={{ marginTop: '0.5rem' }}>Course Name *</Form.Label>
                 <Form.Control
                   type="text"
                   name="name"
@@ -201,8 +201,8 @@ const AddCourseModal = ({ show, onClose, onSave, loading = false }) => {
               </Form.Group>
             </Col>
             <Col md={6}>
-              <Form.Group>
-                <Form.Label>Course Code *</Form.Label>
+              <Form.Group className="mb-0">
+                <Form.Label className="fw-bold mb-2 d-block" style={{ marginTop: '0.5rem' }}>Course Code *</Form.Label>
                 <Form.Control
                   type="text"
                   name="code"
@@ -218,10 +218,10 @@ const AddCourseModal = ({ show, onClose, onSave, loading = false }) => {
             </Col>
           </Row>
 
-          <Row className="mb-3">
+          <Row className="mb-5">
             <Col md={6}>
-              <Form.Group>
-                <Form.Label>Max Trainees *</Form.Label>
+              <Form.Group className="mb-0">
+                <Form.Label className="fw-bold mb-2 d-block" style={{ marginTop: '0.5rem' }}>Max Trainees *</Form.Label>
                 <Form.Control
                   type="number"
                   name="maxNumTrainee"
@@ -237,8 +237,8 @@ const AddCourseModal = ({ show, onClose, onSave, loading = false }) => {
               </Form.Group>
             </Col>
             <Col md={6}>
-              <Form.Group>
-                <Form.Label>Pass Score *</Form.Label>
+              <Form.Group className="mb-0">
+                <Form.Label className="fw-bold mb-2 d-block" style={{ marginTop: '0.5rem' }}>Pass Score *</Form.Label>
                 <Form.Control
                   type="number"
                   name="passScore"
@@ -257,10 +257,10 @@ const AddCourseModal = ({ show, onClose, onSave, loading = false }) => {
             </Col>
           </Row>
 
-          <Row className="mb-3">
+          <Row className="mb-5">
             <Col md={6}>
-              <Form.Group>
-                <Form.Label>Level</Form.Label>
+              <Form.Group className="mb-0">
+                <Form.Label className="fw-bold mb-2 d-block" style={{ marginTop: '0.5rem' }}>Level</Form.Label>
                 <Form.Select
                   name="level"
                   value={formData.level}
@@ -274,8 +274,8 @@ const AddCourseModal = ({ show, onClose, onSave, loading = false }) => {
               </Form.Group>
             </Col>
             <Col md={6}>
-              <Form.Group>
-                <Form.Label>Venue *</Form.Label>
+              <Form.Group className="mb-0">
+                <Form.Label className="fw-bold mb-2 d-block" style={{ marginTop: '0.5rem' }}>Venue *</Form.Label>
                 <Form.Control
                   type="text"
                   name="venue"
@@ -291,10 +291,10 @@ const AddCourseModal = ({ show, onClose, onSave, loading = false }) => {
             </Col>
           </Row>
 
-          <Row className="mb-3">
+          <Row className="mb-5">
             <Col md={6}>
-              <Form.Group>
-                <Form.Label>Start Date *</Form.Label>
+              <Form.Group className="mb-0">
+                <Form.Label className="fw-bold mb-2 d-block" style={{ marginTop: '0.5rem' }}>Start Date *</Form.Label>
                 <Form.Control
                   type="date"
                   name="startDate"
@@ -309,8 +309,8 @@ const AddCourseModal = ({ show, onClose, onSave, loading = false }) => {
               </Form.Group>
             </Col>
             <Col md={6}>
-              <Form.Group>
-                <Form.Label>End Date *</Form.Label>
+              <Form.Group className="mb-0">
+                <Form.Label className="fw-bold mb-2 d-block" style={{ marginTop: '0.5rem' }}>End Date *</Form.Label>
                 <Form.Control
                   type="date"
                   name="endDate"
@@ -326,10 +326,10 @@ const AddCourseModal = ({ show, onClose, onSave, loading = false }) => {
             </Col>
           </Row>
 
-          <Row className="mb-3">
+          <Row className="mb-5">
             <Col>
-              <Form.Group>
-                <Form.Label>Description *</Form.Label>
+              <Form.Group className="mb-0">
+                <Form.Label className="fw-bold mb-2 d-block" style={{ marginTop: '0.5rem' }}>Description *</Form.Label>
                 <Form.Control
                   as="textarea"
                   rows={3}
@@ -346,10 +346,10 @@ const AddCourseModal = ({ show, onClose, onSave, loading = false }) => {
             </Col>
           </Row>
 
-          <Row className="mb-3">
+          <Row className="mb-5">
             <Col>
-              <Form.Group>
-                <Form.Label>Note</Form.Label>
+              <Form.Group className="mb-0">
+                <Form.Label className="fw-bold mb-2 d-block" style={{ marginTop: '0.5rem' }}>Note</Form.Label>
                 <Form.Control
                   as="textarea"
                   rows={2}

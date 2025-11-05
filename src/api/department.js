@@ -51,10 +51,35 @@ export const departmentAPI = {
   // Update department
   updateDepartment: async (id, departmentData) => {
     try {
+      console.log('🔄 API - Updating department:', { id, departmentData });
       const response = await apiClient.put(`/departments/${id}`, departmentData);
+      console.log('✅ API - Department updated successfully:', response.data);
       return response.data;
     } catch (error) {
-      console.error('Error updating department:', error);
+      console.error('❌ API - Error updating department:', error);
+      console.error('❌ API - Error response:', error.response?.data);
+      console.error('❌ API - Error status:', error.response?.status);
+      console.error('❌ API - Request config:', {
+        url: error.config?.url,
+        method: error.config?.method,
+        data: error.config?.data
+      });
+      
+      // Provide more specific error messages
+      if (error.code === 'ERR_NETWORK' || error.message === 'Network Error') {
+        const networkError = new Error('Network error: Unable to connect to server. Please check your internet connection or contact support.');
+        networkError.code = 'NETWORK_ERROR';
+        throw networkError;
+      } else if (error.response?.status === 502) {
+        const gatewayError = new Error('Server error (502): Bad Gateway. The server is temporarily unavailable. Please try again later.');
+        gatewayError.code = 'BAD_GATEWAY';
+        throw gatewayError;
+      } else if (error.response?.status === 403) {
+        const permissionError = new Error('Permission denied: You do not have permission to update this department.');
+        permissionError.code = 'PERMISSION_DENIED';
+        throw permissionError;
+      }
+      
       throw error;
     }
   },

@@ -8,7 +8,6 @@ import {
   DepartmentModal,
   DepartmentFilterPanel,
   DisableDepartmentModal,
-  AssignInstructorsModal,
   DepartmentDetailsModal
 } from '../../../components/Admin/Department';
 import { SearchBar, PermissionWrapper } from '../../../components/Common';
@@ -47,7 +46,6 @@ const DepartmentManagementPage = () => {
   // Modal states
   const [showModal, setShowModal] = useState(false);
   const [showDisableModal, setShowDisableModal] = useState(false);
-  const [showAssignModal, setShowAssignModal] = useState(false);
   const [showDetailsModal, setShowDetailsModal] = useState(false);
   const [modalMode, setModalMode] = useState('add'); // 'add', 'edit', 'view'
   const [selectedDepartment, setSelectedDepartment] = useState(null);
@@ -90,11 +88,6 @@ const DepartmentManagementPage = () => {
     navigate(`/admin/departments/${department.id}`);
   };
 
-  const handleAssignInstructors = (department) => {
-    setSelectedDepartment(department);
-    setShowAssignModal(true);
-  };
-
   const handleViewCourses = (department) => {
     // This would navigate to courses page or show courses modal
     console.log('View courses for department:', department.name);
@@ -121,21 +114,11 @@ const DepartmentManagementPage = () => {
     setSelectedDepartment(null);
   };
 
-  const handleCloseAssignModal = () => {
-    setShowAssignModal(false);
-    setSelectedDepartment(null);
-  };
-
   const handleCloseDetailsModal = () => {
     setShowDetailsModal(false);
     setSelectedDepartment(null);
   };
 
-  const handleAssignInstructorsSubmit = (instructorIds) => {
-    // This would call the API to assign instructors
-    console.log('Assign instructors:', instructorIds, 'to department:', selectedDepartment.name);
-    handleCloseAssignModal();
-  };
 
   const handleSaveDepartment = async (departmentData) => {
     try {
@@ -340,17 +323,6 @@ const DepartmentManagementPage = () => {
             onConfirm={handleConfirmDisable}
             onCancel={handleCloseDisableModal}
             isProcessing={loading}
-          />
-        )}
-
-        {showAssignModal && selectedDepartment && (
-          <AssignInstructorsModal
-            show={showAssignModal}
-            department={selectedDepartment}
-            onClose={handleCloseAssignModal}
-            onAssign={handleAssignInstructorsSubmit}
-            availableInstructors={availableUsers.filter(user => user.role === 'TRAINER')}
-            assignedInstructors={[]} // This would come from department data
           />
         )}
 

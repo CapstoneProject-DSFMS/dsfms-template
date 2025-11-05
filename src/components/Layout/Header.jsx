@@ -130,13 +130,15 @@ const Header = ({ onToggleSidebar }) => {
   // Map routes to titles
   const getTitleFromPath = (path) => {
     const routes = {
+      // Profile route (shared across all roles)
+      '/profile': 'Profile',
+      
       // Admin routes
       '/admin': 'Dashboard',
       '/admin/dashboard': 'Dashboard',
       '/admin/users': 'User Management',
       '/admin/roles': 'Role Management',
       '/admin/departments': 'Department Management',
-      '/admin/profile': 'Profile',
       '/admin/forms': 'Form Templates',
       '/admin/system-config': 'System Configuration',
       
@@ -144,7 +146,6 @@ const Header = ({ onToggleSidebar }) => {
       '/academic': 'Academic Dashboard',
       '/academic/dashboard': 'Academic Dashboard',
       '/academic/departments': 'Department Management',
-      '/academic/profile': 'Profile',
       
       // Trainee routes
       '/trainee': 'Trainee Dashboard',
@@ -326,7 +327,7 @@ const Header = ({ onToggleSidebar }) => {
   };
 
   const handleProfileClick = () => {
-    navigate('/admin/profile');
+    navigate('/profile');
     setShowProfileMenu(false);
   };
 

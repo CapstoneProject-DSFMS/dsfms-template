@@ -212,11 +212,21 @@ export const AuthProvider = ({ children }) => {
       if (roleId) {
         try {
           const fullRoleData = await roleAPI.getRoleById(roleId);
-          // console.log('Full role data with permissions:', fullRoleData); // Commented out to reduce console noise
+          console.log('✅ Role data fetched:', {
+            hasId: !!fullRoleData?.id,
+            hasName: !!fullRoleData?.name,
+            hasPermissions: !!fullRoleData?.permissions,
+            permissionsCount: fullRoleData?.permissions?.length || 0
+          });
+          
+          // Ensure permissions is an array
+          const permissions = Array.isArray(fullRoleData?.permissions) 
+            ? fullRoleData.permissions 
+            : [];
           
           setUserRole(fullRoleData);
-          setUserPermissions(fullRoleData.permissions || []);
-          return { role: fullRoleData, permissions: fullRoleData.permissions || [] };
+          setUserPermissions(permissions);
+          return { role: fullRoleData, permissions };
         } catch (error) {
           console.error('Error fetching role by ID:', error);
           
