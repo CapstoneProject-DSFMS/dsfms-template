@@ -1,4 +1,4 @@
-import{r as i,R as X,a as Me}from"./router-BHpdjI-O.js";import{r as ka,g as mn}from"./vendor-D3F3s8fL.js";var Ht={exports:{}},Qe={};/**
+import{r as i,R as X,a as Me}from"./router-C6Ic_n8-.js";import{r as ka,g as mn}from"./vendor-D3F3s8fL.js";var Ht={exports:{}},Qe={};/**
  * @license React
  * react-jsx-runtime.production.min.js
  *
