@@ -18,7 +18,7 @@ const DepartmentFilterPanel = ({
     <Dropdown className={`filter-panel-dropdown ${className}`}>
       <Dropdown.Toggle 
         variant="outline-secondary" 
-        className="w-100 d-flex align-items-center justify-content-between position-relative"
+        className="w-100 d-flex align-items-center justify-content-between"
       >
         <div className="d-flex align-items-center">
           <Funnel size={14} className="me-2" />
@@ -28,11 +28,6 @@ const DepartmentFilterPanel = ({
               {selectedTypes.length + selectedStatuses.length}
             </span>
           )}
-        </div>
-        <div className="position-absolute end-0 me-3">
-          <svg width="12" height="12" viewBox="0 0 12 12" fill="currentColor">
-            <path d="M6 8L2 4h8L6 8z"/>
-          </svg>
         </div>
       </Dropdown.Toggle>
 

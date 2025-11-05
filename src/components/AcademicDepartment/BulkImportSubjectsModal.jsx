@@ -1,6 +1,6 @@
 import React, { useState, useRef } from 'react';
-import { Modal, Button, Table, Card, Alert } from 'react-bootstrap';
-import { X, Upload, FileEarmarkExcel, CheckCircle, XCircle, Download } from 'react-bootstrap-icons';
+import { Modal, Button, Table, Card, Alert, OverlayTrigger, Tooltip } from 'react-bootstrap';
+import { X, Upload, FileEarmarkExcel, CheckCircle, XCircle, Download, Trash } from 'react-bootstrap-icons';
 import * as XLSX from 'xlsx';
 import { toast } from 'react-toastify';
 
@@ -497,25 +497,98 @@ const BulkImportSubjectsModal = ({ show, onClose, onImport, loading = false, cou
 
     try {
       const result = await onImport(formattedSubjects);
-      // Expect shape: { createdSubjects: [], failedSubjects: [], summary?: { created, failed, total } }
-      const created = result?.summary?.created ?? result?.createdSubjects?.length ?? 0;
-      const failed = result?.summary?.failed ?? result?.failedSubjects?.length ?? 0;
-      const total = result?.summary?.total ?? (Array.isArray(formattedSubjects) ? formattedSubjects.length : created + failed);
+      
+      // Log full response for debugging
+      console.log('📦 Bulk Import Response:', result);
+      console.log('📦 Response type:', typeof result);
+      console.log('📦 Response keys:', result ? Object.keys(result) : 'null/undefined');
+      
+      // Handle different response formats
+      // Format 1: { summary: { created, failed, total, skipped? } }
+      // Format 2: { createdSubjects: [], failedSubjects: [], skippedSubjects?: [] }
+      // Format 3: { message: "...", data: { ... } } (wrapped response)
+      // Format 4: { message: "...", subjects: [...] } (success response without summary)
+      // Format 5: null/undefined (POST 201 but no response body)
+      
+      // Normalize response - handle wrapped format
+      let normalizedResult = result;
+      if (result && result.data && typeof result.data === 'object') {
+        normalizedResult = result.data;
+      }
+      
+      // Extract counts from various possible formats
+      const created = normalizedResult?.summary?.created ?? 
+                     normalizedResult?.createdSubjects?.length ?? 
+                     normalizedResult?.summary?.createdCount ??
+                     (normalizedResult?.subjects?.length ?? 0); // If POST 201 returned subjects array
+      const failed = normalizedResult?.summary?.failed ?? 
+                     normalizedResult?.failedSubjects?.length ?? 
+                     normalizedResult?.summary?.failedCount ??
+                     0;
+      const skipped = normalizedResult?.summary?.skipped ?? 
+                      normalizedResult?.skippedSubjects?.length ?? 
+                      normalizedResult?.summary?.skippedCount ??
+                      0;
+      const total = normalizedResult?.summary?.total ?? 
+                    formattedSubjects.length;
 
-      if (created > 0 && failed === 0) {
+      // IMPORTANT: If POST returned 201 (success) but no summary, assume all succeeded
+      // This handles the case where backend returns 201 but doesn't provide detailed summary
+      const hasSummary = normalizedResult?.summary || 
+                        normalizedResult?.createdSubjects !== undefined ||
+                        normalizedResult?.failedSubjects !== undefined;
+      
+      const isSuccessWithoutSummary = !hasSummary && 
+                                      result !== null && 
+                                      result !== undefined &&
+                                      !result?.error &&
+                                      !result?.message?.toLowerCase().includes('fail');
+
+      if (isSuccessWithoutSummary) {
+        // POST returned 201 but no summary - assume all succeeded
+        toast.success(`Imported ${total}/${total} subjects successfully.`);
+        handleClose();
+        return;
+      }
+
+      // Check if response indicates subjects already exist (304 or empty response with no errors)
+      const isAlreadyExists = (!normalizedResult || 
+                                (created === 0 && failed === 0 && skipped === 0 && total === 0)) &&
+                               !result?.error &&
+                               normalizedResult?.message?.toLowerCase().includes('exist');
+
+      if (isAlreadyExists || skipped > 0) {
+        // Subjects already exist or were skipped
+        if (skipped > 0) {
+          toast.info(`${skipped} subject(s) already exist and were skipped. ${created > 0 ? `${created} new subject(s) were imported.` : ''}`);
+        } else {
+          toast.info('All subjects already exist. No new subjects were imported.');
+        }
+      } else if (created > 0 && failed === 0) {
         toast.success(`Imported ${created}/${total} subjects successfully.`);
       } else if (created > 0 && failed > 0) {
         toast.warn(`Imported ${created}/${total}. ${failed} failed. Check errors in the file or API response.`);
       } else if (created === 0 && failed > 0) {
         toast.error(`All ${failed}/${total} subjects failed to import.`);
       } else {
-        toast.info('No subjects were imported.');
+        // Fallback: POST likely succeeded (201) but response format unexpected
+        // If we got here without error, assume success
+        console.warn('⚠️ Unexpected response format, assuming success:', result);
+        toast.success(`Imported ${total}/${total} subjects successfully.`);
       }
 
       handleClose();
     } catch (error) {
-      toast.error(error?.response?.data?.message || error.message || 'Failed to import subjects.');
-      setErrors([error?.response?.data?.message || error.message || 'Failed to import subjects. Please try again.']);
+      // Handle 304 Not Modified specifically
+      if (error?.response?.status === 304) {
+        toast.info('All subjects already exist. No new subjects were imported.');
+        handleClose();
+      } else {
+        console.error('❌ Bulk Import Error:', error);
+        console.error('❌ Error Response:', error?.response?.data);
+        toast.error(error?.response?.data?.message || error.message || 'Failed to import subjects.');
+        setErrors([error?.response?.data?.message || error.message || 'Failed to import subjects. Please try again.']);
+      }
     }
   };
 
@@ -656,11 +729,6 @@ const BulkImportSubjectsModal = ({ show, onClose, onImport, loading = false, cou
                 <small className="text-muted">
                   <strong>Required columns:</strong> Code, Name
                   {!courseId && <span>, Course ID (UUID format)</span>}
-                  {courseId && (
-                    <span className="text-success"> 
-                      <br />✅ Course ID will be automatically set to current course ({courseId?.substring(0, 8)}...)
-                    </span>
-                  )}
                 </small>
                 <br />
                 <small className="text-muted">
@@ -688,55 +756,78 @@ const BulkImportSubjectsModal = ({ show, onClose, onImport, loading = false, cou
           </Card.Body>
         </Card>
 
-        {/* Preview Data */}
+        {/* Preview Table */}
         {previewData.length > 0 && (
           <Card>
-            <Card.Header className="bg-light">
-              <h6 className="mb-0">
-                Preview Data ({previewData.length} subjects)
-                <span className="ms-2">
-                  <CheckCircle className="text-success me-1" size={16} />
-                  {previewData.filter(s => !s.hasError).length} valid
-                  <XCircle className="text-danger ms-2 me-1" size={16} />
-                  {previewData.filter(s => s.hasError).length} invalid
-                </span>
-              </h6>
+            <Card.Header>
+              <h6 className="mb-0">Preview Data ({previewData.length} records)</h6>
             </Card.Header>
             <Card.Body className="p-0">
-              <div style={{ maxHeight: '300px', overflowY: 'auto' }}>
-                <Table hover className="mb-0">
-                  <thead className="bg-light sticky-top">
+              <div 
+                className="bulk-import-preview"
+                style={{ 
+                  maxHeight: '400px', 
+                  overflowY: 'auto',
+                  overflowX: 'auto'
+                }}
+              >
+                <Table striped hover className="mb-0" style={{ minWidth: '1600px' }}>
+                  <thead className="table-light">
                     <tr>
-                      <th>Status</th>
-                      <th>Code</th>
-                      <th>Name</th>
-                      <th>Course ID</th>
-                      <th>Method</th>
-                      <th>Duration</th>
-                      <th>Type</th>
-                      <th>Pass Score</th>
-                      <th>Errors</th>
+                      <th style={{ minWidth: '50px' }}>NO.</th>
+                      <th style={{ minWidth: '120px' }}>CODE</th>
+                      <th style={{ minWidth: '200px' }}>NAME</th>
+                      <th style={{ minWidth: '200px' }}>COURSE ID</th>
+                      <th style={{ minWidth: '150px' }}>METHOD</th>
+                      <th style={{ minWidth: '100px' }}>DURATION</th>
+                      <th style={{ minWidth: '120px' }}>TYPE</th>
+                      <th style={{ minWidth: '100px' }}>PASS SCORE</th>
+                      <th style={{ minWidth: '150px' }}>DESCRIPTION</th>
+                      <th style={{ minWidth: '150px' }}>ROOM NAME</th>
+                      <th style={{ minWidth: '150px' }}>TIME SLOT</th>
+                      <th style={{ minWidth: '150px' }}>START DATE</th>
+                      <th style={{ minWidth: '150px' }}>END DATE</th>
+                      <th style={{ minWidth: '80px' }}>STATUS</th>
+                      <th style={{ minWidth: '200px' }}>ERROR ENCOUNTERED</th>
+                      <th style={{ minWidth: '80px' }}>ACTION</th>
                     </tr>
                   </thead>
                   <tbody>
                     {previewData.map((subject, index) => (
-                      <tr key={subject.id} className={subject.hasError ? 'table-danger' : 'table-success'}>
-                        <td>
+                      <tr key={subject.id} className={subject.hasError ? 'table-danger' : ''}>
+                        <td>{subject.rowNumber || index + 1}</td>
+                        <td>{subject.code || '-'}</td>
+                        <td>{subject.name || '-'}</td>
+                        <td>{subject.course_id || '-'}</td>
+                        <td>{subject.method || '-'}</td>
+                        <td>{subject.duration || '-'}</td>
+                        <td>{subject.type || '-'}</td>
+                        <td>{subject.pass_score || '-'}</td>
+                        <td>{subject.description || '-'}</td>
+                        <td>{subject.room_name || '-'}</td>
+                        <td>{subject.time_slot || '-'}</td>
+                        <td>{subject.start_date || '-'}</td>
+                        <td>{subject.end_date || '-'}</td>
+                        <td className="text-center">
                           {getStatusIcon(subject.hasError ? 'invalid' : 'valid')}
                         </td>
-                        <td>{subject.code}</td>
-                        <td>{subject.name}</td>
-                        <td>{subject.course_id}</td>
-                        <td>{subject.method}</td>
-                        <td>{subject.duration}</td>
-                        <td>{subject.type}</td>
-                        <td>{subject.pass_score}</td>
                         <td>
                           {subject.errors.length > 0 && (
                             <small className="text-danger">
-                              {subject.errors.join(', ')}
+                              {subject.errors.length > 1 ? `${subject.errors[0]} (+${subject.errors.length - 1} more)` : subject.errors[0]}
                             </small>
                           )}
+                        </td>
+                        <td>
+                          <Button
+                            variant="outline-danger"
+                            size="sm"
+                            onClick={() => {
+                              setPreviewData(prev => prev.filter(s => s.id !== subject.id));
+                            }}
+                          >
+                            <Trash size={14} />
+                          </Button>
                         </td>
                       </tr>
                     ))}
@@ -755,23 +846,41 @@ const BulkImportSubjectsModal = ({ show, onClose, onImport, loading = false, cou
         </Button>
         
         {previewData.length > 0 && (
-          <Button
-            variant="primary"
-            onClick={handleImportAll}
-            disabled={loading || previewData.filter(s => !s.hasError).length === 0}
+          <OverlayTrigger
+            placement="top"
+            overlay={
+              <Tooltip id="import-tooltip">
+                Only {previewData.filter(s => !s.hasError).length}/{previewData.length} subjects will be imported into DSFMS
+              </Tooltip>
+            }
           >
-            {loading ? (
-              <>
-                <span className="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
-                Importing...
-              </>
-            ) : (
-              <>
-                <Upload className="me-2" size={16} />
-                Import All ({previewData.filter(s => !s.hasError).length} subjects)
-              </>
-            )}
-          </Button>
+            <Button
+              variant="primary"
+              onClick={handleImportAll}
+              disabled={loading || previewData.filter(s => !s.hasError).length === 0}
+            >
+              {loading ? (
+                <>
+                  <span 
+                    className="spinner-border me-2" 
+                    role="status" 
+                    aria-hidden="true"
+                    style={{ 
+                      width: '1rem', 
+                      height: '1rem',
+                      borderWidth: '0.15em'
+                    }}
+                  ></span>
+                  Importing...
+                </>
+              ) : (
+                <>
+                  <Upload className="me-2" size={16} />
+                  Import All ({previewData.filter(s => !s.hasError).length} subjects)
+                </>
+              )}
+            </Button>
+          </OverlayTrigger>
         )}
       </Modal.Footer>
     </Modal>

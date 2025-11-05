@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Modal, Button, Alert, Spinner } from 'react-bootstrap';
 import { ExclamationTriangle, X } from 'react-bootstrap-icons';
 import { departmentAPI } from '../../../api/department';
+import { userAPI } from '../../../api/user';
 
 const DisableDepartmentModal = ({ 
   show, 
@@ -16,8 +17,10 @@ const DisableDepartmentModal = ({
     trainerCount: 0
   });
   const [loadingStats, setLoadingStats] = useState(false);
+  const [departmentDetail, setDepartmentDetail] = useState(null);
+  const [headUserDetail, setHeadUserDetail] = useState(null);
 
-  // Fetch department statistics when modal opens
+  // Fetch department statistics and full details when modal opens
   useEffect(() => {
     if (show && department?.id) {
       fetchDepartmentStatistics();
@@ -29,8 +32,27 @@ const DisableDepartmentModal = ({
     
     setLoadingStats(true);
     try {
+      // Fetch full department details to get complete headUser information
       const response = await departmentAPI.getDepartmentById(department.id);
-      console.log('🔍 DisableDepartmentModal - Statistics API response:', response);
+      console.log('🔍 DisableDepartmentModal - Full API response:', response);
+      console.log('🔍 DisableDepartmentModal - Department Head data:', response.departmentHead || response.headUser);
+      
+      // Store full department detail for displaying headUser info
+      setDepartmentDetail(response);
+      
+      // Fetch headUser detail if we have headUserId but no eid in headUser
+      const headUser = response.departmentHead || response.headUser;
+      if (headUser && headUser.id && !headUser.eid) {
+        try {
+          const userDetail = await userAPI.getUserById(headUser.id);
+          console.log('🔍 DisableDepartmentModal - Head User detail from API:', userDetail);
+          setHeadUserDetail(userDetail);
+        } catch (userError) {
+          console.warn('⚠️ Could not fetch headUser detail:', userError);
+          // Continue without user detail
+        }
+      }
+      
       setStatistics({
         courseCount: response.courseCount || response.coursesCount || 0,
         traineeCount: response.traineeCount || response.traineesCount || 0,
@@ -39,6 +61,8 @@ const DisableDepartmentModal = ({
     } catch (error) {
       console.error('Error fetching department statistics:', error);
       // Fallback to department data if API fails
+      setDepartmentDetail(null); // Use original department prop
+      setHeadUserDetail(null);
       setStatistics({
         courseCount: department.courseCount || department.coursesCount || 0,
         traineeCount: department.traineeCount || department.traineesCount || 0,
@@ -119,7 +143,61 @@ const DisableDepartmentModal = ({
               <div className="d-flex flex-column">
                 <strong className="mb-1">Department Head:</strong>
                 <span className="text-muted text-break">
-                  {department.departmentHead?.name || department.departmentHead?.email || 'N/A'}
+                  {(() => {
+                    // Use departmentDetail if available (from API), otherwise fallback to department prop
+                    const dept = departmentDetail || department;
+                    let headUser = dept.departmentHead || dept.headUser;
+                    
+                    // Merge headUserDetail if available (has EID)
+                    if (headUser && headUserDetail) {
+                      headUser = { ...headUser, ...headUserDetail };
+                    }
+                    
+                    if (headUser) {
+                      console.log('🔍 Department Head object:', headUser);
+                      
+                      // Get name - try multiple possible fields
+                      // Priority: name > firstName + middleName + lastName > firstName + lastName > fullName
+                      let name = '';
+                      if (headUser.name) {
+                        name = headUser.name;
+                      } else if (headUser.firstName || headUser.lastName) {
+                        const nameParts = [];
+                        if (headUser.firstName) nameParts.push(headUser.firstName);
+                        if (headUser.middleName) nameParts.push(headUser.middleName);
+                        if (headUser.lastName) nameParts.push(headUser.lastName);
+                        name = nameParts.join(' ').trim();
+                      } else if (headUser.fullName) {
+                        name = headUser.fullName;
+                      }
+                      
+                      // Get EID - try from headUserDetail first, then headUser object
+                      // Try multiple possible field names
+                      const eid = headUserDetail?.eid || 
+                                  headUserDetail?.employeeId || 
+                                  headUser.eid || 
+                                  headUser.employeeId || 
+                                  '';
+                      
+                      console.log('🔍 Name:', name, 'EID:', eid || 'NOT FOUND');
+                      
+                      // Format: "Name [EID]" if both available
+                      if (name && eid) {
+                        return `${name} [${eid}]`;
+                      } else if (name) {
+                        // Show name only if no EID available (better than showing email)
+                        return name;
+                      } else if (eid) {
+                        return `[${eid}]`;
+                      } else if (headUser.email) {
+                        // Last resort: show email if no name available
+                        console.warn('⚠️ No name or EID found in headUser object, showing email as fallback');
+                        console.warn('⚠️ headUser object keys:', Object.keys(headUser));
+                        return headUser.email;
+                      }
+                    }
+                    return 'N/A';
+                  })()}
                 </span>
               </div>
             </div>

@@ -78,7 +78,19 @@ export const userAPI = {
   getRoles: async () => {
     try {
       const response = await apiClient.get('/roles');
-      return response.data;
+      
+      // Handle different response formats (same as roleAPI)
+      // Format 1: { roles: [...] }
+      // Format 2: { message: "...", data: { roles: [...] } }
+      // Format 3: [...] (direct array)
+      const responseData = response.data;
+      
+      // Normalize response - handle wrapped format
+      if (responseData && responseData.data && typeof responseData.data === 'object') {
+        return responseData.data; // Return { roles: [...] } from { message: "...", data: { roles: [...] } }
+      }
+      
+      return responseData; // Return direct format
     } catch (error) {
       throw error.response?.data || error.message;
     }

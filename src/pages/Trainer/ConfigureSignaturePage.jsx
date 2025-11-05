@@ -1,8 +1,10 @@
 import React, { useState } from 'react';
 import { Container, Row, Col, Card, Button, Form, Alert, Modal } from 'react-bootstrap';
-import { PersonCheck, Upload, Trash, Eye, Save } from 'react-bootstrap-icons';
+import { PersonCheck, Upload, Trash, Eye, Save, ArrowLeft } from 'react-bootstrap-icons';
+import { useNavigate } from 'react-router-dom';
 
 const ConfigureSignaturePage = () => {
+  const navigate = useNavigate();
   const [signature, setSignature] = useState(null);
   const [previewSignature, setPreviewSignature] = useState(null);
   const [showPreview, setShowPreview] = useState(false);
@@ -49,10 +51,24 @@ const ConfigureSignaturePage = () => {
     setMessage({ type: 'info', text: 'Signature removed.' });
   };
 
+  const handleBackToProfile = () => {
+    navigate('/profile');
+  };
+
   return (
     <Container fluid className="py-4">
       <Row className="mb-4">
         <Col>
+          <div className="d-flex align-items-center mb-3">
+            <Button 
+              variant="outline-secondary" 
+              onClick={handleBackToProfile}
+              className="me-3"
+            >
+              <ArrowLeft size={16} className="me-2" />
+              Back to Profile
+            </Button>
+          </div>
           <h2 className="mb-2">Configure Signature</h2>
           <p className="text-muted">Upload and manage your digital signature for assessments</p>
         </Col>
@@ -110,7 +126,12 @@ const ConfigureSignaturePage = () => {
                   >
                     {saving ? (
                       <>
-                        <span className="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
+                        <span 
+                          className="spinner-border spinner-border-sm me-2" 
+                          role="status" 
+                          aria-hidden="true"
+                          style={{ width: '0.75rem', height: '0.75rem', borderWidth: '0.15em' }}
+                        ></span>
                         Saving...
                       </>
                     ) : (
