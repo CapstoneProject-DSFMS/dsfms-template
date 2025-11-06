@@ -19,7 +19,7 @@ export const mapApiSubjectToTable = (apiSubject) => {
     endDate: formatDate(apiSubject.endDate || apiSubject.end_date),
     roomName: apiSubject.roomName || apiSubject.room_name,
     trainees: apiSubject.enrollmentCount || apiSubject.enrollment_count || 0,
-    status: apiSubject.deletedAt ? 'INACTIVE' : 'ACTIVE',
+    status: apiSubject.status || (apiSubject.deletedAt ? 'ARCHIVED' : 'PLANNED'),
     // Additional fields from API
     description: apiSubject.description,
     type: apiSubject.type,
@@ -52,7 +52,19 @@ export const mapApiSubjectsToTable = (apiSubjects) => {
  * @returns {string} Formatted duration string
  */
 const formatDuration = (duration) => {
-  if (!duration) return 'N/A';
+  if (!duration && duration !== 0) return 'N/A';
+  
+  // Handle duration less than 1 day
+  if (duration < 1) {
+    const hours = Math.round(duration * 24);
+    if (hours === 0) {
+      return '< 1 hour';
+    } else if (hours === 1) {
+      return '1 hour';
+    } else {
+      return `${hours} hours`;
+    }
+  }
   
   if (duration === 1) {
     return '1 day';
@@ -80,7 +92,7 @@ const formatDate = (dateString) => {
   try {
     const date = new Date(dateString);
     return date.toISOString().split('T')[0]; // Returns YYYY-MM-DD
-  } catch (error) {
+  } catch {
     return 'Invalid Date';
   }
 };
@@ -91,9 +103,16 @@ const formatDate = (dateString) => {
  * @returns {string} Bootstrap badge color class
  */
 export const getStatusBadgeColor = (status) => {
-  switch (status) {
+  switch (status?.toUpperCase()) {
     case 'ACTIVE':
+    case 'ON-GOING':
+    case 'ONGOING':
       return 'success';
+    case 'PLANNED':
+      return 'info';
+    case 'COMPLETED':
+      return 'primary';
+    case 'ARCHIVED':
     case 'INACTIVE':
       return 'secondary';
     default:
@@ -107,9 +126,15 @@ export const getStatusBadgeColor = (status) => {
  * @returns {string} Bootstrap badge color class
  */
 export const getMethodBadgeColor = (method) => {
-  switch (method) {
+  switch (method?.toUpperCase()) {
     case 'CLASSROOM':
       return 'info';
+    case 'E_LEARNING':
+    case 'E-LEARNING':
+    case 'ELEARNING':
+      return 'primary';
+    case 'ERO':
+      return 'warning';
     case 'PRACTICAL':
       return 'warning';
     case 'MIXED':

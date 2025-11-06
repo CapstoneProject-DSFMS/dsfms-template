@@ -65,7 +65,7 @@ const SubjectSelectionPanel = ({ selectedSubjects, onSelectionChange }) => {
   const isAllSelected = filteredSubjects.length > 0 && selectedSubjects.length === filteredSubjects.length;
 
   return (
-    <Card className="d-flex flex-column h-100" style={{ border: '1px solid #e9ecef', boxShadow: '0 4px 8px rgba(0,0,0,0.15)', overflow: 'hidden', marginBottom: '1.5rem' }}>
+    <Card className="d-flex flex-column h-100 subject-selection-panel-card" style={{ border: '1px solid #e9ecef', boxShadow: '0 4px 8px rgba(0,0,0,0.15)', overflow: 'visible', marginBottom: '1.5rem' }}>
       <Card.Header className="bg-gradient-primary-custom text-white border-0">
         <div className="d-flex justify-content-between align-items-center">
           <h6 className="mb-0 text-white">Select Subjects</h6>
@@ -78,9 +78,9 @@ const SubjectSelectionPanel = ({ selectedSubjects, onSelectionChange }) => {
           </Button>
         </div>
       </Card.Header>
-      <Card.Body className="p-0 d-flex flex-column" style={{ height: '500px' }}>
+      <Card.Body className="p-0 d-flex flex-column subject-selection-panel-body" style={{ height: '500px', minHeight: 0, display: 'flex', flexDirection: 'column' }}>
         {/* Search */}
-        <div className="p-2 border-bottom">
+        <div className="p-2 border-bottom flex-shrink-0">
           <Form.Control
             type="text"
             placeholder="Search subjects..."
@@ -91,7 +91,15 @@ const SubjectSelectionPanel = ({ selectedSubjects, onSelectionChange }) => {
         </div>
 
         {/* Subject List */}
-        <div style={{ flex: 1, overflowY: 'auto', minHeight: 0 }}>
+        <div 
+          className="subject-list-scroll-container"
+          style={{ 
+            flex: 1, 
+            overflowY: 'auto', 
+            overflowX: 'hidden',
+            minHeight: 0,
+            maxHeight: '100%'
+          }}>
           {loading ? (
             <div className="p-3 text-center">
               <Spinner animation="border" size="sm" className="me-2" />
@@ -113,7 +121,7 @@ const SubjectSelectionPanel = ({ selectedSubjects, onSelectionChange }) => {
                 style={{ cursor: 'pointer', minWidth: 0 }}
                 onClick={() => handleSelectSubject(subject.id)}
               >
-                <div className="me-3">
+                <div className="me-3 flex-shrink-0">
                   {selectedSubjects.includes(subject.id) ? (
                     <CheckSquare size={20} className="text-primary" />
                   ) : (

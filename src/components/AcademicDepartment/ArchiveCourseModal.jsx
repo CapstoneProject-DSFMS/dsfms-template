@@ -6,7 +6,7 @@ const ArchiveCourseModal = ({ show, onClose, onArchive, course, loading = false 
   const [confirmText, setConfirmText] = useState('');
   const [error, setError] = useState('');
 
-  const expectedText = 'DELETE';
+  const expectedText = 'ARCHIVE';
   const isConfirmValid = confirmText === expectedText;
 
   const handleClose = () => {
@@ -17,7 +17,7 @@ const ArchiveCourseModal = ({ show, onClose, onArchive, course, loading = false 
 
   const handleArchive = async () => {
     if (!isConfirmValid) {
-      setError('Please type "DELETE" to confirm');
+      setError('Please type "ARCHIVE" to confirm');
       return;
     }
 
@@ -25,7 +25,7 @@ const ArchiveCourseModal = ({ show, onClose, onArchive, course, loading = false 
       await onArchive(course?.id);
       handleClose();
     } catch (error) {
-      setError(error.message || 'Failed to delete course. Please try again.');
+      setError(error.message || 'Failed to archive course. Please try again.');
     }
   };
 
@@ -36,11 +36,14 @@ const ArchiveCourseModal = ({ show, onClose, onArchive, course, loading = false 
 
   return (
     <Modal show={show} onHide={handleClose} centered>
-      <Modal.Header className="bg-danger text-white border-0">
+      <Modal.Header className="bg-warning text-dark border-0">
         <Modal.Title className="d-flex align-items-center">
           <ExclamationTriangle className="me-2" size={20} />
-          Delete Course
+          Archive Course
         </Modal.Title>
+        <Button variant="link" onClick={handleClose} className="text-dark p-0">
+          <X size={24} />
+        </Button>
       </Modal.Header>
 
       <Modal.Body className="p-4">
@@ -52,7 +55,7 @@ const ArchiveCourseModal = ({ show, onClose, onArchive, course, loading = false 
 
         <div className="mb-3">
           <p className="mb-2">
-            You are about to delete the following course:
+            You are about to archive the following course:
           </p>
           <div className="bg-light p-3 rounded">
             <strong>Course Code:</strong> {course?.code}<br />
@@ -76,20 +79,20 @@ const ArchiveCourseModal = ({ show, onClose, onArchive, course, loading = false 
         </div>
 
         <div className="mb-3">
-          <p className="text-danger mb-2">
+          <p className="text-warning mb-2">
             <strong>Warning:</strong> This action will:
           </p>
-          <ul className="text-danger mb-3">
-            <li>Delete the course permanently from the system</li>
-            <li>Remove the course and make it unavailable for new enrollments</li>
-            <li>This action cannot be undone</li>
-            <li>All course data will be permanently deleted</li>
+          <ul className="text-warning mb-3">
+            <li>Archive the course and make it unavailable for new enrollments</li>
+            <li>Remove the course from active course offerings</li>
+            <li>Affect any ongoing training sessions</li>
+            <li>Course data will be archived but can be restored if needed</li>
           </ul>
         </div>
 
         <div className="mb-3">
           <label htmlFor="confirmText" className="form-label">
-            To confirm, please type <strong>DELETE</strong> in the box below:
+            To confirm, please type <strong>ARCHIVE</strong> in the box below:
           </label>
           <input
             type="text"
@@ -97,12 +100,12 @@ const ArchiveCourseModal = ({ show, onClose, onArchive, course, loading = false 
             id="confirmText"
             value={confirmText}
             onChange={handleConfirmTextChange}
-            placeholder="Type DELETE here"
+            placeholder="Type ARCHIVE here"
             disabled={loading}
           />
           {confirmText && !isConfirmValid && (
             <div className="invalid-feedback">
-              Please type "DELETE" exactly as shown
+              Please type "ARCHIVE" exactly as shown
             </div>
           )}
         </div>
@@ -119,19 +122,28 @@ const ArchiveCourseModal = ({ show, onClose, onArchive, course, loading = false 
         </Button>
         
         <Button
-          variant="danger"
+          variant="warning"
           onClick={handleArchive}
           disabled={loading || !isConfirmValid}
         >
           {loading ? (
             <>
-              <span className="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
-              Deleting...
+              <span 
+                className="spinner-border spinner-border-sm me-2" 
+                role="status" 
+                aria-hidden="true"
+                style={{ 
+                  width: '0.75rem', 
+                  height: '0.75rem',
+                  borderWidth: '0.15em'
+                }}
+              ></span>
+              Archiving...
             </>
           ) : (
             <>
               <ExclamationTriangle className="me-2" size={16} />
-              Delete Course
+              Archive Course
             </>
           )}
         </Button>
