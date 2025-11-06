@@ -56,13 +56,13 @@ const courseAPI = {
     }
   },
 
-  // Archive course
+  // Delete course (formerly archive)
   archiveCourse: async (courseId) => {
     try {
-      const response = await apiClient.patch(`/courses/${courseId}/archive`);
+      const response = await apiClient.delete(`/courses/${courseId}`);
       return response.data;
     } catch (error) {
-      console.error('Error archiving course:', error);
+      console.error('Error deleting course:', error);
       throw error;
     }
   },

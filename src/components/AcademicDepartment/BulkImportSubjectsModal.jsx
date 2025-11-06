@@ -109,10 +109,7 @@ const BulkImportSubjectsModal = ({ show, onClose, onImport, loading = false, cou
           return;
         }
         
-        // If course_id is missing but courseId prop exists, add a warning
-        if (courseId && !headers.includes('course_id')) {
-          console.log('⚠️ course_id column not found in file, will use courseId from props:', courseId);
-        }
+        // If course_id is missing but courseId prop exists, use courseId from props
 
         // Process data
         const subjects = dataRows.map((row, index) => {
@@ -380,7 +377,6 @@ const BulkImportSubjectsModal = ({ show, onClose, onImport, loading = false, cou
                 const year = parsedDate.getFullYear();
                 if (year < 1900 || year > 2100) {
                   // Maybe it's not an Excel serial number, try parsing as timestamp or date string
-                  console.warn('Excel serial number conversion resulted in unreasonable year:', year, 'for input:', dateStr);
                   parsedDate = new Date(dateStr);
                 }
               } else {
@@ -421,21 +417,18 @@ const BulkImportSubjectsModal = ({ show, onClose, onImport, loading = false, cou
           
           // Validate parsed date
           if (isNaN(parsedDate.getTime())) {
-            console.warn('Invalid date value:', dateValue, 'type:', typeof dateValue);
             return null;
           }
           
           // Check if date is reasonable (between 1900 and 2100)
           const year = parsedDate.getFullYear();
           if (year < 1900 || year > 2100) {
-            console.warn('Date out of reasonable range:', dateValue, '→', parsedDate.toISOString(), 'year:', year);
             return null;
           }
           
           // Return ISO datetime string: YYYY-MM-DDTHH:mm:ss.sssZ
           return parsedDate.toISOString();
         } catch (error) {
-          console.error('Error formatting date:', dateValue, error);
           return null;
         }
       };
@@ -480,28 +473,11 @@ const BulkImportSubjectsModal = ({ show, onClose, onImport, loading = false, cou
         // For now, leave it out if empty (backend may accept missing dates)
       }
 
-      // Debug log for first subject
-      if (subjectsToImport.indexOf(subject) === 0) {
-        console.log('📅 Sample date formatting:', {
-          originalStartDate: subject.start_date,
-          formattedStartDate: formattedStartDate,
-          originalEndDate: subject.end_date,
-          formattedEndDate: formattedEndDate,
-          payloadStartDate: payload.startDate,
-          payloadEndDate: payload.endDate
-        });
-      }
-
       return payload;
     });
 
     try {
       const result = await onImport(formattedSubjects);
-      
-      // Log full response for debugging
-      console.log('📦 Bulk Import Response:', result);
-      console.log('📦 Response type:', typeof result);
-      console.log('📦 Response keys:', result ? Object.keys(result) : 'null/undefined');
       
       // Handle different response formats
       // Format 1: { summary: { created, failed, total, skipped? } }
@@ -546,7 +522,9 @@ const BulkImportSubjectsModal = ({ show, onClose, onImport, loading = false, cou
 
       if (isSuccessWithoutSummary) {
         // POST returned 201 but no summary - assume all succeeded
-        toast.success(`Imported ${total}/${total} subjects successfully.`);
+        toast.success(`Imported ${total}/${total} subjects successfully.`, {
+          icon: false
+        });
         handleClose();
         return;
       }
@@ -557,36 +535,65 @@ const BulkImportSubjectsModal = ({ show, onClose, onImport, loading = false, cou
                                !result?.error &&
                                normalizedResult?.message?.toLowerCase().includes('exist');
 
+      // Show detailed error messages for each failed subject FIRST
+      if (normalizedResult?.failedSubjects && Array.isArray(normalizedResult.failedSubjects) && normalizedResult.failedSubjects.length > 0) {
+        normalizedResult.failedSubjects.forEach((failedSubject) => {
+          const subjectName = failedSubject.subject?.name || 'Unknown Subject';
+          const subjectCode = failedSubject.subject?.code || 'N/A';
+          const errorMsg = failedSubject.error || 'Unknown error';
+          
+          toast.error(`${subjectName} (${subjectCode}): ${errorMsg}`, {
+            autoClose: 6000,
+            position: "top-right",
+            icon: false
+          });
+        });
+      }
+
+      // Then show summary message
       if (isAlreadyExists || skipped > 0) {
         // Subjects already exist or were skipped
         if (skipped > 0) {
-          toast.info(`${skipped} subject(s) already exist and were skipped. ${created > 0 ? `${created} new subject(s) were imported.` : ''}`);
+          toast.info(`${skipped} subject(s) already exist and were skipped. ${created > 0 ? `${created} new subject(s) were imported.` : ''}`, {
+            icon: false
+          });
         } else {
-          toast.info('All subjects already exist. No new subjects were imported.');
+          toast.info('All subjects already exist. No new subjects were imported.', {
+            icon: false
+          });
         }
       } else if (created > 0 && failed === 0) {
-        toast.success(`Imported ${created}/${total} subjects successfully.`);
+        toast.success(`Imported ${created}/${total} subjects successfully.`, {
+          icon: false
+        });
       } else if (created > 0 && failed > 0) {
-        toast.warn(`Imported ${created}/${total}. ${failed} failed. Check errors in the file or API response.`);
+        toast.warn(`Imported ${created}/${total}. ${failed} failed.`, {
+          icon: false
+        });
       } else if (created === 0 && failed > 0) {
-        toast.error(`All ${failed}/${total} subjects failed to import.`);
+        toast.error(`All ${failed}/${total} subjects failed to import.`, {
+          icon: false
+        });
       } else {
         // Fallback: POST likely succeeded (201) but response format unexpected
         // If we got here without error, assume success
-        console.warn('⚠️ Unexpected response format, assuming success:', result);
-        toast.success(`Imported ${total}/${total} subjects successfully.`);
+        toast.success(`Imported ${total}/${total} subjects successfully.`, {
+          icon: false
+        });
       }
 
       handleClose();
     } catch (error) {
       // Handle 304 Not Modified specifically
       if (error?.response?.status === 304) {
-        toast.info('All subjects already exist. No new subjects were imported.');
+        toast.info('All subjects already exist. No new subjects were imported.', {
+          icon: false
+        });
         handleClose();
       } else {
-        console.error('❌ Bulk Import Error:', error);
-        console.error('❌ Error Response:', error?.response?.data);
-        toast.error(error?.response?.data?.message || error.message || 'Failed to import subjects.');
+        toast.error(error?.response?.data?.message || error.message || 'Failed to import subjects.', {
+          icon: false
+        });
         setErrors([error?.response?.data?.message || error.message || 'Failed to import subjects. Please try again.']);
       }
     }

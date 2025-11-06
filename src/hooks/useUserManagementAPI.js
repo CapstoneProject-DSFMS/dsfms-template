@@ -27,7 +27,7 @@ export const useUserManagementAPI = () => {
       try {
         // Fetch users and departments in parallel
         const [usersResponse, departmentsResponse] = await Promise.all([
-          userAPI.getUsers({ includeDeleted: true }),
+          userAPI.getUsers(),
           departmentAPI.getDepartments({ includeDeleted: true })
         ]);
         
@@ -234,7 +234,7 @@ export const useUserManagementAPI = () => {
       
       // Refresh users and departments list
       const [usersResponse, departmentsResponse] = await Promise.all([
-        userAPI.getUsers({ includeDeleted: true }),
+        userAPI.getUsers(),
         departmentAPI.getDepartments({ includeDeleted: true })
       ]);
       
@@ -392,7 +392,7 @@ export const useUserManagementAPI = () => {
       setModalShow(false);
       // Refresh users and departments list
       const [usersResponse, departmentsResponse] = await Promise.all([
-        userAPI.getUsers({ includeDeleted: true }),
+        userAPI.getUsers(),
         departmentAPI.getDepartments({ includeDeleted: true })
       ]);
       
@@ -467,7 +467,7 @@ export const useUserManagementAPI = () => {
       
       // Refresh users and departments list
       const [usersResponse, departmentsResponse] = await Promise.all([
-        userAPI.getUsers({ includeDeleted: true }),
+        userAPI.getUsers(),
         departmentAPI.getDepartments({ includeDeleted: true })
       ]);
       

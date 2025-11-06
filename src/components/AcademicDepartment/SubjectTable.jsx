@@ -233,9 +233,9 @@ const SubjectTable = ({ subjects = [], loading = false, onView, onEdit, onDelete
                   }}
                 >
                   <span className="me-1" style={{ fontSize: '0.8rem' }}>
-                    {subject.status === 'ACTIVE' ? '●' : '○'}
+                    {subject.status === 'ACTIVE' || subject.status === 'ON-GOING' || subject.status === 'ONGOING' ? '●' : '○'}
                   </span>
-                  {subject.status === 'ACTIVE' ? 'Active' : 'Inactive'}
+                  {subject.status || 'N/A'}
                 </Badge>
               </td>
               <td className="text-center show-mobile">
