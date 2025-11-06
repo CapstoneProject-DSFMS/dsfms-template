@@ -81,6 +81,22 @@ apiClient.interceptors.request.use(
           }
         });
       }
+      
+      // Debug log for assign-trainees requests
+      if (config.url?.includes('/assign-trainees') && config.method === 'post') {
+        console.log('🔍 Assign Trainees Request (Interceptor):', {
+          url: config.url,
+          method: config.method,
+          data: config.data,
+          dataType: typeof config.data,
+          dataIsArray: Array.isArray(config.data),
+          dataStringified: JSON.stringify(config.data),
+          headers: {
+            'Content-Type': config.headers['Content-Type'],
+            Authorization: config.headers.Authorization ? 'Bearer [TOKEN]' : 'No token'
+          }
+        });
+      }
     }
     return config;
   },

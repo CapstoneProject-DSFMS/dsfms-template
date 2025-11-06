@@ -77,10 +77,10 @@ const subjectAPI = {
     }
   },
 
-  // Archive subject
+  // Archive subject (using DELETE method)
   archiveSubject: async (subjectId) => {
     try {
-      const response = await apiClient.patch(`/subjects/${subjectId}/archive`);
+      const response = await apiClient.delete(`/subjects/${subjectId}/archive`);
       return response.data;
     } catch (error) {
       throw error;
@@ -137,7 +137,32 @@ const subjectAPI = {
   // Assign trainees to subject
   assignTrainees: async (subjectId, traineeData) => {
     try {
-      const response = await apiClient.post(`/subjects/${subjectId}/assign-trainees`, traineeData);
+      // Backend expects camelCase: batchCode and traineeUserIds
+      const requestData = {
+        batchCode: traineeData.batchCode || traineeData.batch_code || '',
+        traineeUserIds: traineeData.traineeUserIds || traineeData.trainee_user_ids || []
+      };
+      
+      // Validate data types
+      if (!requestData.batchCode || typeof requestData.batchCode !== 'string') {
+        throw new Error('batchCode must be a non-empty string');
+      }
+      
+      if (!Array.isArray(requestData.traineeUserIds) || requestData.traineeUserIds.length === 0) {
+        throw new Error('traineeUserIds must be a non-empty array');
+      }
+      
+      // Create a fresh plain object (avoid any prototype issues)
+      const payload = {
+        batchCode: String(requestData.batchCode).trim(),
+        traineeUserIds: Array.isArray(requestData.traineeUserIds) 
+          ? [...requestData.traineeUserIds] // Create new array
+          : []
+      };
+      
+      // Send directly without transformRequest - let axios handle serialization
+      // Similar to how other POST requests work (createSubject, etc.)
+      const response = await apiClient.post(`/subjects/${subjectId}/assign-trainees`, payload);
       return response.data;
     } catch (error) {
       throw error;

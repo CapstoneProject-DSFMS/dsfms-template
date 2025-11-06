@@ -4,8 +4,10 @@ import { toast } from 'react-toastify';
 import EditorWithCustomFields from './EditorWithCustomFields';
 import EditorWithMergeFields from './EditorWithMergeFields';
 import { uploadAPI } from '../../../api';
+import apiClient from '../../../api/config.js';
+import { API_CONFIG } from '../../../config/api.js';
 
-
+  
 const OnlyOfficeFormEditor = ({
   initialContent = '',
   fileName = 'Untitled Document',
@@ -23,6 +25,7 @@ const OnlyOfficeFormEditor = ({
   const isInitialized = useRef(false);
   const editorRef = useRef(null);
   const exportResolverRef = useRef(null);
+  const documentKeyRef = useRef(null); // Store documentKey for callback flow
 
   // Memoize cleanup function to avoid dependency issues
   const cleanupEditor = useCallback(() => {
@@ -146,10 +149,14 @@ const OnlyOfficeFormEditor = ({
           DocsAPI: typeof window.DocsAPI,
           DocEditor: typeof window.DocsAPI?.DocEditor,
           hasEvents: typeof window.DocsAPI?.DocEditor?.prototype?.events
-        });
+        }); 
 
         // OnlyOffice configuration with hardcoded JWT
+        // Generate random documentKey for callback flow
         const documentKey = `doc-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+        documentKeyRef.current = documentKey; // Store for later use
+        
+        console.log('🔑 Generated documentKey for callback:', documentKey);
         
         // Generate JWT token using official OnlyOffice documentation format
         const jwtPayload = {
@@ -179,6 +186,18 @@ const OnlyOfficeFormEditor = ({
         
         const jwtToken = await generateJWTToken(jwtPayload);
         
+        // Add callbackUrl conditionally (OnlyOffice Cloud Dev may not support it)
+        // Set to false to disable callbackUrl if OnlyOffice Cloud Dev doesn't support it
+        const ENABLE_CALLBACK_URL = true; // Set to false if editor fails to load
+        const CALLBACK_URL = `${API_CONFIG.BASE_URL}/media/docs/onlyoffice/callback`;
+        
+        if (ENABLE_CALLBACK_URL) {
+          console.log('📡 Adding callbackUrl:', CALLBACK_URL);
+        } else {
+          console.log('⚠️ callbackUrl is DISABLED (OnlyOffice Cloud Dev may not support it)');
+        }
+        
+        // Build config with callbackUrl at top-level (not in editorConfig)
         const config = {
           document: {
             fileType: 'docx',
@@ -213,6 +232,10 @@ const OnlyOfficeFormEditor = ({
             },
             mode: 'edit'
           },
+          // Callback URL for OnlyOffice to send document save events
+          // Note: callbackUrl should be at top-level, not in editorConfig
+          // OnlyOffice Cloud Dev may not support this - set ENABLE_CALLBACK_URL = false if editor fails
+          ...(ENABLE_CALLBACK_URL && { callbackUrl: CALLBACK_URL }),
           // JWT Token for OnlyOffice Cloud - Official format
           token: jwtToken,
           // Events configuration - CORRECT WAY according to documentation
@@ -227,7 +250,13 @@ const OnlyOfficeFormEditor = ({
             },
             onError: (event) => {
               console.error('❌ OnlyOffice Error:', event);
-              toast.error('Error loading document: ' + (event.data?.errorDescription || 'Unknown error'));
+              console.error('❌ Error details:', {
+                errorCode: event.data?.errorCode,
+                errorDescription: event.data?.errorDescription,
+                error: event.data?.error,
+                fullEvent: event
+              });
+              toast.error('Error loading document: ' + (event.data?.errorDescription || event.data?.error || 'Unknown error'));
             },
             onDocumentStateChange: (event) => {
               console.log('📄 Document state changed:', event);
@@ -238,7 +267,13 @@ const OnlyOfficeFormEditor = ({
             onRequestSaveAs: async (event) => {
               try {
                 const data = event?.data || {};
-                console.log('🧾 onRequestSaveAs event received:', data);
+                console.log('═══════════════════════════════════════════════════════════');
+                console.log('🧾 OnlyOffice Event: onRequestSaveAs');
+                console.log('═══════════════════════════════════════════════════════════');
+                console.log('📦 Event data received:', JSON.stringify(data, null, 2));
+                console.log('ℹ️ This event is triggered when user saves document');
+                console.log('⚠️ NOTE: This is a FRONTEND event, NOT the POST callback to backend');
+                console.log('⚠️ POST callback to backend happens separately from OnlyOffice Server');
                 
                 // Try multiple possible URL fields
                 const tempUrl = data.url 
@@ -262,6 +297,7 @@ const OnlyOfficeFormEditor = ({
                   }
                   exportResolverRef.current = null;
                 }
+                console.log('═══════════════════════════════════════════════════════════');
               } catch (err) {
                 console.error('❌ Error in onRequestSaveAs handler:', err);
                 if (exportResolverRef.current) {
@@ -274,13 +310,20 @@ const OnlyOfficeFormEditor = ({
               // Also listen to onRequestSave (different event)
               try {
                 const data = event?.data || {};
-                console.log('💾 onRequestSave event received:', data);
+                console.log('═══════════════════════════════════════════════════════════');
+                console.log('💾 OnlyOffice Event: onRequestSave');
+                console.log('═══════════════════════════════════════════════════════════');
+                console.log('📦 Event data received:', JSON.stringify(data, null, 2));
+                console.log('ℹ️ This event is triggered when user saves document');
+                console.log('⚠️ NOTE: This is a FRONTEND event, NOT the POST callback to backend');
+                console.log('⚠️ POST callback to backend happens separately from OnlyOffice Server');
                 const tempUrl = data.url || data.downloadUrl || data.fileUrl;
                 if (tempUrl && exportResolverRef.current) {
                   console.log('✅ Using URL from onRequestSave:', tempUrl);
                   exportResolverRef.current.resolve(tempUrl);
                   exportResolverRef.current = null;
                 }
+                console.log('═══════════════════════════════════════════════════════════');
               } catch (err) {
                 console.error('❌ Error in onRequestSave handler:', err);
               }
@@ -398,6 +441,171 @@ const OnlyOfficeFormEditor = ({
       toast.warning('Editor is still loading, please wait...');
     }
   };
+
+  // Get documentKey for callback flow
+  const getDocumentKey = useCallback(() => {
+    return documentKeyRef.current;
+  }, []);
+
+  // Force save and poll for edited URL from backend
+  const forceSaveAndPoll = useCallback(async () => {
+    try {
+      if (!editorRef.current || !isEditorReady) {
+        throw new Error('Editor not ready');
+      }
+
+      const documentKey = documentKeyRef.current;
+      if (!documentKey) {
+        throw new Error('Document key not found');
+      }
+
+      console.log('═══════════════════════════════════════════════════════════');
+      console.log('🚀 CALLBACK FLOW STARTED');
+      console.log('═══════════════════════════════════════════════════════════');
+      console.log('🔄 Step 1: Triggering document save to send callback...');
+      console.log('📡 Step 2: OnlyOffice will send POST callback to backend:');
+      console.log('   URL:', `${API_CONFIG.BASE_URL}/media/docs/onlyoffice/callback`);
+      console.log('   Method: POST');
+      console.log('   Expected Body:', {
+        key: documentKey,
+        status: '2 or 6 (document saved)',
+        url: 'https://documentserver/url-to-edited-document.docx'
+      });
+      console.log('🔑 DocumentKey:', documentKey);
+      console.log('⚠️ NOTE: POST callback is sent DIRECTLY from OnlyOffice to Backend');
+      console.log('⚠️ Frontend cannot intercept this POST request');
+      console.log('⚠️ Check Backend logs to see if callback was received');
+      console.log('═══════════════════════════════════════════════════════════');
+      
+      // Trigger save using available methods - this will cause OnlyOffice to send callback to backend
+      let saveTriggered = false;
+      
+      // Method 1: Try downloadAs() - triggers onRequestSaveAs event
+      if (typeof editorRef.current.downloadAs === 'function') {
+        try {
+          console.log('🔄 Attempting to trigger save via downloadAs("docx")...');
+          console.log('   → This will trigger OnlyOffice to save document');
+          console.log('   → OnlyOffice will then send POST callback to backend');
+          editorRef.current.downloadAs('docx');
+          saveTriggered = true;
+          console.log('✅ downloadAs("docx") called successfully');
+          console.log('   → Waiting for OnlyOffice to process and send POST callback...');
+          console.log('   → POST callback will be sent to:', `${API_CONFIG.BASE_URL}/media/docs/onlyoffice/callback`);
+          console.log('   → Frontend cannot see this POST request (it goes directly to backend)');
+        } catch (e) {
+          console.warn('⚠️ downloadAs() failed:', e);
+        }
+      }
+      
+      // Method 2: Try save() - triggers onRequestSave event
+      if (!saveTriggered && typeof editorRef.current.save === 'function') {
+        try {
+          console.log('🔄 Attempting to trigger save via save()...');
+          editorRef.current.save();
+          saveTriggered = true;
+          console.log('✅ save() called successfully');
+        } catch (e) {
+          console.warn('⚠️ save() failed:', e);
+        }
+      }
+      
+      // Method 3: Try downloadDocument() - alternative method
+      if (!saveTriggered && typeof editorRef.current.downloadDocument === 'function') {
+        try {
+          console.log('🔄 Attempting to trigger save via downloadDocument()...');
+          editorRef.current.downloadDocument();
+          saveTriggered = true;
+          console.log('✅ downloadDocument() called successfully');
+        } catch (e) {
+          console.warn('⚠️ downloadDocument() failed:', e);
+        }
+      }
+      
+      if (!saveTriggered) {
+        throw new Error('No save method available. Tried: downloadAs(), save(), downloadDocument()');
+      }
+      
+      console.log('✅ Save method triggered successfully!');
+      console.log('⏳ Step 3: Waiting for OnlyOffice to send POST callback to backend...');
+      console.log('   → OnlyOffice will POST to:', `${API_CONFIG.BASE_URL}/media/docs/onlyoffice/callback`);
+      console.log('   → Backend should receive callback with documentKey:', documentKey);
+      console.log('   → After backend processes, it will store the edited file URL');
+      console.log('⏳ Step 4: Starting to poll backend for edited URL...');
+      toast.info('Saving document... Please wait');
+
+      const maxAttempts = 5; // 5 attempts = 5 seconds max
+      const pollInterval = 1000; // 1 second between polls
+      
+      for (let attempt = 1; attempt <= maxAttempts; attempt++) {
+        await new Promise(resolve => setTimeout(resolve, pollInterval));
+        
+        try {
+          console.log(`🔄 Polling attempt ${attempt}/${maxAttempts} for documentKey: ${documentKey}`);
+          
+          const response = await apiClient.get(`/media/docs/onlyoffice/get-edited-url`);
+          
+          if (response.data?.url) {
+            const s3Url = response.data.url;
+            console.log('═══════════════════════════════════════════════════════════');
+            console.log('✅ CALLBACK FLOW SUCCESS!');
+            console.log('═══════════════════════════════════════════════════════════');
+            console.log('✅ Step 5: Received edited URL from backend:', s3Url);
+            console.log('📊 Callback flow status: ✅ HOẠT ĐỘNG');
+            console.log('✅ This means:');
+            console.log('   1. OnlyOffice sent POST callback to backend ✅');
+            console.log('   2. Backend received and processed callback ✅');
+            console.log('   3. Backend uploaded file to S3 ✅');
+            console.log('   4. Backend returned S3 URL ✅');
+            console.log('═══════════════════════════════════════════════════════════');
+            toast.success('Document saved successfully!');
+            return s3Url;
+          } else if (response.data?.status === 'pending') {
+            console.log(`⏳ Backend status: pending (attempt ${attempt}/${maxAttempts})`);
+            // Continue polling
+          } else if (response.data?.status === 'error') {
+            throw new Error(response.data?.message || 'Backend returned error status');
+          }
+        } catch (pollError) {
+          // If 404, continue polling (backend hasn't received callback yet)
+          if (pollError.response?.status === 404) {
+            console.log(`⏳ Backend hasn't received callback yet (attempt ${attempt}/${maxAttempts})`);
+            console.log(`   → This means OnlyOffice hasn't sent POST callback yet, or backend endpoint doesn't exist`);
+            if (attempt === 1) {
+              console.log('   💡 TIP: Check backend logs to see if POST callback was received');
+              console.log('   💡 TIP: Check if backend endpoint exists: POST /media/docs/onlyoffice/callback');
+            }
+            continue;
+          }
+          // For other errors, log but continue polling
+          console.warn(`⚠️ Polling error (attempt ${attempt}):`, pollError.message);
+        }
+      }
+
+      // Timeout - backend didn't return URL
+      console.error('═══════════════════════════════════════════════════════════');
+      console.error('❌ CALLBACK FLOW TIMEOUT');
+      console.error('═══════════════════════════════════════════════════════════');
+      console.error('❌ Polling timeout: Backend did not return edited URL after 5 seconds');
+      console.error('📊 Callback flow status: ❌ TIMEOUT');
+      console.error('🔍 Possible reasons:');
+      console.error('   1. OnlyOffice did NOT send POST callback to backend');
+      console.error('      → Check OnlyOffice Cloud Dev supports callbackUrl');
+      console.error('      → Check callbackUrl is correct:', `${API_CONFIG.BASE_URL}/media/docs/onlyoffice/callback`);
+      console.error('   2. Backend did NOT receive POST callback');
+      console.error('      → Check backend logs for POST /media/docs/onlyoffice/callback');
+      console.error('      → Check backend endpoint exists and is accessible');
+      console.error('   3. Backend received callback but did NOT process it');
+      console.error('      → Check backend callback handler code');
+      console.error('   4. Backend processed but endpoint GET /media/docs/onlyoffice/get-edited-url does NOT exist');
+      console.error('      → Check backend has this endpoint');
+      console.error('═══════════════════════════════════════════════════════════');
+      throw new Error('Timeout: Backend did not return edited URL. Please check backend callback handler.');
+    } catch (error) {
+      console.error('❌ Force save and poll failed:', error);
+      toast.error(`Failed: ${error.message}`);
+      throw error;
+    }
+  }, [isEditorReady]);
 
   // Expose export method to child panels - returns temp URL
   // Try both downloadAs() and forceSave() methods
@@ -650,6 +858,8 @@ const OnlyOfficeFormEditor = ({
                 onInsertField={handleInsertField}
                 exportEditedDoc={exportEditedDoc}
                 exportAndUploadEditedDoc={exportAndUploadEditedDoc}
+                forceSaveAndPoll={forceSaveAndPoll}
+                getDocumentKey={getDocumentKey}
                 readOnly={readOnly}
                 className="h-100"
               />

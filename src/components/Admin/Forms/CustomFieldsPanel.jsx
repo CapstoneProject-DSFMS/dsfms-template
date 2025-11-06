@@ -5,14 +5,19 @@ import { toast } from 'react-toastify';
 import { roleAPI } from '../../../api/role';
 import { readTemplateMetaFromStorage, buildTemplatePayload } from '../../../utils/templateBuilder';
 import apiClient from '../../../api/config.js';
+import { API_CONFIG } from '../../../config/api.js';
 
 const CustomFieldsPanel = ({ 
   customFields = [], 
   onAddField,
   onRemoveField,
   onInsertField,
-  exportEditedDoc,
-  exportAndUploadEditedDoc,
+  // eslint-disable-next-line no-unused-vars
+  exportEditedDoc, // Kept for backward compatibility but not used
+  // eslint-disable-next-line no-unused-vars
+  exportAndUploadEditedDoc, // Kept for backward compatibility but not used
+  forceSaveAndPoll,
+  getDocumentKey,
   readOnly = false,
   className = ""
 }) => {
@@ -284,41 +289,47 @@ const CustomFieldsPanel = ({
       setIsSubmitting(true);
       const meta = readTemplateMetaFromStorage();
       
-      // Step: Export → Fetch → Upload → Get S3 URL for templateConfig
+      // Get documentKey for logging
+      const documentKey = getDocumentKey ? getDocumentKey() : null;
+      console.log('🔑 DocumentKey for this session:', documentKey);
+      
+      // Step: ForceSave → Backend Callback → Polling → Get S3 URL for templateConfig
       let templateConfigUrl = null; // URL của file đã chỉnh sửa
       const originalTemplateContent = meta.templateContent; // URL file import ban đầu
       
       console.log('📋 Original templateContent (file import):', originalTemplateContent);
+      console.log('📡 Callback URL configured:', `${API_CONFIG.BASE_URL}/media/docs/onlyoffice/callback`);
       
-      if (exportAndUploadEditedDoc) {
+      if (forceSaveAndPoll) {
         try {
-          console.log('📤 Step 1: Starting export and upload flow...');
-          console.log('📤 Step 2: Calling editor.downloadAs("docx")...');
+          console.log('📤 Step 1: Starting callback flow (forceSave + polling)...');
+          console.log('📤 Step 2: Calling forceSaveAndPoll()...');
+          console.log('📤 Step 3: OnlyOffice will send callback to backend with documentKey:', documentKey);
           
-          templateConfigUrl = await exportAndUploadEditedDoc();
+          templateConfigUrl = await forceSaveAndPoll();
           
-          console.log('✅ Step 3: Export and upload SUCCESS!');
-          console.log('✅ templateConfig URL (file đã chỉnh sửa):', templateConfigUrl);
-          console.log('📊 Export flow status: ✅ HOẠT ĐỘNG');
+          console.log('✅ Step 4: Callback flow SUCCESS!');
+          console.log('✅ templateConfig URL (file đã chỉnh sửa từ backend):', templateConfigUrl);
+          console.log('📊 Callback flow status: ✅ HOẠT ĐỘNG');
         } catch (err) {
-          console.error('❌ Export/Upload failed:', err);
-          console.log('📊 Export flow status: ❌ KHÔNG HOẠT ĐỘNG - Using fallback');
-          toast.warning('Could not upload edited document, templateConfig will be null');
+          console.error('❌ Callback flow failed:', err);
+          console.log('📊 Callback flow status: ❌ KHÔNG HOẠT ĐỘNG - Using fallback');
+          toast.warning('Could not get edited document from backend, templateConfig will be null');
           templateConfigUrl = null;
         }
       } else {
-        console.log('⚠️ exportAndUploadEditedDoc function not available');
-        console.log('📊 Export flow status: ⚠️ FUNCTION KHÔNG TỒN TẠI');
+        console.log('⚠️ forceSaveAndPoll function not available');
+        console.log('📊 Callback flow status: ⚠️ FUNCTION KHÔNG TỒN TẠI');
         templateConfigUrl = null;
       }
       
       // Build payload:
       // - templateContent: URL file import ban đầu
-      // - templateConfig: URL file đã chỉnh sửa (nếu export thành công)
+      // - templateConfig: URL file đã chỉnh sửa (nếu callback thành công)
       const effectiveMeta = { 
         ...meta, 
         templateContent: originalTemplateContent, // Giữ nguyên file import
-        templateConfig: templateConfigUrl // URL file đã chỉnh sửa
+        templateConfig: templateConfigUrl // URL file đã chỉnh sửa từ backend
       };
       
       const payload = buildTemplatePayload(effectiveMeta, sections);
@@ -326,6 +337,7 @@ const CustomFieldsPanel = ({
       console.log('🧩 Template payload built:');
       console.log('  📄 templateContent (file import):', payload.templateContent);
       console.log('  ✏️ templateConfig (file đã chỉnh sửa):', payload.templateConfig || 'null');
+      console.log('  🔑 documentKey:', documentKey);
       console.log('🧩 Full payload:\n', JSON.stringify(payload, null, 2));
       
       const res = await apiClient.post('/templates', payload);

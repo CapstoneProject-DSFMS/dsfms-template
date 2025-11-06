@@ -130,7 +130,6 @@ export const traineeAPI = {
     try {
       const response = await apiClient.get('/users', { 
         params: {
-          includeDeleted: true,
           roleName: 'TRAINEE',
           ...params
         }
@@ -146,8 +145,8 @@ export const traineeAPI = {
     try {
       console.log('API call - lookupTrainees with:', identifiers);
       
-      // Use the working format: {trainees: [...]}
-      const requestBody = { trainees: identifiers };
+      // Server expects traineesList, not trainees
+      const requestBody = { traineesList: identifiers };
       console.log('Sending request with format:', requestBody);
       
       const response = await apiClient.post('/subjects/trainees/lookup', requestBody);

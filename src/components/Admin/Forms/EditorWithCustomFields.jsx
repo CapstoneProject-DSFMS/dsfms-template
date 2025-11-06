@@ -8,6 +8,8 @@ const EditorWithCustomFields = ({
   onInsertField,
   exportEditedDoc,
   exportAndUploadEditedDoc,
+  forceSaveAndPoll,
+  getDocumentKey,
   readOnly = false,
   className = ''
 }) => {
@@ -19,6 +21,8 @@ const EditorWithCustomFields = ({
       onInsertField={onInsertField}
       exportEditedDoc={exportEditedDoc}
       exportAndUploadEditedDoc={exportAndUploadEditedDoc}
+      forceSaveAndPoll={forceSaveAndPoll}
+      getDocumentKey={getDocumentKey}
       readOnly={readOnly}
       className={className}
     />

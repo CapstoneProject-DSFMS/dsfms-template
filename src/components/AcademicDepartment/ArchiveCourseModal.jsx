@@ -41,6 +41,9 @@ const ArchiveCourseModal = ({ show, onClose, onArchive, course, loading = false 
           <ExclamationTriangle className="me-2" size={20} />
           Archive Course
         </Modal.Title>
+        <Button variant="link" onClick={handleClose} className="text-dark p-0">
+          <X size={24} />
+        </Button>
       </Modal.Header>
 
       <Modal.Body className="p-4">
@@ -76,14 +79,14 @@ const ArchiveCourseModal = ({ show, onClose, onArchive, course, loading = false 
         </div>
 
         <div className="mb-3">
-          <p className="text-danger mb-2">
+          <p className="text-warning mb-2">
             <strong>Warning:</strong> This action will:
           </p>
-          <ul className="text-danger mb-3">
+          <ul className="text-warning mb-3">
             <li>Archive the course and make it unavailable for new enrollments</li>
-            <li>Move the course to archived status</li>
-            <li>Preserve all course data and trainee progress</li>
-            <li>Allow course to be restored if needed</li>
+            <li>Remove the course from active course offerings</li>
+            <li>Affect any ongoing training sessions</li>
+            <li>Course data will be archived but can be restored if needed</li>
           </ul>
         </div>
 
@@ -125,7 +128,16 @@ const ArchiveCourseModal = ({ show, onClose, onArchive, course, loading = false 
         >
           {loading ? (
             <>
-              <span className="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
+              <span 
+                className="spinner-border spinner-border-sm me-2" 
+                role="status" 
+                aria-hidden="true"
+                style={{ 
+                  width: '0.75rem', 
+                  height: '0.75rem',
+                  borderWidth: '0.15em'
+                }}
+              ></span>
               Archiving...
             </>
           ) : (
