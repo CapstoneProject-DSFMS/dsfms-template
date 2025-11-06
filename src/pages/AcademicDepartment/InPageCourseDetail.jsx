@@ -2,10 +2,11 @@ import React, { useState, useEffect } from 'react';
 import { Card, Button, Row, Col, Container, Badge, Nav, Tab } from 'react-bootstrap';
 import { Plus, Upload, Pencil, ArrowLeft, People, Calendar, GeoAlt, FileText, Award, PersonCheck, Book } from 'react-bootstrap-icons';
 import { useNavigate, useParams, useLocation } from 'react-router-dom';
+import { toast } from 'react-toastify';
 import courseAPI from '../../api/course';
 import subjectAPI from '../../api/subject';
 import SubjectTable from '../../components/AcademicDepartment/SubjectTable';
-import TraineeCountTable from '../../components/AcademicDepartment/TraineeCountTable';
+import EnrolledTraineesTable from '../../components/AcademicDepartment/EnrolledTraineesTable';
 import AddSubjectModal from '../../components/AcademicDepartment/AddSubjectModal';
 import BulkImportSubjectsModal from '../../components/AcademicDepartment/BulkImportSubjectsModal';
 import EditCourseModal from '../../components/AcademicDepartment/EditCourseModal';
@@ -201,6 +202,13 @@ const InPageCourseDetail = ({ course, department }) => {
       // Call API to archive subject
       await subjectAPI.archiveSubject(selectedSubject.id);
       
+      // Show success toast
+      toast.success(`Successfully archived subject "${selectedSubject.name}"`, {
+        autoClose: 3000,
+        position: "top-right",
+        icon: false
+      });
+      
       // Reload course details to get updated subjects
       const response = await courseAPI.getCourseById(courseId);
       if (response.subjects && Array.isArray(response.subjects)) {
@@ -210,8 +218,14 @@ const InPageCourseDetail = ({ course, department }) => {
       // Close modal
       setShowDisableSubject(false);
       setSelectedSubject(null);
-      } catch {
-      // Handle error - could show toast notification
+    } catch (error) {
+      // Show error toast
+      const errorMessage = error?.response?.data?.message || error?.message || 'Failed to archive subject';
+      toast.error(`Error: ${errorMessage}`, {
+        autoClose: 4000,
+        position: "top-right",
+        icon: false
+      });
     } finally {
       setIsDisabling(false);
     }
@@ -560,16 +574,13 @@ const InPageCourseDetail = ({ course, department }) => {
 
               {/* Trainees Tab */}
               <Tab.Pane eventKey="trainees" style={{ height: '100%' }}>
-                <TraineeCountTable 
-                  course={course}
-                  loading={false}
-                  onView={() => {
-                    // Handle view trainee details
-                  }}
-                  onRemove={() => {
-                    // Handle remove trainee from course
-                  }}
-                />
+                <div className="p-4">
+                  <EnrolledTraineesTable 
+                    courseId={courseId}
+                    loading={false}
+                    title="Trainees Roster"
+                  />
+                </div>
               </Tab.Pane>
             </Tab.Content>
           </Card.Body>

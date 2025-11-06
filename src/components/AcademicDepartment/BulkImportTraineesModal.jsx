@@ -287,7 +287,7 @@ const BulkImportTraineesModal = ({ show, onClose, onImport, loading = false }) =
     const templateData = [
       ['eid', 'email'], // Header row
       ['TE000001', 'john.doe@example.com'], // Sample data row 1
-      ['TE000002', 'jane.smith@example.com'], // Sample data row 2
+      ['TE000002', 'trollergamehuydk+7@gmail.com'], // Sample data row 2
       ['TE000003', 'bob.johnson@example.com'], // Sample data row 3
       ['TE000004', 'alice.brown@example.com'], // Sample data row 4
       ['TE000005', 'charlie.wilson@example.com'] // Sample data row 5

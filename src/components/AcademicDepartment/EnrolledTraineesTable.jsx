@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { Card, Table, Badge, Modal, Button } from 'react-bootstrap';
 import { People, X } from 'react-bootstrap-icons';
+import { toast } from 'react-toastify';
 import { LoadingSkeleton, SortIcon } from '../Common';
 import useTableSort from '../../hooks/useTableSort';
 import EnrolledTraineeActions from './EnrolledTraineeActions';
@@ -10,7 +11,7 @@ import { traineeAPI } from '../../api/trainee';
 import subjectAPI from '../../api/subject';
 
 
-const EnrolledTraineesTable = ({ courseId, loading = false }) => {
+const EnrolledTraineesTable = ({ courseId, loading = false, title = 'Enrolled Trainees' }) => {
   const [enrolledTrainees, setEnrolledTrainees] = useState([]);
   const [loadingEnrolled, setLoadingEnrolled] = useState(true);
   const [showSubjectModal, setShowSubjectModal] = useState(false);
@@ -164,15 +165,33 @@ const EnrolledTraineesTable = ({ courseId, loading = false }) => {
         // Refresh the enrolled trainees data
         await loadEnrolledTrainees();
         
+        // Show success toast
+        toast.success(`Successfully removed ${traineeToRemove.name} from all subjects`, {
+          autoClose: 3000,
+          position: "top-right",
+          icon: false
+        });
+        
         // Close modal
         setShowRemoveModal(false);
       } else {
-        // Just close modal if no enrollments
+        // No enrollments found
+        toast.warning(`No enrollments found for ${traineeToRemove.name}`, {
+          autoClose: 3000,
+          position: "top-right",
+          icon: false
+        });
         setShowRemoveModal(false);
       }
       
-    } catch {
-      // You can add error toast notification here
+    } catch (error) {
+      // Show error toast
+      const errorMessage = error?.response?.data?.message || error?.message || 'Failed to remove trainee from subjects';
+      toast.error(`Error: ${errorMessage}`, {
+        autoClose: 4000,
+        position: "top-right",
+        icon: false
+      });
     } finally {
       setRemoveLoading(false);
     }
@@ -198,6 +217,11 @@ const EnrolledTraineesTable = ({ courseId, loading = false }) => {
     // Find the subject ID from the selected trainee's subjects
     const subject = selectedTrainee?.subjects?.find(s => s.name === subjectToRemove);
     if (!subject) {
+      toast.error('Subject not found', {
+        autoClose: 3000,
+        position: "top-right",
+        icon: false
+      });
       return;
     }
 
@@ -208,7 +232,12 @@ const EnrolledTraineesTable = ({ courseId, loading = false }) => {
       
       // Check if enrollment status is ENROLLED
       if (subject.enrollment?.status !== 'ENROLLED') {
-        // You can show a toast notification here
+        toast.warning(`Cannot remove trainee from ${subjectToRemove}. Enrollment status is not ENROLLED.`, {
+          autoClose: 4000,
+          position: "top-right",
+          icon: false
+        });
+        setRemoveLoading(false);
         return;
       }
       
@@ -218,12 +247,25 @@ const EnrolledTraineesTable = ({ courseId, loading = false }) => {
       // Refresh the enrolled trainees data
       await loadEnrolledTrainees();
       
+      // Show success toast
+      toast.success(`Successfully removed ${traineeToRemove.name} from ${subjectToRemove}`, {
+        autoClose: 3000,
+        position: "top-right",
+        icon: false
+      });
+      
       // Close modals
       setShowRemoveModal(false);
       setShowSubjectModal(false);
       
-    } catch {
-      // You can add error toast notification here
+    } catch (error) {
+      // Show error toast
+      const errorMessage = error?.response?.data?.message || error?.message || 'Failed to remove trainee from subject';
+      toast.error(`Error: ${errorMessage}`, {
+        autoClose: 4000,
+        position: "top-right",
+        icon: false
+      });
     } finally {
       setRemoveLoading(false);
     }
@@ -234,9 +276,6 @@ const EnrolledTraineesTable = ({ courseId, loading = false }) => {
   if (loading || loadingEnrolled) {
     return (
       <Card style={{ width: '100%' }}>
-        <Card.Header className="bg-gradient-primary-custom text-white border-0">
-          <h6 className="mb-0 text-white">Enrolled Trainees</h6>
-        </Card.Header>
         <Card.Body className="p-0">
           <LoadingSkeleton rows={4} columns={4} />
         </Card.Body>
@@ -247,14 +286,11 @@ const EnrolledTraineesTable = ({ courseId, loading = false }) => {
   if (enrolledTrainees.length === 0) {
     return (
       <Card style={{ width: '100%' }}>
-        <Card.Header className="bg-gradient-primary-custom text-white border-0">
-          <h6 className="mb-0 text-white">Enrolled Trainees (0)</h6>
-        </Card.Header>
         <Card.Body className="p-0">
           <div className="text-center py-5">
             <div className="text-muted">
               <h5>No enrolled trainees</h5>
-              <p>This course doesn't have any enrolled trainees yet.</p>
+              <p>No trainees have been enrolled in any subjects yet.</p>
             </div>
           </div>
         </Card.Body>
@@ -328,12 +364,6 @@ const EnrolledTraineesTable = ({ courseId, loading = false }) => {
   return (
     <>
       <Card className="d-flex flex-column" style={{ height: '400px', width: '100%' }}>
-        <Card.Header 
-          className="bg-gradient-primary-custom text-white border-0" 
-          style={{ flexShrink: 0 }}
-        >
-          <h6 className="mb-0 text-white">Enrolled Trainees ({enrolledTrainees.length})</h6>
-        </Card.Header>
         <Card.Body 
           className="p-0" 
           style={{ 
@@ -358,7 +388,7 @@ const EnrolledTraineesTable = ({ courseId, loading = false }) => {
                     EID
                   </SortableHeader>
                   <SortableHeader columnKey="subjects" className="show-mobile">
-                    Subjects
+                    Total Subject
                   </SortableHeader>
                   <th className="border-neutral-200 text-primary-custom fw-bold letter-spacing px-3 py-3 text-center show-mobile">
                     Actions
@@ -416,29 +446,32 @@ const EnrolledTraineesTable = ({ courseId, loading = false }) => {
       </Card>
 
       {/* Subject List Modal */}
-      <Modal show={showSubjectModal} onHide={() => setShowSubjectModal(false)} size="lg">
-        <Modal.Header closeButton className="border-bottom">
-          <Modal.Title className="d-flex align-items-center">
+      <Modal show={showSubjectModal} onHide={() => setShowSubjectModal(false)} size="lg" centered>
+        <Modal.Header className="bg-gradient-primary-custom text-white border-0">
+          <Modal.Title className="d-flex align-items-center text-white">
             <People className="me-2" size={20} />
             {selectedTrainee?.name} - Enrolled Subjects
           </Modal.Title>
+          <Button variant="link" onClick={() => setShowSubjectModal(false)} className="text-white p-0">
+            <X size={24} />
+          </Button>
         </Modal.Header>
-        <Modal.Body className="p-4">
+        <Modal.Body className="p-4" style={{ maxHeight: '70vh', overflowY: 'auto' }}>
           {selectedTrainee && (
             <div>
               {/* Trainee Info Header */}
-              <div className="mb-4 p-3 bg-light rounded">
+              <div className="mb-4 p-3 bg-primary bg-opacity-10 rounded border-start border-primary border-3">
                 <div className="row align-items-center">
                   <div className="col-md-6">
-                    <h6 className="mb-1 text-primary">Trainee Information</h6>
+                    <h6 className="mb-1 text-primary-custom fw-bold">Trainee Information</h6>
                     <div className="d-flex align-items-center">
-                      <Badge bg="secondary" className="me-2">EID</Badge>
-                      <span className="fw-semibold">{selectedTrainee.eid}</span>
+                      <Badge bg="primary-custom" className="me-2 text-white">EID</Badge>
+                      <span className="fw-semibold text-primary-custom">{selectedTrainee.eid}</span>
                     </div>
                   </div>
                   <div className="col-md-6 text-md-end">
-                    <div className="text-muted small">
-                      <div>Total Subjects: <Badge bg="info">{selectedTrainee.subjects.length}</Badge></div>
+                    <div className="text-primary-custom small">
+                      <div>Total Subjects: <Badge bg="primary-custom" className="text-white">{selectedTrainee.subjects.length}</Badge></div>
                     </div>
                   </div>
                 </div>
@@ -455,12 +488,12 @@ const EnrolledTraineesTable = ({ courseId, loading = false }) => {
                           <div className="col-md-8">
                             <div className="d-flex justify-content-between align-items-start mb-3">
                               <div>
-                                <h6 className="mb-1 text-dark">{subject.name}</h6>
+                                <h6 className="mb-1 text-primary-custom fw-bold">{subject.name}</h6>
                                 <div className="d-flex flex-wrap gap-2 align-items-center">
-                                  <Badge bg="outline-secondary" className="text-dark border">
+                                  <Badge bg="primary-custom" className="text-white">
                                     {subject.code}
                                   </Badge>
-                                  <Badge bg={subject.status === 'ACTIVE' ? 'success' : 'secondary'}>
+                                  <Badge bg={subject.status === 'ACTIVE' ? 'success' : 'primary-custom'} className={subject.status === 'ACTIVE' ? '' : 'text-white'}>
                                     {subject.status}
                                   </Badge>
                                 </div>
@@ -481,16 +514,16 @@ const EnrolledTraineesTable = ({ courseId, loading = false }) => {
                             <div className="row g-2 mb-3">
                               <div className="col-sm-6">
                                 <div className="d-flex align-items-center">
-                                  <span className="text-muted small me-2">Type:</span>
-                                  <Badge bg="outline-primary" className="text-primary border">
+                                  <span className="text-primary-custom small me-2 fw-semibold">Type:</span>
+                                  <Badge bg="primary-custom" className="text-white">
                                     {subject.type}
                                   </Badge>
                                 </div>
                               </div>
                               <div className="col-sm-6">
                                 <div className="d-flex align-items-center">
-                                  <span className="text-muted small me-2">Method:</span>
-                                  <Badge bg="outline-info" className="text-info border">
+                                  <span className="text-primary-custom small me-2 fw-semibold">Method:</span>
+                                  <Badge bg="primary-custom" className="text-white">
                                     {subject.method}
                                   </Badge>
                                 </div>
@@ -498,8 +531,8 @@ const EnrolledTraineesTable = ({ courseId, loading = false }) => {
                             </div>
                             
                             <div className="mb-3">
-                              <span className="text-muted small me-2">Course:</span>
-                              <span className="fw-medium">{subject.course?.name}</span>
+                              <span className="text-primary-custom small me-2 fw-semibold">Course:</span>
+                              <span className="fw-medium text-primary-custom">{subject.course?.name}</span>
                             </div>
                           </div>
 
@@ -507,19 +540,19 @@ const EnrolledTraineesTable = ({ courseId, loading = false }) => {
                           {subject.enrollment && (
                             <div className="col-md-4">
                               <div className="p-3 bg-primary bg-opacity-10 rounded border-start border-primary border-3">
-                                <h6 className="text-primary mb-2">Enrollment Details</h6>
+                                <h6 className="text-primary-custom mb-2 fw-bold">Enrollment Details</h6>
                                 <div className="space-y-2">
                                   <div className="d-flex justify-content-between align-items-center">
-                                    <span className="text-muted small">Status:</span>
-                                    <Badge bg="info">{subject.enrollment.status}</Badge>
+                                    <span className="text-primary-custom small fw-semibold">Status:</span>
+                                    <Badge bg="primary-custom" className="text-white">{subject.enrollment.status}</Badge>
                                   </div>
                                   <div className="d-flex justify-content-between align-items-center">
-                                    <span className="text-muted small">Batch:</span>
-                                    <span className="fw-medium small">{subject.enrollment.batchCode}</span>
+                                    <span className="text-primary-custom small fw-semibold">Batch:</span>
+                                    <span className="fw-medium small text-primary-custom">{subject.enrollment.batchCode}</span>
                                   </div>
                                   <div className="d-flex justify-content-between align-items-center">
-                                    <span className="text-muted small">Enrolled:</span>
-                                    <span className="fw-medium small">
+                                    <span className="text-primary-custom small fw-semibold">Enrolled:</span>
+                                    <span className="fw-medium small text-primary-custom">
                                       {new Date(subject.enrollment.enrollmentDate).toLocaleDateString()}
                                     </span>
                                   </div>
@@ -537,7 +570,7 @@ const EnrolledTraineesTable = ({ courseId, loading = false }) => {
           )}
         </Modal.Body>
         <Modal.Footer className="border-top">
-          <Button variant="secondary" onClick={() => setShowSubjectModal(false)}>
+          <Button variant="primary-custom" className="text-white" onClick={() => setShowSubjectModal(false)}>
             Close
           </Button>
         </Modal.Footer>

@@ -1,11 +1,10 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Container, Row, Col, Card, Button, Form } from 'react-bootstrap';
 import { ArrowLeft, Upload, Search, Plus } from 'react-bootstrap-icons';
 import { useNavigate, useParams } from 'react-router-dom';
 import { toast } from 'react-toastify';
 import SubjectSelectionPanel from '../../components/AcademicDepartment/SubjectSelectionPanel';
 import TraineeSelectionPanel from '../../components/AcademicDepartment/TraineeSelectionPanel';
-import EnrolledTraineesTable from '../../components/AcademicDepartment/EnrolledTraineesTable';
 import BulkImportTraineesModal from '../../components/AcademicDepartment/BulkImportTraineesModal';
 import BatchCodeModal from '../../components/AcademicDepartment/BatchCodeModal';
 import subjectAPI from '../../api/subject';
@@ -28,7 +27,29 @@ const EnrollTraineesPage = () => {
   const [showBatchCodeModal, setShowBatchCodeModal] = useState(false);
   const [bulkImportLoading, setBulkImportLoading] = useState(false);
   const [enrollLoading, setEnrollLoading] = useState(false);
-  const [tableRefreshKey, setTableRefreshKey] = useState(0);
+  const [subjectsMap, setSubjectsMap] = useState({}); // Map subjectId to subject name/code
+
+  // Load subjects to map IDs to names
+  useEffect(() => {
+    const loadSubjects = async () => {
+      try {
+        const response = await subjectAPI.getSubjects();
+        if (response && response.subjects) {
+          const map = {};
+          response.subjects.forEach(subject => {
+            map[subject.id] = {
+              name: subject.name,
+              code: subject.code
+            };
+          });
+          setSubjectsMap(map);
+        }
+      } catch (error) {
+        // Silently fail - subjects map is optional for error display
+      }
+    };
+    loadSubjects();
+  }, []);
 
   const handleBack = () => {
     // Navigate back to course detail page
@@ -42,23 +63,13 @@ const EnrollTraineesPage = () => {
   const handleBulkImportTrainees = async (trainees) => {
     // Prevent duplicate calls
     if (bulkImportLoading) {
-      console.log('🔍 Bulk import already in progress, skipping...');
       return;
     }
     
     setBulkImportLoading(true);
     try {
-      console.log('🔍 Bulk import trainees received:', trainees);
-      
       // Use real trainees from API lookup (they already have proper UUIDs)
       const newTrainees = trainees.map((trainee) => {
-        console.log('🔍 Processing bulk import trainee:', {
-          id: trainee.id,
-          eid: trainee.eid,
-          firstName: trainee.firstName,
-          lastName: trainee.lastName
-        });
-        
         return {
           id: trainee.id, // Use real UUID from API
           eid: trainee.eid,
@@ -72,16 +83,10 @@ const EnrollTraineesPage = () => {
         };
       });
       
-      console.log('🔍 New trainees to add:', newTrainees);
-      
       // Check for duplicates and only add new trainees
       setSelectedTrainees(prev => {
         const existingIds = new Set(prev.map(t => t.id));
         const newUniqueTrainees = newTrainees.filter(trainee => !existingIds.has(trainee.id));
-        
-        console.log('🔍 Existing trainee IDs:', Array.from(existingIds));
-        console.log('🔍 New unique trainees to add:', newUniqueTrainees);
-        console.log('🔍 Duplicates filtered out:', newTrainees.length - newUniqueTrainees.length);
         
         // Only show toast if there are actual changes
         if (newUniqueTrainees.length === 0 && newTrainees.length > 0) {
@@ -100,6 +105,16 @@ const EnrollTraineesPage = () => {
               autoClose: 4000,
               position: "top-right",
               toastId: 'partial-duplicates', // Prevent duplicate toasts
+              closeButton: false // Remove close button
+            });
+          }, 100);
+        } else if (newUniqueTrainees.length === newTrainees.length && newUniqueTrainees.length > 0) {
+          // All trainees were successfully added (no duplicates)
+          setTimeout(() => {
+            toast.success(`Successfully added ${newUniqueTrainees.length} trainee${newUniqueTrainees.length > 1 ? 's' : ''} to the selection!`, {
+              autoClose: 3000,
+              position: "top-right",
+              toastId: 'bulk-import-success', // Prevent duplicate toasts
               closeButton: false // Remove close button
             });
           }, 100);
@@ -133,18 +148,8 @@ const EnrollTraineesPage = () => {
     setShowBatchCodeModal(false);
     
     try {
-      // Prepare data for API call - Backend expects batch_code and trainee_user_ids (snake_case)
-      console.log('🔍 Selected trainees for enrollment:', selectedTrainees);
-      console.log('🔍 Using batch code:', batchCode);
-      
       // Validate trainee IDs
       const traineeIds = selectedTrainees.map(trainee => {
-        console.log('🔍 Processing trainee:', {
-          id: trainee.id,
-          eid: trainee.eid,
-          name: `${trainee.firstName} ${trainee.lastName}`
-        });
-        
         if (!trainee.id) {
           throw new Error(`Trainee ${trainee.eid} (${trainee.firstName} ${trainee.lastName}) is missing UUID`);
         }
@@ -157,76 +162,124 @@ const EnrollTraineesPage = () => {
         batchCode: String(batchCode).trim(), // Ensure it's a string
         traineeUserIds: traineeIds // Array of UUIDs
       };
-      
-      console.log('🔍 Final trainee data for API (camelCase):', traineeData);
-      console.log('🔍 Trainee IDs array:', traineeIds);
-      console.log('🔍 Batch code type:', typeof traineeData.batchCode, 'value:', traineeData.batchCode);
-      console.log('🔍 Trainee IDs type:', Array.isArray(traineeData.traineeUserIds), 'length:', traineeData.traineeUserIds?.length);
 
-      // Check for potential duplicates (this is just a warning, server will handle actual validation)
-      console.log('⚠️ Note: Server will validate for duplicate enrollments');
-
-      // Call API for each selected subject
+      // Call API for each selected subject with subject name tracking
       const enrollmentPromises = selectedSubjects.map(async (subjectId) => {
-        
         if (!subjectId) {
-          throw new Error(`Invalid subject ID: ${subjectId}`);
+          const subjectInfo = subjectsMap[subjectId] || { name: 'Unknown', code: 'N/A' };
+          throw new Error(`Invalid subject ID: ${subjectId} (${subjectInfo.name})`);
         }
         
-        const response = await subjectAPI.assignTrainees(subjectId, traineeData);
-        return { subjectId, response };
+        try {
+          const response = await subjectAPI.assignTrainees(subjectId, traineeData);
+          return { 
+            subjectId, 
+            response, 
+            status: 'success',
+            subjectName: subjectsMap[subjectId]?.name || 'Unknown Subject',
+            subjectCode: subjectsMap[subjectId]?.code || 'N/A'
+          };
+        } catch (error) {
+          // Return error info instead of throwing
+          const subjectInfo = subjectsMap[subjectId] || { name: 'Unknown Subject', code: 'N/A' };
+          return {
+            subjectId,
+            status: 'error',
+            error,
+            subjectName: subjectInfo.name,
+            subjectCode: subjectInfo.code,
+            errorMessage: error.response?.data?.message || error.message || 'Unknown error',
+            errorDetails: error.response?.data
+          };
+        }
       });
 
-      // Wait for all enrollments to complete
-      const enrollmentResults = await Promise.all(enrollmentPromises);
+      // Wait for all enrollments to complete (use allSettled to get all results)
+      const enrollmentResults = await Promise.allSettled(enrollmentPromises);
       
-      console.log('✅ All enrollments completed successfully:', enrollmentResults);
+      // Process results
+      const successful = [];
+      const failed = [];
+      
+      enrollmentResults.forEach((result, index) => {
+        if (result.status === 'fulfilled') {
+          const enrollment = result.value;
+          if (enrollment.status === 'success') {
+            successful.push(enrollment);
+          } else {
+            failed.push(enrollment);
+          }
+        } else {
+          // Promise rejected
+          const subjectId = selectedSubjects[index];
+          const subjectInfo = subjectsMap[subjectId] || { name: 'Unknown Subject', code: 'N/A' };
+          failed.push({
+            subjectId,
+            status: 'error',
+            subjectName: subjectInfo.name,
+            subjectCode: subjectInfo.code,
+            errorMessage: result.reason?.message || 'Unknown error',
+            errorDetails: result.reason
+          });
+        }
+      });
 
-      // Refresh the enrolled trainees table
-      setTableRefreshKey(prev => prev + 1);
-      
-      // Clear selected trainees and subjects
-      const enrolledCount = selectedTrainees.length;
-      const subjectCount = selectedSubjects.length;
-      setSelectedTrainees([]);
-      setSelectedSubjects([]);
-      
-      toast.success(`Successfully enrolled ${enrolledCount} trainees to ${subjectCount} subject(s) with batch code: ${batchCode}`);
+      // Show detailed error messages for each failed subject
+      if (failed.length > 0) {
+        failed.forEach((failure) => {
+          const errorMsg = failure.errorMessage || 'Unknown error';
+          const subjectDisplay = `${failure.subjectName} (${failure.subjectCode})`;
+          
+          // Extract more specific error if available
+          let detailedError = errorMsg;
+          if (failure.errorDetails?.message) {
+            detailedError = failure.errorDetails.message;
+          } else if (failure.errorDetails?.errors && Array.isArray(failure.errorDetails.errors)) {
+            detailedError = failure.errorDetails.errors.map(e => e.message || e).join(', ');
+          }
+          
+          toast.error(`${subjectDisplay}: ${detailedError}`, {
+            autoClose: 5000,
+            position: "top-right",
+            icon: false
+          });
+        });
+      }
+
+      // Show success message if any succeeded
+      if (successful.length > 0) {
+        const enrolledCount = selectedTrainees.length;
+        toast.success(`Successfully enrolled ${enrolledCount} trainee(s) to ${successful.length} subject(s): ${successful.map(s => s.subjectName).join(', ')}`, {
+          autoClose: 4000,
+          position: "top-right",
+          icon: false
+        });
+        
+        // Clear only successful subjects from selection
+        if (failed.length === 0) {
+          // All succeeded, clear all
+          setSelectedTrainees([]);
+          setSelectedSubjects([]);
+        } else {
+          // Some failed, only clear successful subjects (keep failed ones)
+          const successfulSubjectIds = new Set(successful.map(s => s.subjectId));
+          setSelectedSubjects(prev => prev.filter(id => !successfulSubjectIds.has(id)));
+        }
+        
+        // Redirect to course detail page with trainees tab active when at least one enrollment succeeded
+        setTimeout(() => {
+          navigate(`/academic/course-detail/${courseId}`, {
+            state: { activeTab: 'trainees' }
+          });
+        }, 1000); // Delay to show toast before redirect
+      }
       
     } catch (error) {
-      // Log detailed error for debugging
-      console.error('❌ Enrollment Error:', {
-        status: error.response?.status,
-        statusText: error.response?.statusText,
-        data: error.response?.data,
-        errors: error.response?.data?.errors,
-        errorsDetailed: error.response?.data?.errors?.map((err, idx) => ({
-          index: idx,
-          field: err.field,
-          message: err.message,
-          code: err.code,
-          value: err.value,
-          fullError: err
-        })),
-        message: error.response?.data?.message,
-        fullErrorResponse: JSON.stringify(error.response?.data, null, 2),
-        fullError: error
-      });
+      // This catch should rarely be hit now since we handle errors in allSettled
       
-      // Show more specific error message
       let errorMessage = 'Failed to enroll trainees. Please try again.';
       if (error.response?.data?.message) {
         errorMessage = error.response.data.message;
-      } else if (error.response?.data?.errors) {
-        // Format validation errors more clearly
-        const errors = error.response.data.errors;
-        if (Array.isArray(errors)) {
-          errorMessage = `Validation errors: ${errors.map(e => e.message || e).join(', ')}`;
-        } else if (typeof errors === 'object') {
-          errorMessage = `Validation errors: ${JSON.stringify(errors, null, 2)}`;
-        } else {
-          errorMessage = `Validation errors: ${errors}`;
-        }
       } else if (error.message) {
         errorMessage = error.message;
       }
@@ -303,7 +356,7 @@ const EnrollTraineesPage = () => {
         <Row className="g-4">
           {/* Panel 1: Subject Selection */}
           <Col lg={6}>
-            <div style={{ height: '500px', position: 'relative', zIndex: 1, overflow: 'hidden' }}>
+            <div style={{ height: '500px', position: 'relative', zIndex: 1, overflow: 'visible' }}>
               <SubjectSelectionPanel 
                 selectedSubjects={selectedSubjects}
                 onSelectionChange={setSelectedSubjects}
@@ -313,7 +366,7 @@ const EnrollTraineesPage = () => {
 
           {/* Panel 2: Trainee Selection */}
           <Col lg={6}>
-            <div style={{ height: '500px', position: 'relative', zIndex: 1, overflow: 'hidden' }}>
+            <div style={{ height: '500px', position: 'relative', zIndex: 1, overflow: 'visible' }}>
               <TraineeSelectionPanel 
                 selectedTrainees={selectedTrainees}
                 onSelectionChange={setSelectedTrainees}
@@ -323,33 +376,6 @@ const EnrollTraineesPage = () => {
         </Row>
       </div>
 
-      {/* Spacer to push Enrolled Trainees to bottom */}
-      <div className="flex-spacer" style={{ flex: '1 1 auto', minHeight: '2rem' }}></div>
-
-      {/* Enrolled Trainees Table - Full Width at Bottom - OUTSIDE of Row */}
-      <Row className="enrolled-trainees-row">
-        <Col xs={12}>
-          <div 
-            className="enrolled-trainees-container flex-shrink-0" 
-            id="enrolled-trainees-section"
-            style={{ 
-              marginTop: '0', 
-              marginBottom: '2rem', 
-              clear: 'both',
-              width: '100%',
-              position: 'relative',
-              zIndex: 1000,
-              display: 'block'
-            }}
-          >
-            <EnrolledTraineesTable 
-              key={tableRefreshKey}
-              courseId={courseId}
-              loading={false}
-            />
-          </div>
-        </Col>
-      </Row>
 
       {/* Bulk Import Modal */}
       <BulkImportTraineesModal

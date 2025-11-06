@@ -77,10 +77,10 @@ const subjectAPI = {
     }
   },
 
-  // Archive subject
+  // Archive subject (using DELETE method)
   archiveSubject: async (subjectId) => {
     try {
-      const response = await apiClient.patch(`/subjects/${subjectId}/archive`);
+      const response = await apiClient.delete(`/subjects/${subjectId}/archive`);
       return response.data;
     } catch (error) {
       throw error;
@@ -145,32 +145,12 @@ const subjectAPI = {
       
       // Validate data types
       if (!requestData.batchCode || typeof requestData.batchCode !== 'string') {
-        console.error('❌ Validation Error: batchCode must be a non-empty string', {
-          batchCode: requestData.batchCode,
-          type: typeof requestData.batchCode
-        });
         throw new Error('batchCode must be a non-empty string');
       }
       
       if (!Array.isArray(requestData.traineeUserIds) || requestData.traineeUserIds.length === 0) {
-        console.error('❌ Validation Error: traineeUserIds must be a non-empty array', {
-          traineeUserIds: requestData.traineeUserIds,
-          isArray: Array.isArray(requestData.traineeUserIds),
-          length: requestData.traineeUserIds?.length
-        });
         throw new Error('traineeUserIds must be a non-empty array');
       }
-      
-      // Log request data for debugging
-      console.log('📤 Assign Trainees Request:', {
-        url: `/subjects/${subjectId}/assign-trainees`,
-        subjectId,
-        requestData,
-        requestDataStringified: JSON.stringify(requestData, null, 2),
-        batchCodeType: typeof requestData.batchCode,
-        traineeUserIdsType: Array.isArray(requestData.traineeUserIds) ? 'array' : typeof requestData.traineeUserIds,
-        traineeUserIdsLength: requestData.traineeUserIds.length
-      });
       
       // Create a fresh plain object (avoid any prototype issues)
       const payload = {
@@ -180,35 +160,11 @@ const subjectAPI = {
           : []
       };
       
-      console.log('📤 Payload for request:', payload);
-      console.log('📤 Payload stringified:', JSON.stringify(payload));
-      console.log('📤 Payload constructor:', payload.constructor.name);
-      
       // Send directly without transformRequest - let axios handle serialization
       // Similar to how other POST requests work (createSubject, etc.)
       const response = await apiClient.post(`/subjects/${subjectId}/assign-trainees`, payload);
       return response.data;
     } catch (error) {
-      // Log detailed error for debugging
-      console.error('❌ Assign Trainees Error:', {
-        status: error.response?.status,
-        statusText: error.response?.statusText,
-        data: error.response?.data,
-        errors: error.response?.data?.errors,
-        errorsDetailed: error.response?.data?.errors?.map((err, idx) => ({
-          index: idx,
-          field: err.field,
-          message: err.message,
-          code: err.code,
-          value: err.value,
-          fullError: err
-        })),
-        message: error.response?.data?.message,
-        requestData: traineeData,
-        url: `/subjects/${subjectId}/assign-trainees`,
-        fullErrorResponse: JSON.stringify(error.response?.data, null, 2)
-      });
-      
       throw error;
     }
   },

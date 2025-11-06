@@ -636,6 +636,27 @@ table .department-table-container .badge {
   overflow: visible !important;
 }
 
+/* Ensure scroll works inside SubjectSelectionPanel */
+.subject-selection-panel-body .subject-list-scroll-container {
+  overflow-y: auto !important;
+  overflow-x: hidden !important;
+  flex: 1 1 auto !important;
+  min-height: 0 !important;
+  max-height: calc(500px - 100px) !important; /* Card.Body height minus header/search/summary */
+  position: relative !important;
+  height: auto !important;
+}
+
+/* Ensure SubjectSelectionPanel Card Body allows scrolling */
+.enroll-page .col-lg-6 .card .card-body {
+  overflow: visible !important;
+}
+
+/* Ensure wrapper div doesn't block scroll */
+.enroll-page .col-lg-6 > div {
+  overflow: visible !important;
+}
+
 /* Ensure Enrolled Trainees is always visible and on top */
 .enroll-page #enrolled-trainees-section,
 .enroll-page #enrolled-trainees-section * {
@@ -702,12 +723,17 @@ table .department-table-container .badge {
   overflow: visible !important;
 }
 
-/* Ensure Subject Selection Panel is contained */
+/* Ensure Subject Selection Panel is contained - BUT ALLOW SCROLL FOR SUBJECT PANEL */
 .enroll-page .main-content-section .col-lg-6 > div {
   overflow: hidden !important;
   position: relative !important;
   z-index: 1 !important;
   isolation: isolate !important;
+}
+
+/* EXCEPTION: Allow overflow visible for SubjectSelectionPanel wrapper */
+.enroll-page .main-content-section .col-lg-6:first-child > div {
+  overflow: visible !important;
 }
 
 /* Remove all internal spacing from enroll page components */
@@ -851,16 +877,34 @@ body, html {
   min-height: auto !important;
 }
 
-/* Fix Card height for Subject table */
-.card {
+/* Fix Card height for Subject table - BUT EXCLUDE SubjectSelectionPanel */
+.card:not(.subject-selection-panel-card) {
   height: auto !important;
   min-height: auto !important;
 }
 
-.card-body {
+.card-body:not(.subject-selection-panel-body) {
   height: auto !important;
   min-height: auto !important;
   overflow: visible !important;
+}
+
+/* SubjectSelectionPanel Card - Keep fixed height for scroll */
+.subject-selection-panel-card {
+  height: 500px !important;
+  min-height: 500px !important;
+  max-height: 500px !important;
+  overflow: visible !important;
+}
+
+/* SubjectSelectionPanel Card Body - Keep fixed height and flex layout */
+.subject-selection-panel-body {
+  height: 500px !important;
+  min-height: 500px !important;
+  max-height: 500px !important;
+  overflow: visible !important;
+  display: flex !important;
+  flex-direction: column !important;
 }
 
 /* Fix Container height for Course Detail */
@@ -894,6 +938,187 @@ body, html {
   width: 120px !important;
   min-width: 120px !important;
   max-width: 120px !important;
+}
+
+/* ============================================
+   RESPONSIVE CSS FOR SUBJECT TABLE - MOBILE
+   ============================================ */
+
+/* Enable horizontal scroll on mobile for subject table */
+.department-table-container.subject-table-scroll {
+  overflow-x: auto !important;
+  overflow-y: auto !important;
+  -webkit-overflow-scrolling: touch;
+  width: 100%;
+}
+
+.department-table-container.subject-table-scroll .table {
+  min-width: 800px; /* Minimum width to prevent cramping */
+  width: 100%;
+}
+
+/* Mobile responsive - Tablets and below (768px) */
+@media (max-width: 768px) {
+  /* Allow horizontal scroll on mobile */
+  .department-table-container.subject-table-scroll {
+    overflow-x: auto !important;
+    overflow-y: auto !important;
+    margin: 0 -0.75rem;
+    padding: 0 0.75rem;
+  }
+
+  .department-table-container.subject-table-scroll .table {
+    min-width: 900px; /* Wider on tablet to show more columns */
+    font-size: 0.8rem;
+  }
+
+  .department-table-container.subject-table-scroll .table th,
+  .department-table-container.subject-table-scroll .table td {
+    padding: 0.5rem 0.4rem !important;
+    white-space: nowrap;
+    font-size: 0.8rem;
+  }
+
+  /* Hide less important columns on tablet */
+  .department-table-container.subject-table-scroll .table th:nth-child(5), /* Duration */
+  .department-table-container.subject-table-scroll .table td:nth-child(5),
+  .department-table-container.subject-table-scroll .table th:nth-child(7), /* Room Name */
+  .department-table-container.subject-table-scroll .table td:nth-child(7) {
+    display: none !important;
+  }
+
+  /* Make name column wider on mobile */
+  .department-table-container.subject-table-scroll .table th:nth-child(1),
+  .department-table-container.subject-table-scroll .table td:nth-child(1) {
+    min-width: 200px !important;
+    max-width: 250px !important;
+    white-space: normal !important;
+    word-wrap: break-word;
+  }
+
+  /* Adjust badge sizes */
+  .department-table-container.subject-table-scroll .table .badge {
+    font-size: 0.7rem !important;
+    padding: 0.25rem 0.5rem !important;
+  }
+
+  /* Sticky header adjustments */
+  .department-table-container.subject-table-scroll .sticky-header th {
+    font-size: 0.75rem !important;
+    padding: 0.5rem 0.4rem !important;
+  }
+}
+
+/* Mobile responsive - Small phones (576px and below) */
+@media (max-width: 576px) {
+  .department-table-container.subject-table-scroll {
+    overflow-x: auto !important;
+    overflow-y: auto !important;
+    margin: 0 -0.5rem;
+    padding: 0 0.5rem;
+  }
+
+  .department-table-container.subject-table-scroll .table {
+    min-width: 1000px; /* Even wider to show essential columns */
+    font-size: 0.75rem;
+  }
+
+  .department-table-container.subject-table-scroll .table th,
+  .department-table-container.subject-table-scroll .table td {
+    padding: 0.4rem 0.3rem !important;
+    font-size: 0.75rem;
+  }
+
+  /* Hide more columns on small phones - keep only essential */
+  .department-table-container.subject-table-scroll .table th:nth-child(4), /* Duration */
+  .department-table-container.subject-table-scroll .table td:nth-child(4),
+  .department-table-container.subject-table-scroll .table th:nth-child(5), /* Start Date */
+  .department-table-container.subject-table-scroll .table td:nth-child(5),
+  .department-table-container.subject-table-scroll .table th:nth-child(6), /* End Date */
+  .department-table-container.subject-table-scroll .table td:nth-child(6),
+  .department-table-container.subject-table-scroll .table th:nth-child(7), /* Room Name */
+  .department-table-container.subject-table-scroll .table td:nth-child(7) {
+    display: none !important;
+  }
+
+  /* Keep: Name, Code, Method, Trainees, Status, Actions */
+
+  /* Make essential columns wider */
+  .department-table-container.subject-table-scroll .table th:nth-child(1),
+  .department-table-container.subject-table-scroll .table td:nth-child(1) {
+    min-width: 180px !important;
+    max-width: 220px !important;
+    white-space: normal !important;
+    word-wrap: break-word;
+  }
+
+  .department-table-container.subject-table-scroll .table th:nth-child(2),
+  .department-table-container.subject-table-scroll .table td:nth-child(2) {
+    min-width: 100px !important;
+    max-width: 120px !important;
+  }
+
+  .department-table-container.subject-table-scroll .table th:nth-child(3),
+  .department-table-container.subject-table-scroll .table td:nth-child(3) {
+    min-width: 100px !important;
+    max-width: 120px !important;
+  }
+
+  /* Smaller badges */
+  .department-table-container.subject-table-scroll .table .badge {
+    font-size: 0.65rem !important;
+    padding: 0.2rem 0.4rem !important;
+  }
+
+  /* Sticky header */
+  .department-table-container.subject-table-scroll .sticky-header th {
+    font-size: 0.7rem !important;
+    padding: 0.4rem 0.3rem !important;
+  }
+}
+
+/* Very small phones (480px and below) */
+@media (max-width: 480px) {
+  .department-table-container.subject-table-scroll .table {
+    min-width: 1100px; /* Even wider to prevent cramping */
+    font-size: 0.7rem;
+  }
+
+  .department-table-container.subject-table-scroll .table th,
+  .department-table-container.subject-table-scroll .table td {
+    padding: 0.35rem 0.25rem !important;
+    font-size: 0.7rem;
+  }
+
+  .department-table-container.subject-table-scroll .table .badge {
+    font-size: 0.6rem !important;
+    padding: 0.15rem 0.35rem !important;
+  }
+
+  .department-table-container.subject-table-scroll .sticky-header th {
+    font-size: 0.65rem !important;
+    padding: 0.35rem 0.25rem !important;
+  }
+}
+
+/* Custom scrollbar for mobile subject table */
+.department-table-container.subject-table-scroll::-webkit-scrollbar {
+  height: 8px;
+  width: 8px;
+}
+
+.department-table-container.subject-table-scroll::-webkit-scrollbar-track {
+  background: #f1f1f1;
+  border-radius: 4px;
+}
+
+.department-table-container.subject-table-scroll::-webkit-scrollbar-thumb {
+  background: #888;
+  border-radius: 4px;
+}
+
+.department-table-container.subject-table-scroll::-webkit-scrollbar-thumb:hover {
+  background: #555;
 }
 
 /* Dropdown styles moved to dropdown-unified.css */
