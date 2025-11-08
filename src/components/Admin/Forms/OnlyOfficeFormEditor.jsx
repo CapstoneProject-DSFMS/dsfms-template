@@ -13,7 +13,6 @@ const OnlyOfficeFormEditor = ({
   fileName = 'Untitled Document',
   readOnly = false,
   showMergeFields = true,
-  showImportInfo = false,
   importType = '',
   className = ""
 }) => {
@@ -21,7 +20,7 @@ const OnlyOfficeFormEditor = ({
   const [editor, setEditor] = useState(null);
   const [isEditorReady, setIsEditorReady] = useState(false);
   const [customFields, setCustomFields] = useState([]);
-  const [showCustomFieldsPanel, setShowCustomFieldsPanel] = useState(true);
+  const [showCustomFieldsPanel] = useState(true);
   const isInitialized = useRef(false);
   const editorRef = useRef(null);
   const exportResolverRef = useRef(null);
@@ -405,31 +404,168 @@ const OnlyOfficeFormEditor = ({
                   try {
                     // eslint-disable-next-line no-undef
                     const oDocument = Api.GetDocument();
-                    const oSelection = oDocument.GetSelection();
-                    // Insert text directly at cursor position without creating new paragraph
-                    // eslint-disable-next-line no-undef
-                    oSelection.InsertText(Asc.scope.__templateText);
-                  } catch (error) {
-                    console.error('Error inside callCommand:', error);
-                    // Fallback: try using paragraph method if selection fails
+                    
+                    console.log('🔍 DEBUG: Starting insert field with style preservation');
+                    
+                    // Method 1: Use Search() to find range containing current sentence, then get style
+                    let oTextPr = null;
                     try {
+                      // Get current sentence text
+                      const currentSentenceText = oDocument.GetCurrentSentence();
+                      console.log('🔍 DEBUG: Current sentence text:', JSON.stringify(currentSentenceText));
+                      
+                      // Only use Search() if sentence text is meaningful (not just spaces)
+                      const trimmedText = currentSentenceText && typeof currentSentenceText === 'string' 
+                        ? currentSentenceText.trim() 
+                        : '';
+                      
+                      if (trimmedText && trimmedText.length > 0) {
+                        // Use Search() to find the range containing this text
+                        try {
+                          // Search for the sentence text in document
+                          const searchResults = oDocument.Search(trimmedText);
+                          console.log('🔍 DEBUG: Search results count:', searchResults?.length);
+                          
+                          if (searchResults && searchResults.length > 0 && searchResults.length < 10) {
+                            // Only use if not too many results (to avoid wrong match)
+                            // Get the first result (should be the one at cursor)
+                            const oRange = searchResults[0];
+                            console.log('✅ DEBUG: Got range from search');
+                            
+                            // Try to get paragraph from range
+                            try {
+                              const oParagraph = oRange.GetParagraph(0);
+                              console.log('✅ DEBUG: Got paragraph from range');
+                              
+                              // Try to get text properties from range
+                              try {
+                                // Get text properties from the range itself
+                                oTextPr = oRange.GetTextPr();
+                                console.log('✅ DEBUG: Got TextPr from range');
+                                
+                                // Check if TextPr has bold - if cursor is in non-bold text, don't apply bold
+                                try {
+                                  // eslint-disable-next-line no-undef
+                                  const tempRun = Api.CreateRun();
+                                  tempRun.SetTextPr(oTextPr);
+                                  const isBold = tempRun.GetBold();
+                                  console.log('🔍 DEBUG: TextPr has bold:', isBold);
+                                  
+                                  // If bold is true but we're inserting at a non-bold position,
+                                  // we might want to remove bold. But let's keep it for now
+                                  // and only apply if the sentence text itself is meaningful
+                                } catch {
+                                  // Ignore
+                                }
+                              } catch (e1) {
+                                console.warn('⚠️ DEBUG: GetTextPr() from range failed:', e1);
+                                
+                                // Try to get from paragraph
+                                try {
+                                  // Try GetElement() to get runs from paragraph
+                                  const paraElementCount = oParagraph.GetElementsCount();
+                                  console.log('🔍 DEBUG: Paragraph has', paraElementCount, 'elements');
+                                  
+                                  if (paraElementCount > 0) {
+                                    // Get the last element (run) - closest to cursor
+                                    const lastRun = oParagraph.GetElement(paraElementCount - 1);
+                                    console.log('✅ DEBUG: Got last run from paragraph');
+                                    
+                                    if (lastRun && lastRun.GetTextPr) {
+                                      oTextPr = lastRun.GetTextPr();
+                                      console.log('✅ DEBUG: Got TextPr from last run');
+                                    }
+                                  }
+                                } catch (e2) {
+                                  console.warn('⚠️ DEBUG: GetElement() from paragraph failed:', e2);
+                                }
+                              }
+                            } catch (e3) {
+                              console.warn('⚠️ DEBUG: GetParagraph() from range failed:', e3);
+                            }
+                          } else {
+                            console.warn('⚠️ DEBUG: Too many search results or no results, skipping style copy');
+                          }
+                        } catch (searchError) {
+                          console.warn('⚠️ DEBUG: Search() failed:', searchError);
+                        }
+                      } else {
+                        console.log('⚠️ DEBUG: Sentence text is empty or only spaces, will not copy style');
+                        console.log('⚠️ DEBUG: Will use default style (no bold)');
+                      }
+                      
+                      if (!oTextPr) {
+                        console.warn('⚠️ DEBUG: Could not find TextPr, will insert without style');
+                      }
+                    } catch (error) {
+                      console.warn('⚠️ DEBUG: Error getting style:', error);
+                    }
+                    
+                    // Create new paragraph with text
+                    // eslint-disable-next-line no-undef
+                    const oNewParagraph = Api.CreateParagraph();
+                    
+                    if (oTextPr) {
+                      console.log('✅ DEBUG: Using copied TextPr for style');
+                      // Create run with copied style
+                      // eslint-disable-next-line no-undef
+                      const oRun = Api.CreateRun();
+                      // eslint-disable-next-line no-undef
+                      oRun.AddText(Asc.scope.__templateText);
+                      oRun.SetTextPr(oTextPr); // Apply the copied style
+                      oNewParagraph.AddElement(oRun);
+                    } else {
+                      console.log('⚠️ DEBUG: No TextPr found, creating default TextPr (no bold)');
+                      // Create a new TextPr with default style (no bold)
+                      // eslint-disable-next-line no-undef
+                      const oDefaultTextPr = Api.CreateTextPr();
+                      // Explicitly set bold to false to ensure no bold
+                      oDefaultTextPr.SetBold(false);
+                      
+                      // Create run with default style
+                      // eslint-disable-next-line no-undef
+                      const oRun = Api.CreateRun();
+                      // eslint-disable-next-line no-undef
+                      oRun.AddText(Asc.scope.__templateText);
+                      oRun.SetTextPr(oDefaultTextPr); // Apply default style (no bold)
+                      oNewParagraph.AddElement(oRun);
+                      console.log('✅ DEBUG: Created run with default style (no bold)');
+                    }
+                    
+                    // Insert with isInline = true
+                    console.log('🔍 DEBUG: Inserting content with isInline=true');
+                    oDocument.InsertContent([oNewParagraph], true);
+                    console.log('✅ DEBUG: Insert completed');
+                    
+                  } catch (error) {
+                    console.error('❌ DEBUG: Error inside callCommand:', error);
+                    console.error('❌ DEBUG: Error details:', {
+                      message: error.message,
+                      stack: error.stack,
+                      name: error.name
+                    });
+                    
+                    // Final fallback: simple paragraph
+                    try {
+                      console.log('🔄 DEBUG: Trying fallback method...');
                       // eslint-disable-next-line no-undef
                       const oDocument = Api.GetDocument();
                       // eslint-disable-next-line no-undef
                       const oParagraph = Api.CreateParagraph();
                       // eslint-disable-next-line no-undef
                       oParagraph.AddText(Asc.scope.__templateText);
-                      oDocument.InsertContent([oParagraph]);
+                      oDocument.InsertContent([oParagraph], true);
+                      console.log('✅ DEBUG: Fallback method succeeded');
                     } catch (fallbackError) {
-                      console.error('Fallback insert also failed:', fallbackError);
+                      console.error('❌ DEBUG: All methods failed:', fallbackError);
+                      throw fallbackError;
                     }
                   }
                  }, function() {
-                   requestAnimationFrame(() => {
-                     toast.success('Inserted template at cursor position');
-                   });
+                   // Success callback - no toast notification needed
                  }, function(error) {
-                   toast.error('Failed to insert field: ' + error.message);
+                   console.error('❌ DEBUG: callCommand error callback:', error);
+                   toast.error('Failed to insert field: ' + (error?.message || 'Unknown error'));
                  });
 
                 return;
@@ -477,15 +613,52 @@ const OnlyOfficeFormEditor = ({
       console.log('📡 Step 2: OnlyOffice will send POST callback to backend:');
       console.log('   URL:', `${API_CONFIG.BASE_URL}/media/docs/onlyoffice/callback`);
       console.log('   Method: POST');
-      console.log('   Expected Body:', {
+      console.log('   Content-Type: application/json');
+      console.log('═══════════════════════════════════════════════════════════');
+      console.log('📦 EXPECTED CALLBACK BODY (for reference only):');
+      console.log('═══════════════════════════════════════════════════════════');
+      console.log('⚠️ QUAN TRỌNG: Đây là body MONG ĐỢI, KHÔNG PHẢI body thực tế!');
+      console.log('⚠️ Frontend KHÔNG THỂ thấy body thực tế vì POST callback đi trực tiếp từ OnlyOffice → Backend');
+      console.log('⚠️ Body thực tế chỉ có thể thấy trong Backend logs');
+      console.log('═══════════════════════════════════════════════════════════');
+      
+      // Log expected body in multiple formats for easy comparison
+      const expectedBody = {
         key: documentKey,
-        status: '2 or 6 (document saved)',
-        url: 'https://documentserver/url-to-edited-document.docx'
-      });
-      console.log('🔑 DocumentKey:', documentKey);
-      console.log('⚠️ NOTE: POST callback is sent DIRECTLY from OnlyOffice to Backend');
-      console.log('⚠️ Frontend cannot intercept this POST request');
-      console.log('⚠️ Check Backend logs to see if callback was received');
+        status: 6, // 6 = Document saved, 2 = Document saved with errors, 3 = Document saving error
+        url: 'https://documentserver/url-to-edited-document.docx' // OnlyOffice will replace with actual URL
+      };
+      
+      console.log('📋 Expected Body Structure (Frontend tạo ra để tham khảo):');
+      console.log(JSON.stringify(expectedBody, null, 2));
+      console.log('');
+      console.log('📋 Expected Body (One-line JSON - copy để so sánh với Backend logs):');
+      console.log(JSON.stringify(expectedBody));
+      console.log('');
+      console.log('📋 Giải thích các fields:');
+      console.log('   - key:', documentKey, '← DocumentKey của session này (Backend sẽ nhận key này)');
+      console.log('   - status: 6 ← Status code (6 = Document saved, OnlyOffice sẽ gửi status thực tế)');
+      console.log('   - url: "https://documentserver/..." ← PLACEHOLDER, OnlyOffice sẽ thay bằng URL thực tế');
+      console.log('');
+      console.log('📋 Status Codes có thể nhận được từ OnlyOffice:');
+      console.log('   - 0: No errors, document is being edited');
+      console.log('   - 1: Document is being saved');
+      console.log('   - 2: Document is saved with errors');
+      console.log('   - 3: Document saving error has occurred');
+      console.log('   - 4: Document is closed with no changes');
+      console.log('   - 6: Document is being saved, document state is saved ← Mong đợi status này');
+      console.log('   - 7: Error has occurred while force saving the document');
+      console.log('');
+      console.log('💡 Cách verify callback hoạt động:');
+      console.log('   1. Check Backend logs sau khi click Submit');
+      console.log('   2. Tìm POST request đến /media/docs/onlyoffice/callback');
+      console.log('   3. So sánh body trong Backend logs với expected body ở trên');
+      console.log('   4. Nếu key khớp và status là 6 hoặc 2 → Callback đã hoạt động!');
+      console.log('═══════════════════════════════════════════════════════════');
+      console.log('🔑 DocumentKey for this session:', documentKey);
+      console.log('⚠️ LƯU Ý: POST callback được gửi TRỰC TIẾP từ OnlyOffice Server → Backend');
+      console.log('⚠️ Frontend KHÔNG THỂ thấy POST request này (không có trong Network tab)');
+      console.log('⚠️ Chỉ có thể verify bằng cách check Backend logs');
       console.log('═══════════════════════════════════════════════════════════');
       
       // Trigger save using available methods - this will cause OnlyOffice to send callback to backend
@@ -751,22 +924,6 @@ const OnlyOfficeFormEditor = ({
   return (
     <div className={`onlyoffice-form-editor ${className}`}>
       <div className="p-0">
-        {showImportInfo && (
-          <Alert variant="info" className="mb-0 rounded-0">
-            You are editing an imported form: <strong>{importType}</strong>
-            {importType === 'File without fields' && (
-              <div className="mt-2">
-                <button 
-                  className="btn btn-sm btn-outline-primary"
-                  onClick={() => setShowCustomFieldsPanel(!showCustomFieldsPanel)}
-                >
-                  {showCustomFieldsPanel ? 'Hide Custom Fields' : 'Show Custom Fields'}
-                </button>
-              </div>
-            )}
-          </Alert>
-        )}
-
         <Row className="g-0" style={{ minHeight: '90vh' }}>
           {/* OnlyOffice Editor */}
           <Col md={showMergeFields && ((importType === 'File without fields' && showCustomFieldsPanel) || (importType !== 'File without fields')) ? 9 : 12}>

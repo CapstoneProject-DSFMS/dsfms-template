@@ -243,6 +243,20 @@
   padding: 0;
 }
 
+/* Form Editor Header - Override global card-header background */
+.form-editor-page .form-editor-header,
+.form-editor-page .card-header.bg-primary {
+  background-color: var(--bs-primary) !important;
+  color: white !important;
+}
+
+.form-editor-page .form-editor-header h4,
+.form-editor-page .form-editor-header .text-white,
+.form-editor-page .card-header.bg-primary h4,
+.form-editor-page .card-header.bg-primary .text-white {
+  color: white !important;
+}
+
 @media (max-width: 768px) {
   .form-editor-page .card-header .d-flex.gap-2 {
     flex-direction: column;

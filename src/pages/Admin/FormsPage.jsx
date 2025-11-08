@@ -14,7 +14,6 @@ const FormsPage = () => {
   };
 
   const handleImportSuccess = (importType, fileName) => {
-    toast.success(`${importType} file "${fileName}" imported successfully!`);
     setShowImportModal(false);
   };
 
