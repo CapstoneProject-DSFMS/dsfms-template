@@ -1,26 +1,26 @@
 import React, { useState, useEffect } from 'react';
 import { Container, Row, Col, Card, Button, Badge, Spinner, Alert } from 'react-bootstrap';
 import { 
-  ArrowLeft, 
   Book, 
   People, 
   CalendarEvent,
   CheckCircle,
   Clock,
   ThreeDotsVertical,
-  Eye,
-  Pencil
+  Eye
 } from 'react-bootstrap-icons';
 import { useNavigate, useParams } from 'react-router-dom';
 import { LoadingSkeleton, SearchBar, PermissionWrapper, AdminTable, SortIcon } from '../../components/Common';
 import PortalUnifiedDropdown from '../../components/Common/PortalUnifiedDropdown';
 import useTableSort from '../../hooks/useTableSort';
 import { API_PERMISSIONS } from '../../constants/apiPermissions';
+import { useAuth } from '../../hooks/useAuth';
+import { departmentAPI } from '../../api/department';
 import '../../styles/scrollable-table.css';
 import '../../styles/department-head.css';
 
 // Course Table Component
-const CourseTable = ({ courses, loading, onView, onEdit }) => {
+const CourseTable = ({ courses, loading, onView }) => {
   const { sortedData, sortConfig, handleSort } = useTableSort(courses);
 
   if (loading) {
@@ -114,9 +114,13 @@ const CourseTable = ({ courses, loading, onView, onEdit }) => {
 };
 
 // Course Row Component
-const CourseRow = ({ course, index, onView, onEdit }) => {
+const CourseRow = ({ course, index, onView }) => {
   const getStatusBadge = (status) => {
     const statusConfig = {
+      PLANNED: { variant: 'info', icon: Clock },
+      ONGOING: { variant: 'primary', icon: CheckCircle },
+      COMPLETED: { variant: 'success', icon: CheckCircle },
+      CANCELLED: { variant: 'secondary', icon: Clock },
       active: { variant: 'success', icon: CheckCircle },
       inactive: { variant: 'secondary', icon: Clock },
       pending: { variant: 'warning', icon: Clock }
@@ -139,12 +143,6 @@ const CourseRow = ({ course, index, onView, onEdit }) => {
       icon: <Eye />,
       onClick: () => onView(course),
       permission: API_PERMISSIONS.COURSES.VIEW_DETAIL
-    },
-    {
-      label: 'Edit Course',
-      icon: <Pencil />,
-      onClick: () => onEdit(course),
-      permission: API_PERMISSIONS.COURSES.UPDATE
     }
   ];
 
@@ -186,7 +184,7 @@ const CourseRow = ({ course, index, onView, onEdit }) => {
       </td>
       <td className="align-middle text-center show-mobile">
         <PermissionWrapper 
-          permissions={[API_PERMISSIONS.COURSES.VIEW_DETAIL, API_PERMISSIONS.COURSES.UPDATE]}
+          permissions={[API_PERMISSIONS.COURSES.VIEW_DETAIL]}
           fallback={null}
         >
           <PortalUnifiedDropdown
@@ -211,59 +209,78 @@ const CourseRow = ({ course, index, onView, onEdit }) => {
 const MyDepartmentDetailsPage = () => {
   const navigate = useNavigate();
   const { courseId } = useParams();
+  const { user } = useAuth();
   const [courses, setCourses] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [filterStatus, setFilterStatus] = useState('all');
   const [selectedCourse, setSelectedCourse] = useState(null);
   const [activeTab, setActiveTab] = useState('subjects');
 
-  // Mock data - replace with actual API call
+  // Fetch courses from API
   useEffect(() => {
-    const mockCourses = [
-      {
-        id: 1,
-        title: 'Software Development Fundamentals',
-        code: 'SDF-001',
-        description: 'Introduction to software development principles and practices',
-        status: 'active',
-        enrolledCount: 25,
-        startDate: '2024-01-15T09:00:00Z',
-        department: 'IT Department'
-      },
-      {
-        id: 2,
-        title: 'Database Management Systems',
-        code: 'DMS-002',
-        description: 'Comprehensive course on database design and management',
-        status: 'active',
-        enrolledCount: 18,
-        startDate: '2024-01-20T10:00:00Z',
-        department: 'IT Department'
-      },
-      {
-        id: 3,
-        title: 'Web Development Advanced',
-        code: 'WDA-003',
-        description: 'Advanced web development techniques and frameworks',
-        status: 'pending',
-        enrolledCount: 12,
-        startDate: '2024-02-01T09:00:00Z',
-        department: 'IT Department'
+    const fetchCourses = async () => {
+      if (!user || !user.id) {
+        setLoading(false);
+        return;
       }
-    ];
-    
-    setTimeout(() => {
-      setCourses(mockCourses);
-      setLoading(false);
-    }, 1000);
-  }, []);
+
+      try {
+        setLoading(true);
+        setError(null);
+
+        // Step 1: Get all departments
+        const departmentsResponse = await departmentAPI.getDepartments({ includeDeleted: true });
+        const departments = departmentsResponse.departments || [];
+
+        // Step 2: Find department where headUserId matches current user id
+        const userDepartment = departments.find(dept => dept.headUserId === user.id);
+
+        if (!userDepartment) {
+          setCourses([]);
+          setLoading(false);
+          return;
+        }
+
+        // Step 3: Get department detail to get courses
+        const departmentDetail = await departmentAPI.getDepartmentById(userDepartment.id);
+        const coursesList = departmentDetail.courses || [];
+
+        // Step 4: Map courses to match expected format
+        const mappedCourses = coursesList.map(course => ({
+          id: course.id,
+          title: course.name,
+          code: course.code,
+          description: course.description || '',
+          status: course.status || 'PLANNED',
+          enrolledCount: course.maxNumTrainee || 0,
+          startDate: course.startDate,
+          endDate: course.endDate,
+          level: course.level,
+          venue: course.venue,
+          passScore: course.passScore,
+          subjectCount: course.subjectCount || 0
+        }));
+
+        setCourses(mappedCourses);
+      } catch (err) {
+        console.error('Error fetching courses:', err);
+        setError('Failed to load courses. Please try again later.');
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchCourses();
+  }, [user]);
 
   const filteredCourses = courses.filter(course => {
     const matchesSearch = course.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
                          course.code.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         course.description.toLowerCase().includes(searchTerm.toLowerCase());
+                         (course.description && course.description.toLowerCase().includes(searchTerm.toLowerCase()));
     
+    // Filter by status
     const matchesFilter = filterStatus === 'all' || course.status === filterStatus;
     
     return matchesSearch && matchesFilter;
@@ -272,11 +289,6 @@ const MyDepartmentDetailsPage = () => {
   const handleViewCourse = (course) => {
     setSelectedCourse(course);
     navigate(`/department-head/my-department-details/${course.id}`);
-  };
-
-  const handleEditCourse = (course) => {
-    // Handle edit course logic
-    console.log('Edit course:', course);
   };
 
   const tabs = [
@@ -301,79 +313,70 @@ const MyDepartmentDetailsPage = () => {
       <Container fluid className="py-4">
         <div className="text-center py-5">
           <Spinner animation="border" variant="primary" />
-          <p className="mt-3 text-muted">Loading department details...</p>
+          <p className="mt-3 text-muted">Loading courses...</p>
         </div>
+      </Container>
+    );
+  }
+
+  if (error) {
+    return (
+      <Container fluid className="py-4">
+        <Alert variant="danger">
+          <Alert.Heading>Error</Alert.Heading>
+          <p>{error}</p>
+        </Alert>
       </Container>
     );
   }
 
   return (
     <Container fluid className="py-4 my-department-details-page">
-      <Card className="border-neutral-200 shadow-sm">
-        <Card.Header className="bg-light-custom border-neutral-200">
-          <Row className="align-items-center">
-            <Col xs={12} className="mt-2 mt-md-0 mb-3">
-              <div className="d-flex align-items-center mb-3">
-                <button 
-                  className="btn btn-link p-0 me-3"
-                  onClick={() => navigate('/department-head/dashboard')}
-                >
-                  <ArrowLeft size={20} />
-                </button>
-                <div>
-                  <h2 className="mb-1">My Department Details</h2>
-                  <p className="text-muted mb-0">Manage courses, subjects, and trainees in your department</p>
-                </div>
+      {/* Courses Section */}
+      <Card className="border-0 shadow-sm mb-0">
+        <Card.Header className="department-head-section-header bg-primary text-white border-0">
+          <div className="d-flex justify-content-between align-items-center">
+            <h4 className="mb-0 text-white">
+              <Book className="me-2" />
+              Courses ({filteredCourses.length})
+            </h4>
+          </div>
+        </Card.Header>
+        <Card.Body>
+          {/* Search and Filters */}
+          <Row className="mb-3 form-mobile-stack search-filter-section">
+            <Col xs={12} lg={6} md={5} className="mb-2 mb-lg-0">
+              <SearchBar
+                placeholder="Search courses by title, code, or description..."
+                value={searchTerm}
+                onChange={setSearchTerm}
+                className="search-bar-mobile"
+              />
+            </Col>
+            <Col xs={12} lg={3} md={4} className="mb-2 mb-lg-0 position-relative">
+              <select 
+                className="form-select filter-panel-mobile"
+                value={filterStatus}
+                onChange={(e) => setFilterStatus(e.target.value)}
+              >
+                <option value="all">All Status</option>
+                <option value="PLANNED">Planned</option>
+                <option value="ONGOING">Ongoing</option>
+                <option value="COMPLETED">Completed</option>
+                <option value="CANCELLED">Cancelled</option>
+              </select>
+            </Col>
+            <Col xs={12} lg={3} md={3}>
+              <div className="text-end text-mobile-center">
+                <small className="text-muted">
+                  {filteredCourses.length} course{filteredCourses.length !== 1 ? 's' : ''}
+                </small>
               </div>
             </Col>
           </Row>
-        </Card.Header>
 
-        <Card.Body>
-          {/* Courses Section */}
-          <Card className="border-0 shadow-sm mb-0">
-            <Card.Header className="department-head-section-header bg-primary text-white border-0">
-              <div className="d-flex justify-content-between align-items-center">
-                <h5 className="mb-0 text-white">
-                  <Book className="me-2" />
-                  Courses ({filteredCourses.length})
-                </h5>
-              </div>
-            </Card.Header>
-            <Card.Body>
-              {/* Search and Filters */}
-              <Row className="mb-3 form-mobile-stack search-filter-section">
-                <Col xs={12} lg={6} md={5} className="mb-2 mb-lg-0">
-                  <SearchBar
-                    placeholder="Search courses by title, code, or description..."
-                    value={searchTerm}
-                    onChange={setSearchTerm}
-                    className="search-bar-mobile"
-                  />
-                </Col>
-                <Col xs={12} lg={3} md={4} className="mb-2 mb-lg-0 position-relative">
-                  <select 
-                    className="form-select filter-panel-mobile"
-                    value={filterStatus}
-                    onChange={(e) => setFilterStatus(e.target.value)}
-                  >
-                    <option value="all">All Status</option>
-                    <option value="active">Active</option>
-                    <option value="inactive">Inactive</option>
-                    <option value="pending">Pending</option>
-                  </select>
-                </Col>
-                <Col xs={12} lg={3} md={3}>
-                  <div className="text-end text-mobile-center">
-                    <small className="text-muted">
-                      {filteredCourses.length} course{filteredCourses.length !== 1 ? 's' : ''}
-                    </small>
-                  </div>
-                </Col>
-              </Row>
-
-              {/* Courses Table */}
-              <AdminTable
+          {/* Courses Table */}
+          <AdminTable
             data={filteredCourses}
             loading={loading}
             columns={[
@@ -390,14 +393,11 @@ const MyDepartmentDetailsPage = () => {
                 course={course}
                 index={index}
                 onView={handleViewCourse}
-                onEdit={handleEditCourse}
               />
             )}
             emptyMessage="No courses found"
             emptyDescription="Try adjusting your search criteria."
           />
-            </Card.Body>
-          </Card>
         </Card.Body>
       </Card>
     </Container>

@@ -89,12 +89,28 @@ const ImportFileModal = ({ show, onHide, onImportSuccess, onImportError }) => {
       
       // Xử lý 2 luồng khác nhau
       if (importType === 'with-fields') {
-        // Luồng 1: File with fields - Navigate trực tiếp
+        // Luồng 1: File with fields - Lưu thông tin và navigate
+        const templateData = {
+          name: templateInfo.name,
+          description: templateInfo.description,
+          departmentId: templateInfo.departmentId,
+          templateContent: documentUrl,
+          fileName: selectedFile.name.replace('.docx', ''),
+          importType: 'File with fields',
+          createdAt: new Date().toISOString()
+        };
+
+        // Lưu vào localStorage
+        localStorage.setItem('templateInfo', JSON.stringify(templateData));
+        console.log('💾 Template info saved to localStorage:', templateData);
+
+        // Navigate đến editor
         navigate('/admin/forms/editor', {
           state: {
             documentUrl: documentUrl,
-            fileName: selectedFile.name.replace('.docx', ''),
-            importType: 'File with fields'
+            fileName: templateData.fileName,
+            importType: 'File with fields',
+            templateInfo: templateData
           }
         });
         
@@ -231,8 +247,8 @@ const ImportFileModal = ({ show, onHide, onImportSuccess, onImportError }) => {
           </Alert>
         )}
 
-        {/* Template Information Form - Show for "without-fields" */}
-        {importType === 'without-fields' && (
+        {/* Template Information Form - Show for both types */}
+        {(importType === 'without-fields' || importType === 'with-fields') && (
           <div className="mb-4">
             <h6 className="text-primary-custom mb-3">Fill in Basic Template Information</h6>
             <Form>
@@ -351,7 +367,7 @@ const ImportFileModal = ({ show, onHide, onImportSuccess, onImportError }) => {
             variant="primary-custom"
             size="sm"
             onClick={handleImport}
-            disabled={!selectedFile || isUploading}
+            disabled={!selectedFile || !templateInfo.name || !templateInfo.description || !templateInfo.departmentId || isUploading}
             className="w-100 w-md-auto order-1 order-md-2"
           >
             {isUploading ? (

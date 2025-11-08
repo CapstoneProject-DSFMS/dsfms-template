@@ -179,8 +179,21 @@ const Header = ({ onToggleSidebar }) => {
       '/sqa/templates/history': 'Template History',
       '/sqa/templates/sections': 'Template Sections',
       '/sqa/templates/fields': 'Template Fields',
-      '/sqa/templates/pdf-preview': 'PDF Preview'
+      '/sqa/templates/pdf-preview': 'PDF Preview',
+      
+      // Department Head routes
+      '/department-head': 'Department Dashboard',
+      '/department-head/dashboard': 'Department Dashboard',
+      '/department-head/my-department-details': 'My Department Details',
+      '/department-head/assessment-review-requests': 'Assessment Review Requests'
     };
+    
+    // Check for department head course details (pattern: /department-head/my-department-details/:courseId)
+    if (path.startsWith('/department-head/my-department-details/') && 
+        path !== '/department-head/my-department-details' &&
+        !path.includes('/subjects/')) {
+      return 'Course Details';
+    }
     
     // Check for department detail page (pattern: /admin/departments/:id)
     if (path.startsWith('/admin/departments/') && path !== '/admin/departments') {
@@ -240,6 +253,11 @@ const Header = ({ onToggleSidebar }) => {
     // Check for assessment section (pattern: /trainee/:traineeId/assessment-section/:sectionId)
     if (path.match(/^\/trainee\/[^/]+\/assessment-section\/[^/]+$/)) {
       return 'Assessment Section';
+    }
+    
+    // Check for admin form editor (pattern: /admin/forms/editor)
+    if (path.startsWith('/admin/forms/editor')) {
+      return 'Form Templates';
     }
     
     // Check for SQA template detail pages (pattern: /sqa/templates/:templateId)

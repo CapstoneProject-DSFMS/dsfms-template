@@ -21,6 +21,14 @@ const dashboardStyles = `
   .assessments-card .card-header h5 {
     color: #ffffff !important;
   }
+  .quick-actions-card .card-header {
+    background-color: #1b3c53 !important;
+    color: #ffffff !important;
+    border-bottom: 1px solid #dee2e6 !important;
+  }
+  .quick-actions-card .card-header h5 {
+    color: #ffffff !important;
+  }
 `;
 
 // Inject the styles
@@ -71,50 +79,55 @@ const TraineeDashboardPage = () => {
       {/* Quick Actions */}
       <Row className="mb-4">
         <Col>
-          <h3 className="mb-3">Quick Actions</h3>
+          <Card className="border-0 shadow-sm quick-actions-card">
+            <Card.Header>
+              <h5 className="mb-0">Quick Actions</h5>
+            </Card.Header>
+            <Card.Body>
+              <Row>
+                {quickActions.map((action, index) => {
+                  const IconComponent = action.icon;
+                  return (
+                    <Col lg={6} xl={3} className="mb-3" key={index}>
+                      <Card 
+                        className="h-100 border-0 shadow-sm hover-card"
+                        style={{ 
+                          cursor: 'pointer',
+                          transition: 'all 0.3s ease'
+                        }}
+                        onClick={() => navigate(action.path)}
+                        onMouseEnter={(e) => {
+                          e.currentTarget.style.transform = 'translateY(-5px)';
+                          e.currentTarget.style.boxShadow = '0 8px 25px rgba(0,0,0,0.15)';
+                        }}
+                        onMouseLeave={(e) => {
+                          e.currentTarget.style.transform = 'translateY(0)';
+                          e.currentTarget.style.boxShadow = '0 2px 10px rgba(0,0,0,0.1)';
+                        }}
+                      >
+                        <Card.Body className="p-4">
+                          <div className="d-flex align-items-center mb-3">
+                            <div 
+                              className={`bg-${action.color} text-white rounded-circle d-flex align-items-center justify-content-center me-3`}
+                              style={{ width: '48px', height: '48px' }}
+                            >
+                              <IconComponent size={24} />
+                            </div>
+                            <div className="flex-grow-1">
+                              <h5 className="mb-1">{action.title}</h5>
+                            </div>
+                            <ArrowRight size={20} className="text-muted" />
+                          </div>
+                          <p className="text-muted mb-0">{action.description}</p>
+                        </Card.Body>
+                      </Card>
+                    </Col>
+                  );
+                })}
+              </Row>
+            </Card.Body>
+          </Card>
         </Col>
-      </Row>
-
-      <Row>
-        {quickActions.map((action, index) => {
-          const IconComponent = action.icon;
-          return (
-            <Col lg={6} xl={3} className="mb-4" key={index}>
-              <Card 
-                className="h-100 border-0 shadow-sm hover-card"
-                style={{ 
-                  cursor: 'pointer',
-                  transition: 'all 0.3s ease'
-                }}
-                onClick={() => navigate(action.path)}
-                onMouseEnter={(e) => {
-                  e.currentTarget.style.transform = 'translateY(-5px)';
-                  e.currentTarget.style.boxShadow = '0 8px 25px rgba(0,0,0,0.15)';
-                }}
-                onMouseLeave={(e) => {
-                  e.currentTarget.style.transform = 'translateY(0)';
-                  e.currentTarget.style.boxShadow = '0 2px 10px rgba(0,0,0,0.1)';
-                }}
-              >
-                <Card.Body className="p-4">
-                  <div className="d-flex align-items-center mb-3">
-                    <div 
-                      className={`bg-${action.color} text-white rounded-circle d-flex align-items-center justify-content-center me-3`}
-                      style={{ width: '48px', height: '48px' }}
-                    >
-                      <IconComponent size={24} />
-                    </div>
-                    <div className="flex-grow-1">
-                      <h5 className="mb-1">{action.title}</h5>
-                    </div>
-                    <ArrowRight size={20} className="text-muted" />
-                  </div>
-                  <p className="text-muted mb-0">{action.description}</p>
-                </Card.Body>
-              </Card>
-            </Col>
-          );
-        })}
       </Row>
 
 
