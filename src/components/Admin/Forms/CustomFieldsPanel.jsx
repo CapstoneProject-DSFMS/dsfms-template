@@ -308,25 +308,79 @@ const CustomFieldsPanel = ({
       
       console.log('📋 Original templateContent (file import):', originalTemplateContent);
       console.log('📡 Callback URL configured:', `${API_CONFIG.BASE_URL}/media/docs/onlyoffice/callback`);
+      console.log('');
+      console.log('═══════════════════════════════════════════════════════════');
+      console.log('📦 CALLBACK BODY INFO (for backend comparison):');
+      console.log('═══════════════════════════════════════════════════════════');
+      console.log('⚠️ LƯU Ý: Đây là body MONG ĐỢI, không phải body thực tế!');
+      console.log('⚠️ Body thực tế chỉ có thể thấy trong Backend logs');
+      console.log('═══════════════════════════════════════════════════════════');
+      if (documentKey) {
+        const expectedCallbackBody = {
+          key: documentKey,
+          status: 6, // Expected status when document is saved
+          url: 'https://documentserver/url-to-edited-document.docx' // OnlyOffice will provide actual URL
+        };
+        console.log('📋 Expected Callback Body (JSON format - để tham khảo):');
+        console.log(JSON.stringify(expectedCallbackBody, null, 2));
+        console.log('');
+        console.log('📋 Expected Callback Body (One-line - copy để so sánh với Backend logs):');
+        console.log(JSON.stringify(expectedCallbackBody));
+        console.log('');
+        console.log('📋 Giải thích:');
+        console.log('   - key:', documentKey, '← DocumentKey này sẽ được gửi trong callback');
+        console.log('   - status: 6 ← Mong đợi status này (6 = Document saved)');
+        console.log('   - url: "https://documentserver/..." ← PLACEHOLDER, OnlyOffice sẽ thay bằng URL thực tế');
+        console.log('');
+        console.log('💡 Backend sẽ nhận POST request với body structure tương tự');
+        console.log('💡 So sánh body trong Backend logs với expected body ở trên để verify');
+      } else {
+        console.log('⚠️ DocumentKey not available');
+      }
+      console.log('═══════════════════════════════════════════════════════════');
+      console.log('');
       
       if (forceSaveAndPoll) {
         try {
-          console.log('📤 Step 1: Starting callback flow (trigger save only, polling disabled)...');
-          console.log('📤 Step 2: Calling forceSaveAndPoll()...');
-          console.log('📤 Step 3: OnlyOffice will send POST callback to backend with documentKey:', documentKey);
+          console.log('═══════════════════════════════════════════════════════════');
+          console.log('📤 STEP 1: TRIGGER CALLBACK FLOW');
+          console.log('═══════════════════════════════════════════════════════════');
+          console.log('📤 Step 1.1: Starting callback flow (trigger save only, polling disabled)...');
+          console.log('📤 Step 1.2: Calling forceSaveAndPoll()...');
+          console.log('📤 Step 1.3: OnlyOffice will send POST callback to backend with documentKey:', documentKey);
           console.log('⏸️ NOTE: Polling is temporarily disabled - check backend logs to verify callback');
           
           templateConfigUrl = await forceSaveAndPoll();
           
           if (templateConfigUrl) {
-            console.log('✅ Step 4: Callback flow SUCCESS!');
+            console.log('✅ Step 1.4: Callback flow SUCCESS!');
             console.log('✅ templateConfig URL (file đã chỉnh sửa từ backend):', templateConfigUrl);
             console.log('📊 Callback flow status: ✅ HOẠT ĐỘNG');
           } else {
-            console.log('⏸️ Step 4: Polling disabled - templateConfig will be null');
+            console.log('⏸️ Step 1.4: Polling disabled - templateConfig will be null');
             console.log('📊 Callback flow status: ⏸️ POLLING DISABLED');
             console.log('💡 Check backend logs to verify if POST callback was received');
           }
+          
+          console.log('═══════════════════════════════════════════════════════════');
+          console.log('⏳ STEP 2: WAITING FOR CALLBACK TO BE SENT');
+          console.log('═══════════════════════════════════════════════════════════');
+          console.log('⏳ Waiting 10 seconds for OnlyOffice to send POST callback to backend...');
+          console.log('⏳ This gives OnlyOffice Server time to process and send callback');
+          console.log('⏳ Expected callback URL:', `${API_CONFIG.BASE_URL}/media/docs/onlyoffice/callback`);
+          console.log('⏳ Expected documentKey in callback:', documentKey);
+          toast.info('Waiting 10 seconds for callback... Please check backend logs');
+          
+          // Wait 10 seconds for callback to be sent
+          await new Promise(resolve => setTimeout(resolve, 10000));
+          
+          console.log('✅ Wait completed!');
+          console.log('💡 IMPORTANT: Check backend logs NOW to verify if callback was received');
+          console.log('💡 Look for POST request to /media/docs/onlyoffice/callback');
+          console.log('💡 Compare backend received body with expected body shown above');
+          console.log('═══════════════════════════════════════════════════════════');
+          console.log('');
+          
         } catch (err) {
           console.error('❌ Callback flow failed:', err);
           console.log('📊 Callback flow status: ❌ KHÔNG HOẠT ĐỘNG - Using fallback');
@@ -338,6 +392,14 @@ const CustomFieldsPanel = ({
         console.log('📊 Callback flow status: ⚠️ FUNCTION KHÔNG TỒN TẠI');
         templateConfigUrl = null;
       }
+      
+      console.log('═══════════════════════════════════════════════════════════');
+      console.log('📤 STEP 3: SUBMITTING TEMPLATE TO BACKEND');
+      console.log('═══════════════════════════════════════════════════════════');
+      console.log('📤 Now proceeding to submit template...');
+      console.log('📤 This will call POST /templates API');
+      console.log('═══════════════════════════════════════════════════════════');
+      console.log('');
       
       // Build payload:
       // - templateContent: URL file import ban đầu
