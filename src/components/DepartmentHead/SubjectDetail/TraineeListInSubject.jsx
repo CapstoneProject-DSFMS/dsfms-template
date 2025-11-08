@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Table, Badge, Button, Row, Col, Spinner, Alert } from 'react-bootstrap';
-import { Person, Calendar, Clock, Eye, ThreeDotsVertical } from 'react-bootstrap-icons';
-import { useNavigate } from 'react-router-dom';
+import { Person, Calendar, Clock, Eye, ThreeDotsVertical, ArrowLeft } from 'react-bootstrap-icons';
+import { useNavigate, useParams } from 'react-router-dom';
 import { LoadingSkeleton, SortIcon, PortalUnifiedDropdown, SearchBar } from '../../Common';
 import TrainerFilterPanel from '../../Trainer/TrainerFilterPanel';
 import useTableSort from '../../../hooks/useTableSort';
@@ -9,6 +9,8 @@ import '../../../styles/scrollable-table.css';
 
 const TraineeListInSubject = ({ subjectId, courseId }) => {
   const navigate = useNavigate();
+  const { courseId: paramCourseId } = useParams();
+  const actualCourseId = courseId || paramCourseId;
   const [trainees, setTrainees] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -208,6 +210,20 @@ const TraineeListInSubject = ({ subjectId, courseId }) => {
 
   return (
     <div className="p-4">
+      {/* Back Button */}
+      <Row className="mb-3">
+        <Col>
+          <button 
+            className="btn btn-link p-0 text-decoration-none"
+            onClick={() => navigate(`/department-head/my-department-details/${actualCourseId}`)}
+            style={{ color: 'var(--bs-primary)' }}
+          >
+            <ArrowLeft size={20} className="me-2" />
+            Back to Course Details
+          </button>
+        </Col>
+      </Row>
+
       {/* Search and Filters */}
       <Row className="mb-3 form-mobile-stack search-filter-section">
         <Col xs={12} lg={6} md={5} className="mb-2 mb-lg-0">

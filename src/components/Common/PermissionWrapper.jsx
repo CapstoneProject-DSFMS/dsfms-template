@@ -26,10 +26,17 @@ const PermissionWrapper = ({
 
     // Multiple permissions check
     if (permissions && permissions.length > 0) {
+      // Filter out null/undefined permissions
+      const validPermissions = permissions.filter(perm => perm && typeof perm === 'string');
+      
+      if (validPermissions.length === 0) {
+        return true; // If no valid permissions, allow access
+      }
+      
       if (requireAll) {
-        return hasAllPermissions(permissions);
+        return hasAllPermissions(validPermissions);
       } else {
-        return hasAnyPermission(permissions);
+        return hasAnyPermission(validPermissions);
       }
     }
 

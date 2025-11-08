@@ -27,6 +27,7 @@ const EditorWithMergeFields = ({ onInsertField, exportEditedDoc, initialUrl, rea
   });
   const [availableRoles, setAvailableRoles] = useState(['TRAINER', 'TRAINEE']);
   const lastExtractedUrlRef = useRef(null);
+  const isReorderRef = useRef(false);
   const [dragState, setDragState] = useState({ sectionIndex: null, fromIndex: null, overIndex: null, position: 'above' });
   const [sectionDragState, setSectionDragState] = useState({ fromIndex: null, overIndex: null, position: 'above' });
   
@@ -120,6 +121,10 @@ const EditorWithMergeFields = ({ onInsertField, exportEditedDoc, initialUrl, rea
       // - If field has parentTempId, it's already a child of PART (will be dragged with PART)
       // - If field has null parentTempId, it's an independent field (no reset needed)
       
+      // Check if this is a reorder operation (field already exists in section)
+      // We need to check this before setSections to determine if we should remove from mergeFields
+      // Reset ref
+      isReorderRef.current = false;
       setSections((prev) => {
         const next = [...prev];
         const existingFields = next[sectionIndex]?.fields || [];
@@ -128,14 +133,17 @@ const EditorWithMergeFields = ({ onInsertField, exportEditedDoc, initialUrl, rea
         // CRITICAL: Only consider it a reorder if we're dragging PART fields that already exist
         // OR if we're dragging fields that are exact same instances (same name AND same parentTempId/tempId)
         const draggedPartFields = fieldsToAdd.filter(isPart);
-        const isReorder = draggedPartFields.some(partField => {
+        const checkReorder = draggedPartFields.some(partField => {
           // Check if this exact PART field (by name) already exists in section
           return existingFields.some(existing => 
             isPart(existing) && existing.name === partField.name
           );
         });
         
-        if (isReorder) {
+        // Store in ref for use outside callback
+        isReorderRef.current = checkReorder;
+        
+        if (checkReorder) {
           // Reorder: remove ONLY the dragged PART fields and their children
           // CRITICAL: Don't remove fields that have same name but different parentTempId (they belong to different PART fields)
           const partFieldNamesToRemove = new Set(draggedPartFields.map(f => f.name));
@@ -323,6 +331,34 @@ const EditorWithMergeFields = ({ onInsertField, exportEditedDoc, initialUrl, rea
         
         return next;
       });
+      
+      // Remove dragged fields from mergeFields list (only if not reorder)
+      // Store original fields before normalization for removal
+      const originalFieldsToRemove = fieldsToAdd;
+      
+      if (!isReorderRef.current) {
+        setMergeFields((prev) => {
+          // Helper to match fields for removal
+          const matchField = (field1, field2) => {
+            // For PART fields, match by name
+            if (isPart(field1) && isPart(field2)) {
+              return field1.name === field2.name;
+            }
+            // For child fields, match by name + parentTempId
+            if (field1.parentTempId && field2.parentTempId) {
+              return field1.name === field2.name && field1.parentTempId === field2.parentTempId;
+            }
+            // For top-level fields, match by name
+            return field1.name === field2.name && !field1.parentTempId && !field2.parentTempId;
+          };
+          
+          // Remove fields that match the dragged fields
+          return prev.filter(mergeField => {
+            // Check if this mergeField should be removed
+            return !originalFieldsToRemove.some(draggedField => matchField(mergeField, draggedField));
+          });
+        });
+      }
     } catch {
       // ignore malformed drag payload
     }
@@ -1089,8 +1125,37 @@ const EditorWithMergeFields = ({ onInsertField, exportEditedDoc, initialUrl, rea
                                     size="sm"
                                     onClick={() => {
                                       const next = [...sections];
+                                      const removedField = next[sIdx].fields[realIndex];
                                       next[sIdx].fields = next[sIdx].fields.filter((_, i) => i !== realIndex);
                                       setSections(next);
+                                      
+                                      // Add field back to mergeFields list
+                                      if (removedField) {
+                                        setMergeFields((prev) => {
+                                          // Check if field already exists in mergeFields
+                                          const fieldExists = prev.some(f => {
+                                            // For PART fields, match by name
+                                            if (isPart(f) && isPart(removedField)) {
+                                              return f.name === removedField.name;
+                                            }
+                                            // For child fields, match by name + parentTempId
+                                            if (f.parentTempId && removedField.parentTempId) {
+                                              return f.name === removedField.name && f.parentTempId === removedField.parentTempId;
+                                            }
+                                            // For top-level fields, match by name
+                                            return f.name === removedField.name && !f.parentTempId && !removedField.parentTempId;
+                                          });
+                                          
+                                          if (!fieldExists) {
+                                            // Restore original field state (restore parentTempId if it was a PART field)
+                                            const restoredField = { ...removedField };
+                                            // If this was a PART field in section, restore its original parentTempId structure
+                                            // For now, just add it back as-is
+                                            return [...prev, restoredField];
+                                          }
+                                          return prev;
+                                        });
+                                      }
                                     }}
                                     disabled={readOnly}
                                     title="Remove Field"
@@ -1187,8 +1252,35 @@ const EditorWithMergeFields = ({ onInsertField, exportEditedDoc, initialUrl, rea
                                               size="sm"
                                               onClick={() => {
                                                 const next = [...sections];
+                                                const removedField = next[sIdx].fields[realIdx];
                                                 next[sIdx].fields = next[sIdx].fields.filter((_, i) => i !== realIdx);
                                                 setSections(next);
+                                                
+                                                // Add field back to mergeFields list
+                                                if (removedField) {
+                                                  setMergeFields((prev) => {
+                                                    // Check if field already exists in mergeFields
+                                                    const fieldExists = prev.some(f => {
+                                                      // For PART fields, match by name
+                                                      if (isPart(f) && isPart(removedField)) {
+                                                        return f.name === removedField.name;
+                                                      }
+                                                      // For child fields, match by name + parentTempId
+                                                      if (f.parentTempId && removedField.parentTempId) {
+                                                        return f.name === removedField.name && f.parentTempId === removedField.parentTempId;
+                                                      }
+                                                      // For top-level fields, match by name
+                                                      return f.name === removedField.name && !f.parentTempId && !removedField.parentTempId;
+                                                    });
+                                                    
+                                                    if (!fieldExists) {
+                                                      // Restore original field state
+                                                      const restoredField = { ...removedField };
+                                                      return [...prev, restoredField];
+                                                    }
+                                                    return prev;
+                                                  });
+                                                }
                                               }}
                                               disabled={readOnly}
                                               title="Remove Field"

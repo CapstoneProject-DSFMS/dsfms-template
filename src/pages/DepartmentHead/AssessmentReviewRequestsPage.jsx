@@ -143,7 +143,7 @@ const AssessmentRequestRow = ({ request, index, onView, onApprove, onDeny }) => 
         label: 'View Details',
         icon: <Eye />,
         onClick: () => onView(request),
-        permission: API_PERMISSIONS.ASSESSMENTS.VIEW_DETAIL
+        permission: API_PERMISSIONS.ASSESSMENTS.VIEW_ALL
       }
     ];
 
@@ -216,7 +216,7 @@ const AssessmentRequestRow = ({ request, index, onView, onApprove, onDeny }) => 
       </td>
       <td className="align-middle text-center show-mobile">
         <PermissionWrapper 
-          permissions={[API_PERMISSIONS.ASSESSMENTS.VIEW_DETAIL, API_PERMISSIONS.ASSESSMENTS.APPROVE]}
+          permissions={[API_PERMISSIONS.ASSESSMENTS.VIEW_ALL, API_PERMISSIONS.ASSESSMENTS.APPROVE]}
           fallback={null}
         >
           <PortalUnifiedDropdown
