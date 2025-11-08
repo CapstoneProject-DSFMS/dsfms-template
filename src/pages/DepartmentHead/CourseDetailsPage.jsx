@@ -8,19 +8,19 @@ import {
   CheckCircle,
   Clock,
   ThreeDotsVertical,
-  Eye,
-  Pencil
+  Eye
 } from 'react-bootstrap-icons';
 import { useNavigate, useParams } from 'react-router-dom';
 import { LoadingSkeleton, SearchBar, PermissionWrapper, AdminTable, SortIcon } from '../../components/Common';
 import PortalUnifiedDropdown from '../../components/Common/PortalUnifiedDropdown';
 import useTableSort from '../../hooks/useTableSort';
 import { API_PERMISSIONS } from '../../constants/apiPermissions';
+import courseAPI from '../../api/course';
 import '../../styles/scrollable-table.css';
 import '../../styles/department-head.css';
 
 // Subject Table Component
-const SubjectTable = ({ subjects, loading, onView, onEdit }) => {
+const SubjectTable = ({ subjects, loading, onView }) => {
   const { sortedData, sortConfig, handleSort } = useTableSort(subjects);
 
   if (loading) {
@@ -79,11 +79,11 @@ const SubjectTable = ({ subjects, loading, onView, onEdit }) => {
             <SortableHeader columnKey="status" className="show-mobile">
               Status
             </SortableHeader>
-            <SortableHeader columnKey="enrolledCount" className="hide-mobile">
-              Enrolled
-            </SortableHeader>
             <SortableHeader columnKey="duration" className="hide-mobile">
               Duration
+            </SortableHeader>
+            <SortableHeader columnKey="method" className="hide-mobile">
+              Method
             </SortableHeader>
             <th 
               className="fw-semibold text-center show-mobile"
@@ -98,13 +98,12 @@ const SubjectTable = ({ subjects, loading, onView, onEdit }) => {
           </tr>
         </thead>
         <tbody>
-          {sortedData.map((subject, index) => (
+            {sortedData.map((subject, index) => (
             <SubjectRow
               key={subject.id}
               subject={subject}
               index={index}
               onView={onView}
-              onEdit={onEdit}
             />
           ))}
         </tbody>
@@ -114,9 +113,13 @@ const SubjectTable = ({ subjects, loading, onView, onEdit }) => {
 };
 
 // Subject Row Component
-const SubjectRow = ({ subject, index, onView, onEdit }) => {
+const SubjectRow = ({ subject, index, onView }) => {
   const getStatusBadge = (status) => {
     const statusConfig = {
+      ON_GOING: { variant: 'primary', icon: CheckCircle },
+      PLANNED: { variant: 'info', icon: Clock },
+      COMPLETED: { variant: 'success', icon: CheckCircle },
+      CANCELLED: { variant: 'secondary', icon: Clock },
       active: { variant: 'success', icon: CheckCircle },
       inactive: { variant: 'secondary', icon: Clock },
       pending: { variant: 'warning', icon: Clock }
@@ -128,7 +131,7 @@ const SubjectRow = ({ subject, index, onView, onEdit }) => {
     return (
       <Badge bg={config.variant} className="d-flex align-items-center">
         <IconComponent size={12} className="me-1" />
-        {status.toUpperCase()}
+        {status.replace(/_/g, ' ').toUpperCase()}
       </Badge>
     );
   };
@@ -139,12 +142,6 @@ const SubjectRow = ({ subject, index, onView, onEdit }) => {
       icon: <Eye />,
       onClick: () => onView(subject),
       permission: API_PERMISSIONS.SUBJECTS.VIEW_DETAIL
-    },
-    {
-      label: 'Edit Subject',
-      icon: <Pencil />,
-      onClick: () => onEdit(subject),
-      permission: API_PERMISSIONS.SUBJECTS.UPDATE
     }
   ];
 
@@ -163,8 +160,8 @@ const SubjectRow = ({ subject, index, onView, onEdit }) => {
     >
       <td className="align-middle show-mobile">
         <div>
-          <h6 className="mb-1 fw-medium">{subject.title}</h6>
-          <small className="text-muted">{subject.description}</small>
+          <h6 className="mb-1 fw-medium">{subject.name}</h6>
+          <small className="text-muted">{subject.description || ''}</small>
         </div>
       </td>
       <td className="align-middle show-mobile">
@@ -174,19 +171,18 @@ const SubjectRow = ({ subject, index, onView, onEdit }) => {
         {getStatusBadge(subject.status)}
       </td>
       <td className="align-middle hide-mobile">
-        <div className="d-flex align-items-center">
-          <People size={16} className="me-1 text-muted" />
-          <span>{subject.enrolledCount}</span>
+        <div className="text-muted small">
+          {subject.duration || 0} hours
         </div>
       </td>
       <td className="align-middle hide-mobile">
         <div className="text-muted small">
-          {subject.duration} hours
+          {subject.method || 'N/A'}
         </div>
       </td>
       <td className="align-middle text-center show-mobile">
         <PermissionWrapper 
-          permissions={[API_PERMISSIONS.SUBJECTS.VIEW_DETAIL, API_PERMISSIONS.SUBJECTS.UPDATE]}
+          permissions={[API_PERMISSIONS.SUBJECTS.VIEW_DETAIL]}
           fallback={null}
         >
           <PortalUnifiedDropdown
@@ -208,7 +204,7 @@ const SubjectRow = ({ subject, index, onView, onEdit }) => {
 };
 
 // Trainee Table Component
-const TraineeTable = ({ trainees, loading, onView, onEdit }) => {
+const TraineeTable = ({ trainees, loading, onView }) => {
   const { sortedData, sortConfig, handleSort } = useTableSort(trainees);
 
   if (loading) {
@@ -261,17 +257,17 @@ const TraineeTable = ({ trainees, loading, onView, onEdit }) => {
             <SortableHeader columnKey="name" className="show-mobile">
               Trainee Name
             </SortableHeader>
+            <SortableHeader columnKey="eid" className="hide-mobile">
+              Employee ID
+            </SortableHeader>
             <SortableHeader columnKey="email" className="show-mobile">
               Email
             </SortableHeader>
-            <SortableHeader columnKey="status" className="show-mobile">
-              Status
+            <SortableHeader columnKey="enrollmentCount" className="hide-mobile">
+              Enrollments
             </SortableHeader>
-            <SortableHeader columnKey="enrollmentDate" className="hide-mobile">
-              Enrollment Date
-            </SortableHeader>
-            <SortableHeader columnKey="progress" className="hide-mobile">
-              Progress
+            <SortableHeader columnKey="batches" className="hide-mobile">
+              Batches
             </SortableHeader>
             <th 
               className="fw-semibold text-center show-mobile"
@@ -292,7 +288,6 @@ const TraineeTable = ({ trainees, loading, onView, onEdit }) => {
               trainee={trainee}
               index={index}
               onView={onView}
-              onEdit={onEdit}
             />
           ))}
         </tbody>
@@ -302,37 +297,13 @@ const TraineeTable = ({ trainees, loading, onView, onEdit }) => {
 };
 
 // Trainee Row Component
-const TraineeRow = ({ trainee, index, onView, onEdit }) => {
-  const getStatusBadge = (status) => {
-    const statusConfig = {
-      active: { variant: 'success', icon: CheckCircle },
-      inactive: { variant: 'secondary', icon: Clock },
-      pending: { variant: 'warning', icon: Clock }
-    };
-    
-    const config = statusConfig[status] || statusConfig.pending;
-    const IconComponent = config.icon;
-    
-    return (
-      <Badge bg={config.variant} className="d-flex align-items-center">
-        <IconComponent size={12} className="me-1" />
-        {status.toUpperCase()}
-      </Badge>
-    );
-  };
-
+const TraineeRow = ({ trainee, index, onView }) => {
   const getActionItems = (trainee) => [
     {
       label: 'View Details',
       icon: <Eye />,
       onClick: () => onView(trainee),
       permission: API_PERMISSIONS.TRAINEES.VIEW_DETAIL
-    },
-    {
-      label: 'Edit Trainee',
-      icon: <Pencil />,
-      onClick: () => onEdit(trainee),
-      permission: API_PERMISSIONS.TRAINEES.UPDATE
     }
   ];
 
@@ -352,28 +323,30 @@ const TraineeRow = ({ trainee, index, onView, onEdit }) => {
       <td className="align-middle show-mobile">
         <div>
           <h6 className="mb-1 fw-medium">{trainee.name}</h6>
-          <small className="text-muted">{trainee.department}</small>
+          <small className="text-muted">{trainee.email}</small>
         </div>
+      </td>
+      <td className="align-middle hide-mobile">
+        <span className="text-dark fw-medium">{trainee.eid || 'N/A'}</span>
       </td>
       <td className="align-middle show-mobile">
         <span className="text-dark">{trainee.email}</span>
       </td>
-      <td className="align-middle show-mobile">
-        {getStatusBadge(trainee.status)}
-      </td>
       <td className="align-middle hide-mobile">
         <div className="text-muted small">
-          {new Date(trainee.enrollmentDate).toLocaleDateString()}
+          {trainee.enrollmentCount || 0}
         </div>
       </td>
       <td className="align-middle hide-mobile">
-        <div className="fw-medium">
-          {trainee.progress}%
+        <div className="text-muted small">
+          {trainee.batches && trainee.batches.length > 0 
+            ? trainee.batches.join(', ') 
+            : 'N/A'}
         </div>
       </td>
       <td className="align-middle text-center show-mobile">
         <PermissionWrapper 
-          permissions={[API_PERMISSIONS.TRAINEES.VIEW_DETAIL, API_PERMISSIONS.TRAINEES.UPDATE]}
+          permissions={[API_PERMISSIONS.TRAINEES.VIEW_DETAIL]}
           fallback={null}
         >
           <PortalUnifiedDropdown
@@ -402,105 +375,97 @@ const CourseDetailsPage = () => {
   const [subjects, setSubjects] = useState([]);
   const [trainees, setTrainees] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
   const [activeTab, setActiveTab] = useState('subjects');
 
-  // Mock data - replace with actual API call
+  // Fetch course details from API
   useEffect(() => {
-    const mockCourse = {
-      id: courseId,
-      title: 'Software Development Fundamentals',
-      code: 'SDF-001',
-      description: 'Introduction to software development principles and practices',
-      status: 'active',
-      enrolledCount: 25,
-      startDate: '2024-01-15T09:00:00Z',
-      department: 'IT Department'
+    const fetchCourseDetails = async () => {
+      if (!courseId) {
+        setLoading(false);
+        return;
+      }
+
+      try {
+        setLoading(true);
+        setError(null);
+
+        // Call API GET /courses/{courseId}
+        const courseData = await courseAPI.getCourseById(courseId);
+
+        // Map course data
+        const mappedCourse = {
+          id: courseData.id,
+          title: courseData.name,
+          code: courseData.code,
+          description: courseData.description || '',
+          status: courseData.status || 'PLANNED',
+          enrolledCount: courseData.traineeCount || 0,
+          startDate: courseData.startDate,
+          endDate: courseData.endDate,
+          department: courseData.department?.name || 'N/A',
+          departmentCode: courseData.department?.code || ''
+        };
+
+        // Map subjects from API response
+        const mappedSubjects = (courseData.subjects || []).map(subject => ({
+          id: subject.id,
+          name: subject.name,
+          code: subject.code,
+          description: subject.description || '',
+          status: subject.status || 'PLANNED',
+          duration: subject.duration || 0,
+          method: subject.method || 'N/A',
+          roomName: subject.roomName,
+          timeSlot: subject.timeSlot,
+          startDate: subject.startDate,
+          endDate: subject.endDate,
+          passScore: subject.passScore
+        }));
+
+        setCourse(mappedCourse);
+        setSubjects(mappedSubjects);
+
+        // Fetch trainees for this course
+        try {
+          const traineesResponse = await courseAPI.getCourseTrainees(courseId);
+          const traineesList = traineesResponse.trainees || [];
+
+          // Map trainees to match expected format
+          const mappedTrainees = traineesList.map(trainee => ({
+            id: trainee.id,
+            eid: trainee.eid,
+            firstName: trainee.firstName || '',
+            lastName: trainee.lastName || '',
+            name: `${trainee.firstName || ''} ${trainee.lastName || ''}`.trim(),
+            email: trainee.email || '',
+            enrollmentCount: trainee.enrollmentCount || 0,
+            batches: trainee.batches || []
+          }));
+
+          setTrainees(mappedTrainees);
+        } catch (traineeErr) {
+          console.error('Error fetching trainees:', traineeErr);
+          // Don't fail the whole page if trainees fail, just set empty array
+          setTrainees([]);
+        }
+      } catch (err) {
+        console.error('Error fetching course details:', err);
+        setError('Failed to load course details. Please try again later.');
+      } finally {
+        setLoading(false);
+      }
     };
 
-    const mockSubjects = [
-      {
-        id: 1,
-        title: 'Programming Basics',
-        code: 'PB-001',
-        description: 'Introduction to programming concepts',
-        status: 'active',
-        enrolledCount: 25,
-        duration: 40
-      },
-      {
-        id: 2,
-        title: 'Data Structures',
-        code: 'DS-002',
-        description: 'Understanding data structures and algorithms',
-        status: 'active',
-        enrolledCount: 25,
-        duration: 60
-      },
-      {
-        id: 3,
-        title: 'Database Design',
-        code: 'DD-003',
-        description: 'Database design principles and SQL',
-        status: 'pending',
-        enrolledCount: 25,
-        duration: 50
-      }
-    ];
-
-    const mockTrainees = [
-      {
-        id: 1,
-        name: 'John Smith',
-        email: 'john.smith@company.com',
-        department: 'IT Department',
-        status: 'active',
-        enrollmentDate: '2024-01-15T09:00:00Z',
-        progress: 75
-      },
-      {
-        id: 2,
-        name: 'Sarah Johnson',
-        email: 'sarah.johnson@company.com',
-        department: 'IT Department',
-        status: 'active',
-        enrollmentDate: '2024-01-15T09:00:00Z',
-        progress: 60
-      },
-      {
-        id: 3,
-        name: 'Mike Wilson',
-        email: 'mike.wilson@company.com',
-        department: 'IT Department',
-        status: 'active',
-        enrollmentDate: '2024-01-16T10:00:00Z',
-        progress: 45
-      }
-    ];
-    
-    setTimeout(() => {
-      setCourse(mockCourse);
-      setSubjects(mockSubjects);
-      setTrainees(mockTrainees);
-      setLoading(false);
-    }, 1000);
+    fetchCourseDetails();
   }, [courseId]);
 
   const handleViewSubject = (subject) => {
     navigate(`/department-head/courses/${courseId}/subjects/${subject.id}`);
   };
 
-  const handleEditSubject = (subject) => {
-    console.log('Edit subject:', subject);
-    // TODO: Implement edit subject functionality
-  };
-
   const handleViewTrainee = (trainee) => {
     navigate(`/department-head/trainees/${trainee.id}`);
-  };
-
-  const handleEditTrainee = (trainee) => {
-    console.log('Edit trainee:', trainee);
-    // TODO: Implement edit trainee functionality
   };
 
   const tabs = [
@@ -508,13 +473,13 @@ const CourseDetailsPage = () => {
       id: 'subjects',
       title: 'Subject List',
       icon: Book,
-      component: <SubjectTable subjects={subjects} loading={loading} onView={handleViewSubject} onEdit={handleEditSubject} />
+      component: <SubjectTable subjects={subjects} loading={loading} onView={handleViewSubject} />
     },
     {
       id: 'trainees',
       title: 'Trainee List',
       icon: People,
-      component: <TraineeTable trainees={trainees} loading={loading} onView={handleViewTrainee} onEdit={handleEditTrainee} />
+      component: <TraineeTable trainees={trainees} loading={loading} onView={handleViewTrainee} />
     }
   ];
 
@@ -527,6 +492,17 @@ const CourseDetailsPage = () => {
           <Spinner animation="border" variant="primary" />
           <p className="mt-3 text-muted">Loading course details...</p>
         </div>
+      </Container>
+    );
+  }
+
+  if (error) {
+    return (
+      <Container fluid className="py-4">
+        <Alert variant="danger">
+          <Alert.Heading>Error</Alert.Heading>
+          <p>{error}</p>
+        </Alert>
       </Container>
     );
   }
@@ -556,7 +532,7 @@ const CourseDetailsPage = () => {
             </button>
             <div>
               <h2 className="mb-1">{course.title}</h2>
-              <p className="text-muted mb-0">{course.code} • {course.department}</p>
+              <p className="text-muted mb-0">{course.code} • {course.department} ({course.departmentCode})</p>
             </div>
           </div>
         </Col>

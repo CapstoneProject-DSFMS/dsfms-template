@@ -625,14 +625,7 @@ export const router = createBrowserRouter([
       },
       {
         path: "dashboard",
-        element: (
-          <PermissionRoute 
-            permission={API_PERMISSIONS.DASHBOARD.VIEW}
-            fallback={<div className="p-4 text-center text-muted">You don't have permission to access department head dashboard.</div>}
-          >
-            <DepartmentHeadDashboardPage />
-          </PermissionRoute>
-        )
+        element: <DepartmentHeadDashboardPage />
       },
       {
         path: "my-department-details",
@@ -671,7 +664,7 @@ export const router = createBrowserRouter([
         path: "assessment-review-requests/:requestId",
         element: (
           <PermissionRoute 
-            permission={API_PERMISSIONS.ASSESSMENTS.VIEW_DETAIL}
+            permission={API_PERMISSIONS.ASSESSMENTS.VIEW_ALL}
             fallback={<div className="p-4 text-center text-muted">You don't have permission to view assessment request details.</div>}
           >
             <AssessmentReviewRequestsPage />
