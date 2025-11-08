@@ -405,13 +405,23 @@ const OnlyOfficeFormEditor = ({
                   try {
                     // eslint-disable-next-line no-undef
                     const oDocument = Api.GetDocument();
-                    const oSelection = oDocument.GetSelection();
-                    // Insert text directly at cursor position without creating new paragraph
                     // eslint-disable-next-line no-undef
-                    oSelection.InsertText(Asc.scope.__templateText);
+                    const oParagraph = Api.CreateParagraph();
+                    // eslint-disable-next-line no-undef
+                    oParagraph.AddText(Asc.scope.__templateText);
+                    
+                    // Insert content with isInline = true to insert inline at cursor position
+                    // This prevents creating a new paragraph
+                    oDocument.InsertContent([oParagraph], true);
+                    
                   } catch (error) {
                     console.error('Error inside callCommand:', error);
-                    // Fallback: try using paragraph method if selection fails
+                    console.error('Error details:', {
+                      message: error.message,
+                      stack: error.stack,
+                      name: error.name
+                    });
+                    // Fallback: try without isInline parameter
                     try {
                       // eslint-disable-next-line no-undef
                       const oDocument = Api.GetDocument();
@@ -421,7 +431,8 @@ const OnlyOfficeFormEditor = ({
                       oParagraph.AddText(Asc.scope.__templateText);
                       oDocument.InsertContent([oParagraph]);
                     } catch (fallbackError) {
-                      console.error('Fallback insert also failed:', fallbackError);
+                      console.error('Fallback paragraph method also failed:', fallbackError);
+                      throw fallbackError;
                     }
                   }
                  }, function() {
@@ -429,7 +440,8 @@ const OnlyOfficeFormEditor = ({
                      toast.success('Inserted template at cursor position');
                    });
                  }, function(error) {
-                   toast.error('Failed to insert field: ' + error.message);
+                   console.error('callCommand error callback:', error);
+                   toast.error('Failed to insert field: ' + (error?.message || 'Unknown error'));
                  });
 
                 return;
