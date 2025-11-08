@@ -4,7 +4,7 @@ import { toast } from 'react-toastify';
 import EditorWithCustomFields from './EditorWithCustomFields';
 import EditorWithMergeFields from './EditorWithMergeFields';
 import { uploadAPI } from '../../../api';
-import apiClient from '../../../api/config.js';
+// import apiClient from '../../../api/config.js'; // Temporarily disabled - polling is off
 import { API_CONFIG } from '../../../config/api.js';
 
   
@@ -405,13 +405,24 @@ const OnlyOfficeFormEditor = ({
                   try {
                     // eslint-disable-next-line no-undef
                     const oDocument = Api.GetDocument();
+                    const oSelection = oDocument.GetSelection();
+                    // Insert text directly at cursor position without creating new paragraph
                     // eslint-disable-next-line no-undef
-                    const oParagraph = Api.CreateParagraph();
-                    // eslint-disable-next-line no-undef
-                    oParagraph.AddText(Asc.scope.__templateText);
-                    oDocument.InsertContent([oParagraph]);
+                    oSelection.InsertText(Asc.scope.__templateText);
                   } catch (error) {
                     console.error('Error inside callCommand:', error);
+                    // Fallback: try using paragraph method if selection fails
+                    try {
+                      // eslint-disable-next-line no-undef
+                      const oDocument = Api.GetDocument();
+                      // eslint-disable-next-line no-undef
+                      const oParagraph = Api.CreateParagraph();
+                      // eslint-disable-next-line no-undef
+                      oParagraph.AddText(Asc.scope.__templateText);
+                      oDocument.InsertContent([oParagraph]);
+                    } catch (fallbackError) {
+                      console.error('Fallback insert also failed:', fallbackError);
+                    }
                   }
                  }, function() {
                    requestAnimationFrame(() => {
@@ -526,80 +537,23 @@ const OnlyOfficeFormEditor = ({
       }
       
       console.log('✅ Save method triggered successfully!');
-      console.log('⏳ Step 3: Waiting for OnlyOffice to send POST callback to backend...');
+      console.log('⏳ Step 3: OnlyOffice will send POST callback to backend...');
       console.log('   → OnlyOffice will POST to:', `${API_CONFIG.BASE_URL}/media/docs/onlyoffice/callback`);
       console.log('   → Backend should receive callback with documentKey:', documentKey);
       console.log('   → After backend processes, it will store the edited file URL');
-      console.log('⏳ Step 4: Starting to poll backend for edited URL...');
-      toast.info('Saving document... Please wait');
-
-      const maxAttempts = 5; // 5 attempts = 5 seconds max
-      const pollInterval = 1000; // 1 second between polls
+      console.log('═══════════════════════════════════════════════════════════');
+      console.log('⏸️ POLLING DISABLED - Check backend logs to verify callback');
+      console.log('═══════════════════════════════════════════════════════════');
+      console.log('💡 To verify callback:');
+      console.log('   1. Check backend logs for POST /media/docs/onlyoffice/callback');
+      console.log('   2. Verify backend received callback with documentKey:', documentKey);
+      console.log('   3. Check if backend processed and uploaded file to S3');
+      console.log('═══════════════════════════════════════════════════════════');
+      toast.info('Document save triggered. Check backend logs to verify callback.');
       
-      for (let attempt = 1; attempt <= maxAttempts; attempt++) {
-        await new Promise(resolve => setTimeout(resolve, pollInterval));
-        
-        try {
-          console.log(`🔄 Polling attempt ${attempt}/${maxAttempts} for documentKey: ${documentKey}`);
-          
-          const response = await apiClient.get(`/media/docs/onlyoffice/get-edited-url`);
-          
-          if (response.data?.url) {
-            const s3Url = response.data.url;
-            console.log('═══════════════════════════════════════════════════════════');
-            console.log('✅ CALLBACK FLOW SUCCESS!');
-            console.log('═══════════════════════════════════════════════════════════');
-            console.log('✅ Step 5: Received edited URL from backend:', s3Url);
-            console.log('📊 Callback flow status: ✅ HOẠT ĐỘNG');
-            console.log('✅ This means:');
-            console.log('   1. OnlyOffice sent POST callback to backend ✅');
-            console.log('   2. Backend received and processed callback ✅');
-            console.log('   3. Backend uploaded file to S3 ✅');
-            console.log('   4. Backend returned S3 URL ✅');
-            console.log('═══════════════════════════════════════════════════════════');
-            toast.success('Document saved successfully!');
-            return s3Url;
-          } else if (response.data?.status === 'pending') {
-            console.log(`⏳ Backend status: pending (attempt ${attempt}/${maxAttempts})`);
-            // Continue polling
-          } else if (response.data?.status === 'error') {
-            throw new Error(response.data?.message || 'Backend returned error status');
-          }
-        } catch (pollError) {
-          // If 404, continue polling (backend hasn't received callback yet)
-          if (pollError.response?.status === 404) {
-            console.log(`⏳ Backend hasn't received callback yet (attempt ${attempt}/${maxAttempts})`);
-            console.log(`   → This means OnlyOffice hasn't sent POST callback yet, or backend endpoint doesn't exist`);
-            if (attempt === 1) {
-              console.log('   💡 TIP: Check backend logs to see if POST callback was received');
-              console.log('   💡 TIP: Check if backend endpoint exists: POST /media/docs/onlyoffice/callback');
-            }
-            continue;
-          }
-          // For other errors, log but continue polling
-          console.warn(`⚠️ Polling error (attempt ${attempt}):`, pollError.message);
-        }
-      }
-
-      // Timeout - backend didn't return URL
-      console.error('═══════════════════════════════════════════════════════════');
-      console.error('❌ CALLBACK FLOW TIMEOUT');
-      console.error('═══════════════════════════════════════════════════════════');
-      console.error('❌ Polling timeout: Backend did not return edited URL after 5 seconds');
-      console.error('📊 Callback flow status: ❌ TIMEOUT');
-      console.error('🔍 Possible reasons:');
-      console.error('   1. OnlyOffice did NOT send POST callback to backend');
-      console.error('      → Check OnlyOffice Cloud Dev supports callbackUrl');
-      console.error('      → Check callbackUrl is correct:', `${API_CONFIG.BASE_URL}/media/docs/onlyoffice/callback`);
-      console.error('   2. Backend did NOT receive POST callback');
-      console.error('      → Check backend logs for POST /media/docs/onlyoffice/callback');
-      console.error('      → Check backend endpoint exists and is accessible');
-      console.error('   3. Backend received callback but did NOT process it');
-      console.error('      → Check backend callback handler code');
-      console.error('   4. Backend processed but endpoint GET /media/docs/onlyoffice/get-edited-url does NOT exist');
-      console.error('      → Check backend has this endpoint');
-      console.error('═══════════════════════════════════════════════════════════');
-      throw new Error('Timeout: Backend did not return edited URL. Please check backend callback handler.');
+      // Polling is temporarily disabled
+      // Return null to indicate polling was skipped
+      return null;
     } catch (error) {
       console.error('❌ Force save and poll failed:', error);
       toast.error(`Failed: ${error.message}`);

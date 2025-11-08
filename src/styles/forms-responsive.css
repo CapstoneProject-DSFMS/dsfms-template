@@ -5,51 +5,210 @@
   max-width: 60vw;
 }
 
+.import-file-modal-dialog {
+  max-width: 60vw;
+}
+
 .import-file-modal .modal-body {
   max-height: 60vh;
   overflow-y: auto;
 }
 
-/* Card height equalization */
-.import-file-modal .card {
-  min-height: 280px;
+/* Card height equalization - Desktop: equal height, Mobile: auto height */
+.import-file-modal .import-type-row {
+  display: flex;
+  flex-wrap: wrap;
+  margin-left: -0.5rem;
+  margin-right: -0.5rem;
 }
 
-.import-file-modal .card-body {
+.import-file-modal .import-type-col {
+  padding-left: 0.5rem;
+  padding-right: 0.5rem;
   display: flex;
   flex-direction: column;
+}
+
+.import-file-modal .import-type-card {
+  min-height: 280px;
+  transition: all 0.2s ease;
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  width: 100%;
+}
+
+/* Desktop: Equal height cards when side-by-side */
+@media (min-width: 768px) {
+  .import-file-modal .import-type-card {
+    height: 100%;
+  }
+}
+
+.import-file-modal .import-type-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+.import-file-modal .import-type-card .card-body {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
   height: 100%;
 }
 
-.import-file-modal .card-body .flex-grow-1 {
+.import-file-modal .import-type-card .card-body .flex-grow-1 {
   flex-grow: 1;
   display: flex;
   flex-direction: column;
   justify-content: space-between;
+  min-height: 0;
 }
 
-/* Mobile responsive for cards */
-@media (max-width: 768px) {
-  .import-file-modal .modal-dialog {
+/* Tablet responsive (768px - 991px) - Cards side-by-side with equal height */
+@media (min-width: 768px) and (max-width: 991px) {
+  .import-file-modal .modal-dialog,
+  .import-file-modal-dialog {
+    max-width: 85vw;
+    margin: 1rem auto;
+  }
+  
+  .import-file-modal .import-type-row {
+    display: flex;
+    flex-wrap: wrap;
+  }
+  
+  .import-file-modal .import-type-col {
+    display: flex;
+    flex-direction: column;
+  }
+  
+  .import-file-modal .import-type-card {
+    min-height: 260px;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+  }
+  
+  .import-file-modal .import-type-card .card-body {
+    padding: 1.25rem;
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+    height: 100%;
+  }
+}
+
+/* Mobile responsive for cards - Force stack and auto height */
+@media (max-width: 767px) {
+  .import-file-modal .modal-dialog,
+  .import-file-modal-dialog {
     max-width: 95vw;
     margin: 0.5rem;
   }
   
-  .import-file-modal .card {
-    min-height: 250px;
+  /* Force Row to stack vertically */
+  .import-file-modal .import-type-row {
+    flex-direction: column !important;
+    display: flex !important;
+  }
+  
+  /* Force Col to full width and stack */
+  .import-file-modal .import-type-row > .import-type-col,
+  .import-file-modal .import-type-row > [class*="col-"] {
+    width: 100% !important;
+    max-width: 100% !important;
+    flex: 0 0 100% !important;
+    margin-bottom: 0.75rem !important;
+    padding-left: 0.5rem !important;
+    padding-right: 0.5rem !important;
+  }
+  
+  .import-file-modal .import-type-row > .import-type-col:last-child,
+  .import-file-modal .import-type-row > [class*="col-"]:last-child {
+    margin-bottom: 0 !important;
+  }
+  
+  /* Force cards to auto height */
+  .import-file-modal .import-type-card {
+    min-height: auto !important;
+    height: auto !important;
+    margin-bottom: 0 !important;
+    width: 100% !important;
+  }
+  
+  .import-file-modal .import-type-card .card-body {
+    padding: 1rem !important;
+    height: auto !important;
+    min-height: auto !important;
+  }
+  
+  .import-file-modal .import-type-card .card-body .flex-grow-1 {
+    min-height: auto !important;
+  }
+  
+  .import-file-modal .import-type-card .card-body h6 {
+    font-size: 1rem;
+    margin-bottom: 0.5rem;
+  }
+  
+  .import-file-modal .import-type-card .card-body p {
+    font-size: 0.85rem;
     margin-bottom: 1rem;
   }
   
+  .import-file-modal .import-type-card .card-body svg {
+    width: 40px;
+    height: 40px;
+  }
+}
+
+/* Small mobile (576px and below) */
+@media (max-width: 576px) {
+  .import-file-modal .modal-dialog,
+  .import-file-modal-dialog {
+    max-width: 100vw;
+    margin: 0;
+    height: 100vh;
+    max-height: 100vh;
+  }
+  
+  .import-file-modal .modal-content {
+    height: 100vh;
+    border-radius: 0;
+    display: flex;
+    flex-direction: column;
+  }
+  
+  .import-file-modal .modal-body {
+    flex: 1;
+    overflow-y: auto;
+    max-height: calc(100vh - 120px);
+  }
+  
+  .import-file-modal .import-type-card {
+    min-height: auto;
+    margin-bottom: 0.75rem;
+  }
+  
   .import-file-modal .card-body {
-    padding: 1rem;
+    padding: 0.75rem;
   }
   
-  .import-file-modal .card-body h6 {
-    font-size: 1rem;
+  .import-file-modal .card-body svg {
+    width: 36px;
+    height: 36px;
   }
   
-  .import-file-modal .card-body p {
-    font-size: 0.85rem;
+  .import-file-modal .modal-footer {
+    flex-direction: column;
+    gap: 0.5rem;
+  }
+  
+  .import-file-modal .modal-footer .btn {
+    width: 100%;
+    margin: 0;
   }
 }
 

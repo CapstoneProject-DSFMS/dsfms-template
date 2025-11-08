@@ -34,22 +34,25 @@ const DepartmentTable = ({
     
     return (
       <th 
-        className={`border-neutral-200 text-primary-custom fw-semibold ${className} ${isActive ? 'text-primary' : 'text-muted'}`}
+        className={`fw-semibold ${className}`}
         style={{ 
           cursor: 'pointer',
           userSelect: 'none',
           transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
           position: 'relative',
-          overflow: 'hidden'
+          overflow: 'hidden',
+          backgroundColor: 'var(--bs-primary)',
+          color: 'white',
+          borderColor: 'var(--bs-primary)'
         }}
         onClick={() => handleSort(columnKey)}
         onMouseEnter={(e) => {
-          e.target.style.backgroundColor = 'rgba(0, 123, 255, 0.08)';
+          e.target.style.backgroundColor = '#214760';
           e.target.style.transform = 'translateY(-1px)';
-          e.target.style.boxShadow = '0 2px 8px rgba(0, 123, 255, 0.15)';
+          e.target.style.boxShadow = '0 2px 8px rgba(0, 0, 0, 0.15)';
         }}
         onMouseLeave={(e) => {
-          e.target.style.backgroundColor = 'transparent';
+          e.target.style.backgroundColor = 'var(--bs-primary)';
           e.target.style.transform = 'translateY(0)';
           e.target.style.boxShadow = 'none';
         }}
@@ -57,7 +60,8 @@ const DepartmentTable = ({
         <div className="d-flex align-items-center justify-content-between position-relative">
           <span style={{ 
             transition: 'all 0.3s ease',
-            fontWeight: isActive ? '600' : '500'
+            fontWeight: isActive ? '600' : '500',
+            color: 'white'
           }}>
             {children}
           </span>
@@ -71,6 +75,7 @@ const DepartmentTable = ({
             <SortIcon 
               direction={direction} 
               size={14}
+              color="white"
             />
           </div>
         </div>
@@ -82,7 +87,7 @@ const DepartmentTable = ({
               left: 0,
               right: 0,
               height: '2px',
-              background: 'linear-gradient(90deg, var(--bs-primary), var(--bs-info))',
+              background: 'rgba(255, 255, 255, 0.5)',
               animation: 'slideIn 0.3s ease-out'
             }}
           />
@@ -117,7 +122,14 @@ const DepartmentTable = ({
             <SortableHeader columnKey="status" className="show-mobile">
               Status
             </SortableHeader>
-            <th className="border-neutral-200 text-primary-custom fw-semibold text-center show-mobile">
+            <th 
+              className="fw-semibold text-center show-mobile"
+              style={{
+                backgroundColor: 'var(--bs-primary)',
+                color: 'white',
+                borderColor: 'var(--bs-primary)'
+              }}
+            >
               Actions
             </th>
           </tr>

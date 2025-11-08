@@ -34,7 +34,7 @@ const SubjectTable = ({ subjects = [], loading = false, onView, onEdit, onDelete
 
     return (
       <th
-        className={`border-neutral-200 text-primary-custom fw-bold letter-spacing px-3 py-3 text-start ${className} ${isActive ? 'text-primary' : 'text-muted'}`}
+        className={`fw-semibold text-start ${className}`}
         style={{
           cursor: 'pointer',
           userSelect: 'none',
@@ -42,16 +42,19 @@ const SubjectTable = ({ subjects = [], loading = false, onView, onEdit, onDelete
           position: 'relative',
           overflow: 'hidden',
           minWidth: '80px',
-          maxWidth: '150px'
+          maxWidth: '150px',
+          backgroundColor: 'var(--bs-primary)',
+          color: 'white',
+          borderColor: 'var(--bs-primary)'
         }}
         onClick={() => handleSort(columnKey)}
         onMouseEnter={(e) => {
-          e.target.style.backgroundColor = 'rgba(0, 123, 255, 0.08)';
+          e.target.style.backgroundColor = '#214760';
           e.target.style.transform = 'translateY(-1px)';
-          e.target.style.boxShadow = '0 2px 8px rgba(0, 123, 255, 0.15)';
+          e.target.style.boxShadow = '0 2px 8px rgba(0, 0, 0, 0.15)';
         }}
         onMouseLeave={(e) => {
-          e.target.style.backgroundColor = 'transparent';
+          e.target.style.backgroundColor = 'var(--bs-primary)';
           e.target.style.transform = 'translateY(0)';
           e.target.style.boxShadow = 'none';
         }}
@@ -59,13 +62,14 @@ const SubjectTable = ({ subjects = [], loading = false, onView, onEdit, onDelete
         <div className="d-flex align-items-center justify-content-between position-relative w-100">
           <span style={{
             transition: 'all 0.3s ease',
-            fontWeight: '700', // Always bold for uppercase text
-            textTransform: 'uppercase', // Ensure uppercase
-            letterSpacing: '0.5px', // Better readability
+            fontWeight: '700',
+            textTransform: 'uppercase',
+            letterSpacing: '0.5px',
             flex: '1',
             whiteSpace: 'nowrap',
             overflow: 'hidden',
-            textOverflow: 'ellipsis'
+            textOverflow: 'ellipsis',
+            color: 'white'
           }}>
             {children}
           </span>
@@ -80,6 +84,7 @@ const SubjectTable = ({ subjects = [], loading = false, onView, onEdit, onDelete
             <SortIcon
               direction={direction}
               size={14}
+              color="white"
             />
           </div>
         </div>
@@ -91,7 +96,7 @@ const SubjectTable = ({ subjects = [], loading = false, onView, onEdit, onDelete
               left: 0,
               right: 0,
               height: '2px',
-              background: 'linear-gradient(90deg, var(--bs-primary), var(--bs-info))',
+              background: 'rgba(255, 255, 255, 0.5)',
               animation: 'slideIn 0.3s ease-out'
             }}
           />

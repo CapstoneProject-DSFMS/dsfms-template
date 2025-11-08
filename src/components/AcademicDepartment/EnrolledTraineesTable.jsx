@@ -29,7 +29,9 @@ const EnrolledTraineesTable = ({ courseId, loading = false, title = 'Enrolled Tr
       // Step 1: Get all available trainees
       const traineesResponse = await traineeAPI.getTraineesForEnrollment();
       
-      if (!traineesResponse || !traineesResponse.data) {
+      // Backend returns: { message: "...", data: { users: [...], totalItems: 7 } }
+      // So we need to access response.data.users, not response.data
+      if (!traineesResponse || !traineesResponse.data || !traineesResponse.data.users || !Array.isArray(traineesResponse.data.users)) {
         setEnrolledTrainees([]);
         return;
       }
@@ -37,7 +39,7 @@ const EnrolledTraineesTable = ({ courseId, loading = false, title = 'Enrolled Tr
       // Step 2: For each trainee, check if they have enrollments
       const enrolledTrainees = [];
       
-      for (const trainee of traineesResponse.data) {
+      for (const trainee of traineesResponse.data.users) {
         try {
           // Call API to get trainee's enrollment details
           const enrollmentData = await courseAPI.getTraineeEnrollments(trainee.id);
@@ -304,22 +306,25 @@ const EnrolledTraineesTable = ({ courseId, loading = false, title = 'Enrolled Tr
 
     return (
       <th
-        className={`border-neutral-200 text-primary-custom fw-bold letter-spacing px-3 py-3 ${className} ${isActive ? 'text-primary' : 'text-muted'}`}
+        className={`fw-semibold ${className}`}
         style={{
           cursor: 'pointer',
           userSelect: 'none',
           transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
           position: 'relative',
-          overflow: 'hidden'
+          overflow: 'hidden',
+          backgroundColor: 'var(--bs-primary)',
+          color: 'white',
+          borderColor: 'var(--bs-primary)'
         }}
         onClick={() => handleSort(columnKey)}
         onMouseEnter={(e) => {
-          e.target.style.backgroundColor = 'rgba(0, 123, 255, 0.08)';
+          e.target.style.backgroundColor = '#214760';
           e.target.style.transform = 'translateY(-1px)';
-          e.target.style.boxShadow = '0 2px 8px rgba(0, 123, 255, 0.15)';
+          e.target.style.boxShadow = '0 2px 8px rgba(0, 0, 0, 0.15)';
         }}
         onMouseLeave={(e) => {
-          e.target.style.backgroundColor = 'transparent';
+          e.target.style.backgroundColor = 'var(--bs-primary)';
           e.target.style.transform = 'translateY(0)';
           e.target.style.boxShadow = 'none';
         }}
@@ -327,7 +332,8 @@ const EnrolledTraineesTable = ({ courseId, loading = false, title = 'Enrolled Tr
         <div className="d-flex align-items-center justify-content-between position-relative">
           <span style={{
             transition: 'all 0.3s ease',
-            fontWeight: isActive ? '700' : '600'
+            fontWeight: isActive ? '700' : '600',
+            color: 'white'
           }}>
             {children}
           </span>
@@ -341,6 +347,7 @@ const EnrolledTraineesTable = ({ courseId, loading = false, title = 'Enrolled Tr
             <SortIcon
               direction={direction}
               size={14}
+              color="white"
             />
           </div>
         </div>
@@ -352,7 +359,7 @@ const EnrolledTraineesTable = ({ courseId, loading = false, title = 'Enrolled Tr
               left: 0,
               right: 0,
               height: '2px',
-              background: 'linear-gradient(90deg, var(--bs-primary), var(--bs-info))',
+              background: 'rgba(255, 255, 255, 0.5)',
               animation: 'slideIn 0.3s ease-out'
             }}
           />
@@ -390,7 +397,14 @@ const EnrolledTraineesTable = ({ courseId, loading = false, title = 'Enrolled Tr
                   <SortableHeader columnKey="subjects" className="show-mobile">
                     Total Subject
                   </SortableHeader>
-                  <th className="border-neutral-200 text-primary-custom fw-bold letter-spacing px-3 py-3 text-center show-mobile">
+                  <th 
+                    className="fw-semibold text-center show-mobile"
+                    style={{
+                      backgroundColor: 'var(--bs-primary)',
+                      color: 'white',
+                      borderColor: 'var(--bs-primary)'
+                    }}
+                  >
                     Actions
                   </th>
                 </tr>

@@ -24,6 +24,7 @@ const CustomFieldsPanel = ({
   const [sections, setSections] = useState([]);
   const [collapsedSections, setCollapsedSections] = useState({});
   const [dragState, setDragState] = useState({ sectionIndex: null, fromIndex: null, overIndex: null, position: 'above' });
+  const [sectionDragState, setSectionDragState] = useState({ fromIndex: null, overIndex: null, position: 'above' });
 
   // Section modal state
   const [showSectionModal, setShowSectionModal] = useState(false);
@@ -107,19 +108,27 @@ const CustomFieldsPanel = ({
     });
   };
 
+  const reorderSections = (fromIndex, toIndex) => {
+    if (fromIndex === null || toIndex === null || fromIndex === toIndex) return;
+    setSections((prev) => {
+      // Directly reorder array without sorting (sections are already in correct order)
+      const reordered = [...prev];
+      const [moved] = reordered.splice(fromIndex, 1);
+      reordered.splice(toIndex, 0, moved);
+      // Only reorder array, DO NOT update displayOrder (will be calculated on submit)
+      return reordered;
+    });
+  };
+
   const handleSaveSection = () => {
-    if (!newSection.name || !newSection.label) {
-      toast.warning('Please fill in section name and label');
-      return;
-    }
-    // simple unique section name check
-    if (sections.some((s) => s.name === newSection.name)) {
-      toast.warning('Section name must be unique');
+    if (!newSection.label) {
+      toast.warning('Please fill in section label');
       return;
     }
     // If editBy is TRAINEE, set roleInSubject to null; if TRAINER, keep the value
     const sectionToAdd = {
       ...newSection,
+      name: newSection.label, // Use label as name
       roleInSubject: newSection.editBy === 'TRAINEE' ? null : (newSection.roleInSubject || null)
     };
     setSections((prev) => [...prev, sectionToAdd]);
@@ -302,15 +311,22 @@ const CustomFieldsPanel = ({
       
       if (forceSaveAndPoll) {
         try {
-          console.log('📤 Step 1: Starting callback flow (forceSave + polling)...');
+          console.log('📤 Step 1: Starting callback flow (trigger save only, polling disabled)...');
           console.log('📤 Step 2: Calling forceSaveAndPoll()...');
-          console.log('📤 Step 3: OnlyOffice will send callback to backend with documentKey:', documentKey);
+          console.log('📤 Step 3: OnlyOffice will send POST callback to backend with documentKey:', documentKey);
+          console.log('⏸️ NOTE: Polling is temporarily disabled - check backend logs to verify callback');
           
           templateConfigUrl = await forceSaveAndPoll();
           
-          console.log('✅ Step 4: Callback flow SUCCESS!');
-          console.log('✅ templateConfig URL (file đã chỉnh sửa từ backend):', templateConfigUrl);
-          console.log('📊 Callback flow status: ✅ HOẠT ĐỘNG');
+          if (templateConfigUrl) {
+            console.log('✅ Step 4: Callback flow SUCCESS!');
+            console.log('✅ templateConfig URL (file đã chỉnh sửa từ backend):', templateConfigUrl);
+            console.log('📊 Callback flow status: ✅ HOẠT ĐỘNG');
+          } else {
+            console.log('⏸️ Step 4: Polling disabled - templateConfig will be null');
+            console.log('📊 Callback flow status: ⏸️ POLLING DISABLED');
+            console.log('💡 Check backend logs to verify if POST callback was received');
+          }
         } catch (err) {
           console.error('❌ Callback flow failed:', err);
           console.log('📊 Callback flow status: ❌ KHÔNG HOẠT ĐỘNG - Using fallback');
@@ -486,6 +502,10 @@ const CustomFieldsPanel = ({
           .draggable-item.dragging { cursor: grabbing; box-shadow: 0 8px 18px rgba(0,0,0,.08); transform: scale(.995); background:#fff; }
           .drop-target-above { border-top: 3px solid var(--bs-primary) !important; }
           .drop-target-below { border-bottom: 3px solid var(--bs-primary) !important; }
+          .section-card { transition: transform .12s ease, box-shadow .12s ease, border-color .12s ease; }
+          .section-card.section-dragging { cursor: grabbing; box-shadow: 0 8px 18px rgba(0,0,0,.15); transform: scale(.98); opacity: 0.7; }
+          .section-card.section-drop-target-above { border-top: 4px solid var(--bs-primary) !important; border-top-left-radius: 0.5rem; border-top-right-radius: 0.5rem; }
+          .section-card.section-drop-target-below { border-bottom: 4px solid var(--bs-primary) !important; border-bottom-left-radius: 0.5rem; border-bottom-right-radius: 0.5rem; }
         `}
       </style>
       <div className={`p-3 bg-light custom-fields-panel ${className}`} style={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
@@ -506,13 +526,56 @@ const CustomFieldsPanel = ({
         <div className="d-grid gap-2">
           {sections.length > 0 ? (
             sections
-              .sort((a, b) => a.displayOrder - b.displayOrder)
               .map((section, sIdx) => (
-                <Card key={sIdx} className="border section-card">
+                <Card 
+                  key={sIdx} 
+                  className={`border section-card ${sectionDragState.fromIndex === sIdx ? 'section-dragging' : ''} ${sectionDragState.overIndex === sIdx ? (sectionDragState.position === 'above' ? 'section-drop-target-above' : 'section-drop-target-below') : ''}`}
+                  draggable={!readOnly}
+                  onDragStart={(e) => {
+                    if (readOnly) {
+                      e.preventDefault();
+                      return;
+                    }
+                    setSectionDragState({ fromIndex: sIdx, overIndex: sIdx, position: 'above' });
+                    e.dataTransfer.effectAllowed = 'move';
+                  }}
+                  onDragOver={(e) => {
+                    if (readOnly || sectionDragState.fromIndex === null) return;
+                    e.preventDefault();
+                    const rect = e.currentTarget.getBoundingClientRect();
+                    const mid = rect.top + rect.height / 2;
+                    const position = e.clientY < mid ? 'above' : 'below';
+                    let targetIndex = sIdx;
+                    if (position === 'below' && sectionDragState.fromIndex < sIdx) {
+                      targetIndex = sIdx + 1;
+                    } else if (position === 'above' && sectionDragState.fromIndex > sIdx) {
+                      targetIndex = sIdx;
+                    } else if (position === 'below' && sectionDragState.fromIndex > sIdx) {
+                      targetIndex = sIdx + 1;
+                    } else if (position === 'above' && sectionDragState.fromIndex < sIdx) {
+                      targetIndex = sIdx;
+                    }
+                    if (sectionDragState.overIndex !== targetIndex || sectionDragState.position !== position) {
+                      setSectionDragState((prev) => ({ ...prev, overIndex: targetIndex, position }));
+                    }
+                  }}
+                  onDrop={(e) => {
+                    if (readOnly || sectionDragState.fromIndex === null) return;
+                    e.preventDefault();
+                    const toIndex = Math.max(0, Math.min(sectionDragState.overIndex, sections.length));
+                    reorderSections(sectionDragState.fromIndex, toIndex);
+                    setSectionDragState({ fromIndex: null, overIndex: null, position: 'above' });
+                  }}
+                  onDragEnd={() => {
+                    setSectionDragState({ fromIndex: null, overIndex: null, position: 'above' });
+                  }}
+                  style={{ cursor: readOnly ? 'default' : 'grab' }}
+                >
                   <Card.Header 
                     className="d-flex justify-content-between align-items-center section-header"
                     onClick={() => toggleSection(sIdx)}
                     aria-expanded={!collapsedSections[sIdx]}
+                    onDragStart={(e) => e.stopPropagation()}
                   >
                     <div className="d-flex flex-column">
                       <div className="section-title fw-bold">
@@ -522,7 +585,7 @@ const CustomFieldsPanel = ({
                           {section.fields?.length || 0}
                         </span>
                       </div>
-                      <small className="text-muted">Order: {section.displayOrder} • Edit by: {section.editBy}</small>
+                      <small className="text-muted">Edit by: {section.editBy}</small>
                     </div>
                     <div onClick={(e) => e.stopPropagation()}>
                       <Button
@@ -696,26 +759,14 @@ const CustomFieldsPanel = ({
       </div>
 
       {/* Add Section Modal */}
-      <Modal show={showSectionModal} onHide={handleCloseModals}>
+      <Modal show={showSectionModal} onHide={handleCloseModals} centered size="lg">
         <Modal.Header closeButton>
           <Modal.Title>Add New Section</Modal.Title>
         </Modal.Header>
         <Modal.Body>
           <Form>
             <Row className="g-3">
-              <Col md={6}>
-                <Form.Group>
-                  <Form.Label className="text-primary-custom">Name <span className="text-danger">*</span></Form.Label>
-                  <Form.Control
-                    type="text"
-                    placeholder="e.g., Basic Information"
-                    value={newSection.name}
-                    onChange={(e) => setNewSection((prev) => ({ ...prev, name: e.target.value }))}
-                    required
-                  />
-                </Form.Group>
-              </Col>
-              <Col md={6}>
+              <Col md={12}>
                 <Form.Group>
                   <Form.Label className="text-primary-custom">Label <span className="text-danger">*</span></Form.Label>
                   <Form.Control
@@ -756,6 +807,7 @@ const CustomFieldsPanel = ({
                     <Form.Select
                       value={newSection.roleInSubject || 'ASSESSMENT_REVIEWER'}
                       onChange={(e) => setNewSection((prev) => ({ ...prev, roleInSubject: e.target.value }))}
+                      style={{ minWidth: '200px' }}
                     >
                       <option value="ASSESSMENT_REVIEWER">ASSESSMENT_REVIEWER</option>
                       <option value="EXAMINER">EXAMINER</option>

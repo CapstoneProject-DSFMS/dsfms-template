@@ -1,6 +1,7 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Container, Card, Row, Col, Button, Dropdown } from 'react-bootstrap';
 import { toast } from 'react-toastify';
+import { useSearchParams, useNavigate } from 'react-router-dom';
 import { Plus, Upload, Funnel, ChevronDown } from 'react-bootstrap-icons';
 import { UserTable, UserModal, BulkImportModal, DisableUserModal, FilterPanel } from '../../../components/Admin/User';
 import RoleChangeConfirmModal from '../../../components/Admin/User/RoleChangeConfirmModal';
@@ -11,10 +12,24 @@ import { API_PERMISSIONS } from '../../../constants/apiPermissions';
 import '../../../styles/scrollable-table.css';
 
 const UserManagementPage = () => {
+  const [searchParams, setSearchParams] = useSearchParams();
+  const navigate = useNavigate();
   const [disableModalShow, setDisableModalShow] = useState(false);
   const [userToDisable, setUserToDisable] = useState(null);
   const [disableLoading, setDisableLoading] = useState(false);
   const [bulkImportShow, setBulkImportShow] = useState(false);
+  
+  // Check for bulk-import action in URL params
+  useEffect(() => {
+    const action = searchParams.get('action');
+    if (action === 'bulk-import') {
+      setBulkImportShow(true);
+      // Remove the query param from URL
+      const newSearchParams = new URLSearchParams(searchParams);
+      newSearchParams.delete('action');
+      setSearchParams(newSearchParams, { replace: true });
+    }
+  }, [searchParams, setSearchParams]);
 
   const {
     users: filteredUsers,
@@ -183,7 +198,15 @@ const UserManagementPage = () => {
           {/* Bulk Import Modal */}
           <BulkImportModal
             show={bulkImportShow}
-            onClose={() => setBulkImportShow(false)}
+            onClose={() => {
+              setBulkImportShow(false);
+              // Clean up URL params if any
+              if (searchParams.get('action') === 'bulk-import') {
+                const newSearchParams = new URLSearchParams(searchParams);
+                newSearchParams.delete('action');
+                setSearchParams(newSearchParams, { replace: true });
+              }
+            }}
             onImport={handleBulkImport}
             loading={loading}
           />
