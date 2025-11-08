@@ -57,7 +57,7 @@ const FormEditorPage = () => {
     >
       <Container fluid className="py-4 form-editor-page form-component">
         <Card className="border-neutral-200 shadow-sm">
-          <Card.Header className="border-neutral-200" style={{ backgroundColor: 'var(--bs-primary)' }}>
+          <Card.Header className="border-neutral-200 form-editor-header bg-primary">
             <Row className="align-items-center">
               <Col xs={12} md={8}>
                 <div className="d-flex align-items-center">
