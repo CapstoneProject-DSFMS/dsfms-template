@@ -48,7 +48,6 @@ const FormsPage = () => {
   };
 
   const handleImportSuccess = (importType, fileName) => {
-    toast.success(`${importType} file "${fileName}" imported successfully!`, { icon: false });
     setShowImportModal(false);
     loadTemplates(); // Reload templates after successful import
   };
