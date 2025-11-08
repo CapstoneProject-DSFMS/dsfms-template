@@ -44,15 +44,21 @@ const SubjectTable = ({ subjects, loading, onView, onEdit }) => {
     
     return (
       <th 
-        className={`text-primary-custom fw-semibold ${className} ${isActive ? 'text-primary' : 'text-muted'}`}
+        className={`fw-semibold ${className}`}
         onClick={() => handleSort(columnKey)}
-        style={{ cursor: 'pointer' }}
+        style={{ 
+          cursor: 'pointer',
+          backgroundColor: 'var(--bs-primary)',
+          color: 'white',
+          borderColor: 'var(--bs-primary)'
+        }}
       >
         <div className="d-flex align-items-center">
-          {children}
+          <span style={{ color: 'white' }}>{children}</span>
           <SortIcon 
             direction={direction}
             className="ms-1"
+            color="white"
           />
         </div>
       </th>
@@ -79,7 +85,14 @@ const SubjectTable = ({ subjects, loading, onView, onEdit }) => {
             <SortableHeader columnKey="duration" className="hide-mobile">
               Duration
             </SortableHeader>
-            <th className="text-primary-custom fw-semibold text-center show-mobile">
+            <th 
+              className="fw-semibold text-center show-mobile"
+              style={{
+                backgroundColor: 'var(--bs-primary)',
+                color: 'white',
+                borderColor: 'var(--bs-primary)'
+              }}
+            >
               Actions
             </th>
           </tr>
@@ -219,15 +232,21 @@ const TraineeTable = ({ trainees, loading, onView, onEdit }) => {
     
     return (
       <th 
-        className={`text-primary-custom fw-semibold ${className} ${isActive ? 'text-primary' : 'text-muted'}`}
+        className={`fw-semibold ${className}`}
         onClick={() => handleSort(columnKey)}
-        style={{ cursor: 'pointer' }}
+        style={{ 
+          cursor: 'pointer',
+          backgroundColor: 'var(--bs-primary)',
+          color: 'white',
+          borderColor: 'var(--bs-primary)'
+        }}
       >
         <div className="d-flex align-items-center">
-          {children}
+          <span style={{ color: 'white' }}>{children}</span>
           <SortIcon 
             direction={direction}
             className="ms-1"
+            color="white"
           />
         </div>
       </th>
@@ -254,7 +273,14 @@ const TraineeTable = ({ trainees, loading, onView, onEdit }) => {
             <SortableHeader columnKey="progress" className="hide-mobile">
               Progress
             </SortableHeader>
-            <th className="text-primary-custom fw-semibold text-center show-mobile">
+            <th 
+              className="fw-semibold text-center show-mobile"
+              style={{
+                backgroundColor: 'var(--bs-primary)',
+                color: 'white',
+                borderColor: 'var(--bs-primary)'
+              }}
+            >
               Actions
             </th>
           </tr>

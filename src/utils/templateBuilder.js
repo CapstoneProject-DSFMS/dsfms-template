@@ -98,7 +98,7 @@ export function buildTemplatePayload(meta, sections) {
     return {
       name: section.name,
       label: section.label,
-      displayOrder: section.displayOrder ?? (sIdx + 1),
+      displayOrder: sIdx + 1, // Calculate displayOrder based on array index at submit time
       editBy: section.editBy || 'TRAINER',
       roleInSubject: section.roleInSubject ? section.roleInSubject : null,
       isSubmittable: Boolean(section.isSubmittable),

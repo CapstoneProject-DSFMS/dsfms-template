@@ -101,12 +101,67 @@ const AssignedTrainersTable = ({
         <Table hover className="mb-0 table-mobile-responsive" style={{ fontSize: '0.875rem' }}>
           <thead className="sticky-header">
             <tr>
-              <th className="border-neutral-200 text-primary-custom fw-semibold show-mobile">EID</th>
-              <th className="border-neutral-200 text-primary-custom fw-semibold show-mobile">Full Name</th>
-              <th className="border-neutral-200 text-primary-custom fw-semibold show-mobile">Email</th>
-              <th className="border-neutral-200 text-primary-custom fw-semibold hide-mobile">Phone</th>
-              <th className="border-neutral-200 text-primary-custom fw-semibold hide-mobile">Address</th>
-              <th className="border-neutral-200 text-primary-custom fw-semibold text-center show-mobile" width="80">Actions</th>
+              <th 
+                className="fw-semibold show-mobile"
+                style={{
+                  backgroundColor: 'var(--bs-primary)',
+                  color: 'white',
+                  borderColor: 'var(--bs-primary)'
+                }}
+              >
+                EID
+              </th>
+              <th 
+                className="fw-semibold show-mobile"
+                style={{
+                  backgroundColor: 'var(--bs-primary)',
+                  color: 'white',
+                  borderColor: 'var(--bs-primary)'
+                }}
+              >
+                Full Name
+              </th>
+              <th 
+                className="fw-semibold show-mobile"
+                style={{
+                  backgroundColor: 'var(--bs-primary)',
+                  color: 'white',
+                  borderColor: 'var(--bs-primary)'
+                }}
+              >
+                Email
+              </th>
+              <th 
+                className="fw-semibold hide-mobile"
+                style={{
+                  backgroundColor: 'var(--bs-primary)',
+                  color: 'white',
+                  borderColor: 'var(--bs-primary)'
+                }}
+              >
+                Phone
+              </th>
+              <th 
+                className="fw-semibold hide-mobile"
+                style={{
+                  backgroundColor: 'var(--bs-primary)',
+                  color: 'white',
+                  borderColor: 'var(--bs-primary)'
+                }}
+              >
+                Address
+              </th>
+              <th 
+                className="fw-semibold text-center show-mobile"
+                width="80"
+                style={{
+                  backgroundColor: 'var(--bs-primary)',
+                  color: 'white',
+                  borderColor: 'var(--bs-primary)'
+                }}
+              >
+                Actions
+              </th>
             </tr>
           </thead>
           <tbody>

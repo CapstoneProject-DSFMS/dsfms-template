@@ -41,9 +41,11 @@ const TraineeSelectionPanel = ({ selectedTrainees, onSelectionChange }) => {
       const response = await traineeAPI.getTraineesForEnrollment();
       
       
-      if (response && response.data) {
+      // Backend returns: { message: "...", data: { users: [...], totalItems: 7 } }
+      // So we need to access response.data.users, not response.data
+      if (response && response.data && response.data.users && Array.isArray(response.data.users)) {
         // Transform API data to match component format
-        const transformedTrainees = response.data.map(trainee => ({
+        const transformedTrainees = response.data.users.map(trainee => ({
           id: trainee.id,
           eid: trainee.eid,
           name: `${trainee.firstName} ${trainee.lastName}`.trim(),
@@ -57,7 +59,8 @@ const TraineeSelectionPanel = ({ selectedTrainees, onSelectionChange }) => {
       } else {
         setAllTrainees([]);
       }
-    } catch {
+    } catch (error) {
+      console.error('Error loading trainees:', error);
       setError('Failed to load trainees');
       setAllTrainees([]);
     } finally {

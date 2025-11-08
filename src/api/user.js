@@ -6,7 +6,36 @@ export const userAPI = {
   getUsers: async (params = {}) => {
     try {
       const response = await apiClient.get('/users', { params });
-      return response.data;
+      const responseData = response.data;
+      
+      // Handle different response formats
+      // Format 1: { users: [...] }
+      // Format 2: { message: "...", data: { users: [...] } }
+      // Format 3: { message: "...", data: [...] }
+      // Format 4: [...] (direct array)
+      
+      // Normalize response - handle wrapped format
+      if (responseData && responseData.data) {
+        // If data.data exists, it might be wrapped
+        if (Array.isArray(responseData.data)) {
+          return { data: responseData.data };
+        } else if (responseData.data.users && Array.isArray(responseData.data.users)) {
+          return { data: responseData.data.users };
+        }
+      }
+      
+      // Handle direct format
+      if (Array.isArray(responseData)) {
+        return { data: responseData };
+      }
+      
+      // Handle { users: [...] } format
+      if (responseData && responseData.users && Array.isArray(responseData.users)) {
+        return { data: responseData.users };
+      }
+      
+      // Default: return as is (might be { data: [...] } already)
+      return responseData;
     } catch (error) {
       throw error.response?.data || error.message;
     }

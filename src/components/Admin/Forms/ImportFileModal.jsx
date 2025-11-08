@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { Modal, Button, Form, Row, Col, Card, Alert } from 'react-bootstrap';
-import { X, Upload, FileEarmark, FileEarmarkText, Download } from 'react-bootstrap-icons';
+import { X, Upload, FileEarmark, FileEarmarkText } from 'react-bootstrap-icons';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'react-toastify';
 import { uploadAPI } from '../../../api';
@@ -152,10 +152,6 @@ const ImportFileModal = ({ show, onHide, onImportSuccess, onImportError }) => {
     onHide();
   };
 
-  const downloadTemplate = (type) => {
-    // Simulate template download
-    toast.info(`Downloading ${type} template...`);
-  };
 
 
 
@@ -164,7 +160,14 @@ const ImportFileModal = ({ show, onHide, onImportSuccess, onImportError }) => {
 
 
   return (
-    <Modal show={show} onHide={handleClose} size="lg" centered className="import-file-modal">
+    <Modal 
+      show={show} 
+      onHide={handleClose} 
+      size="lg" 
+      centered 
+      className="import-file-modal"
+      dialogClassName="import-file-modal-dialog"
+    >
       <Modal.Header 
         className="bg-primary-custom text-white border-0"
         closeButton
@@ -176,71 +179,41 @@ const ImportFileModal = ({ show, onHide, onImportSuccess, onImportError }) => {
         </Modal.Title>
       </Modal.Header>
 
-      <Modal.Body className="p-4">
+      <Modal.Body className="p-3 p-md-4">
         {/* Import Type Selection */}
         <div className="mb-4">
           <h6 className="text-primary-custom mb-3">Select Import Type</h6>
-          <Row className="g-3">
-            <Col md={6}>
+          <Row className="g-3 import-type-row">
+            <Col xs={12} sm={12} md={6} className="import-type-col">
               <Card 
-                className={`h-100 cursor-pointer ${importType === 'with-fields' ? 'border-primary bg-light' : 'border-secondary'}`}
+                className={`import-type-card ${importType === 'with-fields' ? 'border-primary bg-light' : 'border-secondary'}`}
                 onClick={() => setImportType('with-fields')}
                 style={{ cursor: 'pointer' }}
               >
-                <Card.Body className="text-center p-4 d-flex flex-column">
-                  <div className="flex-grow-1 d-flex flex-column justify-content-between">
-                    <div>
-                      <FileEarmarkText size={48} className="text-primary mb-3" />
-                      <h6 className="text-primary">File with Fields</h6>
-                      <p className="text-muted small mb-3">
-                        Import a Word document that already contains predefined form fields and structure. The system will automatically parse and create form templates.
-                      </p>
-                    </div>
-                    <div className="mt-auto">
-                      <Button 
-                        variant="outline-primary" 
-                        size="sm"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          downloadTemplate('with-fields');
-                        }}
-                      >
-                        <Download className="me-1" size={14} />
-                        Download Template
-                      </Button>
-                    </div>
+                <Card.Body className="text-center p-3 p-md-4 d-flex flex-column">
+                  <div className="flex-grow-1 d-flex flex-column justify-content-center align-items-center">
+                    <FileEarmarkText size={48} className="text-primary mb-3" />
+                    <h6 className="text-primary mb-2">File with Fields</h6>
+                    <p className="text-muted small mb-0">
+                      Import a Word document that already contains predefined form fields and structure. The system will automatically parse and create form templates.
+                    </p>
                   </div>
                 </Card.Body>
               </Card>
             </Col>
-            <Col md={6}>
+            <Col xs={12} sm={12} md={6} className="import-type-col">
               <Card 
-                className={`h-100 cursor-pointer ${importType === 'without-fields' ? 'border-primary bg-light' : 'border-secondary'}`}
+                className={`import-type-card ${importType === 'without-fields' ? 'border-primary bg-light' : 'border-secondary'}`}
                 onClick={() => setImportType('without-fields')}
                 style={{ cursor: 'pointer' }}
               >
-                <Card.Body className="text-center p-4 d-flex flex-column">
-                  <div className="flex-grow-1 d-flex flex-column justify-content-between">
-                    <div>
-                      <FileEarmark size={48} className="text-success mb-3" />
-                      <h6 className="text-success">File without Fields</h6>
-                      <p className="text-muted small mb-3">
-                        Import a raw Word document without predefined structure. You will manually define form fields and mapping after import.
-                      </p>
-                    </div>
-                    <div className="mt-auto">
-                      <Button 
-                        variant="outline-success" 
-                        size="sm"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          downloadTemplate('without-fields');
-                        }}
-                      >
-                        <Download className="me-1" size={14} />
-                        Download Template
-                      </Button>
-                    </div>
+                <Card.Body className="text-center p-3 p-md-4 d-flex flex-column">
+                  <div className="flex-grow-1 d-flex flex-column justify-content-center align-items-center">
+                    <FileEarmark size={48} className="text-success mb-3" />
+                    <h6 className="text-success mb-2">File without Fields</h6>
+                    <p className="text-muted small mb-0">
+                      Import a raw Word document without predefined structure. You will manually define form fields and mapping after import.
+                    </p>
                   </div>
                 </Card.Body>
               </Card>
@@ -361,30 +334,34 @@ const ImportFileModal = ({ show, onHide, onImportSuccess, onImportError }) => {
         )}
       </Modal.Body>
 
-      <Modal.Footer className="border-0 p-4">
+      <Modal.Footer className="border-0 p-3 p-md-3 d-flex flex-column flex-md-row gap-2 gap-md-2 justify-content-end">
         <Button
           variant="outline-secondary"
+          size="sm"
           onClick={handleClose}
           disabled={isUploading}
+          className="w-100 w-md-auto order-2 order-md-1"
         >
-          <X className="me-2" size={16} />
+          <X className="me-2" size={14} />
           Cancel
         </Button>
         
         {importType === 'with-fields' && (
           <Button
             variant="primary-custom"
+            size="sm"
             onClick={handleImport}
             disabled={!selectedFile || isUploading}
+            className="w-100 w-md-auto order-1 order-md-2"
           >
             {isUploading ? (
               <>
-                <span className="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true" style={{ width: '1rem', height: '1rem' }}></span>
+                <span className="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true" style={{ width: '0.875rem', height: '0.875rem' }}></span>
                 Importing...
               </>
             ) : (
               <>
-                <Upload className="me-2" size={16} />
+                <Upload className="me-2" size={14} />
                 Import File
               </>
             )}
@@ -394,17 +371,19 @@ const ImportFileModal = ({ show, onHide, onImportSuccess, onImportError }) => {
         {importType === 'without-fields' && (
           <Button
             variant="primary-custom"
+            size="sm"
             onClick={handleImport}
             disabled={!selectedFile || !templateInfo.name || !templateInfo.description || !templateInfo.departmentId || isUploading}
+            className="w-100 w-md-auto order-1 order-md-2"
           >
             {isUploading ? (
               <>
-                <span className="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true" style={{ width: '1rem', height: '1rem' }}></span>
+                <span className="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true" style={{ width: '0.875rem', height: '0.875rem' }}></span>
                 Importing...
               </>
             ) : (
               <>
-                <Upload className="me-2" size={16} />
+                <Upload className="me-2" size={14} />
                 Import File
               </>
             )}

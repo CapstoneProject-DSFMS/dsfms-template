@@ -28,6 +28,7 @@ const EditorWithMergeFields = ({ onInsertField, exportEditedDoc, initialUrl, rea
   const [availableRoles, setAvailableRoles] = useState(['TRAINER', 'TRAINEE']);
   const lastExtractedUrlRef = useRef(null);
   const [dragState, setDragState] = useState({ sectionIndex: null, fromIndex: null, overIndex: null, position: 'above' });
+  const [sectionDragState, setSectionDragState] = useState({ fromIndex: null, overIndex: null, position: 'above' });
   
   // Toggle section collapse/expand
   const toggleSection = (index) => {
@@ -332,6 +333,18 @@ const EditorWithMergeFields = ({ onInsertField, exportEditedDoc, initialUrl, rea
     e.preventDefault();
   };
 
+  const reorderSections = (fromIndex, toIndex) => {
+    if (fromIndex === null || toIndex === null || fromIndex === toIndex) return;
+    setSections((prev) => {
+      // Directly reorder array without sorting (sections are already in correct order)
+      const reordered = [...prev];
+      const [moved] = reordered.splice(fromIndex, 1);
+      reordered.splice(toIndex, 0, moved);
+      // Only reorder array, DO NOT update displayOrder (will be calculated on submit)
+      return reordered;
+    });
+  };
+
   const addSection = () => {
     const idx = sections.length + 1;
     setNewSection({
@@ -348,23 +361,18 @@ const EditorWithMergeFields = ({ onInsertField, exportEditedDoc, initialUrl, rea
   };
 
   const handleSaveSection = () => {
-    if (!newSection.name || !newSection.label) {
-      toast.warning('Please fill in section name and label');
-      return;
-    }
-    // Simple unique section name check
-    if (sections.some((s) => s.name === newSection.name)) {
-      toast.warning('Section name must be unique');
+    if (!newSection.label) {
+      toast.warning('Please fill in section label');
       return;
     }
     // If editBy is TRAINEE, set roleInSubject to null; if TRAINER, keep the value
     const sectionToAdd = {
       ...newSection,
+      name: newSection.label, // Use label as name
       roleInSubject: newSection.editBy === 'TRAINEE' ? null : (newSection.roleInSubject || null)
     };
     setSections((prev) => [...prev, sectionToAdd]);
     setShowSectionModal(false);
-    toast.success('Section added successfully');
   };
 
   const handleCloseSectionModal = () => {
@@ -653,6 +661,10 @@ const EditorWithMergeFields = ({ onInsertField, exportEditedDoc, initialUrl, rea
           .field-card-item.dragging { cursor: grabbing; box-shadow: 0 8px 18px rgba(0,0,0,.08); transform: scale(.995); background: #fff; }
           .field-card-item.drop-target-above { border-top: 3px solid var(--bs-primary) !important; }
           .field-card-item.drop-target-below { border-bottom: 3px solid var(--bs-primary) !important; }
+          .section-card { transition: transform .12s ease, box-shadow .12s ease, border-color .12s ease; }
+          .section-card.section-dragging { cursor: grabbing; box-shadow: 0 8px 18px rgba(0,0,0,.15); transform: scale(.98); opacity: 0.7; }
+          .section-card.section-drop-target-above { border-top: 4px solid var(--bs-primary) !important; border-top-left-radius: 0.5rem; border-top-right-radius: 0.5rem; }
+          .section-card.section-drop-target-below { border-bottom: 4px solid var(--bs-primary) !important; border-bottom-left-radius: 0.5rem; border-bottom-right-radius: 0.5rem; }
         `}</style>
         {/* Sections on Top */}
         <div className="flex-shrink-0" style={{ maxHeight: '60%', overflowY: 'auto', borderBottom: '1px solid #eee', minHeight: 0, width: '100%', maxWidth: '100%', boxSizing: 'border-box' }}>
@@ -664,35 +676,87 @@ const EditorWithMergeFields = ({ onInsertField, exportEditedDoc, initialUrl, rea
             )}
             {sections.length > 0 && (
             <div className="d-grid gap-2">
-              {sections.map((sec, idx) => (
-                <Card key={idx} className="border section-card" onDragOver={onAllowDrop} onDrop={(e) => onDropToSection(e, idx)}>
+              {sections
+                .map((sec, sIdx) => {
+                  return (
+                <Card 
+                  key={sIdx} 
+                  className={`border section-card ${sectionDragState.fromIndex === sIdx ? 'section-dragging' : ''} ${sectionDragState.overIndex === sIdx ? (sectionDragState.position === 'above' ? 'section-drop-target-above' : 'section-drop-target-below') : ''}`}
+                  draggable={!readOnly}
+                  onDragStart={(e) => {
+                    if (readOnly) {
+                      e.preventDefault();
+                      return;
+                    }
+                    setSectionDragState({ fromIndex: sIdx, overIndex: sIdx, position: 'above' });
+                    e.dataTransfer.effectAllowed = 'move';
+                  }}
+                  onDragOver={(e) => {
+                    if (readOnly || sectionDragState.fromIndex === null) {
+                      onAllowDrop(e);
+                      return;
+                    }
+                    e.preventDefault();
+                    const rect = e.currentTarget.getBoundingClientRect();
+                    const mid = rect.top + rect.height / 2;
+                    const position = e.clientY < mid ? 'above' : 'below';
+                    let targetIndex = sIdx;
+                    if (position === 'below' && sectionDragState.fromIndex < sIdx) {
+                      targetIndex = sIdx + 1;
+                    } else if (position === 'above' && sectionDragState.fromIndex > sIdx) {
+                      targetIndex = sIdx;
+                    } else if (position === 'below' && sectionDragState.fromIndex > sIdx) {
+                      targetIndex = sIdx + 1;
+                    } else if (position === 'above' && sectionDragState.fromIndex < sIdx) {
+                      targetIndex = sIdx;
+                    }
+                    if (sectionDragState.overIndex !== targetIndex || sectionDragState.position !== position) {
+                      setSectionDragState((prev) => ({ ...prev, overIndex: targetIndex, position }));
+                    }
+                  }}
+                  onDrop={(e) => {
+                    if (readOnly || sectionDragState.fromIndex === null) {
+                      onDropToSection(e, sIdx);
+                      return;
+                    }
+                    e.preventDefault();
+                    const toIndex = Math.max(0, Math.min(sectionDragState.overIndex, sections.length));
+                    reorderSections(sectionDragState.fromIndex, toIndex);
+                    setSectionDragState({ fromIndex: null, overIndex: null, position: 'above' });
+                  }}
+                  onDragEnd={() => {
+                    setSectionDragState({ fromIndex: null, overIndex: null, position: 'above' });
+                  }}
+                  style={{ cursor: readOnly ? 'default' : 'grab' }}
+                >
                   <Card.Header 
                     className="d-flex justify-content-between align-items-center section-header"
-                    onClick={() => toggleSection(idx)}
-                    aria-expanded={!collapsedSections[idx]}
+                    onClick={() => toggleSection(sIdx)}
+                    aria-expanded={!collapsedSections[sIdx]}
+                    onDragStart={(e) => e.stopPropagation()}
                   >
                     <div className="d-flex flex-column">
                       <div className="section-title fw-bold">
-                        {collapsedSections[idx] ? <ChevronRight size={16} /> : <ChevronDown size={16} />}
+                        {collapsedSections[sIdx] ? <ChevronRight size={16} /> : <ChevronDown size={16} />}
                         {sec.label}
                         <span className="badge rounded-pill ms-1 field-count-badge">
                           {sec.fields?.length || 0}
                         </span>
                       </div>
-                      <small className="text-muted">Order: {sec.displayOrder || (idx + 1)} • Edit by: {sec.editBy || 'TRAINER'}</small>
+                      <small className="text-muted">Edit by: {sec.editBy || 'TRAINER'}</small>
                     </div>
                     <div onClick={(e) => e.stopPropagation()}>
                       <Button
                         size="sm"
                         variant="outline-danger"
-                        onClick={() => removeSection(idx)}
+                        onClick={() => removeSection(sIdx)}
                         disabled={readOnly}
                       >
                         Remove
                       </Button>
                     </div>
                   </Card.Header>
-                  {!collapsedSections[idx] && (
+                  {!collapsedSections[sIdx] && (
                   <Card.Body className="section-body">
                     {sec.fields && sec.fields.length > 0 ? (
                       (() => {
@@ -715,7 +779,7 @@ const EditorWithMergeFields = ({ onInsertField, exportEditedDoc, initialUrl, rea
                           return !f.parentTempId || f.parentTempId === null || f.parentTempId === '';
                         });
                         
-                        console.log(`📊 Section ${idx} fields analysis:`, {
+                        console.log(`📊 Section ${sIdx} fields analysis:`, {
                           totalFields: allSorted.length,
                           topLevelCount: topLevel.length,
                           topLevelFields: topLevel.map(f => ({ 
@@ -913,7 +977,7 @@ const EditorWithMergeFields = ({ onInsertField, exportEditedDoc, initialUrl, rea
                               return;
                             }
                             
-                            setDragState({ sectionIndex: idx, fromIndex: realIndex, overIndex: realIndex, position: 'above' });
+                            setDragState({ sectionIndex: sIdx, fromIndex: realIndex, overIndex: realIndex, position: 'above' });
                             
                             if (isPartField) {
                               // When dragging PART, include all its children
@@ -937,7 +1001,7 @@ const EditorWithMergeFields = ({ onInsertField, exportEditedDoc, initialUrl, rea
                           // Handle drag over for visual feedback (only for reorder within section)
                           const handleDragOver = (e) => {
                             // Only handle if dragging within the same section
-                            if (dragState.sectionIndex !== idx || dragState.fromIndex === null) return;
+                            if (dragState.sectionIndex !== sIdx || dragState.fromIndex === null) return;
                             e.preventDefault();
                             e.stopPropagation(); // Prevent bubbling to section drop handler
                             const rect = e.currentTarget.getBoundingClientRect();
@@ -953,23 +1017,23 @@ const EditorWithMergeFields = ({ onInsertField, exportEditedDoc, initialUrl, rea
                           // Handle drop to reorder (only for reorder within section)
                           const handleDrop = (e) => {
                             // Only handle if this is a reorder within the same section
-                            if (dragState.sectionIndex !== idx || dragState.fromIndex === null) return;
+                            if (dragState.sectionIndex !== sIdx || dragState.fromIndex === null) return;
                             e.preventDefault();
                             e.stopPropagation(); // Prevent bubbling to section drop handler
                             const toIndex = Math.max(0, Math.min(dragState.overIndex, sec.fields.length || 0));
-                            reorderWithinSection(idx, dragState.fromIndex, toIndex);
+                            reorderWithinSection(sIdx, dragState.fromIndex, toIndex);
                             setDragState({ sectionIndex: null, fromIndex: null, overIndex: null, position: 'above' });
                           };
                           
                           // Visual feedback for drag state
-                          const isDragging = dragState.sectionIndex === idx && dragState.fromIndex === realIndex;
-                          const isDropTarget = dragState.sectionIndex === idx && dragState.overIndex === realIndex;
+                          const isDragging = dragState.sectionIndex === sIdx && dragState.fromIndex === realIndex;
+                          const isDropTarget = dragState.sectionIndex === sIdx && dragState.overIndex === realIndex;
                           const dropTargetClass = isDropTarget && dragState.position === 'above' ? 'drop-target-above' : 
                                                    isDropTarget && dragState.position === 'below' ? 'drop-target-below' : '';
                           
                           // Use field.name as key to ensure unique identification
                           // Include tempId to prevent React from reusing components incorrectly
-                          const fieldKey = `${idx}-topLevel-${field.name}-${field.tempId || field.name || realIndex}`;
+                          const fieldKey = `${sIdx}-topLevel-${field.name}-${field.tempId || field.name || realIndex}`;
                           
                           // DEBUG: Log key to ensure uniqueness
                           if (isPartField) {
@@ -1014,7 +1078,7 @@ const EditorWithMergeFields = ({ onInsertField, exportEditedDoc, initialUrl, rea
                                   <Button
                                     variant="outline-primary"
                                     size="sm"
-                                    onClick={() => handleEditField(idx, realIndex)}
+                                    onClick={() => handleEditField(sIdx, realIndex)}
                                     disabled={readOnly}
                                     title="Edit Field"
                                     className="text-primary border-primary"
@@ -1026,7 +1090,7 @@ const EditorWithMergeFields = ({ onInsertField, exportEditedDoc, initialUrl, rea
                                     size="sm"
                                     onClick={() => {
                                       const next = [...sections];
-                                      next[idx].fields = next[idx].fields.filter((_, i) => i !== realIndex);
+                                      next[sIdx].fields = next[sIdx].fields.filter((_, i) => i !== realIndex);
                                       setSections(next);
                                     }}
                                     disabled={readOnly}
@@ -1054,7 +1118,7 @@ const EditorWithMergeFields = ({ onInsertField, exportEditedDoc, initialUrl, rea
                               {/* Render children if this is a PART field */}
                               {isPartField && children.length > 0 && (
                                 <div 
-                                  key={`${idx}-part-children-${field.tempId || field.name}-${realIndex}`}
+                                  key={`${sIdx}-part-children-${field.tempId || field.name}-${realIndex}`}
                                   className="mt-2 part-children" 
                                   style={{ borderLeft: '3px dashed rgba(13, 110, 253, 0.35)', marginLeft: '0.5rem', paddingLeft: '0.75rem' }}
                                   data-part-parent={field.name}
@@ -1081,7 +1145,7 @@ const EditorWithMergeFields = ({ onInsertField, exportEditedDoc, initialUrl, rea
                                     const realIdx = sec.fields.indexOf(child);
                                     // CRITICAL: Include parent PART field's tempId in key to ensure uniqueness
                                     // This prevents React from reusing components when multiple PART fields have children
-                                    const fieldKey = `${idx}-child-${field.tempId || field.name}-${child.name}-${child.tempId || realIdx}`;
+                                    const fieldKey = `${sIdx}-child-${field.tempId || field.name}-${child.name}-${child.tempId || realIdx}`;
                                     
                                     console.log(`  🔑 Key for child ${child.name} of PART ${field.name}: ${fieldKey}`);
                                     
@@ -1112,7 +1176,7 @@ const EditorWithMergeFields = ({ onInsertField, exportEditedDoc, initialUrl, rea
                                             <Button
                                               variant="outline-primary"
                                               size="sm"
-                                              onClick={() => handleEditField(idx, realIdx)}
+                                              onClick={() => handleEditField(sIdx, realIdx)}
                                               disabled={readOnly}
                                               title="Edit Field"
                                               className="text-primary border-primary"
@@ -1124,7 +1188,7 @@ const EditorWithMergeFields = ({ onInsertField, exportEditedDoc, initialUrl, rea
                                               size="sm"
                                               onClick={() => {
                                                 const next = [...sections];
-                                                next[idx].fields = next[idx].fields.filter((_, i) => i !== realIdx);
+                                                next[sIdx].fields = next[sIdx].fields.filter((_, i) => i !== realIdx);
                                                 setSections(next);
                                               }}
                                               disabled={readOnly}
@@ -1159,7 +1223,7 @@ const EditorWithMergeFields = ({ onInsertField, exportEditedDoc, initialUrl, rea
                         };
 
                         // DEBUG: Log what's being rendered
-                        console.log(`🎨 Rendering ${topLevel.length} topLevel fields for section ${idx}:`, 
+                        console.log(`🎨 Rendering ${topLevel.length} topLevel fields for section ${sIdx}:`, 
                           topLevel.map(f => ({ name: f.name, fieldType: f.fieldType, tempId: f.tempId, parentTempId: f.parentTempId }))
                         );
                         
@@ -1186,7 +1250,8 @@ const EditorWithMergeFields = ({ onInsertField, exportEditedDoc, initialUrl, rea
                   </Card.Body>
                   )}
                 </Card>
-              ))}
+                );
+                })}
             </div>
             )}
           </div>
@@ -1280,26 +1345,14 @@ const EditorWithMergeFields = ({ onInsertField, exportEditedDoc, initialUrl, rea
       </div>
 
       {/* Add Section Modal */}
-      <Modal show={showSectionModal} onHide={handleCloseSectionModal}>
+      <Modal show={showSectionModal} onHide={handleCloseSectionModal} centered size="lg">
         <Modal.Header closeButton>
           <Modal.Title>Add New Section</Modal.Title>
         </Modal.Header>
         <Modal.Body>
           <Form>
             <Row className="g-3">
-              <Col md={6}>
-                <Form.Group>
-                  <Form.Label>Name <span className="text-danger">*</span></Form.Label>
-                  <Form.Control
-                    type="text"
-                    placeholder="e.g., Basic Information"
-                    value={newSection.name}
-                    onChange={(e) => setNewSection((prev) => ({ ...prev, name: e.target.value }))}
-                    required
-                  />
-                </Form.Group>
-              </Col>
-              <Col md={6}>
+              <Col md={12}>
                 <Form.Group>
                   <Form.Label>Label <span className="text-danger">*</span></Form.Label>
                   <Form.Control
@@ -1339,6 +1392,7 @@ const EditorWithMergeFields = ({ onInsertField, exportEditedDoc, initialUrl, rea
                     <Form.Select
                       value={newSection.roleInSubject || 'ASSESSMENT_REVIEWER'}
                       onChange={(e) => setNewSection((prev) => ({ ...prev, roleInSubject: e.target.value }))}
+                      style={{ minWidth: '200px' }}
                     >
                       <option value="ASSESSMENT_REVIEWER">ASSESSMENT_REVIEWER</option>
                       <option value="EXAMINER">EXAMINER</option>

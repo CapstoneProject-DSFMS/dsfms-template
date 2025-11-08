@@ -140,6 +140,7 @@ const Header = ({ onToggleSidebar }) => {
       '/admin/roles': 'Role Management',
       '/admin/departments': 'Department Management',
       '/admin/forms': 'Form Templates',
+      '/admin/main-menu': 'Main Menu',
       '/admin/system-config': 'System Configuration',
       
       // Academic routes

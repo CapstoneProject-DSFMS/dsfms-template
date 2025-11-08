@@ -38,21 +38,51 @@
   background: #a8a8a8;
 }
 
-/* Sticky header styles */
+/* Sticky header styles - Global blue background for all tables */
 .sticky-header {
   position: sticky;
   top: 0;
   z-index: 10;
-  background-color: #f8f9fa !important;
+  background-color: var(--bs-primary) !important;
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
 }
 
 .sticky-header th {
   position: sticky;
   top: 0;
-  background-color: #f8f9fa !important;
+  background-color: var(--bs-primary) !important;
+  color: white !important;
   z-index: 11;
-  border-bottom: 2px solid #dee2e6;
+  border-bottom: 2px solid rgba(255, 255, 255, 0.2) !important;
+  border-color: var(--bs-primary) !important;
+}
+
+/* Ensure all table headers have blue background */
+.scrollable-table-container .table thead,
+.scrollable-table-container .table thead th,
+.department-table-container .table thead,
+.department-table-container .table thead th,
+.admin-table .table thead,
+.admin-table .table thead th {
+  background-color: var(--bs-primary) !important;
+  color: white !important;
+  border-color: var(--bs-primary) !important;
+}
+
+/* Table header text and icons should be white */
+.scrollable-table-container .table thead th,
+.department-table-container .table thead th,
+.admin-table .table thead th,
+.table thead.sticky-header th {
+  color: white !important;
+}
+
+/* Sort icons in headers should be white */
+.scrollable-table-container .table thead th .sort-icon,
+.department-table-container .table thead th .sort-icon,
+.admin-table .table thead th .sort-icon,
+.table thead.sticky-header th .sort-icon {
+  color: white !important;
 }
 
 /* Scroll indicator */

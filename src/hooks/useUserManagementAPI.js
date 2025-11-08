@@ -31,8 +31,21 @@ export const useUserManagementAPI = () => {
           departmentAPI.getDepartments({ includeDeleted: true })
         ]);
         
+        // Handle different response formats - ensure data is an array
+        let usersArray = [];
+        if (Array.isArray(usersResponse)) {
+          usersArray = usersResponse;
+        } else if (Array.isArray(usersResponse?.data)) {
+          usersArray = usersResponse.data;
+        } else if (usersResponse?.users && Array.isArray(usersResponse.users)) {
+          usersArray = usersResponse.users;
+        } else {
+          console.warn('⚠️ Unexpected users response format:', usersResponse);
+          usersArray = [];
+        }
+        
         // Transform users data to match component format
-        const transformedUsers = usersResponse.data.map(user => ({
+        const transformedUsers = usersArray.map(user => ({
           id: user.id,
           eid: user.eid,
           fullName: [user.firstName, user.middleName, user.lastName].filter(Boolean).join(' '),
@@ -238,7 +251,20 @@ export const useUserManagementAPI = () => {
         departmentAPI.getDepartments({ includeDeleted: true })
       ]);
       
-      const transformedUsers = usersResponse.data.map(user => ({
+      // Handle different response formats - ensure data is an array
+      let usersArray = [];
+      if (Array.isArray(usersResponse)) {
+        usersArray = usersResponse;
+      } else if (Array.isArray(usersResponse?.data)) {
+        usersArray = usersResponse.data;
+      } else if (usersResponse?.users && Array.isArray(usersResponse.users)) {
+        usersArray = usersResponse.users;
+      } else {
+        console.warn('⚠️ Unexpected users response format:', usersResponse);
+        usersArray = [];
+      }
+      
+      const transformedUsers = usersArray.map(user => ({
         id: user.id,
         eid: user.eid,
         fullName: [user.firstName, user.middleName, user.lastName].filter(Boolean).join(' '),
@@ -396,15 +422,28 @@ export const useUserManagementAPI = () => {
         departmentAPI.getDepartments({ includeDeleted: true })
       ]);
       
+      // Handle different response formats - ensure data is an array
+      let usersArray = [];
+      if (Array.isArray(usersResponse)) {
+        usersArray = usersResponse;
+      } else if (Array.isArray(usersResponse?.data)) {
+        usersArray = usersResponse.data;
+      } else if (usersResponse?.users && Array.isArray(usersResponse.users)) {
+        usersArray = usersResponse.users;
+      } else {
+        console.warn('⚠️ Unexpected users response format:', usersResponse);
+        usersArray = [];
+      }
+      
       // Check if the updated user has traineeProfile (only for edit mode)
       if (modalMode === 'edit' && selectedUser?.id) {
-        const updatedUser = usersResponse.data.find(u => u.id === selectedUser.id);
+        const updatedUser = usersArray.find(u => u.id === selectedUser.id);
         if (updatedUser) {
           // User found and updated successfully
         }
       }
       
-      const transformedUsers = usersResponse.data.map(user => ({
+      const transformedUsers = usersArray.map(user => ({
         id: user.id,
         eid: user.eid,
         fullName: [user.firstName, user.middleName, user.lastName].filter(Boolean).join(' '),
@@ -471,7 +510,20 @@ export const useUserManagementAPI = () => {
         departmentAPI.getDepartments({ includeDeleted: true })
       ]);
       
-      const transformedUsers = usersResponse.data.map(user => ({
+      // Handle different response formats - ensure data is an array
+      let usersArray = [];
+      if (Array.isArray(usersResponse)) {
+        usersArray = usersResponse;
+      } else if (Array.isArray(usersResponse?.data)) {
+        usersArray = usersResponse.data;
+      } else if (usersResponse?.users && Array.isArray(usersResponse.users)) {
+        usersArray = usersResponse.users;
+      } else {
+        console.warn('⚠️ Unexpected users response format:', usersResponse);
+        usersArray = [];
+      }
+      
+      const transformedUsers = usersArray.map(user => ({
         id: user.id,
         eid: user.eid,
         fullName: [user.firstName, user.middleName, user.lastName].filter(Boolean).join(' '),
