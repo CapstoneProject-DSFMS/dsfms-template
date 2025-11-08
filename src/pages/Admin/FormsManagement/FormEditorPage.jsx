@@ -57,7 +57,7 @@ const FormEditorPage = () => {
     >
       <Container fluid className="py-4 form-editor-page form-component">
         <Card className="border-neutral-200 shadow-sm">
-          <Card.Header className="bg-light-custom border-neutral-200">
+          <Card.Header className="border-neutral-200" style={{ backgroundColor: 'var(--bs-primary)' }}>
             <Row className="align-items-center">
               <Col xs={12} md={8}>
                 <div className="d-flex align-items-center">
@@ -70,11 +70,11 @@ const FormEditorPage = () => {
                     <ArrowLeft size={16} />
                   </Button>
                   <div>
-                    <h4 className="mb-0 text-primary-custom">
+                    <h4 className="mb-0 text-white">
                       {fileName}
                     </h4>
                     {importType && (
-                      <small className="text-muted">
+                      <small className="text-white" style={{ opacity: 0.9 }}>
                         Import Type: {importType}
                       </small>
                     )}
