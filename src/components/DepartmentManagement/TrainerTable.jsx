@@ -35,20 +35,21 @@ const TrainerTable = ({
     
     return (
       <th 
-        className={`border-neutral-200 text-primary-custom fw-semibold ${className} ${isActive ? 'text-primary' : 'text-muted'}`}
+        className={`fw-semibold ${className}`}
         style={{ 
           cursor: 'pointer',
           userSelect: 'none',
-          backgroundColor: 'var(--bs-neutral-50)',
-          borderBottom: '2px solid var(--bs-neutral-200)'
+          backgroundColor: 'var(--bs-primary)',
+          color: 'white',
+          borderColor: 'var(--bs-primary)'
         }}
         onClick={() => handleSort(columnKey)}
       >
         <div className="d-flex align-items-center">
-          <span className="me-1">{children}</span>
+          <span className="me-1" style={{ color: 'white' }}>{children}</span>
           <SortIcon 
             direction={direction}
-            className="text-muted"
+            color="white"
             style={{ fontSize: '0.75rem' }}
           />
         </div>
@@ -64,7 +65,15 @@ const TrainerTable = ({
       <Table hover className="mb-0 table-mobile-responsive" style={{ fontSize: '0.875rem' }}>
         <thead className="sticky-header">
           <tr>
-            <th className="border-neutral-200 text-primary-custom fw-semibold text-center" style={{ width: '50px' }}>
+            <th 
+              className="fw-semibold text-center"
+              style={{ 
+                width: '50px',
+                backgroundColor: 'var(--bs-primary)',
+                color: 'white',
+                borderColor: 'var(--bs-primary)'
+              }}
+            >
               <Form.Check
                 type="checkbox"
                 checked={isAllSelected}

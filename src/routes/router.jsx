@@ -26,6 +26,7 @@ import AcademicDetailsPage from '../pages/Trainee/AcademicDetailsPage'
 import EnrolledCoursesPage from '../pages/Trainee/EnrolledCoursesPage'
 import FormsPage from '../pages/Admin/FormsManagement/FormsPage';
 import FormEditorPage from '../pages/Admin/FormsManagement/FormEditorPage';
+import MainMenuPage from '../pages/Admin/MainMenuPage';
 import SignatureRequiredPage from '../pages/Trainee/SignatureRequiredPage';
 import SectionCompletionPage from '../pages/Trainee/SectionCompletionPage';
 import YourAssessmentsPage from '../pages/Trainee/YourAssessmentsPage';
@@ -104,6 +105,17 @@ export const router = createBrowserRouter([
       {
         path: "",
         element: <RoleBasedRedirect />
+      },
+      {
+        path: "main-menu",
+        element: (
+          <PermissionRoute 
+            permission={null}
+            fallback={<div className="p-4 text-center text-muted">You don't have permission to access main menu.</div>}
+          >
+            <MainMenuPage />
+          </PermissionRoute>
+        )
       },
       {
         path: "users",

@@ -161,15 +161,21 @@ const TraineeListInSubject = ({ subjectId, courseId }) => {
     
     return (
       <th 
-        className={`border-neutral-200 text-primary-custom fw-semibold ${className} ${isActive ? 'text-primary' : 'text-muted'}`}
+        className={`fw-semibold ${className}`}
         onClick={() => handleSort(columnKey)}
-        style={{ cursor: 'pointer' }}
+        style={{ 
+          cursor: 'pointer',
+          backgroundColor: 'var(--bs-primary)',
+          color: 'white',
+          borderColor: 'var(--bs-primary)'
+        }}
       >
         <div className="d-flex align-items-center">
-          {children}
+          <span style={{ color: 'white' }}>{children}</span>
           <SortIcon 
             direction={direction}
             className="ms-1"
+            color="white"
           />
         </div>
       </th>

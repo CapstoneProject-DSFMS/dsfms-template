@@ -44,15 +44,21 @@ const AssessmentRequestTable = ({ requests, loading, onView, onApprove, onDeny }
     
     return (
       <th 
-        className={`text-primary-custom fw-semibold ${className} ${isActive ? 'text-primary' : 'text-muted'}`}
+        className={`fw-semibold ${className}`}
         onClick={() => handleSort(columnKey)}
-        style={{ cursor: 'pointer' }}
+        style={{ 
+          cursor: 'pointer',
+          backgroundColor: 'var(--bs-primary)',
+          color: 'white',
+          borderColor: 'var(--bs-primary)'
+        }}
       >
         <div className="d-flex align-items-center">
-          {children}
+          <span style={{ color: 'white' }}>{children}</span>
           <SortIcon 
             direction={direction}
             className="ms-1"
+            color="white"
           />
         </div>
       </th>
@@ -82,7 +88,14 @@ const AssessmentRequestTable = ({ requests, loading, onView, onApprove, onDeny }
             <SortableHeader columnKey="score" className="hide-mobile">
               Score
             </SortableHeader>
-            <th className="text-primary-custom fw-semibold text-center show-mobile">
+            <th 
+              className="fw-semibold text-center show-mobile"
+              style={{
+                backgroundColor: 'var(--bs-primary)',
+                color: 'white',
+                borderColor: 'var(--bs-primary)'
+              }}
+            >
               Actions
             </th>
           </tr>

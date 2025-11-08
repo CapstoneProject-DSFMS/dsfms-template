@@ -74,7 +74,6 @@ export const AuthProvider = ({ children }) => {
                   setIsAuthenticated(false);
                 }
                 
-                // console.log('✅ Token refreshed successfully on initialization'); // Commented out to reduce console noise
               } catch (refreshError) {
                 // console.error('❌ Token refresh failed on initialization:', refreshError); // Commented out to reduce console noise
                 authAPI.logout();

@@ -23,6 +23,7 @@ import {
   Book,
   ClipboardCheck,
   Clock,
+  List,
 } from "react-bootstrap-icons";
 import logo from "../../assets/logo-light.png";
 import { usePermissions } from "../../hooks/usePermissions";
@@ -94,6 +95,14 @@ const Sidebar = ({ collapsed, onClose }) => {
       .trim();
     
     const allNavItems = [
+      {
+        id: "main-menu",
+        label: "Main Menu",
+        icon: List,
+        path: "/admin/main-menu",
+        permission: null, // No specific permission, will check individual actions
+        module: "ADMIN"
+      },
       {
         id: "users",
         label: "User Management",
@@ -316,8 +325,8 @@ const Sidebar = ({ collapsed, onClose }) => {
     
     // For ADMINISTRATOR role, show only admin-specific items
     if (normalizedRoleName === 'ADMINISTRATOR') {
-      // Define admin-specific items that should be visible
-      const adminItems = ['users', 'roles', 'departments', 'forms', 'system-config'];
+      // Define admin-specific items that should be visible (including main-menu)
+      const adminItems = ['main-menu', 'users', 'roles', 'departments', 'forms', 'system-config'];
       
       // Check if this is an admin item
       const isAdminItem = adminItems.includes(item.id);
@@ -325,6 +334,11 @@ const Sidebar = ({ collapsed, onClose }) => {
       if (!isAdminItem) {
         // console.log(`🔍 ADMINISTRATOR role - Non-admin item ${item.id}: BLOCKED (ADMINISTRATOR should only see admin items)`);
         return false; // Block all non-admin items for ADMINISTRATOR
+      }
+      
+      // For main-menu, always show (permissions checked for individual actions)
+      if (item.id === 'main-menu') {
+        return true;
       }
       
       // For admin items, use normal permission check
