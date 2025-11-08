@@ -613,15 +613,52 @@ const OnlyOfficeFormEditor = ({
       console.log('📡 Step 2: OnlyOffice will send POST callback to backend:');
       console.log('   URL:', `${API_CONFIG.BASE_URL}/media/docs/onlyoffice/callback`);
       console.log('   Method: POST');
-      console.log('   Expected Body:', {
+      console.log('   Content-Type: application/json');
+      console.log('═══════════════════════════════════════════════════════════');
+      console.log('📦 EXPECTED CALLBACK BODY (for reference only):');
+      console.log('═══════════════════════════════════════════════════════════');
+      console.log('⚠️ QUAN TRỌNG: Đây là body MONG ĐỢI, KHÔNG PHẢI body thực tế!');
+      console.log('⚠️ Frontend KHÔNG THỂ thấy body thực tế vì POST callback đi trực tiếp từ OnlyOffice → Backend');
+      console.log('⚠️ Body thực tế chỉ có thể thấy trong Backend logs');
+      console.log('═══════════════════════════════════════════════════════════');
+      
+      // Log expected body in multiple formats for easy comparison
+      const expectedBody = {
         key: documentKey,
-        status: '2 or 6 (document saved)',
-        url: 'https://documentserver/url-to-edited-document.docx'
-      });
-      console.log('🔑 DocumentKey:', documentKey);
-      console.log('⚠️ NOTE: POST callback is sent DIRECTLY from OnlyOffice to Backend');
-      console.log('⚠️ Frontend cannot intercept this POST request');
-      console.log('⚠️ Check Backend logs to see if callback was received');
+        status: 6, // 6 = Document saved, 2 = Document saved with errors, 3 = Document saving error
+        url: 'https://documentserver/url-to-edited-document.docx' // OnlyOffice will replace with actual URL
+      };
+      
+      console.log('📋 Expected Body Structure (Frontend tạo ra để tham khảo):');
+      console.log(JSON.stringify(expectedBody, null, 2));
+      console.log('');
+      console.log('📋 Expected Body (One-line JSON - copy để so sánh với Backend logs):');
+      console.log(JSON.stringify(expectedBody));
+      console.log('');
+      console.log('📋 Giải thích các fields:');
+      console.log('   - key:', documentKey, '← DocumentKey của session này (Backend sẽ nhận key này)');
+      console.log('   - status: 6 ← Status code (6 = Document saved, OnlyOffice sẽ gửi status thực tế)');
+      console.log('   - url: "https://documentserver/..." ← PLACEHOLDER, OnlyOffice sẽ thay bằng URL thực tế');
+      console.log('');
+      console.log('📋 Status Codes có thể nhận được từ OnlyOffice:');
+      console.log('   - 0: No errors, document is being edited');
+      console.log('   - 1: Document is being saved');
+      console.log('   - 2: Document is saved with errors');
+      console.log('   - 3: Document saving error has occurred');
+      console.log('   - 4: Document is closed with no changes');
+      console.log('   - 6: Document is being saved, document state is saved ← Mong đợi status này');
+      console.log('   - 7: Error has occurred while force saving the document');
+      console.log('');
+      console.log('💡 Cách verify callback hoạt động:');
+      console.log('   1. Check Backend logs sau khi click Submit');
+      console.log('   2. Tìm POST request đến /media/docs/onlyoffice/callback');
+      console.log('   3. So sánh body trong Backend logs với expected body ở trên');
+      console.log('   4. Nếu key khớp và status là 6 hoặc 2 → Callback đã hoạt động!');
+      console.log('═══════════════════════════════════════════════════════════');
+      console.log('🔑 DocumentKey for this session:', documentKey);
+      console.log('⚠️ LƯU Ý: POST callback được gửi TRỰC TIẾP từ OnlyOffice Server → Backend');
+      console.log('⚠️ Frontend KHÔNG THỂ thấy POST request này (không có trong Network tab)');
+      console.log('⚠️ Chỉ có thể verify bằng cách check Backend logs');
       console.log('═══════════════════════════════════════════════════════════');
       
       // Trigger save using available methods - this will cause OnlyOffice to send callback to backend

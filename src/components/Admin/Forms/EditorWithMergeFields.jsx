@@ -575,7 +575,6 @@ const EditorWithMergeFields = ({ onInsertField, exportEditedDoc, initialUrl, rea
         tempId: f.tempId
       }));
       setMergeFields(fields);
-      toast.success('Extracted fields from document');
     } catch {
       toast.error('Failed to extract fields');
     } finally {
