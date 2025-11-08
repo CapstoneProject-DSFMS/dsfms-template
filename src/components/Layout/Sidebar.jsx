@@ -148,7 +148,6 @@ const Sidebar = ({ collapsed, onClose }) => {
         label: "Academic Dashboard",
         icon: House,
         path: "/academic/dashboard",
-        permission: API_PERMISSIONS.DASHBOARD.VIEW,
         module: "ACADEMIC"
       },
       {
@@ -237,7 +236,6 @@ const Sidebar = ({ collapsed, onClose }) => {
         label: "Department Dashboard",
         icon: Building,
         path: "/department-head/dashboard",
-        permission: API_PERMISSIONS.DASHBOARD.VIEW,
         module: "DEPARTMENT_HEAD"
       },
       {

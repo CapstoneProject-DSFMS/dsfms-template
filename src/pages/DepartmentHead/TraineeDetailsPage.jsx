@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from 'react';
-import { Container, Row, Col, Card, Spinner, Alert, Badge, Table } from 'react-bootstrap';
-import { Person, ArrowLeft, Envelope, Calendar, Clock, Book, CheckCircle, Award } from 'react-bootstrap-icons';
+import { Container, Row, Col, Card, Spinner, Alert, Badge } from 'react-bootstrap';
+import { Person, ArrowLeft, Envelope, Calendar, Phone, GeoAlt, Passport, Building } from 'react-bootstrap-icons';
 import { useParams, useNavigate } from 'react-router-dom';
-import { LoadingSkeleton } from '../../components/Common';
+import { userAPI } from '../../api/user';
 import '../../styles/scrollable-table.css';
 import '../../styles/department-head.css';
 
@@ -15,107 +15,52 @@ const TraineeDetailsPage = () => {
 
   useEffect(() => {
     const fetchTraineeDetails = async () => {
+      if (!traineeId) {
+        setLoading(false);
+        return;
+      }
+
       try {
         setLoading(true);
-        // Simulate API call
-        await new Promise(resolve => setTimeout(resolve, 1000));
+        setError(null);
+
+        // Call API GET /users/{userId}
+        const response = await userAPI.getUserById(traineeId);
         
-        // Mock trainee data
-        const mockTrainee = {
-          id: traineeId,
-          name: 'John Doe',
-          email: 'john.doe@email.com',
-          employeeId: 'TE001',
-          department: 'Operations',
-          position: 'Operations Manager',
-          phone: '+1-555-0123',
-          enrollmentDate: '2024-01-15',
-          status: 'active',
-          lastActivity: '2024-01-20',
-          completedCourses: 3,
-          totalCourses: 5,
-          completedSubjects: 12,
-          totalSubjects: 20,
-          averageScore: 85,
-          overallProgress: 65,
-          enrolledCourses: [
-            { 
-              id: 1, 
-              name: 'Aviation Safety Management', 
-              code: 'ASM-101',
-              progress: 75, 
-              instructor: 'Dr. Smith',
-              enrolledDate: '2024-01-15',
-              status: 'in_progress',
-              completedSubjects: 6,
-              totalSubjects: 8
-            },
-            { 
-              id: 2, 
-              name: 'Aircraft Maintenance', 
-              code: 'AM-201',
-              progress: 45, 
-              instructor: 'Jane Doe',
-              enrolledDate: '2024-01-16',
-              status: 'in_progress',
-              completedSubjects: 4,
-              totalSubjects: 9
-            },
-            { 
-              id: 3, 
-              name: 'Emergency Response Training', 
-              code: 'ERT-301',
-              progress: 100, 
-              instructor: 'Mike Johnson',
-              enrolledDate: '2024-01-10',
-              status: 'completed',
-              completedSubjects: 10,
-              totalSubjects: 10
-            }
-          ],
-          assessments: [
-            { 
-              id: 1,
-              name: 'Safety Procedures Quiz', 
-              course: 'Aviation Safety Management',
-              score: 95, 
-              maxScore: 100,
-              status: 'approved',
-              completedDate: '2024-01-20',
-              submittedBy: 'Dr. Smith'
-            },
-            { 
-              id: 2,
-              name: 'Maintenance Practical Assessment', 
-              course: 'Aircraft Maintenance',
-              score: 87, 
-              maxScore: 100,
-              status: 'approved',
-              completedDate: '2024-01-19',
-              submittedBy: 'Jane Doe'
-            },
-            { 
-              id: 3,
-              name: 'Emergency Procedures Test', 
-              course: 'Emergency Response Training',
-              score: 92, 
-              maxScore: 100,
-              status: 'pending',
-              completedDate: '2024-01-25',
-              submittedBy: 'Mike Johnson'
-            }
-          ],
-          certifications: [
-            { name: 'Aviation Safety Management', date: '2024-01-20', status: 'completed', issuedBy: 'Training Department' },
-            { name: 'Risk Assessment', date: '2024-01-25', status: 'completed', issuedBy: 'Quality Department' },
-            { name: 'Emergency Response', date: '2024-02-01', status: 'in_progress', issuedBy: 'Training Department' }
-          ]
+        // Handle response format: { message: "...", data: {...} }
+        const userData = response.data || response;
+
+        // Map user data to trainee format
+        const mappedTrainee = {
+          id: userData.id,
+          eid: userData.eid,
+          firstName: userData.firstName || '',
+          lastName: userData.lastName || '',
+          middleName: userData.middleName || '',
+          name: `${userData.firstName || ''} ${userData.middleName || ''} ${userData.lastName || ''}`.trim().replace(/\s+/g, ' '),
+          email: userData.email || '',
+          phoneNumber: userData.phoneNumber || 'N/A',
+          status: userData.status || 'ACTIVE',
+          gender: userData.gender || 'N/A',
+          address: userData.address || 'N/A',
+          avatarUrl: userData.avatarUrl,
+          role: userData.role?.name || 'N/A',
+          department: userData.department?.name || 'N/A',
+          departmentId: userData.department?.id,
+          // Trainee Profile
+          dob: userData.traineeProfile?.dob,
+          enrollmentDate: userData.traineeProfile?.enrollmentDate,
+          trainingBatch: userData.traineeProfile?.trainingBatch || 'N/A',
+          passportNo: userData.traineeProfile?.passportNo || 'N/A',
+          nation: userData.traineeProfile?.nation || 'N/A',
+          createdAt: userData.createdAt,
+          updatedAt: userData.updatedAt
         };
         
-        setTrainee(mockTrainee);
+        setTrainee(mappedTrainee);
       } catch (err) {
-        setError('Failed to load trainee details');
-        console.error('Error fetching trainee:', err);
+        console.error('Error fetching trainee details:', err);
+        setError('Failed to load trainee details. Please try again later.');
       } finally {
         setLoading(false);
       }
@@ -126,18 +71,25 @@ const TraineeDetailsPage = () => {
 
   const getStatusBadge = (status) => {
     const statusConfig = {
+      ACTIVE: { variant: 'success', text: 'Active' },
+      INACTIVE: { variant: 'secondary', text: 'Inactive' },
+      SUSPENDED: { variant: 'danger', text: 'Suspended' },
       active: { variant: 'success', text: 'Active' },
-      completed: { variant: 'primary', text: 'Completed' },
-      in_progress: { variant: 'info', text: 'In Progress' },
-      inactive: { variant: 'warning', text: 'Inactive' },
-      suspended: { variant: 'danger', text: 'Suspended' },
-      approved: { variant: 'success', text: 'Approved' },
-      pending: { variant: 'warning', text: 'Pending' },
-      rejected: { variant: 'danger', text: 'Rejected' }
+      inactive: { variant: 'secondary', text: 'Inactive' },
+      suspended: { variant: 'danger', text: 'Suspended' }
     };
     
-    const config = statusConfig[status] || { variant: 'secondary', text: 'Unknown' };
+    const config = statusConfig[status] || { variant: 'secondary', text: status || 'Unknown' };
     return <Badge bg={config.variant}>{config.text}</Badge>;
+  };
+
+  const formatDate = (dateString) => {
+    if (!dateString) return 'N/A';
+    try {
+      return new Date(dateString).toLocaleDateString();
+    } catch {
+      return dateString;
+    }
   };
 
   if (loading) {
@@ -174,305 +126,178 @@ const TraineeDetailsPage = () => {
   }
 
   return (
-    <Container fluid className="py-4">
+    <Container fluid className="py-3 py-md-4 px-3 px-md-4">
       {/* Header */}
-      <Row className="mb-4">
+      <Row className="mb-3 mb-md-4">
         <Col>
-          <div className="d-flex align-items-center mb-3">
+          <div className="d-flex align-items-center flex-wrap">
             <button 
-              className="btn btn-link p-0 me-3"
+              className="btn btn-link p-0 me-2 me-md-3 mb-2 mb-md-0"
               onClick={() => navigate(-1)}
+              aria-label="Go back"
             >
-              <ArrowLeft size={20} />
+              <ArrowLeft size={18} className="d-md-none" />
+              <ArrowLeft size={20} className="d-none d-md-block" />
             </button>
-            <div>
-              <h2 className="mb-1">{trainee.name}</h2>
-              <p className="text-muted mb-0">{trainee.employeeId} • {trainee.department}</p>
+            <div className="flex-grow-1">
+              <h2 className="mb-1 h4 h-md-2">{trainee.name}</h2>
+              <p className="text-muted mb-0 small">{trainee.eid} • {trainee.department}</p>
             </div>
           </div>
         </Col>
       </Row>
 
       {/* Trainee Info Cards */}
-      <Row className="mb-4">
-        <Col md={3} className="mb-3">
-          <Card className="h-100 border-0 shadow-sm">
-            <Card.Body className="text-center">
-              <Person size={24} className="text-primary mb-2" />
-              <h6 className="mb-1 text-muted">Status</h6>
-              <div className="mt-2">{getStatusBadge(trainee.status)}</div>
-            </Card.Body>
-          </Card>
-        </Col>
-        <Col md={3} className="mb-3">
-          <Card className="h-100 border-0 shadow-sm">
-            <Card.Body className="text-center">
-              <Book size={24} className="text-success mb-2" />
-              <h6 className="mb-1 text-muted">Courses</h6>
-              <h4 className="mb-0 text-success">{trainee.completedCourses}/{trainee.totalCourses}</h4>
-              <small className="text-muted">Completed</small>
-            </Card.Body>
-          </Card>
-        </Col>
-        <Col md={3} className="mb-3">
-          <Card className="h-100 border-0 shadow-sm">
-            <Card.Body className="text-center">
-              <div className="text-info mb-2">
-                <Award size={24} />
-              </div>
-              <h6 className="mb-1 text-muted">Average Score</h6>
-              <h4 className="mb-0 text-info">{trainee.averageScore}%</h4>
-              <small className="text-muted">Performance</small>
-            </Card.Body>
-          </Card>
-        </Col>
-        <Col md={3} className="mb-3">
-          <Card className="h-100 border-0 shadow-sm">
-            <Card.Body className="text-center">
-              <Calendar size={24} className="text-warning mb-2" />
-              <h6 className="mb-1 text-muted">Enrolled</h6>
-              <h4 className="mb-0 text-warning">{new Date(trainee.enrollmentDate).toLocaleDateString()}</h4>
-              <small className="text-muted">Start Date</small>
-            </Card.Body>
-          </Card>
-        </Col>
-      </Row>
+      <div style={{ marginBottom: '4rem' }}>
+        <Row className="g-2 g-md-3">
+          <Col xs={6} sm={6} md={3} lg={3} className="d-flex mb-2 mb-md-0">
+            <Card className="h-100 border-0 shadow-sm w-100">
+              <Card.Body className="text-center d-flex flex-column justify-content-center p-3 p-md-4" style={{ minHeight: '120px' }}>
+                <div className="d-flex justify-content-center mb-2">
+                  <Person size={20} className="text-primary d-md-none" />
+                  <Person size={24} className="text-primary d-none d-md-block" />
+                </div>
+                <h6 className="mb-2 text-muted small fw-normal">Status</h6>
+                <div className="mt-auto d-flex justify-content-center">{getStatusBadge(trainee.status)}</div>
+              </Card.Body>
+            </Card>
+          </Col>
+          <Col xs={6} sm={6} md={3} lg={3} className="d-flex mb-2 mb-md-0">
+            <Card className="h-100 border-0 shadow-sm w-100">
+              <Card.Body className="text-center d-flex flex-column justify-content-center p-3 p-md-4" style={{ minHeight: '120px' }}>
+                <div className="d-flex justify-content-center mb-2">
+                  <Building size={20} className="text-info d-md-none" />
+                  <Building size={24} className="text-info d-none d-md-block" />
+                </div>
+                <h6 className="mb-2 text-muted small fw-normal">Department</h6>
+                <h6 className="mb-0 text-info small d-md-none" style={{ minHeight: '20px', display: 'flex', alignItems: 'center', justifyContent: 'center', wordBreak: 'break-word' }}>{trainee.department}</h6>
+                <h6 className="mb-0 text-info d-none d-md-block" style={{ minHeight: '24px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>{trainee.department}</h6>
+              </Card.Body>
+            </Card>
+          </Col>
+          <Col xs={6} sm={6} md={3} lg={3} className="d-flex mb-2 mb-md-0">
+            <Card className="h-100 border-0 shadow-sm w-100">
+              <Card.Body className="text-center d-flex flex-column justify-content-center p-3 p-md-4" style={{ minHeight: '120px' }}>
+                <div className="d-flex justify-content-center mb-2">
+                  <Calendar size={20} className="text-success d-md-none" />
+                  <Calendar size={24} className="text-success d-none d-md-block" />
+                </div>
+                <h6 className="mb-2 text-muted small fw-normal">Enrollment Date</h6>
+                <h6 className="mb-0 text-success small d-md-none" style={{ minHeight: '20px', display: 'flex', alignItems: 'center', justifyContent: 'center', wordBreak: 'break-word' }}>{formatDate(trainee.enrollmentDate)}</h6>
+                <h6 className="mb-0 text-success d-none d-md-block" style={{ minHeight: '24px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>{formatDate(trainee.enrollmentDate)}</h6>
+              </Card.Body>
+            </Card>
+          </Col>
+          <Col xs={6} sm={6} md={3} lg={3} className="d-flex mb-2 mb-md-0">
+            <Card className="h-100 border-0 shadow-sm w-100">
+              <Card.Body className="text-center d-flex flex-column justify-content-center p-3 p-md-4" style={{ minHeight: '120px' }}>
+                <div className="d-flex justify-content-center mb-2">
+                  <Passport size={20} className="text-warning d-md-none" />
+                  <Passport size={24} className="text-warning d-none d-md-block" />
+                </div>
+                <h6 className="mb-2 text-muted small fw-normal">Training Batch</h6>
+                <h6 className="mb-0 text-warning small d-md-none" style={{ minHeight: '20px', display: 'flex', alignItems: 'center', justifyContent: 'center', wordBreak: 'break-word' }}>{trainee.trainingBatch}</h6>
+                <h6 className="mb-0 text-warning d-none d-md-block" style={{ minHeight: '24px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>{trainee.trainingBatch}</h6>
+              </Card.Body>
+            </Card>
+          </Col>
+        </Row>
+      </div>
 
-      {/* Contact Information & Progress */}
-      <Row className="mb-4">
-        <Col md={6}>
-          <Card className="border-0 shadow-sm">
-            <Card.Header className="bg-primary text-white">
-              <h5 className="mb-0">Contact Information</h5>
+      {/* Personal Information & Trainee Profile */}
+      <Row className="mb-4 g-3 g-md-4 align-items-stretch">
+        <Col xs={12} sm={12} md={6} lg={6} className="mb-3 mb-md-0 d-flex">
+          <Card className="border-0 shadow-sm w-100 d-flex flex-column">
+            <Card.Header className="department-head-section-header bg-primary text-white border-0">
+              <h5 className="mb-0 text-white h6 h-md-5">Personal Information</h5>
             </Card.Header>
-            <Card.Body>
-              <div className="mb-3">
-                <Envelope size={16} className="me-2 text-muted" />
-                <strong>Email:</strong> {trainee.email}
-              </div>
-              <div className="mb-3">
-                <Person size={16} className="me-2 text-muted" />
-                <strong>Position:</strong> {trainee.position}
-              </div>
-              <div className="mb-3">
-                <Calendar size={16} className="me-2 text-muted" />
-                <strong>Last Activity:</strong> {new Date(trainee.lastActivity).toLocaleDateString()}
-              </div>
-              <div className="mb-0">
-                <Clock size={16} className="me-2 text-muted" />
-                <strong>Overall Progress:</strong> {trainee.overallProgress}%
-              </div>
-            </Card.Body>
-          </Card>
-        </Col>
-        <Col md={6}>
-          <Card className="border-0 shadow-sm">
-            <Card.Header className="bg-primary text-white">
-              <h5 className="mb-0">Progress Overview</h5>
-            </Card.Header>
-            <Card.Body>
-              <div className="mb-3">
-                <div className="d-flex justify-content-between mb-2">
-                  <span>Courses Progress</span>
-                  <span className="fw-bold">{trainee.completedCourses}/{trainee.totalCourses}</span>
-                </div>
-                <div className="progress" style={{ height: '10px' }}>
-                  <div 
-                    className="progress-bar bg-success" 
-                    role="progressbar" 
-                    style={{ width: `${(trainee.completedCourses / trainee.totalCourses) * 100}%` }}
-                  ></div>
+            <Card.Body className="p-3 p-md-4 flex-grow-1">
+              <div className="mb-3 d-flex align-items-start">
+                <Person size={16} className="me-2 text-muted mt-1 flex-shrink-0" />
+                <div className="flex-grow-1">
+                  <strong className="d-block d-md-inline">Employee ID:</strong> <span className="d-block d-md-inline ms-md-1">{trainee.eid}</span>
                 </div>
               </div>
-              <div className="mb-0">
-                <div className="d-flex justify-content-between mb-2">
-                  <span>Subjects Progress</span>
-                  <span className="fw-bold">{trainee.completedSubjects}/{trainee.totalSubjects}</span>
+              <div className="mb-3 d-flex align-items-start">
+                <Envelope size={16} className="me-2 text-muted mt-1 flex-shrink-0" />
+                <div className="flex-grow-1">
+                  <strong className="d-block d-md-inline">Email:</strong> <span className="d-block d-md-inline ms-md-1 text-break">{trainee.email}</span>
                 </div>
-                <div className="progress" style={{ height: '10px' }}>
-                  <div 
-                    className="progress-bar bg-info" 
-                    role="progressbar" 
-                    style={{ width: `${(trainee.completedSubjects / trainee.totalSubjects) * 100}%` }}
-                  ></div>
+              </div>
+              <div className="mb-3 d-flex align-items-start">
+                <Phone size={16} className="me-2 text-muted mt-1 flex-shrink-0" />
+                <div className="flex-grow-1">
+                  <strong className="d-block d-md-inline">Phone Number:</strong> <span className="d-block d-md-inline ms-md-1">{trainee.phoneNumber}</span>
+                </div>
+              </div>
+              <div className="mb-3 d-flex align-items-start">
+                <Person size={16} className="me-2 text-muted mt-1 flex-shrink-0" />
+                <div className="flex-grow-1">
+                  <strong className="d-block d-md-inline">Gender:</strong> <span className="d-block d-md-inline ms-md-1">{trainee.gender}</span>
+                </div>
+              </div>
+              <div className="mb-3 d-flex align-items-start">
+                <Calendar size={16} className="me-2 text-muted mt-1 flex-shrink-0" />
+                <div className="flex-grow-1">
+                  <strong className="d-block d-md-inline">Date of Birth:</strong> <span className="d-block d-md-inline ms-md-1">{formatDate(trainee.dob)}</span>
+                </div>
+              </div>
+              <div className="mb-0 d-flex align-items-start">
+                <GeoAlt size={16} className="me-2 text-muted mt-1 flex-shrink-0" />
+                <div className="flex-grow-1">
+                  <strong className="d-block d-md-inline">Address:</strong> <span className="d-block d-md-inline ms-md-1 text-break">{trainee.address}</span>
                 </div>
               </div>
             </Card.Body>
           </Card>
         </Col>
-      </Row>
-
-      {/* Enrolled Courses */}
-      <Row className="mb-4">
-        <Col>
-          <Card className="border-0 shadow-sm">
-            <Card.Header className="bg-primary text-white">
-              <h5 className="mb-0">Enrolled Courses</h5>
+        <Col xs={12} sm={12} md={6} lg={6} className="mb-0 d-flex">
+          <Card className="border-0 shadow-sm w-100 d-flex flex-column">
+            <Card.Header className="department-head-section-header bg-primary text-white border-0">
+              <h5 className="mb-0 text-white h6 h-md-5">Trainee Profile</h5>
             </Card.Header>
-            <Card.Body className="p-0">
-              <div className="scrollable-table-container admin-table">
-                <Table hover className="mb-0 table-mobile-responsive sticky-header border-neutral-200 align-middle" style={{ fontSize: '0.875rem' }}>
-                  <thead className="sticky-header">
-                    <tr>
-                      <th className="border-neutral-200 text-primary-custom fw-semibold">Course</th>
-                      <th className="border-neutral-200 text-primary-custom fw-semibold hide-mobile">Code</th>
-                      <th className="border-neutral-200 text-primary-custom fw-semibold">Progress</th>
-                      <th className="border-neutral-200 text-primary-custom fw-semibold hide-mobile">Subjects</th>
-                      <th className="border-neutral-200 text-primary-custom fw-semibold">Status</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {trainee.enrolledCourses.map((course, index) => (
-                      <tr 
-                        key={course.id}
-                        className={`${index % 2 === 0 ? 'bg-white' : 'bg-neutral-50'}`}
-                      >
-                        <td className="align-middle">
-                          <div>
-                            <h6 className="mb-0 fw-medium">{course.name}</h6>
-                            <small className="text-muted">Instructor: {course.instructor}</small>
-                          </div>
-                        </td>
-                        <td className="align-middle hide-mobile">
-                          <Badge bg="secondary">{course.code}</Badge>
-                        </td>
-                        <td className="align-middle">
-                          <div>
-                            <div className="d-flex justify-content-between mb-1">
-                              <span className="fw-medium">{course.progress}%</span>
-                            </div>
-                            <div className="progress" style={{ height: '6px' }}>
-                              <div 
-                                className="progress-bar bg-primary" 
-                                role="progressbar" 
-                                style={{ width: `${course.progress}%` }}
-                              ></div>
-                            </div>
-                          </div>
-                        </td>
-                        <td className="align-middle hide-mobile">
-                          <span>{course.completedSubjects}/{course.totalSubjects}</span>
-                        </td>
-                        <td className="align-middle">
-                          {getStatusBadge(course.status)}
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </Table>
+            <Card.Body className="p-3 p-md-4 flex-grow-1">
+              <div className="mb-3 d-flex align-items-start">
+                <Building size={16} className="me-2 text-muted mt-1 flex-shrink-0" />
+                <div className="flex-grow-1">
+                  <strong className="d-block d-md-inline">Department:</strong> <span className="d-block d-md-inline ms-md-1">{trainee.department}</span>
+                </div>
+              </div>
+              <div className="mb-3 d-flex align-items-start">
+                <Person size={16} className="me-2 text-muted mt-1 flex-shrink-0" />
+                <div className="flex-grow-1">
+                  <strong className="d-block d-md-inline">Role:</strong> <span className="d-block d-md-inline ms-md-1">{trainee.role}</span>
+                </div>
+              </div>
+              <div className="mb-3 d-flex align-items-start">
+                <Calendar size={16} className="me-2 text-muted mt-1 flex-shrink-0" />
+                <div className="flex-grow-1">
+                  <strong className="d-block d-md-inline">Enrollment Date:</strong> <span className="d-block d-md-inline ms-md-1">{formatDate(trainee.enrollmentDate)}</span>
+                </div>
+              </div>
+              <div className="mb-3 d-flex align-items-start">
+                <Passport size={16} className="me-2 text-muted mt-1 flex-shrink-0" />
+                <div className="flex-grow-1">
+                  <strong className="d-block d-md-inline">Training Batch:</strong> <span className="d-block d-md-inline ms-md-1">{trainee.trainingBatch}</span>
+                </div>
+              </div>
+              <div className="mb-3 d-flex align-items-start">
+                <Passport size={16} className="me-2 text-muted mt-1 flex-shrink-0" />
+                <div className="flex-grow-1">
+                  <strong className="d-block d-md-inline">Passport No:</strong> <span className="d-block d-md-inline ms-md-1">{trainee.passportNo}</span>
+                </div>
+              </div>
+              <div className="mb-0 d-flex align-items-start">
+                <GeoAlt size={16} className="me-2 text-muted mt-1 flex-shrink-0" />
+                <div className="flex-grow-1">
+                  <strong className="d-block d-md-inline">Nation:</strong> <span className="d-block d-md-inline ms-md-1">{trainee.nation}</span>
+                </div>
               </div>
             </Card.Body>
           </Card>
         </Col>
       </Row>
 
-      {/* Assessments */}
-      <Row className="mb-4">
-        <Col>
-          <Card className="border-0 shadow-sm">
-            <Card.Header className="bg-primary text-white">
-              <h5 className="mb-0">Assessment History</h5>
-            </Card.Header>
-            <Card.Body className="p-0">
-              <div className="scrollable-table-container admin-table">
-                <Table hover className="mb-0 table-mobile-responsive sticky-header border-neutral-200 align-middle" style={{ fontSize: '0.875rem' }}>
-                  <thead className="sticky-header">
-                    <tr>
-                      <th className="border-neutral-200 text-primary-custom fw-semibold">Assessment</th>
-                      <th className="border-neutral-200 text-primary-custom fw-semibold hide-mobile">Course</th>
-                      <th className="border-neutral-200 text-primary-custom fw-semibold">Score</th>
-                      <th className="border-neutral-200 text-primary-custom fw-semibold hide-mobile">Submitted By</th>
-                      <th className="border-neutral-200 text-primary-custom fw-semibold">Status</th>
-                      <th className="border-neutral-200 text-primary-custom fw-semibold hide-mobile">Completed Date</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {trainee.assessments.map((assessment, index) => (
-                      <tr 
-                        key={assessment.id}
-                        className={`${index % 2 === 0 ? 'bg-white' : 'bg-neutral-50'}`}
-                      >
-                        <td className="align-middle">
-                          <div>
-                            <h6 className="mb-0 fw-medium">{assessment.name}</h6>
-                          </div>
-                        </td>
-                        <td className="align-middle hide-mobile">
-                          <span>{assessment.course}</span>
-                        </td>
-                        <td className="align-middle">
-                          {assessment.score ? (
-                            <span className="fw-bold text-success">{assessment.score}/{assessment.maxScore}</span>
-                          ) : (
-                            <span className="text-muted">-</span>
-                          )}
-                        </td>
-                        <td className="align-middle hide-mobile">
-                          <span className="text-muted">{assessment.submittedBy}</span>
-                        </td>
-                        <td className="align-middle">
-                          {getStatusBadge(assessment.status)}
-                        </td>
-                        <td className="align-middle hide-mobile">
-                          <span>{new Date(assessment.completedDate).toLocaleDateString()}</span>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </Table>
-              </div>
-            </Card.Body>
-          </Card>
-        </Col>
-      </Row>
-
-      {/* Certifications */}
-      <Row>
-        <Col>
-          <Card className="border-0 shadow-sm">
-            <Card.Header className="bg-primary text-white">
-              <h5 className="mb-0">Certifications</h5>
-            </Card.Header>
-            <Card.Body className="p-0">
-              <div className="scrollable-table-container admin-table">
-                <Table hover className="mb-0 table-mobile-responsive sticky-header border-neutral-200 align-middle" style={{ fontSize: '0.875rem' }}>
-                  <thead className="sticky-header">
-                    <tr>
-                      <th className="border-neutral-200 text-primary-custom fw-semibold">Certification</th>
-                      <th className="border-neutral-200 text-primary-custom fw-semibold">Date</th>
-                      <th className="border-neutral-200 text-primary-custom fw-semibold hide-mobile">Issued By</th>
-                      <th className="border-neutral-200 text-primary-custom fw-semibold">Status</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {trainee.certifications.map((cert, index) => (
-                      <tr 
-                        key={index}
-                        className={`${index % 2 === 0 ? 'bg-white' : 'bg-neutral-50'}`}
-                      >
-                        <td className="align-middle">
-                          <div>
-                            <h6 className="mb-0 fw-medium">{cert.name}</h6>
-                          </div>
-                        </td>
-                        <td className="align-middle">
-                          <span>{new Date(cert.date).toLocaleDateString()}</span>
-                        </td>
-                        <td className="align-middle hide-mobile">
-                          <span className="text-muted">{cert.issuedBy}</span>
-                        </td>
-                        <td className="align-middle">
-                          {getStatusBadge(cert.status)}
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </Table>
-              </div>
-            </Card.Body>
-          </Card>
-        </Col>
-      </Row>
     </Container>
   );
 };

@@ -197,6 +197,10 @@ export const usePermissions = () => {
     
     // Parse permissionName if it's in format "METHOD /path"
     const parsePermission = (perm) => {
+      // Handle null/undefined permissions
+      if (!perm || typeof perm !== 'string') {
+        return { method: null, path: '' };
+      }
       const parts = perm.trim().split(/\s+/);
       if (parts.length >= 2) {
         const method = parts[0]; // GET, POST, PUT, PATCH, DELETE
@@ -280,7 +284,14 @@ export const usePermissions = () => {
       return false;
     }
     
-    return permissionNames.some(permissionName => 
+    // Filter out null/undefined permissions
+    const validPermissions = permissionNames.filter(perm => perm && typeof perm === 'string');
+    
+    if (validPermissions.length === 0) {
+      return false;
+    }
+    
+    return validPermissions.some(permissionName => 
       hasPermission(permissionName)
     );
   }, [userPermissions, hasPermission]);
@@ -291,7 +302,14 @@ export const usePermissions = () => {
       return false;
     }
     
-    return permissionNames.every(permissionName => 
+    // Filter out null/undefined permissions
+    const validPermissions = permissionNames.filter(perm => perm && typeof perm === 'string');
+    
+    if (validPermissions.length === 0) {
+      return false;
+    }
+    
+    return validPermissions.every(permissionName => 
       hasPermission(permissionName)
     );
   }, [userPermissions, hasPermission]);
