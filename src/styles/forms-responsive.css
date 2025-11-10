@@ -250,6 +250,743 @@
   color: white !important;
 }
 
+/* Template Detail Modal Responsive */
+.template-detail-modal-dialog {
+  max-width: 90vw;
+  margin: 1rem auto;
+}
+
+.template-detail-modal-content {
+  border-radius: 0.75rem;
+}
+
+.template-detail-header {
+  padding: 1rem 1.25rem !important;
+}
+
+.template-detail-title {
+  font-size: 1.1rem;
+}
+
+.template-detail-title-text {
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.template-detail-body {
+  max-height: 70vh;
+}
+
+.template-detail-tabs-container {
+  position: sticky;
+  top: 0;
+  z-index: 10;
+}
+
+.template-detail-tabs {
+  scrollbar-width: none; /* Firefox */
+  -ms-overflow-style: none; /* IE and Edge */
+}
+
+.template-detail-tabs::-webkit-scrollbar {
+  display: none; /* Chrome, Safari, Opera */
+}
+
+.template-detail-tab {
+  flex-shrink: 0;
+}
+
+.template-detail-content {
+  padding: 1rem !important;
+}
+
+.template-detail-footer {
+  flex-wrap: wrap;
+}
+
+/* Tablet (768px - 991px) */
+@media (min-width: 768px) and (max-width: 991px) {
+  .template-detail-modal-dialog {
+    max-width: 85vw;
+    margin: 1.5rem auto;
+  }
+
+  .template-detail-header {
+    padding: 1.25rem 1.5rem !important;
+  }
+
+  .template-detail-title {
+    font-size: 1.25rem;
+  }
+
+  .template-detail-content {
+    padding: 1.5rem !important;
+  }
+
+  .template-detail-body {
+    max-height: 65vh;
+  }
+}
+
+/* Mobile (max-width: 767px) */
+@media (max-width: 767px) {
+  .template-detail-modal-dialog {
+    max-width: 100vw;
+    margin: 0;
+    height: 100vh;
+    max-height: 100vh;
+  }
+
+  .template-detail-modal-content {
+    height: 100vh;
+    border-radius: 0;
+    display: flex;
+    flex-direction: column;
+  }
+
+  .template-detail-header {
+    padding: 0.875rem 1rem !important;
+    flex-shrink: 0;
+  }
+
+  .template-detail-title {
+    font-size: 1rem;
+  }
+
+  .template-detail-title-text {
+    max-width: 150px !important;
+  }
+
+  .template-detail-body {
+    flex: 1;
+    overflow-y: auto;
+    max-height: none;
+    height: 100%;
+  }
+
+  .template-detail-tabs-container {
+    flex-shrink: 0;
+  }
+
+  .template-detail-tabs {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .template-detail-tab {
+    padding: 0.75rem 0.5rem !important;
+    font-size: 0.875rem;
+  }
+
+  .template-detail-content {
+    padding: 0.875rem !important;
+  }
+
+  .template-detail-footer {
+    flex-shrink: 0;
+    padding: 0.875rem 1rem !important;
+    flex-direction: column;
+    gap: 0.5rem;
+  }
+
+  .template-detail-footer .btn {
+    width: 100%;
+    margin: 0;
+    padding: 0.625rem 1rem !important;
+    font-size: 0.875rem;
+  }
+
+  /* Adjust list items for mobile */
+  .template-detail-content .list-group-item {
+    padding: 0.75rem !important;
+  }
+
+  .template-detail-content .list-group-item h6 {
+    font-size: 0.95rem;
+  }
+
+  .template-detail-content .list-group-item small {
+    font-size: 0.8rem;
+  }
+}
+
+/* Small Mobile (max-width: 576px) */
+@media (max-width: 576px) {
+  .template-detail-header {
+    padding: 0.75rem 0.875rem !important;
+  }
+
+  .template-detail-title {
+    font-size: 0.95rem;
+  }
+
+  .template-detail-title-text {
+    max-width: 120px !important;
+  }
+
+  .template-detail-tab {
+    padding: 0.625rem 0.375rem !important;
+    font-size: 0.8rem;
+  }
+
+  .template-detail-content {
+    padding: 0.75rem !important;
+  }
+
+  .template-detail-footer {
+    padding: 0.75rem 0.875rem !important;
+  }
+
+  .template-detail-footer .btn {
+    padding: 0.5rem 0.875rem !important;
+    font-size: 0.8rem;
+  }
+}
+
+/* Custom Fields Panel Responsive */
+.custom-fields-panel {
+  width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
+}
+
+.custom-fields-title {
+  font-size: 0.95rem;
+  word-break: break-word;
+}
+
+.custom-fields-add-section-btn,
+.custom-fields-add-field-btn {
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.custom-fields-tip {
+  word-break: break-word;
+}
+
+.custom-fields-submit-btn {
+  white-space: nowrap;
+}
+
+.custom-fields-col {
+  border-top: 1px solid #dee2e6;
+  border-left: none !important;
+}
+
+.custom-fields-wrapper {
+  width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
+}
+
+/* Tablet (768px - 991px) */
+@media (min-width: 768px) and (max-width: 991px) {
+  /* Force Row to use flexbox column layout */
+  .onlyoffice-form-editor .row {
+    display: flex !important;
+    flex-direction: column !important;
+  }
+
+  .custom-fields-panel {
+    padding: 0.875rem !important;
+    min-height: 300px;
+    height: auto !important;
+    max-height: 70vh;
+    overflow: hidden !important;
+  }
+
+  .custom-fields-title {
+    font-size: 1rem;
+  }
+
+  .custom-fields-col {
+    border-top: 1px solid #dee2e6 !important;
+    border-left: none !important;
+    margin-top: 1rem;
+    padding-top: 1rem;
+    order: 2 !important;
+    width: 100% !important;
+    flex: 0 0 100% !important;
+    max-width: 100% !important;
+    display: block !important;
+    visibility: visible !important;
+  }
+
+  .editor-col {
+    order: 1 !important;
+    width: 100% !important;
+    flex: 0 0 100% !important;
+    max-width: 100% !important;
+    margin-bottom: 1rem;
+    display: block !important;
+    visibility: visible !important;
+  }
+
+  .editor-wrapper {
+    height: 70vh !important;
+    min-height: 500px !important;
+    max-height: none !important;
+    display: flex !important;
+    flex-direction: column !important;
+    overflow: visible !important;
+  }
+
+  .editor-wrapper > div:first-child {
+    flex-shrink: 0;
+    margin-bottom: 0.5rem;
+  }
+
+  .editor-wrapper #onlyoffice-editor {
+    height: calc(100% - 50px) !important;
+    min-height: 440px !important;
+    flex: 1 1 auto !important;
+    display: block !important;
+    visibility: visible !important;
+    overflow: visible !important;
+    position: relative !important;
+  }
+
+  /* Ensure OnlyOffice iframe is visible */
+  .editor-wrapper #onlyoffice-editor iframe {
+    height: 100% !important;
+    min-height: 440px !important;
+    display: block !important;
+    visibility: visible !important;
+  }
+
+  .custom-fields-wrapper {
+    height: auto !important;
+    min-height: 300px;
+    max-height: 70vh;
+    overflow-y: auto;
+    overflow-x: hidden;
+    display: block !important;
+    visibility: visible !important;
+  }
+
+  .custom-fields-content {
+    min-height: 200px !important;
+    max-height: none !important;
+    overflow-y: auto !important;
+    overflow-x: hidden !important;
+    flex: 1 1 auto !important;
+    position: relative !important;
+  }
+
+  /* Section cards responsive */
+  .custom-fields-panel .section-card {
+    display: block !important;
+    visibility: visible !important;
+    opacity: 1 !important;
+    margin-bottom: 0.75rem !important;
+  }
+
+  .custom-fields-panel .section-header {
+    padding: 0.75rem !important;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    display: flex !important;
+    visibility: visible !important;
+  }
+
+  .custom-fields-panel .section-title {
+    font-size: 0.9rem !important;
+    width: 100%;
+    margin-bottom: 0.25rem;
+    display: flex !important;
+    visibility: visible !important;
+  }
+
+  .custom-fields-panel .section-body {
+    padding: 0.75rem !important;
+    display: block !important;
+    visibility: visible !important;
+    overflow: visible !important;
+  }
+
+  /* Field items responsive */
+  .custom-fields-panel .draggable-item,
+  .custom-fields-panel .custom-field-item {
+    padding: 0.75rem !important;
+    margin-bottom: 0.75rem !important;
+    display: block !important;
+    visibility: visible !important;
+    opacity: 1 !important;
+    min-height: auto !important;
+    width: 100% !important;
+    box-sizing: border-box !important;
+  }
+
+  .custom-fields-panel .field-title {
+    font-size: 0.85rem !important;
+    display: flex !important;
+    visibility: visible !important;
+  }
+
+  .custom-fields-panel .insert-field-btn {
+    font-size: 0.75rem !important;
+    padding: 0.375rem 0.5rem !important;
+    display: flex !important;
+    visibility: visible !important;
+  }
+
+  /* Ensure all field content is visible */
+  .custom-fields-panel .d-grid,
+  .custom-fields-panel .custom-fields-grid {
+    display: grid !important;
+    visibility: visible !important;
+    grid-template-columns: 1fr !important;
+    gap: 0.5rem !important;
+    width: 100% !important;
+  }
+
+  .custom-fields-panel .part-children {
+    display: block !important;
+    visibility: visible !important;
+    margin-top: 0.5rem !important;
+  }
+
+  /* Ensure Card components are visible */
+  .custom-fields-panel .card {
+    display: block !important;
+    visibility: visible !important;
+    opacity: 1 !important;
+  }
+
+  .custom-fields-panel .card-body {
+    display: block !important;
+    visibility: visible !important;
+  }
+}
+
+/* Mobile (max-width: 767px) */
+@media (max-width: 767px) {
+  /* Force Row to use flexbox column layout */
+  .onlyoffice-form-editor .row {
+    display: flex !important;
+    flex-direction: column !important;
+  }
+
+  .custom-fields-panel {
+    padding: 0.75rem !important;
+    min-height: 300px;
+    height: auto !important;
+    max-height: 70vh;
+    overflow: hidden !important;
+  }
+
+  .custom-fields-title {
+    font-size: 0.9rem;
+  }
+
+  .custom-fields-col {
+    border-top: 1px solid #dee2e6;
+    border-left: none !important;
+    margin-top: 1rem;
+    padding-top: 1rem;
+    order: 2 !important;
+    width: 100% !important;
+    flex: 0 0 100% !important;
+    max-width: 100% !important;
+    display: block !important;
+    visibility: visible !important;
+  }
+
+  .editor-col {
+    order: 1 !important;
+    width: 100% !important;
+    flex: 0 0 100% !important;
+    max-width: 100% !important;
+    margin-bottom: 1rem;
+    display: block !important;
+    visibility: visible !important;
+  }
+
+  .editor-wrapper {
+    height: auto !important;
+    min-height: 400px;
+    max-height: 60vh;
+  }
+
+  .custom-fields-wrapper {
+    height: auto !important;
+    min-height: 300px;
+    max-height: 70vh;
+    overflow-y: auto;
+    overflow-x: hidden;
+    display: block !important;
+    visibility: visible !important;
+  }
+
+  .custom-fields-content {
+    min-height: 200px !important;
+    max-height: none !important;
+    overflow-y: auto !important;
+    overflow-x: hidden !important;
+    flex: 1 1 auto !important;
+    position: relative !important;
+  }
+
+  .editor-col {
+    margin-bottom: 1rem;
+  }
+
+  /* Section cards responsive */
+  .custom-fields-panel .section-card {
+    display: block !important;
+    visibility: visible !important;
+    opacity: 1 !important;
+    margin-bottom: 0.75rem !important;
+  }
+
+  .custom-fields-panel .section-header {
+    padding: 0.625rem !important;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    display: flex !important;
+    visibility: visible !important;
+  }
+
+  .custom-fields-panel .section-title {
+    font-size: 0.85rem !important;
+    width: 100%;
+    margin-bottom: 0.25rem;
+    display: flex !important;
+    visibility: visible !important;
+  }
+
+  .custom-fields-panel .section-body {
+    padding: 0.625rem !important;
+    display: block !important;
+    visibility: visible !important;
+    overflow: visible !important;
+  }
+
+  /* Field items responsive */
+  .custom-fields-panel .draggable-item,
+  .custom-fields-panel .custom-field-item {
+    padding: 0.625rem !important;
+    margin-bottom: 0.75rem !important;
+    display: block !important;
+    visibility: visible !important;
+    opacity: 1 !important;
+    min-height: auto !important;
+    width: 100% !important;
+    box-sizing: border-box !important;
+  }
+
+  .custom-fields-panel .field-title {
+    font-size: 0.8rem !important;
+    display: flex !important;
+    visibility: visible !important;
+  }
+
+  .custom-fields-panel .insert-field-btn {
+    font-size: 0.7rem !important;
+    padding: 0.25rem 0.5rem !important;
+    display: flex !important;
+    visibility: visible !important;
+  }
+
+  /* Ensure all field content is visible */
+  .custom-fields-panel .d-grid,
+  .custom-fields-panel .custom-fields-grid {
+    display: grid !important;
+    visibility: visible !important;
+    grid-template-columns: 1fr !important;
+    gap: 0.5rem !important;
+    width: 100% !important;
+  }
+
+  .custom-fields-panel .part-children {
+    display: block !important;
+    visibility: visible !important;
+    margin-top: 0.5rem !important;
+  }
+
+  /* Ensure Card components are visible */
+  .custom-fields-panel .card {
+    display: block !important;
+    visibility: visible !important;
+    opacity: 1 !important;
+  }
+
+  .custom-fields-panel .card-body {
+    display: block !important;
+    visibility: visible !important;
+  }
+
+  /* Footer responsive */
+  .custom-fields-panel .custom-fields-tip {
+    font-size: 0.7rem !important;
+    padding: 0.375rem !important;
+    margin-bottom: 0.5rem;
+  }
+
+  .custom-fields-panel .custom-fields-submit-btn {
+    width: 100%;
+    font-size: 0.75rem !important;
+    padding: 0.5rem !important;
+  }
+}
+
+/* Small Mobile (max-width: 576px) */
+@media (max-width: 576px) {
+  /* Force Row to use flexbox column layout */
+  .onlyoffice-form-editor .row {
+    display: flex !important;
+    flex-direction: column !important;
+  }
+
+  .custom-fields-panel {
+    padding: 0.5rem !important;
+    min-height: 250px;
+    height: auto !important;
+    max-height: 65vh;
+    overflow: hidden !important;
+  }
+
+  .custom-fields-title {
+    font-size: 0.85rem;
+  }
+
+  .custom-fields-col {
+    border-top: 1px solid #dee2e6;
+    border-left: none !important;
+    margin-top: 1rem;
+    padding-top: 1rem;
+    order: 2 !important;
+    width: 100% !important;
+    flex: 0 0 100% !important;
+    max-width: 100% !important;
+    display: block !important;
+    visibility: visible !important;
+  }
+
+  .editor-col {
+    order: 1 !important;
+    width: 100% !important;
+    flex: 0 0 100% !important;
+    max-width: 100% !important;
+    margin-bottom: 1rem;
+    display: block !important;
+    visibility: visible !important;
+  }
+
+  .editor-wrapper {
+    height: auto !important;
+    min-height: 350px;
+    max-height: 55vh;
+  }
+
+  .custom-fields-wrapper {
+    min-height: 250px;
+    max-height: 65vh;
+    overflow-y: auto;
+    overflow-x: hidden;
+    display: block !important;
+    visibility: visible !important;
+  }
+
+  .custom-fields-content {
+    min-height: 150px !important;
+    max-height: none !important;
+    overflow-y: auto !important;
+    overflow-x: hidden !important;
+    position: relative !important;
+  }
+
+  .custom-fields-panel .section-card {
+    display: block !important;
+    visibility: visible !important;
+    opacity: 1 !important;
+    margin-bottom: 0.5rem !important;
+  }
+
+  .custom-fields-panel .section-header {
+    padding: 0.5rem !important;
+    display: flex !important;
+    visibility: visible !important;
+  }
+
+  .custom-fields-panel .section-title {
+    font-size: 0.8rem !important;
+    display: flex !important;
+    visibility: visible !important;
+  }
+
+  .custom-fields-panel .section-body {
+    padding: 0.5rem !important;
+    display: block !important;
+    visibility: visible !important;
+    overflow: visible !important;
+  }
+
+  .custom-fields-panel .draggable-item,
+  .custom-fields-panel .custom-field-item {
+    padding: 0.5rem !important;
+    margin-bottom: 0.5rem !important;
+    display: block !important;
+    visibility: visible !important;
+    opacity: 1 !important;
+    min-height: auto !important;
+    width: 100% !important;
+    box-sizing: border-box !important;
+  }
+
+  .custom-fields-panel .field-title {
+    font-size: 0.75rem !important;
+    display: flex !important;
+    visibility: visible !important;
+  }
+
+  .custom-fields-panel .insert-field-btn {
+    font-size: 0.65rem !important;
+    padding: 0.25rem 0.375rem !important;
+    display: flex !important;
+    visibility: visible !important;
+  }
+
+  /* Ensure all field content is visible */
+  .custom-fields-panel .d-grid,
+  .custom-fields-panel .custom-fields-grid {
+    display: grid !important;
+    visibility: visible !important;
+    grid-template-columns: 1fr !important;
+    gap: 0.5rem !important;
+    width: 100% !important;
+  }
+
+  .custom-fields-panel .part-children {
+    display: block !important;
+    visibility: visible !important;
+    margin-top: 0.5rem !important;
+  }
+
+  /* Ensure Card components are visible */
+  .custom-fields-panel .card {
+    display: block !important;
+    visibility: visible !important;
+    opacity: 1 !important;
+  }
+
+  .custom-fields-panel .card-body {
+    display: block !important;
+    visibility: visible !important;
+  }
+
+  .custom-fields-panel .custom-fields-tip {
+    font-size: 0.65rem !important;
+    padding: 0.25rem !important;
+  }
+
+  .custom-fields-panel .custom-fields-submit-btn {
+    font-size: 0.7rem !important;
+    padding: 0.375rem !important;
+  }
+}
+
 .form-editor-page .form-editor-header h4,
 .form-editor-page .form-editor-header .text-white,
 .form-editor-page .card-header.bg-primary h4,
