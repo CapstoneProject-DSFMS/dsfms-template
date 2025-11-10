@@ -129,7 +129,7 @@ const Sidebar = ({ collapsed, onClose }) => {
       },
       {
         id: "forms",
-        label: "Form Templates",
+        label: "Template List",
         icon: FileText,
         path: "/admin/forms",
         permission: API_PERMISSIONS.TEMPLATES.VIEW_ALL,

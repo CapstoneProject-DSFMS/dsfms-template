@@ -18,6 +18,7 @@ const CustomFieldsPanel = ({
   exportAndUploadEditedDoc, // Kept for backward compatibility but not used
   forceSaveAndPoll,
   getDocumentKey,
+  addSystemFieldToSectionRef,
   readOnly = false,
   className = ""
 }) => {
@@ -72,6 +73,62 @@ const CustomFieldsPanel = ({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  // Expose functions to parent component via ref
+  useEffect(() => {
+    if (addSystemFieldToSectionRef) {
+      addSystemFieldToSectionRef.current = {
+        getSections: () => sections,
+        addSystemField: (sectionIndex, fieldData) => {
+          if (sectionIndex === null || sectionIndex < 0 || sectionIndex >= sections.length) {
+            toast.error('Invalid section index');
+            return false; // Return false to indicate failure
+          }
+
+          const section = sections[sectionIndex];
+          const sectionFields = section.fields || [];
+          
+          // Check if fieldName already exists
+          if (sectionFields.some(f => f.fieldName === fieldData.fieldName)) {
+            toast.warning(`Field "${fieldData.fieldName}" already exists in this section`);
+            return false; // Return false to indicate failure
+          }
+
+          // Use section's editBy as roleRequired if not provided
+          const fieldToAdd = {
+            ...fieldData,
+            roleRequired: fieldData.roleRequired || section.editBy || 'TRAINER'
+          };
+
+          const nextSections = [...sections];
+          nextSections[sectionIndex] = {
+            ...section,
+            fields: [...sectionFields, fieldToAdd]
+          };
+
+          setSections(nextSections);
+
+          // Notify parent component - use setTimeout to avoid "Cannot update component while rendering" warning
+          if (onAddField) {
+            const flattened = nextSections.flatMap((s) => s.fields || []);
+            // Defer callback to avoid updating parent during render phase
+            setTimeout(() => {
+              onAddField(flattened);
+            }, 0);
+          }
+          
+          return true; // Return true to indicate success
+        }
+      };
+    }
+
+    // Cleanup
+    return () => {
+      if (addSystemFieldToSectionRef) {
+        addSystemFieldToSectionRef.current = null;
+      }
+    };
+  }, [sections, addSystemFieldToSectionRef, onAddField]);
+
   const handleAddSection = () => {
     setNewSection({
       name: '',
@@ -99,10 +156,12 @@ const CustomFieldsPanel = ({
       fields.splice(toIndex, 0, moved);
       // do not reassign displayOrder here; compute at submit time
       next[sectionIndex] = { ...next[sectionIndex], fields };
-      // notify parent (flattened) if needed
+      // notify parent (flattened) if needed - use setTimeout to avoid render phase update
       if (onAddField) {
         const flattened = next.flatMap((s) => s.fields || []);
-        onAddField(flattened, { silent: true });
+        setTimeout(() => {
+          onAddField(flattened, { silent: true });
+        }, 0);
       }
       return next;
     });
@@ -262,11 +321,13 @@ const CustomFieldsPanel = ({
     }
 
     setSections(nextSections);
-    // Keep external callback compatible if provided
+    // Keep external callback compatible if provided - use setTimeout to avoid render phase update
     if (onAddField) {
       // Flatten all fields to maintain backward compatibility for parent state
       const flattened = nextSections.flatMap((s) => s.fields || []);
-      onAddField(flattened);
+      setTimeout(() => {
+        onAddField(flattened);
+      }, 0);
     }
     
     setShowFieldModal(false);
@@ -428,7 +489,9 @@ const CustomFieldsPanel = ({
     setSections(nextSections);
     if (onAddField) {
       const flattened = nextSections.flatMap((s) => s.fields || []);
-      onAddField(flattened);
+      setTimeout(() => {
+        onAddField(flattened);
+      }, 0);
     }
     // Build inner template based on selected type (TEXT/TOGGLE/IMAGE)
     let inner = `{${partSubFieldName}}`;
@@ -497,22 +560,25 @@ const CustomFieldsPanel = ({
           .section-card.section-drop-target-below { border-bottom: 4px solid var(--bs-primary) !important; border-bottom-left-radius: 0.5rem; border-bottom-right-radius: 0.5rem; }
         `}
       </style>
-      <div className={`p-3 bg-light custom-fields-panel ${className}`} style={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
-      <div className="d-flex justify-content-between align-items-center mb-3">
-        <h6 className="mb-0 text-muted">Custom Fields</h6>
+      <div className={`p-2 p-md-3 bg-light custom-fields-panel ${className}`} style={{ height: '100%', display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
+      <div className="d-flex justify-content-between align-items-center mb-2 mb-md-3 flex-wrap gap-2 flex-shrink-0">
+        <h6 className="mb-0 text-muted custom-fields-title" style={{ fontSize: '0.95rem' }}>Available Custom Fields</h6>
         <Button
           variant="outline-primary"
           size="sm"
           onClick={handleAddSection}
           disabled={readOnly}
+          className="custom-fields-add-section-btn"
+          style={{ whiteSpace: 'nowrap', flexShrink: 0 }}
         >
           <Plus className="me-1" size={14} />
-          Add Section
+          <span className="d-none d-sm-inline">Add Section</span>
+          <span className="d-inline d-sm-none">Section</span>
         </Button>
       </div>
       
-      <div className="flex-grow-1" style={{ overflowY: 'auto', minHeight: '0' }}>
-        <div className="d-grid gap-2">
+      <div className="flex-grow-1 custom-fields-content" style={{ overflowY: 'auto', overflowX: 'hidden', minHeight: '0', flex: '1 1 auto' }}>
+        <div className="d-grid gap-2 custom-fields-grid">
           {sections.length > 0 ? (
             sections
               .map((section, sIdx) => (
@@ -565,26 +631,32 @@ const CustomFieldsPanel = ({
                     onClick={() => toggleSection(sIdx)}
                     aria-expanded={!collapsedSections[sIdx]}
                     onDragStart={(e) => e.stopPropagation()}
+                    style={{ padding: '0.75rem' }}
                   >
-                    <div className="d-flex flex-column">
-                      <div className="section-title fw-bold">
-                        {collapsedSections[sIdx] ? <ChevronRight size={16} /> : <ChevronDown size={16} />}
-                        {section.label}
-                        <span className="badge rounded-pill ms-1 field-count-badge">
+                    <div className="d-flex flex-column flex-grow-1" style={{ minWidth: 0, marginRight: '0.5rem' }}>
+                      <div className="section-title fw-bold d-flex align-items-center" style={{ fontSize: '0.9rem' }}>
+                        {collapsedSections[sIdx] ? <ChevronRight size={16} className="flex-shrink-0" /> : <ChevronDown size={16} className="flex-shrink-0" />}
+                        <span className="text-truncate ms-1" style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }} title={section.label}>
+                          {section.label}
+                        </span>
+                        <span className="badge rounded-pill ms-1 field-count-badge flex-shrink-0">
                           {section.fields?.length || 0}
                         </span>
                       </div>
-                      <small className="text-muted">Edit by: {section.editBy}</small>
+                      <small className="text-muted" style={{ fontSize: '0.75rem' }}>Edit by: {section.editBy}</small>
                     </div>
-                    <div onClick={(e) => e.stopPropagation()}>
+                    <div onClick={(e) => e.stopPropagation()} className="flex-shrink-0">
                       <Button
                         variant="outline-primary"
                         size="sm"
                         onClick={() => handleAddField(sIdx)}
                         disabled={readOnly}
+                        className="custom-fields-add-field-btn"
+                        style={{ whiteSpace: 'nowrap', fontSize: '0.75rem', padding: '0.25rem 0.5rem' }}
                       >
-                        <Plus className="me-1" size={14} />
-                        Add Field
+                        <Plus className="me-1" size={12} />
+                        <span className="d-none d-sm-inline">Add Field</span>
+                        <span className="d-inline d-sm-none">Field</span>
                       </Button>
                     </div>
                   </Card.Header>
@@ -602,8 +674,9 @@ const CustomFieldsPanel = ({
                           return (
                           <div
                             key={`${sIdx}-${realIndex}`}
-                            className={`p-2 rounded border mb-2 draggable-item ${isPart ? 'bg-part part-card' : 'bg-white child-row'} ${dragState.sectionIndex===sIdx && dragState.overIndex===realIndex ? 'border-primary' : ''} ${dragState.sectionIndex===sIdx && dragState.overIndex===realIndex && dragState.position==='above' ? 'drop-target-above' : ''} ${dragState.sectionIndex===sIdx && dragState.overIndex===realIndex && dragState.position==='below' ? 'drop-target-below' : ''} ${dragState.sectionIndex===sIdx && dragState.fromIndex===realIndex ? 'dragging' : ''}`}
+                            className={`p-2 p-md-2 rounded border mb-2 mb-md-2 draggable-item custom-field-item ${isPart ? 'bg-part part-card' : 'bg-white child-row'} ${dragState.sectionIndex===sIdx && dragState.overIndex===realIndex ? 'border-primary' : ''} ${dragState.sectionIndex===sIdx && dragState.overIndex===realIndex && dragState.position==='above' ? 'drop-target-above' : ''} ${dragState.sectionIndex===sIdx && dragState.overIndex===realIndex && dragState.position==='below' ? 'drop-target-below' : ''} ${dragState.sectionIndex===sIdx && dragState.fromIndex===realIndex ? 'dragging' : ''}`}
                             draggable
+                            style={{ display: 'block', visibility: 'visible', opacity: 1, cursor: 'grab' }}
                             onDragStart={(e) => {
                               setDragState({ sectionIndex: sIdx, fromIndex: realIndex, overIndex: realIndex, position: 'above' });
                               e.dataTransfer.effectAllowed = 'move';
@@ -628,16 +701,20 @@ const CustomFieldsPanel = ({
                               setDragState({ sectionIndex: null, fromIndex: null, overIndex: null, position: 'above' });
                             }}
                             onDragEnd={() => setDragState({ sectionIndex: null, fromIndex: null, overIndex: null, position: 'above' })}
-                            style={{ cursor: 'grab' }}
                           >
-                            <div className="d-flex justify-content-between align-items-center mb-2">
-                              <div className="flex-grow-1">
-                                <div className="fw-bold field-title">{field.label} {isPart && (<span className="badge part-badge">PART</span>)} </div>
-                                <small className="text-muted">
+                            <div className="d-flex justify-content-between align-items-start mb-2 gap-2">
+                              <div className="flex-grow-1" style={{ minWidth: 0 }}>
+                                <div className="fw-bold field-title d-flex align-items-center flex-wrap gap-1" style={{ fontSize: '0.85rem', wordBreak: 'break-word' }}>
+                                  <span className="text-truncate" style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: '100%' }} title={field.label}>
+                                    {field.label}
+                                  </span>
+                                  {isPart && (<span className="badge part-badge flex-shrink-0">PART</span>)}
+                                </div>
+                                <small className="text-muted d-block" style={{ fontSize: '0.7rem', wordBreak: 'break-word', overflow: 'hidden', textOverflow: 'ellipsis' }} title={`${field.fieldName} (${field.fieldType})${field.roleRequired ? ` - ${field.roleRequired}` : ''}`}>
                                   {field.fieldName} ({field.fieldType}){field.roleRequired ? ` - ${field.roleRequired}` : ''}
                                 </small>
                               </div>
-                              <div className="d-flex gap-1">
+                              <div className="d-flex gap-1 flex-shrink-0">
                                 <Button
                                   variant="outline-primary"
                                   size="sm"
@@ -645,8 +722,9 @@ const CustomFieldsPanel = ({
                                   disabled={readOnly}
                                   title="Edit Field"
                                   className="text-primary border-primary"
+                                  style={{ padding: '0.25rem 0.4rem' }}
                                 >
-                                  <Pencil size={14} />
+                                  <Pencil size={12} />
                                 </Button>
                                 <Button
                                   variant="outline-danger"
@@ -663,33 +741,37 @@ const CustomFieldsPanel = ({
                                   disabled={readOnly}
                                   title="Remove Field"
                                   className="text-danger border-danger"
+                                  style={{ padding: '0.25rem 0.4rem' }}
                                 >
-                                  <X size={14} />
+                                  <X size={12} />
                                 </Button>
                               </div>
                             </div>
-                            <div className="d-grid">
+                            <div className="d-grid gap-1">
                               <Button
                                 variant="outline-primary"
                                 size="sm"
                                 onClick={() => onInsertField(buildTemplateForField(field))}
                                 disabled={readOnly}
                                 className="d-flex align-items-center justify-content-center text-primary border-primary insert-field-btn"
-                                style={{ transition: 'all 0.2s ease-in-out' }}
+                                style={{ transition: 'all 0.2s ease-in-out', fontSize: '0.75rem', padding: '0.375rem 0.5rem' }}
                               >
-                                <ArrowDown className="me-1" size={14} />
-                                Insert Field
+                                <ArrowDown className="me-1" size={12} />
+                                <span className="d-none d-sm-inline">Insert Field</span>
+                                <span className="d-inline d-sm-none">Insert</span>
                               </Button>
                               {String(field.fieldType).toUpperCase() === 'PART' && (
                                 <Button
                                   variant="outline-primary"
                                   size="sm"
-                                  className="mt-2 text-primary border-primary"
+                                  className="mt-0 text-primary border-primary"
                                   onClick={() => openInsertPartField(sIdx, realIndex, field)}
                                   disabled={readOnly}
+                                  style={{ fontSize: '0.75rem', padding: '0.375rem 0.5rem' }}
                                 >
-                                  <ArrowDown className="me-1" size={14} />
-                                  Add Field to PART
+                                  <ArrowDown className="me-1" size={12} />
+                                  <span className="d-none d-sm-inline">Add Field to PART</span>
+                                  <span className="d-inline d-sm-none">Add to PART</span>
                                 </Button>
                               )}
                             </div>
@@ -738,12 +820,20 @@ const CustomFieldsPanel = ({
         </div>
       </div>
       
-      <div className="d-flex justify-content-between align-items-center mt-3">
-        <Alert variant="info" className="mb-0" style={{ fontSize: '0.8rem' }}>
-          <strong>Tip:</strong> Create sections first, then add fields inside each section.
+      <div className="d-flex flex-column flex-md-row justify-content-between align-items-start align-items-md-center mt-2 mt-md-3 gap-2 flex-shrink-0" style={{ borderTop: '1px solid #dee2e6', paddingTop: '0.75rem' }}>
+        <Alert variant="info" className="mb-0 custom-fields-tip" style={{ fontSize: '0.75rem', padding: '0.5rem', flex: '1 1 auto', marginRight: '0.5rem' }}>
+          <strong>Tip:</strong> <span className="d-none d-sm-inline">Create sections first, then add fields inside each section.</span>
+          <span className="d-inline d-sm-none">Create sections, then add fields.</span>
         </Alert>
-        <Button variant="primary" size="sm" onClick={handleSubmitTemplate} disabled={isSubmitting}>
-          {isSubmitting ? 'Submitting...' : 'Submit Template'}
+        <Button 
+          variant="primary" 
+          size="sm" 
+          onClick={handleSubmitTemplate} 
+          disabled={isSubmitting}
+          className="custom-fields-submit-btn flex-shrink-0"
+          style={{ whiteSpace: 'nowrap', fontSize: '0.8rem', padding: '0.375rem 0.75rem' }}
+        >
+          {isSubmitting ? 'Submitting...' : <><span className="d-none d-sm-inline">Submit Template</span><span className="d-inline d-sm-none">Submit</span></>}
         </Button>
       </div>
 

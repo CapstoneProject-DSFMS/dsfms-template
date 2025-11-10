@@ -139,7 +139,7 @@ const Header = ({ onToggleSidebar }) => {
       '/admin/users': 'User Management',
       '/admin/roles': 'Role Management',
       '/admin/departments': 'Department Management',
-      '/admin/forms': 'Form Templates',
+      '/admin/forms': 'Template List',
       '/admin/main-menu': 'Main Menu',
       '/admin/system-config': 'System Configuration',
       
@@ -257,7 +257,7 @@ const Header = ({ onToggleSidebar }) => {
     
     // Check for admin form editor (pattern: /admin/forms/editor)
     if (path.startsWith('/admin/forms/editor')) {
-      return 'Form Templates';
+      return 'Template List';
     }
     
     // Check for SQA template detail pages (pattern: /sqa/templates/:templateId)

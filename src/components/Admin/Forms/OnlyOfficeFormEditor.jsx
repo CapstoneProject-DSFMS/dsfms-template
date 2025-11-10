@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
-import { Alert, Card, Col, Row, Spinner } from 'react-bootstrap'
+import { Alert, Card, Col, Row, Spinner, Dropdown, Modal, Button as BootstrapButton } from 'react-bootstrap'
 import { toast } from 'react-toastify'
 import { uploadAPI } from '../../../api'
 import EditorWithCustomFields from './EditorWithCustomFields'
@@ -15,16 +15,68 @@ const OnlyOfficeFormEditor = ({
   showMergeFields = true,
   importType = '',
     className = '',
+  onHasUnsavedChangesChange,
 }) => {
     const [isLoading, setIsLoading] = useState(true)
     const [editor, setEditor] = useState(null)
     const [isEditorReady, setIsEditorReady] = useState(false)
     const [customFields, setCustomFields] = useState([])
     const [showCustomFieldsPanel] = useState(true)
+    const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false)
+    const hasUnsavedChangesRef = useRef(false) // Persist state across re-renders
     const isInitialized = useRef(false)
     const editorRef = useRef(null)
     const exportResolverRef = useRef(null)
     const documentKeyRef = useRef(null) // Store documentKey for callback flow
+    
+    // Expose hasUnsavedChanges to parent via callback
+    // Use useRef to store callback to avoid dependency issues
+    const onHasUnsavedChangesChangeRef = useRef(onHasUnsavedChangesChange)
+    
+    // Update ref when callback changes
+    useEffect(() => {
+        onHasUnsavedChangesChangeRef.current = onHasUnsavedChangesChange
+    }, [onHasUnsavedChangesChange])
+    
+    // Update ref when state changes
+    useEffect(() => {
+        hasUnsavedChangesRef.current = hasUnsavedChanges
+    }, [hasUnsavedChanges])
+    
+    // Call callback after render to avoid "Cannot update component while rendering" warning
+    useEffect(() => {
+        // Use setTimeout to ensure this runs after render phase
+        const timeoutId = setTimeout(() => {
+            if (onHasUnsavedChangesChangeRef.current) {
+                onHasUnsavedChangesChangeRef.current(hasUnsavedChanges)
+            }
+        }, 0)
+        
+        return () => clearTimeout(timeoutId)
+    }, [hasUnsavedChanges])
+    
+    // Modal state for selecting section to add system mapped field
+    const [showSectionModal, setShowSectionModal] = useState(false)
+    const [selectedSystemField, setSelectedSystemField] = useState(null)
+    const [availableSections, setAvailableSections] = useState([])
+    const addSystemFieldToSectionRef = useRef(null) // Ref to function from CustomFieldsPanel
+
+    // System Mapped Fields - Predefined fields that can be inserted into document
+    const systemMappedFields = [
+        { label: "Trainee's Full Name", variable: "{trainee_name}" },
+        { label: "Trainee's Eid", variable: "{trainee_eid}" },
+        { label: "Trainee's Nation", variable: "{trainee_nationality}" },
+        { label: "Trainee's Batch Name", variable: "{training_batch}" },
+        { label: "Course's Name", variable: "{course_name}" },
+        { label: "Course's Code", variable: "{course_code}" },
+        { label: "Subject's Name", variable: "{subject_name}" },
+        { label: "Subject's Code", variable: "{subject_code}" },
+        { label: "Assessing date", variable: "{assessment_date}" },
+        { label: "Assessment Location", variable: "{assessment_venue}" },
+        { label: "Instructor's Full Name", variable: "{trainer_name}" },
+        { label: "Trainer's Eid", variable: "{trainer_eid}" },
+        { label: "Template Name", variable: "{template_name}" }
+    ]
 
   // Memoize cleanup function to avoid dependency issues
   const cleanupEditor = useCallback(() => {
@@ -266,7 +318,11 @@ console.log('✅ OnlyOffice API loaded successfully')
             },
             onDocumentReady: () => {
                             console.log('✅ Document is loaded')
-                            // Remove duplicate toast - already shown in onAppReady
+                            // When document is ready, mark as potentially having unsaved changes
+                            // This ensures warning shows if user tries to leave without saving
+                            // We'll reset this flag when document is actually saved
+                            setHasUnsavedChanges(true)
+                            console.log('✅ Set hasUnsavedChanges = true (document ready, user can edit)')
             },
             onError: (event) => {
                             console.error('❌ OnlyOffice Error:', event)
@@ -285,6 +341,24 @@ fullEvent: event,
             },
             onDocumentStateChange: (event) => {
                             console.log('📄 Document state changed:', event)
+                            console.log('📄 Event data:', event.data)
+                            // Track document changes - mark as unsaved when document is modified
+                            // OnlyOffice onDocumentStateChange: 0 = ready, 1 = editing, 2 = saving, 3 = saved
+                            if (event.data !== undefined && event.data !== null) {
+                                const state = event.data
+                                console.log('📄 Document state value:', state)
+                                // If state is 1 (editing) or any non-zero value (document has changes), mark as unsaved
+                                // State 0 = ready (no changes), 1 = editing (has changes), 2 = saving, 3 = saved
+                                if (state === 1) {
+                                    // Document is being edited - has unsaved changes
+                                    console.log('✅ Marking document as having unsaved changes')
+                                    setHasUnsavedChanges(true)
+                                } else if (state === 0 || state === 3) {
+                                    // Document is ready or saved - no unsaved changes
+                                    // Note: We don't reset here because user might continue editing
+                                    console.log('📄 Document state: ready/saved (state:', state, ')')
+                                }
+                            }
             },
             onInfo: (event) => {
                             console.log(
@@ -317,6 +391,9 @@ fullEvent: event,
                                 console.log(
                                     '⚠️ POST callback to backend happens separately from OnlyOffice Server'
                                 )
+                                
+                                // Reset unsaved changes flag when document is saved
+                                setHasUnsavedChanges(false)
 
                                 // Try multiple possible URL fields
                                 const tempUrl =
@@ -468,23 +545,23 @@ JSON.stringify(data, null, 2)
         return cleanupEditor
     }, [initialContent, fileName, cleanupEditor]) // Include cleanupEditor dependency
 
-    const handleInsertField = (fieldOrTemplate) => {
+  const handleInsertField = (fieldOrTemplate) => {
     if (editor && isEditorReady) {
       try {
-            // Method 0: Try OnlyOffice Automation API - createConnector (Official Automation API)
-            if (typeof editor.createConnector === 'function') {
-              try {
+        // Method 0: Try OnlyOffice Automation API - createConnector (Official Automation API)
+        if (typeof editor.createConnector === 'function') {
+          try {
                         const connector = editor.createConnector()
-                
-                // Enable key events first (as per documentation)
-                if (typeof editor.asc_enableKeyEvents === 'function') {
-                  try {
+
+            // Enable key events first (as per documentation)
+            if (typeof editor.asc_enableKeyEvents === 'function') {
+              try {
                                 editor.asc_enableKeyEvents(true)
-                            } catch {
-                                // Silent fail
-                            }
-                        }
-            
+              } catch {
+                // Silent fail
+              }
+            }
+
             // ONLY OnlyOffice Automation API - Official method
             if (connector && connector.isConnected) {
               try {
@@ -494,13 +571,13 @@ JSON.stringify(data, null, 2)
                 Asc.scope.__templateText =
                     typeof fieldOrTemplate === 'string' &&
                     fieldOrTemplate.includes('{')
-                        ? fieldOrTemplate
+                    ? fieldOrTemplate
                         : `{${fieldOrTemplate}}`
 
                 connector.callCommand(
                     function () {
-                        try {
-                  // eslint-disable-next-line no-undef
+                  try {
+                    // eslint-disable-next-line no-undef
                             const oDocument = Api.GetDocument()
 
                             // Method 1: Use Search() to find range containing current sentence, then get style
@@ -557,12 +634,12 @@ JSON.stringify(data, null, 2)
                             }
 
                             // Create new paragraph with text
-                            // eslint-disable-next-line no-undef
+                    // eslint-disable-next-line no-undef
                             const oNewParagraph = Api.CreateParagraph()
 
                             if (oTextPr) {
                                 // Create run with copied style
-                                // eslint-disable-next-line no-undef
+                    // eslint-disable-next-line no-undef
                                 const oRun = Api.CreateRun()
                                 // eslint-disable-next-line no-undef
                                 oRun.AddText(Asc.scope.__templateText)
@@ -584,13 +661,13 @@ JSON.stringify(data, null, 2)
                             }
 
                             oDocument.InsertContent([oNewParagraph], true)
-                        } catch {
+              } catch {
                             // Final fallback: simple paragraph
                             // eslint-disable-next-line no-undef
                             const oDocument = Api.GetDocument()
-                  // eslint-disable-next-line no-undef
+                    // eslint-disable-next-line no-undef
                             const oParagraph = Api.CreateParagraph()
-                  // eslint-disable-next-line no-undef
+                    // eslint-disable-next-line no-undef
                             oParagraph.AddText(Asc.scope.__templateText)
                             oDocument.InsertContent([oParagraph], true)
                         }
@@ -608,16 +685,16 @@ JSON.stringify(data, null, 2)
                                 )
 
                                 return
-                            } catch {
+              } catch {
                                 toast.error(
                                     'Failed to insert field using OnlyOffice Automation API'
                                 )
-                            }
-                        }
-                    } catch {
-                        // Silent fail
-                    }
-                }
+              }
+            }
+          } catch {
+            // Silent fail
+          }
+        }
       } catch (error) {
                 console.error('Error inserting field:', error)
                 toast.error('Failed to insert field: ' + error.message)
@@ -634,56 +711,88 @@ JSON.stringify(data, null, 2)
         return documentKeyRef.current
     }, [])
 
-    // Poll API to get result URL after callback is processed
-    const pollForResult = useCallback(async (documentKey, maxAttempts = 10, delay = 2000) => {
-        for (let attempt = 1; attempt <= maxAttempts; attempt++) {
-            try {
-                const response = await apiClient.get('/media/docs/onlyoffice/result', {
-                    params: { key: documentKey }
-                })
-                
-                // Extract URL from response
-                let resultUrl = null
-                if (response.data?.url) {
-                    resultUrl = response.data.url
-                } else if (response.data?.data?.url) {
-                    resultUrl = response.data.data.url
-                } else if (response.data?.fileUrl) {
-                    resultUrl = response.data.fileUrl
-                } else if (response.data?.resultUrl) {
-                    resultUrl = response.data.resultUrl
-                } else if (typeof response.data === 'string' && response.data.startsWith('http')) {
-                    resultUrl = response.data
-                }
-                
-                if (resultUrl) {
-                    console.log(`✅ Got result URL (attempt ${attempt}/${maxAttempts}):`, resultUrl)
-                    return resultUrl
-                } else {
-                    if (attempt < maxAttempts) {
-                        await new Promise(resolve => setTimeout(resolve, delay))
-                    }
-                }
-            } catch (error) {
-                // If 404, backend hasn't processed yet - continue polling
-                if (error.response?.status === 404) {
-                    if (attempt < maxAttempts) {
-                        console.log(`⏳ Polling... (${attempt}/${maxAttempts})`)
-                        await new Promise(resolve => setTimeout(resolve, delay))
-                    } else {
-                        console.error(`❌ Polling exhausted after ${maxAttempts} attempts`)
-                    }
-                } else {
-                    console.error(`❌ Polling error (attempt ${attempt}):`, error.response?.status || error.message)
-                    if (attempt < maxAttempts) {
-                        await new Promise(resolve => setTimeout(resolve, delay))
-                    }
-                }
-            }
-        }
+    // Handle system mapped field selection from dropdown
+    const handleSystemFieldSelect = (field) => {
+        if (!field || !field.variable) return
         
-        console.warn(`⚠️ No result URL found after ${maxAttempts} attempts`)
-        return null
+        // Store selected field temporarily
+        setSelectedSystemField(field)
+        
+        // Get sections from CustomFieldsPanel via ref
+        if (addSystemFieldToSectionRef.current && typeof addSystemFieldToSectionRef.current.getSections === 'function') {
+            const sections = addSystemFieldToSectionRef.current.getSections()
+            if (sections && sections.length > 0) {
+                setAvailableSections(sections)
+                setShowSectionModal(true)
+            } else {
+                toast.warning('Please create a section first before adding system fields')
+            }
+        } else {
+            toast.warning('Custom Fields Panel is not ready. Please wait...')
+        }
+    }
+    
+    // Handle section selection from modal
+    const handleSelectSection = (sectionIndex) => {
+        if (!selectedSystemField || sectionIndex === null || sectionIndex < 0) return
+        
+        // Call function from CustomFieldsPanel to add field to section
+        if (addSystemFieldToSectionRef.current && typeof addSystemFieldToSectionRef.current.addSystemField === 'function') {
+            const fieldData = {
+                label: selectedSystemField.label,
+                fieldName: selectedSystemField.variable.replace(/[{}]/g, ''), // Remove { } from variable name
+                fieldType: 'TEXT', // System mapped fields are always TEXT type
+                roleRequired: 'TRAINER', // Default, can be adjusted based on section
+                displayOrder: 1
+            }
+            
+            // Call addSystemField and check return value
+            const success = addSystemFieldToSectionRef.current.addSystemField(sectionIndex, fieldData)
+            
+            if (success) {
+                // Only show success toast and close modal if field was successfully added
+                setShowSectionModal(false)
+                setSelectedSystemField(null)
+                toast.success(`Added ${selectedSystemField.label} to section`)
+            }
+            // If success is false, addSystemField already showed warning toast, so we don't need to do anything else
+        } else {
+            toast.error('Failed to add field to section')
+        }
+    }
+
+    // Get result URL from API (single call, no polling)
+    const pollForResult = useCallback(async (documentKey) => {
+        try {
+            const response = await apiClient.get('/media/docs/onlyoffice/result', {
+                params: { key: documentKey }
+            })
+            
+            // Extract URL from response
+            let resultUrl = null
+            if (response.data?.url) {
+                resultUrl = response.data.url
+            } else if (response.data?.data?.url) {
+                resultUrl = response.data.data.url
+            } else if (response.data?.fileUrl) {
+                resultUrl = response.data.fileUrl
+            } else if (response.data?.resultUrl) {
+                resultUrl = response.data.resultUrl
+            } else if (typeof response.data === 'string' && response.data.startsWith('http')) {
+                resultUrl = response.data
+            }
+            
+            if (resultUrl) {
+                console.log('✅ Got result URL:', resultUrl)
+                return resultUrl
+            } else {
+                console.warn('⚠️ No URL in response')
+                return null
+            }
+        } catch (error) {
+            console.error('❌ Error getting result:', error.response?.status || error.message)
+            return null
+        }
     }, [])
 
     // Force save and poll for edited URL from backend
@@ -702,69 +811,93 @@ JSON.stringify(data, null, 2)
             console.log(`🔑 DocumentKey: ${documentKey}`)
             console.log(`📡 Callback URL: ${API_CONFIG.BASE_URL}/media/docs/onlyoffice/callback`)
 
-            // Trigger save using available methods - this will cause OnlyOffice to send callback to backend
-            let saveTriggered = false
-
-            // Method 1: Try downloadAs() - triggers onRequestSaveAs event
-            if (typeof editorRef.current.downloadAs === 'function') {
-                try {
-                    editorRef.current.downloadAs('docx')
-                    saveTriggered = true
-                    console.log('✅ Triggered save via downloadAs()')
-                } catch (e) {
-                    console.warn('⚠️ downloadAs() failed:', e)
+            // IMPORTANT: According to OnlyOffice documentation:
+            // https://api.onlyoffice.com/docs/docs-api/additional-api/command-service/forcesave/
+            // The correct way to trigger forcesave is via Command Service API:
+            // POST https://documentserver/command with body: { "c": "forcesave", "key": "documentKey" }
+            // However, frontend cannot call this directly due to CORS, so we need backend endpoint
+            
+            console.log('🔄 Triggering forcesave via backend Command Service API...')
+            
+            // Step 1: Call backend API to trigger forcesave command
+            // Backend will call OnlyOffice Command Service API: POST /command with { "c": "forcesave", "key": documentKey }
+            console.log('🔄 Step 1: Calling backend API to trigger forcesave command...')
+            try {
+                const response = await apiClient.post('/media/docs/onlyoffice/forcesave', {
+                    key: documentKey
+                })
+                
+                console.log('✅ Forcesave command sent via backend:', response.data)
+                
+                // Check if forcesave was successful
+                // Error code 4 means "No changes were applied to the document"
+                if (response.data?.error === 4) {
+                    console.warn('⚠️ No changes in document - forcesave skipped')
+                    toast.warning('No changes to save')
+                    // Still continue to poll - document might already be saved
+                } else if (response.data?.error !== 0 && response.data?.error !== undefined) {
+                    throw new Error(`Forcesave failed with error code: ${response.data.error}`)
+                }
+            } catch (error) {
+                console.error('❌ Failed to trigger forcesave via backend:', error)
+                
+                // Fallback: Try to use editor methods if backend endpoint doesn't exist
+                console.log('🔄 Fallback: Trying editor methods...')
+                let fallbackTriggered = false
+                
+                // Try save() first
+                if (typeof editorRef.current.save === 'function') {
+                    try {
+                        editorRef.current.save()
+                        console.log('✅ Fallback: save() triggered')
+                        fallbackTriggered = true
+                    } catch (e) {
+                        console.warn('⚠️ Fallback: save() failed:', e)
+                    }
+                }
+                
+                // Try downloadAs()
+                if (typeof editorRef.current.downloadAs === 'function') {
+                    try {
+                        editorRef.current.downloadAs('docx')
+                        console.log('✅ Fallback: downloadAs() triggered')
+                        fallbackTriggered = true
+                    } catch (e) {
+                        console.warn('⚠️ Fallback: downloadAs() failed:', e)
+                    }
+                }
+                
+                if (!fallbackTriggered) {
+                    throw new Error('Both backend API and editor methods failed')
                 }
             }
-
-            // Method 2: Try save() - triggers onRequestSave event
-            if (
-                !saveTriggered &&
-                typeof editorRef.current.save === 'function'
-            ) {
-                try {
-                    editorRef.current.save()
-                    saveTriggered = true
-                    console.log('✅ Triggered save via save()')
-                } catch (e) {
-                    console.warn('⚠️ save() failed:', e)
-                }
-            }
-
-            // Method 3: Try downloadDocument() - alternative method
-            if (
-                !saveTriggered &&
-                typeof editorRef.current.downloadDocument === 'function'
-            ) {
-                try {
-                    editorRef.current.downloadDocument()
-                    saveTriggered = true
-                    console.log('✅ Triggered save via downloadDocument()')
-                } catch (e) {
-                    console.warn('⚠️ downloadDocument() failed:', e)
-                }
-            }
-
-            if (!saveTriggered) {
-                throw new Error(
-                    'No save method available. Tried: downloadAs(), save(), downloadDocument()'
-                )
-            }
-
-            console.log('⏳ Waiting for callback to be processed...')
+            
+            // Step 2: Wait for forcesave to complete and trigger callback
+            // According to docs, callback is sent after forcesave completes
+            console.log('⏳ Waiting for forcesave to complete and trigger callback...')
+            toast.info('Waiting for forcesave to complete...')
+            
+            // Wait for OnlyOffice to process forcesave command
+            // According to docs, there's a delay (savetimeoutdelay, default 5 seconds)
+            await new Promise(resolve => setTimeout(resolve, 5000))
+            
+            console.log('⏳ Waiting for callback to be processed by backend...')
             toast.info('Waiting for backend to process callback...')
             
-            // Wait 5 seconds for OnlyOffice to send callback and backend to process it
-            await new Promise(resolve => setTimeout(resolve, 5000))
+            // Wait for backend to process callback
+            // Backend needs time to: receive callback → download file → upload to S3 → store result
+            await new Promise(resolve => setTimeout(resolve, 8000))
 
             // Poll API to get result URL
             console.log('🔄 Polling for result URL...')
             toast.info('Polling backend for result...')
             
-            const resultUrl = await pollForResult(documentKey, 15, 3000)
+            const resultUrl = await pollForResult(documentKey)
             
             if (resultUrl) {
                 console.log('✅ Result URL received:', resultUrl)
                 toast.success('Document processed successfully!')
+                setHasUnsavedChanges(false) // Reset unsaved changes flag after successful save
                 return resultUrl
             } else {
                 console.warn('⚠️ No result URL received after polling')
@@ -978,20 +1111,20 @@ console.log('🌐 Full S3 URL:', s3Url)
         </Card.Body>
       </Card>
         )
-    }
+  }
 
     const handleAddCustomField = (field, options) => {
-        // Check if field is an array (for update) or single field (for add)
-        if (Array.isArray(field)) {
+    // Check if field is an array (for update) or single field (for add)
+    if (Array.isArray(field)) {
             setCustomFields(field)
             if (!options?.silent) toast.success('Fields updated successfully')
-        } else {
+    } else {
             setCustomFields((prev) => [...prev, field])
             if (!options?.silent) toast.success(`Added field: ${field.label}`)
-        }
+    }
     }
 
-    const handleRemoveCustomField = (index) => {
+  const handleRemoveCustomField = (index) => {
         setCustomFields((prev) => prev.filter((_, i) => i !== index))
         toast.success('Field removed')
   }
@@ -999,9 +1132,10 @@ console.log('🌐 Full S3 URL:', s3Url)
   return (
     <div className={`onlyoffice-form-editor ${className}`}>
       <div className="p-0">
-                <Row className="g-0" style={{ minHeight: '90vh' }}>
+        <Row className="g-0" style={{ minHeight: '90vh' }}>
           {/* OnlyOffice Editor */}
-<Col
+          <Col
+                        xs={12}
                         md={
                             showMergeFields &&
                             ((importType === 'File without fields' &&
@@ -1010,16 +1144,39 @@ console.log('🌐 Full S3 URL:', s3Url)
                                 ? 9
                                 : 12
                         }
+                        className="editor-col"
+                        style={{ order: 1 }}
                     >
-                        <div className="p-3" style={{ height: '90vh' }}>
-                            <div className="d-flex justify-content-end mb-2" />
+            <div className="p-3 editor-wrapper" style={{ height: '90vh' }}>
+                            {/* Header Bar with System Mapped Field Dropdown */}
+                            <div className="d-flex justify-content-end align-items-center mb-2">
+                                <Dropdown>
+                                    <Dropdown.Toggle 
+                                        variant="outline-primary" 
+                                        size="sm"
+                                        id="system-mapped-field-dropdown"
+                                    >
+                                        System Mapped Field
+                                    </Dropdown.Toggle>
+                                    <Dropdown.Menu style={{ maxHeight: '400px', overflowY: 'auto' }}>
+                                        {systemMappedFields.map((field, index) => (
+                                            <Dropdown.Item
+                                                key={index}
+                                                onClick={() => handleSystemFieldSelect(field)}
+                                            >
+                                                {field.label}
+                                            </Dropdown.Item>
+                                        ))}
+                                    </Dropdown.Menu>
+                                </Dropdown>
+                            </div>
               
               {/* OnlyOffice Editor Container */}
               <div 
                 id="onlyoffice-editor" 
                 style={{ 
                   width: '100%', 
-                                    height: '100%',
+                  height: '100%',
                   border: '1px solid #ddd',
                                     borderRadius: '4px',
                 }}
@@ -1042,31 +1199,33 @@ console.log('🌐 Full S3 URL:', s3Url)
                                     }}
                                 >
                                     <EditorWithMergeFields
-                                        onInsertField={handleInsertField}
+                onInsertField={handleInsertField}
                                         exportEditedDoc={exportEditedDoc}
                                         initialUrl={initialContent}
-                                        readOnly={readOnly}
-                                        className="h-100"
-                                    />
-                                </div>
-                            </Col>
-                        )}
+                readOnly={readOnly}
+                className="h-100"
+              />
+            </div>
+          </Col>
+        )}
 
                     {/* Custom Fields Flow (File without fields) - Collapsible */}
                     {showMergeFields &&
                         importType === 'File without fields' &&
                         showCustomFieldsPanel && (
-            <Col md={3} className="border-start">
+          <Col xs={12} md={3} className="border-start border-md-start custom-fields-col" style={{ order: 2 }}>
                                 <div
+                                    className="custom-fields-wrapper"
                                     style={{
                                         height: '90vh',
                                         overflowY: 'auto',
+                                        overflowX: 'hidden',
                                     }}
                                 >
                                     <EditorWithCustomFields
-customFields={customFields}
-                                        onAddField={handleAddCustomField}
-                                        onRemoveField={handleRemoveCustomField}
+                customFields={customFields}
+                onAddField={handleAddCustomField}
+                onRemoveField={handleRemoveCustomField}
                 onInsertField={handleInsertField}
                                         exportEditedDoc={exportEditedDoc}
                                         exportAndUploadEditedDoc={
@@ -1074,14 +1233,210 @@ customFields={customFields}
                                         }
                                         forceSaveAndPoll={forceSaveAndPoll}
                                         getDocumentKey={getDocumentKey}
+                                        addSystemFieldToSectionRef={addSystemFieldToSectionRef}
                 readOnly={readOnly}
                 className="h-100"
               />
-                                </div>
-            </Col>
-          )}
+            </div>
+          </Col>
+        )}
         </Row>
       </div>
+      
+      {/* Modal for selecting section to add system mapped field */}
+      <Modal 
+        show={showSectionModal} 
+        onShow={() => {
+          // Get latest sections when modal opens
+          if (addSystemFieldToSectionRef.current && typeof addSystemFieldToSectionRef.current.getSections === 'function') {
+            const sections = addSystemFieldToSectionRef.current.getSections()
+            setAvailableSections(sections || [])
+          }
+        }}
+        onHide={() => {
+          setShowSectionModal(false)
+          setSelectedSystemField(null)
+        }} 
+        centered
+        className="system-field-modal"
+      >
+        <Modal.Header 
+          closeButton 
+          className="bg-primary-custom text-white border-0"
+          style={{ 
+            borderTopLeftRadius: '0.75rem',
+            borderTopRightRadius: '0.75rem',
+            padding: '1.25rem 1.5rem'
+          }}
+        >
+          <Modal.Title className="text-white mb-0" style={{ fontSize: '1.25rem', fontWeight: 600 }}>
+            Select Section
+          </Modal.Title>
+        </Modal.Header>
+        <Modal.Body style={{ padding: '1.5rem' }}>
+          {selectedSystemField && (
+            <div 
+              className="mb-4 p-3 rounded"
+              style={{ 
+                backgroundColor: 'var(--bs-light)',
+                border: '1px solid var(--bs-neutral-200)'
+              }}
+            >
+              <p className="mb-1 text-primary-custom" style={{ fontSize: '0.875rem', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+                Field to add:
+              </p>
+              <p className="mb-0" style={{ fontSize: '1rem', fontWeight: 500, color: 'var(--bs-dark)' }}>
+                {selectedSystemField.label}
+              </p>
+              <code 
+                className="d-inline-block mt-1 px-2 py-1 rounded"
+                style={{ 
+                  fontSize: '0.875rem',
+                  backgroundColor: 'var(--bs-neutral-100)',
+                  color: 'var(--bs-primary)',
+                  border: '1px solid var(--bs-neutral-300)'
+                }}
+              >
+                {selectedSystemField.variable}
+              </code>
+    </div>
+          )}
+          <p className="mb-3" style={{ fontSize: '0.95rem', color: 'var(--bs-dark)', fontWeight: 500 }}>
+            Choose a section to add this field:
+          </p>
+          {availableSections.length > 0 ? (
+            <div className="d-grid gap-2" style={{ maxHeight: '400px', overflowY: 'auto' }}>
+              {availableSections.map((section, index) => (
+                <button
+                  key={index}
+                  type="button"
+                  className="section-select-btn"
+                  onClick={() => handleSelectSection(index)}
+                  style={{
+                    padding: '1rem 1.25rem',
+                    border: '2px solid var(--bs-neutral-200)',
+                    borderRadius: '0.5rem',
+                    backgroundColor: 'var(--bs-light)',
+                    textAlign: 'left',
+                    transition: 'all 0.3s ease',
+                    cursor: 'pointer',
+                    width: '100%'
+                  }}
+                  onMouseEnter={(e) => {
+                    e.currentTarget.style.borderColor = 'var(--bs-primary)'
+                    e.currentTarget.style.backgroundColor = 'rgba(27, 60, 83, 0.05)'
+                    e.currentTarget.style.transform = 'translateY(-2px)'
+                    e.currentTarget.style.boxShadow = '0 4px 12px rgba(27, 60, 83, 0.15)'
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.borderColor = 'var(--bs-neutral-200)'
+                    e.currentTarget.style.backgroundColor = 'var(--bs-light)'
+                    e.currentTarget.style.transform = 'translateY(0)'
+                    e.currentTarget.style.boxShadow = 'none'
+                  }}
+                >
+                  <div className="d-flex justify-content-between align-items-start">
+                    <div style={{ flex: 1 }}>
+                      <div 
+                        className="mb-1"
+                        style={{ 
+                          fontSize: '1rem', 
+                          fontWeight: 600,
+                          color: 'var(--bs-primary)'
+                        }}
+                      >
+                        {section.label || section.name}
+                      </div>
+                      <div 
+                        className="d-flex align-items-center gap-2 mt-2"
+                        style={{ fontSize: '0.875rem' }}
+                      >
+                        <span 
+                          className="badge rounded-pill px-2 py-1"
+                          style={{ 
+                            backgroundColor: 'var(--bs-secondary)',
+                            color: 'white',
+                            fontSize: '0.75rem',
+                            fontWeight: 500
+                          }}
+                        >
+                          {section.editBy || 'TRAINER'}
+                        </span>
+                      </div>
+                    </div>
+                    <div 
+                      className="d-flex align-items-center justify-content-center"
+                      style={{
+                        minWidth: '60px',
+                        height: '60px',
+                        borderRadius: '0.375rem',
+                        backgroundColor: 'var(--bs-primary)',
+                        color: 'white',
+                        fontSize: '1.25rem',
+                        fontWeight: 700
+                      }}
+                    >
+                      {section.fields?.length || 0}
+                    </div>
+                  </div>
+                </button>
+              ))}
+            </div>
+          ) : (
+            <Alert 
+              variant="warning" 
+              className="mb-0"
+              style={{
+                backgroundColor: '#fff3cd',
+                borderColor: '#ffc107',
+                color: '#856404',
+                borderRadius: '0.5rem',
+                padding: '1rem'
+              }}
+            >
+              <strong>No sections available.</strong> Please create a section first.
+            </Alert>
+          )}
+        </Modal.Body>
+        <Modal.Footer 
+          className="border-0"
+          style={{ 
+            padding: '1rem 1.5rem',
+            borderTop: '1px solid var(--bs-neutral-200)'
+          }}
+        >
+          <BootstrapButton 
+            variant="secondary" 
+            onClick={() => {
+              setShowSectionModal(false)
+              setSelectedSystemField(null)
+            }}
+            style={{
+              backgroundColor: 'var(--bs-secondary)',
+              borderColor: 'var(--bs-secondary)',
+              color: 'white',
+              fontWeight: 500,
+              padding: '0.5rem 1.5rem',
+              borderRadius: '0.375rem',
+              transition: 'all 0.3s ease'
+            }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.backgroundColor = '#3a5a6f'
+              e.currentTarget.style.borderColor = '#3a5a6f'
+              e.currentTarget.style.transform = 'translateY(-1px)'
+              e.currentTarget.style.boxShadow = '0 4px 8px rgba(69, 104, 130, 0.3)'
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.backgroundColor = 'var(--bs-secondary)'
+              e.currentTarget.style.borderColor = 'var(--bs-secondary)'
+              e.currentTarget.style.transform = 'translateY(0)'
+              e.currentTarget.style.boxShadow = 'none'
+            }}
+          >
+            Cancel
+          </BootstrapButton>
+        </Modal.Footer>
+      </Modal>
     </div>
     )
 }
