@@ -361,7 +361,7 @@ const SubjectDetailsView = ({ subjectId, courseId }) => {
                   </Col>
                   <Col md={6}>
                     <p><strong>Type:</strong> {subject.type}</p>
-                    <p><strong>Pass Score:</strong> {subject.passScore}%</p>
+                    <p><strong>Pass Score:</strong> {subject.passScore}</p>
                     <p><strong>Room:</strong> {subject.roomName}</p>
                     <p><strong>Time Slot:</strong> {subject.timeSlot}</p>
                     <p><strong>Start Date:</strong> {new Date(subject.startDate).toLocaleDateString()}</p>
@@ -395,11 +395,11 @@ const SubjectDetailsView = ({ subjectId, courseId }) => {
                 <Table hover>
                   <thead>
                     <tr>
-                      <th>EID</th>
-                      <th>Name</th>
-                      <th>Role</th>
-                      <th>Assigned Date</th>
-                      <th>Actions</th>
+                      <th style={{ backgroundColor: 'var(--bs-primary)', color: 'white', borderColor: 'var(--bs-primary)' }}>EID</th>
+                      <th style={{ backgroundColor: 'var(--bs-primary)', color: 'white', borderColor: 'var(--bs-primary)' }}>Name</th>
+                      <th style={{ backgroundColor: 'var(--bs-primary)', color: 'white', borderColor: 'var(--bs-primary)' }}>Role</th>
+                      <th style={{ backgroundColor: 'var(--bs-primary)', color: 'white', borderColor: 'var(--bs-primary)' }}>Assigned Date</th>
+                      <th style={{ backgroundColor: 'var(--bs-primary)', color: 'white', borderColor: 'var(--bs-primary)' }}>Actions</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -419,7 +419,9 @@ const SubjectDetailsView = ({ subjectId, courseId }) => {
                             </Badge>
                           </td>
                           <td>
-                            {new Date(trainer.assignedAt).toLocaleDateString()}
+                            {trainer.assignedAt && !isNaN(new Date(trainer.assignedAt).getTime()) 
+                              ? new Date(trainer.assignedAt).toLocaleDateString() 
+                              : 'N/A'}
                           </td>
                           <td>
                             <TrainerActions

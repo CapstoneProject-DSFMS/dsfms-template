@@ -817,7 +817,7 @@ const UserModal = ({ show, user, mode, onSave, onClose }) => {
             >
               {isSubmitting ? (
                 <>
-                  <span className="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true" style={{ width: '1rem', height: '1rem' }}></span>
+                  <span className="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
                   Saving...
                 </>
               ) : (

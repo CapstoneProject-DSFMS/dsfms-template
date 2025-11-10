@@ -123,7 +123,7 @@ const BatchCodeModal = ({ show, onClose, onConfirm, loading = false }) => {
         >
           {loading ? (
             <>
-              <span className="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true" style={{ width: '0.75rem', height: '0.75rem' }}></span>
+              <span className="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
               Enrolling...
             </>
           ) : (

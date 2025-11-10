@@ -241,36 +241,16 @@ const subjectAPI = {
         });
       }
       
-      // Try /instructors endpoint first (from API_PERMISSIONS: ADD_INSTRUCTOR: "POST /subjects/:id/instructors")
-      // If that doesn't work, fall back to /trainers
-      let response;
-      try {
-        response = await apiClient.post(
-          `/subjects/${subjectId}/instructors`, 
-          requestBody,
-          {
-            headers: {
-              'Content-Type': 'application/json'
-            }
+      // Use /trainers endpoint (correct endpoint)
+      const response = await apiClient.post(
+        `/subjects/${subjectId}/trainers`, 
+        requestBody,
+        {
+          headers: {
+            'Content-Type': 'application/json'
           }
-        );
-      } catch (instructorError) {
-        // If /instructors fails, try /trainers endpoint
-        if (instructorError.response?.status === 404 || instructorError.response?.status === 422) {
-          console.warn('⚠️ /instructors endpoint failed, trying /trainers...');
-          response = await apiClient.post(
-            `/subjects/${subjectId}/trainers`, 
-            requestBody,
-            {
-              headers: {
-                'Content-Type': 'application/json'
-              }
-            }
-          );
-        } else {
-          throw instructorError;
         }
-      }
+      );
       return response.data;
     } catch (error) {
       // Log detailed error for debugging

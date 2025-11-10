@@ -1,21 +1,20 @@
 import React, { useState } from 'react';
-import { Modal, Button, Badge, Tab, Nav, Row, Col, Card } from 'react-bootstrap';
+import { Modal, Button, Badge } from 'react-bootstrap';
 import { 
   X, 
   FileText, 
   Eye, 
-  Code, 
   FileEarmarkPdf,
-  Calendar,
   Person,
   Building,
   CheckCircle,
   Clock,
-  Download
+  Download,
+  FileEarmarkPlus
 } from 'react-bootstrap-icons';
 
 const TemplatePreviewModal = ({ show, onHide, template }) => {
-  const [activeTab, setActiveTab] = useState('overview');
+  const [activeTab, setActiveTab] = useState('details');
 
   if (!template) return null;
 
@@ -51,118 +50,104 @@ const TemplatePreviewModal = ({ show, onHide, template }) => {
     );
   };
 
-  const renderSchemaPreview = () => {
-    if (!template.templateSchema) return <p className="text-muted">No schema data available</p>;
-    
-    return (
-      <div className="schema-preview">
-        <pre className="bg-light p-3 rounded" style={{ fontSize: '0.85rem', maxHeight: '400px', overflow: 'auto' }}>
-          {JSON.stringify(template.templateSchema, null, 2)}
-        </pre>
-      </div>
-    );
+  const handleCreateNewVersion = () => {
+    // TODO: Implement create new version functionality
+    console.log('Create new version for template:', template.id);
   };
 
-  const renderOverview = () => (
-    <div className="template-overview">
-      <Row className="g-3 mb-4">
-        <Col md={6}>
-          <Card className="h-100 border-0 shadow-sm">
-            <Card.Body>
-              <div className="d-flex align-items-center mb-2">
-                <FileText className="text-primary-custom me-2" size={20} />
-                <h6 className="mb-0">Template Name</h6>
-              </div>
-              <p className="mb-0 fw-bold">{template.name}</p>
-            </Card.Body>
-          </Card>
-        </Col>
-        <Col md={6}>
-          <Card className="h-100 border-0 shadow-sm">
-            <Card.Body>
-              <div className="d-flex align-items-center mb-2">
-                <Building className="text-primary-custom me-2" size={20} />
-                <h6 className="mb-0">Department</h6>
-              </div>
-              <p className="mb-0">{template.department?.name || 'N/A'}</p>
-              <small className="text-muted">{template.department?.code || ''}</small>
-            </Card.Body>
-          </Card>
-        </Col>
-      </Row>
+  const renderDetails = () => (
+    <div className="template-details">
+      <div className="list-group list-group-flush">
+        <div className="list-group-item border-0 px-0 py-3">
+          <div className="d-flex align-items-center">
+            <FileText className="text-primary-custom me-3" size={20} />
+            <div className="flex-grow-1">
+              <strong className="text-muted small d-block mb-1">Template Name</strong>
+              <span className="text-dark">{template.name}</span>
+            </div>
+          </div>
+        </div>
 
-      <Card className="border-0 shadow-sm mb-3">
-        <Card.Body>
-          <h6 className="mb-3">Description</h6>
-          <p className="text-muted mb-0">{template.description || 'No description provided'}</p>
-        </Card.Body>
-      </Card>
+        <div className="list-group-item border-0 px-0 py-3">
+          <div className="d-flex align-items-center">
+            <Building className="text-primary-custom me-3" size={20} />
+            <div className="flex-grow-1">
+              <strong className="text-muted small d-block mb-1">Department</strong>
+              <span className="text-dark">{template.department?.name || 'N/A'}</span>
+              {template.department?.code && (
+                <small className="text-muted d-block">{template.department.code}</small>
+              )}
+            </div>
+          </div>
+        </div>
 
-      <Row className="g-3">
-        <Col md={4}>
-          <Card className="border-0 shadow-sm">
-            <Card.Body>
-              <div className="d-flex align-items-center mb-2">
-                <CheckCircle className="text-primary-custom me-2" size={20} />
-                <h6 className="mb-0">Status</h6>
+        {template.description && (
+          <div className="list-group-item border-0 px-0 py-3">
+            <div className="d-flex align-items-start">
+              <FileText className="text-primary-custom me-3" size={20} />
+              <div className="flex-grow-1">
+                <strong className="text-muted small d-block mb-1">Description</strong>
+                <span className="text-dark">{template.description}</span>
               </div>
-              {getStatusBadge(template.status)}
-            </Card.Body>
-          </Card>
-        </Col>
-        <Col md={4}>
-          <Card className="border-0 shadow-sm">
-            <Card.Body>
-              <div className="d-flex align-items-center mb-2">
-                <FileText className="text-primary-custom me-2" size={20} />
-                <h6 className="mb-0">Version</h6>
-              </div>
-              <p className="mb-0 fw-bold">v{template.version}</p>
-            </Card.Body>
-          </Card>
-        </Col>
-        <Col md={4}>
-          <Card className="border-0 shadow-sm">
-            <Card.Body>
-              <div className="d-flex align-items-center mb-2">
-                <FileText className="text-primary-custom me-2" size={20} />
-                <h6 className="mb-0">Sections</h6>
-              </div>
-              <p className="mb-0 fw-bold">{template._count?.sections || 0}</p>
-            </Card.Body>
-          </Card>
-        </Col>
-      </Row>
-
-      <Row className="g-3 mt-3">
-        <Col md={6}>
-          <Card className="border-0 shadow-sm">
-            <Card.Body>
-              <div className="d-flex align-items-center mb-2">
-                <Person className="text-primary-custom me-2" size={20} />
-                <h6 className="mb-0">Created By</h6>
-              </div>
-              <p className="mb-0">
-                {template.createdByUser?.firstName} {template.createdByUser?.lastName}
-              </p>
-              <small className="text-muted">{formatDate(template.createdAt)}</small>
-            </Card.Body>
-          </Card>
-        </Col>
-        {template.reviewedByUserId && (
-          <Col md={6}>
-            <Card className="border-0 shadow-sm">
-              <Card.Body>
-                <div className="d-flex align-items-center mb-2">
-                  <CheckCircle className="text-primary-custom me-2" size={20} />
-                  <h6 className="mb-0">Reviewed</h6>
-                </div>
-                <p className="mb-0">{formatDate(template.reviewedAt)}</p>
-              </Card.Body>
-            </Card>
-          </Col>
+            </div>
+          </div>
         )}
-      </Row>
+
+        <div className="list-group-item border-0 px-0 py-3">
+          <div className="d-flex align-items-center">
+            <CheckCircle className="text-primary-custom me-3" size={20} />
+            <div className="flex-grow-1">
+              <strong className="text-muted small d-block mb-1">Status</strong>
+              <div>{getStatusBadge(template.status)}</div>
+            </div>
+          </div>
+        </div>
+
+        <div className="list-group-item border-0 px-0 py-3">
+          <div className="d-flex align-items-center">
+            <FileText className="text-primary-custom me-3" size={20} />
+            <div className="flex-grow-1">
+              <strong className="text-muted small d-block mb-1">Version</strong>
+              <span className="text-dark">v{template.version}</span>
+            </div>
+          </div>
+        </div>
+
+        <div className="list-group-item border-0 px-0 py-3">
+          <div className="d-flex align-items-center">
+            <FileText className="text-primary-custom me-3" size={20} />
+            <div className="flex-grow-1">
+              <strong className="text-muted small d-block mb-1">Sections</strong>
+              <span className="text-dark">{template._count?.sections || 0}</span>
+            </div>
+          </div>
+        </div>
+
+        <div className="list-group-item border-0 px-0 py-3">
+          <div className="d-flex align-items-center">
+            <Person className="text-primary-custom me-3" size={20} />
+            <div className="flex-grow-1">
+              <strong className="text-muted small d-block mb-1">Created By</strong>
+              <span className="text-dark">
+                {template.createdByUser?.firstName} {template.createdByUser?.lastName}
+              </span>
+              <small className="text-muted d-block">{formatDate(template.createdAt)}</small>
+            </div>
+          </div>
+        </div>
+
+        {template.reviewedByUserId && (
+          <div className="list-group-item border-0 px-0 py-3">
+            <div className="d-flex align-items-center">
+              <CheckCircle className="text-primary-custom me-3" size={20} />
+              <div className="flex-grow-1">
+                <strong className="text-muted small d-block mb-1">Reviewed</strong>
+                <span className="text-dark">{formatDate(template.reviewedAt)}</span>
+              </div>
+            </div>
+          </div>
+        )}
+      </div>
     </div>
   );
 
@@ -172,16 +157,14 @@ const TemplatePreviewModal = ({ show, onHide, template }) => {
         <div className="content-preview">
           <div className="alert alert-info">
             <FileEarmarkPdf className="me-2" />
-            Template content is stored as a file. 
-            <a href={template.templateContent} target="_blank" rel="noopener noreferrer" className="ms-2">
-              View/Download File
-            </a>
+            Template content is stored as a file. You can download it using the "Download File" button below.
           </div>
-          <iframe 
-            src={template.templateContent} 
-            style={{ width: '100%', height: '600px', border: '1px solid #ddd', borderRadius: '4px' }}
-            title="Template Content Preview"
-          />
+          <div className="border rounded p-4 bg-light text-center" style={{ minHeight: '400px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+            <div>
+              <FileEarmarkPdf size={64} className="text-muted mb-3" />
+              <p className="text-muted mb-0">File preview is not available. Use the download button to view the file.</p>
+            </div>
+          </div>
         </div>
       );
     }
@@ -222,46 +205,43 @@ const TemplatePreviewModal = ({ show, onHide, template }) => {
         </Button>
       </Modal.Header>
       
-      <Modal.Body style={{ maxHeight: '70vh', overflowY: 'auto' }}>
-        <Tab.Container activeKey={activeTab} onSelect={setActiveTab}>
-          <Nav variant="tabs" className="mb-3">
-            <Nav.Item>
-              <Nav.Link eventKey="overview">
-                <FileText className="me-2" size={16} />
-                Overview
-              </Nav.Link>
-            </Nav.Item>
-            <Nav.Item>
-              <Nav.Link eventKey="content">
-                <Eye className="me-2" size={16} />
-                Content Preview
-              </Nav.Link>
-            </Nav.Item>
-            <Nav.Item>
-              <Nav.Link eventKey="schema">
-                <Code className="me-2" size={16} />
-                Schema
-              </Nav.Link>
-            </Nav.Item>
-          </Nav>
+      <Modal.Body className="p-0" style={{ maxHeight: '70vh', overflowY: 'auto' }}>
+        <div className="bg-primary text-white">
+          <div className="custom-tabs-container">
+            <button
+              className={`custom-tab ${activeTab === 'details' ? 'active' : ''}`}
+              onClick={() => setActiveTab('details')}
+            >
+              <FileText size={16} className="me-2" />
+              Details
+            </button>
+            <button
+              className={`custom-tab ${activeTab === 'content' ? 'active' : ''}`}
+              onClick={() => setActiveTab('content')}
+            >
+              <Eye size={16} className="me-2" />
+              Content Preview
+            </button>
+          </div>
+        </div>
 
-          <Tab.Content>
-            <Tab.Pane eventKey="overview">
-              {renderOverview()}
-            </Tab.Pane>
-            <Tab.Pane eventKey="content">
-              {renderContentPreview()}
-            </Tab.Pane>
-            <Tab.Pane eventKey="schema">
-              {renderSchemaPreview()}
-            </Tab.Pane>
-          </Tab.Content>
-        </Tab.Container>
+        <div className="p-4">
+          {activeTab === 'details' && renderDetails()}
+          {activeTab === 'content' && renderContentPreview()}
+        </div>
       </Modal.Body>
       
       <Modal.Footer className="bg-light border-0">
         <Button variant="outline-secondary" onClick={onHide}>
           Close
+        </Button>
+        <Button
+          variant="primary-custom"
+          onClick={handleCreateNewVersion}
+          className="d-flex align-items-center"
+        >
+          <FileEarmarkPlus className="me-2" size={16} />
+          Create New Template's Version
         </Button>
         {template.templateContent && template.templateContent.startsWith('http') && (
           <Button 

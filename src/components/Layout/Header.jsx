@@ -232,12 +232,12 @@ const Header = ({ onToggleSidebar }) => {
     
     // Check for trainee course detail (pattern: /trainee/:traineeId/course/:courseId)
     if (path.match(/^\/trainee\/[^/]+\/course\/[^/]+$/)) {
-      return 'Course Details';
+      return 'Enrolled Course Details';
     }
     
     // Check for trainee subject detail (pattern: /trainee/:traineeId/course/:courseId/subject/:subjectId)
     if (path.match(/^\/trainee\/[^/]+\/course\/[^/]+\/subject\/[^/]+$/)) {
-      return 'Subject Details';
+      return 'Enrolled Subject Details';
     }
     
     // Check for trainee assessments (pattern: /trainee/:traineeId/assessments)

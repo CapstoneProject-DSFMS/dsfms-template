@@ -261,7 +261,7 @@ const EditCourseModal = ({ show, onClose, onSave, course, loading = false }) => 
             </Col>
             <Col md={6}>
               <Form.Group>
-                <Form.Label>Pass Score (%) *</Form.Label>
+                <Form.Label>Pass Score *</Form.Label>
                 <Form.Control
                   type="number"
                   name="passScore"
