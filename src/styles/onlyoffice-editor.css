@@ -71,7 +71,46 @@
 }
 
 /* Responsive Design */
-@media (max-width: 768px) {
+
+/* Tablet (768px - 991px) */
+@media (min-width: 768px) and (max-width: 991px) {
+  .onlyoffice-form-editor .row.g-0 {
+    flex-direction: row;
+  }
+  
+  .onlyoffice-form-editor .col {
+    padding: 0;
+  }
+  
+  .onlyoffice-form-editor .p-2.p-md-3 {
+    padding: 0.75rem !important;
+  }
+  
+  #onlyoffice-editor {
+    height: 85vh !important;
+  }
+  
+  .onlyoffice-form-editor .border-md-start {
+    border-left: 1px solid #dee2e6 !important;
+  }
+  
+  .onlyoffice-form-editor .border-sm-top {
+    border-top: none !important;
+  }
+  
+  /* Sidebar adjustments for tablet */
+  .onlyoffice-form-editor .col[class*="md-4"] {
+    max-height: 90vh;
+  }
+  
+  .onlyoffice-form-editor .col[class*="md-4"] > div {
+    height: 90vh !important;
+    max-height: 90vh;
+  }
+}
+
+/* Mobile (max-width: 767px) */
+@media (max-width: 767px) {
   .onlyoffice-form-editor .row.g-0 {
     flex-direction: column;
   }
@@ -84,18 +123,50 @@
     overflow-y: auto;
   }
   
+  .onlyoffice-form-editor .border-sm-top {
+    border-top: 1px solid #dee2e6 !important;
+    border-left: none !important;
+  }
+  
+  .onlyoffice-form-editor .border-md-start {
+    border-left: none !important;
+  }
+  
   #onlyoffice-editor {
     height: 70vh !important;
   }
+  
+  .onlyoffice-form-editor .col[class*="xs-12"] {
+    order: 1;
+  }
+  
+  .onlyoffice-form-editor .col[class*="xs-12"].order-2 {
+    order: 2;
+    max-height: 40vh;
+  }
+  
+  .onlyoffice-form-editor .col[class*="xs-12"].order-2 > div {
+    height: auto !important;
+    max-height: 40vh;
+  }
 }
 
+/* Small Mobile (max-width: 576px) */
 @media (max-width: 576px) {
-  .onlyoffice-form-editor .editor-area .p-3 {
-    padding: 15px !important;
+  .onlyoffice-form-editor .editor-area .p-2.p-md-3 {
+    padding: 0.5rem !important;
   }
   
   #onlyoffice-editor {
     height: 60vh !important;
+  }
+  
+  .onlyoffice-form-editor .col[class*="xs-12"].order-2 {
+    max-height: 35vh;
+  }
+  
+  .onlyoffice-form-editor .col[class*="xs-12"].order-2 > div {
+    max-height: 35vh;
   }
 }
 

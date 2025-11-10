@@ -47,7 +47,7 @@ const FormsPage = () => {
     setShowImportModal(true);
   };
 
-  const handleImportSuccess = (importType, fileName) => {
+  const handleImportSuccess = () => {
     setShowImportModal(false);
     loadTemplates(); // Reload templates after successful import
   };
@@ -139,16 +139,14 @@ const FormsPage = () => {
               </Col>
             </Row>
           ) : (
-            <Row className="g-4">
+            <Row className="g-3 g-md-4">
               {templates.map((template) => (
-                <Col key={template.id} xs={12} sm={6} md={4} lg={3}>
+                <Col key={template.id} xs={12} sm={6} md={6} lg={4} xl={3}>
                   <Card
                     className="h-100 border-0 shadow-sm template-card"
                     style={{
-                      cursor: 'pointer',
                       transition: 'all 0.3s ease'
                     }}
-                    onClick={() => handlePreviewTemplate(template)}
                     onMouseEnter={(e) => {
                       e.currentTarget.style.transform = 'translateY(-5px)';
                       e.currentTarget.style.boxShadow = '0 8px 25px rgba(0,0,0,0.15)';
@@ -158,75 +156,105 @@ const FormsPage = () => {
                       e.currentTarget.style.boxShadow = '0 2px 10px rgba(0,0,0,0.1)';
                     }}
                   >
-                    <Card.Body className="p-3">
-                      <div className="d-flex align-items-start justify-content-between mb-2">
-                        <div className="d-flex align-items-center flex-grow-1">
-                          <div 
-                            className="bg-primary-custom text-white rounded d-flex align-items-center justify-content-center me-2"
-                            style={{ width: '40px', height: '40px', minWidth: '40px' }}
+                    <Card.Body className="p-3 d-flex flex-column">
+                      {/* Header with Icon and Title */}
+                      <div className="d-flex align-items-start mb-2" style={{ minHeight: '60px' }}>
+                        <div 
+                          className="bg-primary-custom text-white rounded d-flex align-items-center justify-content-center me-2 flex-shrink-0"
+                          style={{ width: '40px', height: '40px', minWidth: '40px' }}
+                        >
+                          <FileText size={20} />
+                        </div>
+                        <div className="flex-grow-1" style={{ minWidth: 0 }}>
+                          <h6 
+                            className="mb-1 fw-bold" 
+                            style={{ 
+                              fontSize: '0.95rem',
+                              display: '-webkit-box',
+                              WebkitLineClamp: 2,
+                              WebkitBoxOrient: 'vertical',
+                              overflow: 'hidden',
+                              wordBreak: 'break-word',
+                              lineHeight: '1.3'
+                            }}
+                            title={template.name}
                           >
-                            <FileText size={20} />
-                          </div>
-                          <div className="flex-grow-1" style={{ minWidth: 0 }}>
-                            <h6 
-                              className="mb-0 fw-bold text-truncate" 
-                              style={{ fontSize: '0.95rem' }}
-                              title={template.name}
-                            >
-                              {template.name}
-                            </h6>
-                            <small className="text-muted">v{template.version}</small>
-                          </div>
+                            {template.name}
+                          </h6>
+                          <small className="text-muted">v{template.version}</small>
                         </div>
                       </div>
                       
-                      <p 
-                        className="text-muted mb-2" 
-                        style={{ 
-                          fontSize: '0.85rem',
-                          display: '-webkit-box',
-                          WebkitLineClamp: 2,
-                          WebkitBoxOrient: 'vertical',
-                          overflow: 'hidden',
-                          minHeight: '2.5em'
-                        }}
-                        title={template.description}
-                      >
-                        {template.description || 'No description'}
-                      </p>
-
-                      <div className="d-flex align-items-center justify-content-between mb-2">
-                        <div className="d-flex align-items-center">
-                          <Building size={12} className="text-muted me-1" />
-                          <small className="text-muted">{template.department?.code || 'N/A'}</small>
-                        </div>
-                        {getStatusBadge(template.status)}
+                      {/* Description */}
+                      <div className="mb-2 flex-grow-1" style={{ minHeight: '40px' }}>
+                        <p 
+                          className="text-muted mb-0" 
+                          style={{ 
+                            fontSize: '0.85rem',
+                            display: '-webkit-box',
+                            WebkitLineClamp: 2,
+                            WebkitBoxOrient: 'vertical',
+                            overflow: 'hidden',
+                            wordBreak: 'break-word',
+                            lineHeight: '1.4'
+                          }}
+                          title={template.description || 'No description'}
+                        >
+                          {template.description || 'No description'}
+                        </p>
                       </div>
 
-                      <div className="d-flex align-items-center justify-content-between">
-                        <div className="d-flex align-items-center">
-                          <Person size={12} className="text-muted me-1" />
-                          <small className="text-muted">
+                      {/* Department and Status */}
+                      <div className="d-flex align-items-center justify-content-between mb-2 flex-wrap">
+                        <div className="d-flex align-items-center" style={{ minWidth: 0, flex: '1 1 auto' }}>
+                          <Building size={12} className="text-muted me-1 flex-shrink-0" />
+                          <small 
+                            className="text-muted text-truncate" 
+                            style={{ maxWidth: '100px' }}
+                            title={template.department?.code || 'N/A'}
+                          >
+                            {template.department?.code || 'N/A'}
+                          </small>
+                        </div>
+                        <div className="flex-shrink-0 ms-2">
+                          {getStatusBadge(template.status)}
+                        </div>
+                      </div>
+
+                      {/* Created By and Date */}
+                      <div className="d-flex align-items-center justify-content-between mb-2 flex-wrap">
+                        <div 
+                          className="d-flex align-items-center" 
+                          style={{ minWidth: 0, flex: '1 1 auto' }}
+                        >
+                          <Person size={12} className="text-muted me-1 flex-shrink-0" />
+                          <small 
+                            className="text-muted text-truncate" 
+                            style={{ maxWidth: '120px' }}
+                            title={`${template.createdByUser?.firstName || ''} ${template.createdByUser?.lastName || ''}`.trim()}
+                          >
                             {template.createdByUser?.firstName} {template.createdByUser?.lastName}
                           </small>
                         </div>
-                        <small className="text-muted">{formatDate(template.createdAt)}</small>
+                        <small className="text-muted flex-shrink-0 ms-2">{formatDate(template.createdAt)}</small>
                       </div>
 
-                      <div className="mt-2 pt-2 border-top">
-                        <div className="d-flex align-items-center justify-content-between">
-                          <small className="text-muted">
+                      {/* Footer with Sections and Preview */}
+                      <div className="mt-auto pt-2 border-top">
+                        <div className="d-flex align-items-center justify-content-between flex-wrap">
+                          <small className="text-muted d-flex align-items-center flex-shrink-0">
                             <FileText size={12} className="me-1" />
                             {template._count?.sections || 0} sections
                           </small>
                           <Button
                             variant="link"
                             size="sm"
-                            className="p-0 text-primary-custom"
+                            className="p-0 text-primary-custom flex-shrink-0 ms-2"
                             onClick={(e) => {
                               e.stopPropagation();
                               handlePreviewTemplate(template);
                             }}
+                            style={{ whiteSpace: 'nowrap' }}
                           >
                             <Eye size={14} className="me-1" />
                             Preview

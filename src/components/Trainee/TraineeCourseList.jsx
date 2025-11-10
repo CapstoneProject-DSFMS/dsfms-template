@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { Table, Badge, Spinner, Row, Col, Nav, Tab } from 'react-bootstrap';
+import { Table, Badge, Spinner, Row, Col, Nav, Tab, Card } from 'react-bootstrap';
 import { Eye, Book, ThreeDotsVertical, Clock, PlayCircle, CheckCircle } from 'react-bootstrap-icons';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'react-toastify';
@@ -391,76 +391,115 @@ const TraineeCourseList = ({ traineeId }) => {
     return (
       <div>
         {/* Tabs */}
-        <Tab.Container activeKey={activeTab} onSelect={setActiveTab}>
-          <Nav variant="tabs" className="mb-3">
-            <Nav.Item>
-              <Nav.Link eventKey="upcoming" className="d-flex align-items-center">
-                <Clock className="me-2" size={16} />
-                Upcoming ({getCoursesByTab('upcoming').length})
-              </Nav.Link>
-            </Nav.Item>
-            <Nav.Item>
-              <Nav.Link eventKey="ongoing" className="d-flex align-items-center">
-                <PlayCircle className="me-2" size={16} />
-                On-going ({getCoursesByTab('ongoing').length})
-              </Nav.Link>
-            </Nav.Item>
-            <Nav.Item>
-              <Nav.Link eventKey="completed" className="d-flex align-items-center">
-                <CheckCircle className="me-2" size={16} />
-                Completed ({getCoursesByTab('completed').length})
-              </Nav.Link>
-            </Nav.Item>
-          </Nav>
-
-          <Tab.Content>
-            <Tab.Pane eventKey={activeTab}>
-              {/* Search and Filters */}
-              <Row className="mb-3 form-mobile-stack search-filter-section">
-                <Col xs={12} lg={6} md={5} className="mb-2 mb-lg-0">
-                  <SearchBar
-                    placeholder="Search courses by name, code, or description..."
-                    value={searchTerm}
-                    onChange={setSearchTerm}
-                    className="search-bar-mobile"
-                  />
-                </Col>
-                <Col xs={12} lg={3} md={4} className="mb-2 mb-lg-0 position-relative">
-                  <CourseFilterPanel
-                    uniqueLevels={uniqueLevels}
-                    uniqueStatuses={uniqueStatuses}
-                    selectedLevels={selectedLevels}
-                    selectedStatuses={selectedStatuses}
-                    onLevelToggle={handleLevelToggle}
-                    onStatusToggle={handleStatusToggle}
-                    onClearFilters={handleClearFilters}
-                    className="filter-panel-mobile"
-                  />
-                </Col>
-                <Col xs={12} lg={3} md={3}>
-                  <div className="text-end text-mobile-center">
-                    <small className="text-muted">
-                      {filteredCourses.length} course{filteredCourses.length !== 1 ? 's' : ''}
-                    </small>
-                  </div>
-                </Col>
-              </Row>
-              
-              <div className="text-center py-5">
-                <div className="text-muted">
-                  <h5>No courses found</h5>
-                  <p>Try adjusting your search criteria or filters.</p>
-                  <button 
-                    className="btn btn-outline-primary btn-sm"
-                    onClick={handleClearFilters}
+        <Card className="border-0 shadow-sm mb-2">
+          <Tab.Container activeKey={activeTab} onSelect={setActiveTab}>
+            <Card.Header className="border-bottom py-2 bg-primary">
+              <Nav variant="tabs" className="border-0">
+                <Nav.Item>
+                  <Nav.Link 
+                    eventKey="upcoming" 
+                    className="d-flex align-items-center"
+                    style={{ 
+                      border: 'none',
+                      backgroundColor: 'transparent',
+                      color: '#ffffff',
+                      fontWeight: activeTab === 'upcoming' ? '600' : '400',
+                      opacity: activeTab === 'upcoming' ? '1' : '0.7',
+                      borderRadius: '4px 4px 0 0'
+                    }}
                   >
-                    Clear Filters
-                  </button>
-                </div>
-              </div>
-            </Tab.Pane>
-          </Tab.Content>
-        </Tab.Container>
+                    <Clock className="me-2" size={16} />
+                    Upcoming ({getCoursesByTab('upcoming').length})
+                  </Nav.Link>
+                </Nav.Item>
+                <Nav.Item>
+                  <Nav.Link 
+                    eventKey="ongoing" 
+                    className="d-flex align-items-center"
+                    style={{ 
+                      border: 'none',
+                      backgroundColor: 'transparent',
+                      color: '#ffffff',
+                      fontWeight: activeTab === 'ongoing' ? '600' : '400',
+                      opacity: activeTab === 'ongoing' ? '1' : '0.7',
+                      borderRadius: '4px 4px 0 0'
+                    }}
+                  >
+                    <PlayCircle className="me-2" size={16} />
+                    On-going ({getCoursesByTab('ongoing').length})
+                  </Nav.Link>
+                </Nav.Item>
+                <Nav.Item>
+                  <Nav.Link 
+                    eventKey="completed" 
+                    className="d-flex align-items-center"
+                    style={{ 
+                      border: 'none',
+                      backgroundColor: 'transparent',
+                      color: '#ffffff',
+                      fontWeight: activeTab === 'completed' ? '600' : '400',
+                      opacity: activeTab === 'completed' ? '1' : '0.7',
+                      borderRadius: '4px 4px 0 0'
+                    }}
+                  >
+                    <CheckCircle className="me-2" size={16} />
+                    Completed ({getCoursesByTab('completed').length})
+                  </Nav.Link>
+                </Nav.Item>
+              </Nav>
+            </Card.Header>
+
+            <Card.Body className="p-0">
+              <Tab.Content>
+                <Tab.Pane eventKey={activeTab}>
+                  {/* Search and Filters */}
+                  <Row className="mb-3 form-mobile-stack search-filter-section p-3">
+                    <Col xs={12} lg={6} md={5} className="mb-2 mb-lg-0">
+                      <SearchBar
+                        placeholder="Search courses by name, code, or description..."
+                        value={searchTerm}
+                        onChange={setSearchTerm}
+                        className="search-bar-mobile"
+                      />
+                    </Col>
+                    <Col xs={12} lg={3} md={4} className="mb-2 mb-lg-0 position-relative">
+                      <CourseFilterPanel
+                        uniqueLevels={uniqueLevels}
+                        uniqueStatuses={uniqueStatuses}
+                        selectedLevels={selectedLevels}
+                        selectedStatuses={selectedStatuses}
+                        onLevelToggle={handleLevelToggle}
+                        onStatusToggle={handleStatusToggle}
+                        onClearFilters={handleClearFilters}
+                        className="filter-panel-mobile"
+                      />
+                    </Col>
+                    <Col xs={12} lg={3} md={3}>
+                      <div className="text-end text-mobile-center">
+                        <small className="text-muted">
+                          {filteredCourses.length} course{filteredCourses.length !== 1 ? 's' : ''}
+                        </small>
+                      </div>
+                    </Col>
+                  </Row>
+                  
+                  <div className="text-center py-5">
+                    <div className="text-muted">
+                      <h5>No courses found</h5>
+                      <p>Try adjusting your search criteria or filters.</p>
+                      <button 
+                        className="btn btn-outline-primary btn-sm"
+                        onClick={handleClearFilters}
+                      >
+                        Clear Filters
+                      </button>
+                    </div>
+                  </div>
+                </Tab.Pane>
+              </Tab.Content>
+            </Card.Body>
+          </Tab.Container>
+        </Card>
       </div>
     );
   }
@@ -468,32 +507,68 @@ const TraineeCourseList = ({ traineeId }) => {
   return (
     <div>
       {/* Tabs */}
-      <Tab.Container activeKey={activeTab} onSelect={setActiveTab}>
-        <Nav variant="tabs" className="mb-3">
-          <Nav.Item>
-            <Nav.Link eventKey="upcoming" className="d-flex align-items-center">
-              <Clock className="me-2" size={16} />
-              Upcoming ({getCoursesByTab('upcoming').length})
-            </Nav.Link>
-          </Nav.Item>
-          <Nav.Item>
-            <Nav.Link eventKey="ongoing" className="d-flex align-items-center">
-              <PlayCircle className="me-2" size={16} />
-              On-going ({getCoursesByTab('ongoing').length})
-            </Nav.Link>
-          </Nav.Item>
-          <Nav.Item>
-            <Nav.Link eventKey="completed" className="d-flex align-items-center">
-              <CheckCircle className="me-2" size={16} />
-              Completed ({getCoursesByTab('completed').length})
-            </Nav.Link>
-          </Nav.Item>
-        </Nav>
-
-        <Tab.Content>
-          <Tab.Pane eventKey={activeTab}>
-            {/* Search and Filters */}
-            <Row className="mb-3 form-mobile-stack search-filter-section">
+      <Card className="border-0 shadow-sm mb-2">
+        <Tab.Container activeKey={activeTab} onSelect={setActiveTab}>
+          <Card.Header className="border-bottom py-2 bg-primary">
+            <Nav variant="tabs" className="border-0">
+              <Nav.Item>
+                <Nav.Link 
+                  eventKey="upcoming" 
+                  className="d-flex align-items-center"
+                  style={{ 
+                    border: 'none',
+                    backgroundColor: 'transparent',
+                    color: '#ffffff',
+                    fontWeight: activeTab === 'upcoming' ? '600' : '400',
+                    opacity: activeTab === 'upcoming' ? '1' : '0.7',
+                    borderRadius: '4px 4px 0 0'
+                  }}
+                >
+                  <Clock className="me-2" size={16} />
+                  Upcoming ({getCoursesByTab('upcoming').length})
+                </Nav.Link>
+              </Nav.Item>
+              <Nav.Item>
+                <Nav.Link 
+                  eventKey="ongoing" 
+                  className="d-flex align-items-center"
+                  style={{ 
+                    border: 'none',
+                    backgroundColor: 'transparent',
+                    color: '#ffffff',
+                    fontWeight: activeTab === 'ongoing' ? '600' : '400',
+                    opacity: activeTab === 'ongoing' ? '1' : '0.7',
+                    borderRadius: '4px 4px 0 0'
+                  }}
+                >
+                  <PlayCircle className="me-2" size={16} />
+                  On-going ({getCoursesByTab('ongoing').length})
+                </Nav.Link>
+              </Nav.Item>
+              <Nav.Item>
+                <Nav.Link 
+                  eventKey="completed" 
+                  className="d-flex align-items-center"
+                  style={{ 
+                    border: 'none',
+                    backgroundColor: 'transparent',
+                    color: '#ffffff',
+                    fontWeight: activeTab === 'completed' ? '600' : '400',
+                    opacity: activeTab === 'completed' ? '1' : '0.7',
+                    borderRadius: '4px 4px 0 0'
+                  }}
+                >
+                  <CheckCircle className="me-2" size={16} />
+                  Completed ({getCoursesByTab('completed').length})
+                </Nav.Link>
+              </Nav.Item>
+            </Nav>
+          </Card.Header>
+          <Card.Body className="p-0">
+            <Tab.Content>
+              <Tab.Pane eventKey={activeTab}>
+                {/* Search and Filters */}
+                <Row className="mb-3 form-mobile-stack search-filter-section p-3">
               <Col xs={12} lg={6} md={5} className="mb-2 mb-lg-0">
                 <SearchBar
                   placeholder="Search courses by name, code, or description..."
@@ -643,9 +718,11 @@ const TraineeCourseList = ({ traineeId }) => {
         </tbody>
         </Table>
       </div>
-          </Tab.Pane>
-        </Tab.Content>
-      </Tab.Container>
+              </Tab.Pane>
+            </Tab.Content>
+          </Card.Body>
+        </Tab.Container>
+      </Card>
     </div>
   );
 };

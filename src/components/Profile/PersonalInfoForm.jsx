@@ -71,10 +71,10 @@ const PersonalInfoForm = ({ profileData, user, onUpdate }) => {
 
   return (
     <Card>
-      <Card.Header>
+      <Card.Header className="bg-primary text-white border-0">
         <div className="d-flex align-items-center">
-          <Person size={20} className="me-2 text-primary" />
-          <h5 className="mb-0">Personal Information</h5>
+          <Person size={20} className="me-2 text-white" />
+          <h5 className="mb-0 text-white">Personal Information</h5>
         </div>
       </Card.Header>
       <Card.Body>
