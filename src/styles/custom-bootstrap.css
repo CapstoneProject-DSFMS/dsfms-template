@@ -944,6 +944,39 @@ html body .forms-page .forms-page-header .text-white {
   background: var(--bs-neutral-400);
 }
 
+/* Global Spinner Size Override - Make all spinners smaller */
+.spinner-border-sm,
+.spinner-border.spinner-border-sm,
+span.spinner-border.spinner-border-sm {
+  width: 0.75rem !important;
+  height: 0.75rem !important;
+  border-width: 0.15em !important;
+}
+
+/* React Bootstrap Spinner component */
+.spinner-border[class*="spinner-border-sm"],
+.spinner-border[size="sm"] {
+  width: 0.75rem !important;
+  height: 0.75rem !important;
+  border-width: 0.15em !important;
+}
+
+/* Ensure all spinners in buttons are small */
+.btn .spinner-border,
+.btn .spinner-border-sm,
+.btn span.spinner-border {
+  width: 0.75rem !important;
+  height: 0.75rem !important;
+  border-width: 0.15em !important;
+}
+
+/* Regular spinner (for loading containers) - keep medium size */
+.spinner-border:not(.spinner-border-sm):not([class*="sm"]) {
+  width: 2rem !important;
+  height: 2rem !important;
+  border-width: 0.25em !important;
+}
+
 /* Sidebar collapsed icon centering - Simplified */
 .sidebar-collapsed .nav-link {
   justify-content: center !important;

@@ -386,7 +386,7 @@ const AddSubjectModal = ({ show, onClose, onSave, loading = false, courseId }) =
         >
           {isSubmitting ? (
             <>
-              <span className="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true" style={{ width: '16px', height: '16px' }}></span>
+              <span className="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
               Creating...
             </>
           ) : (

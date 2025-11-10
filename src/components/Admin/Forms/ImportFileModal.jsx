@@ -372,7 +372,7 @@ const ImportFileModal = ({ show, onHide, onImportSuccess, onImportError }) => {
           >
             {isUploading ? (
               <>
-                <span className="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true" style={{ width: '0.875rem', height: '0.875rem' }}></span>
+                <span className="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
                 Importing...
               </>
             ) : (
@@ -394,7 +394,7 @@ const ImportFileModal = ({ show, onHide, onImportSuccess, onImportError }) => {
           >
             {isUploading ? (
               <>
-                <span className="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true" style={{ width: '0.875rem', height: '0.875rem' }}></span>
+                <span className="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
                 Importing...
               </>
             ) : (

@@ -509,7 +509,7 @@ const Sidebar = ({ collapsed, onClose }) => {
                     />
                     {!collapsed && (
                       <>
-                        <span className="sidebar-nav-label flex-grow-1" style={{ wordWrap: 'break-word', overflowWrap: 'break-word', lineHeight: '1.2' }}>{item.label}</span>
+                        <span className="sidebar-nav-label flex-grow-1" style={{ overflowWrap: 'break-word', lineHeight: '1.2' }}>{item.label}</span>
                         <ChevronDown
                           size={16}
                           className={`ms-auto transition-transform ${isAssessmentDropdownOpen ? "rotate-180" : ""}`}
@@ -532,7 +532,6 @@ const Sidebar = ({ collapsed, onClose }) => {
                           style={{
                             backgroundColor: location.pathname === child.path ? "rgba(255, 255, 255, 0.1)" : "transparent",
                             whiteSpace: 'normal',
-                            wordWrap: 'break-word',
                             overflowWrap: 'break-word'
                           }}
                           onClick={onClose}
@@ -557,8 +556,7 @@ const Sidebar = ({ collapsed, onClose }) => {
                   minHeight: collapsed ? "48px" : "auto",
                   backgroundColor: isActive ? "rgba(255, 255, 255, 0.1)" : "transparent",
                   whiteSpace: collapsed ? 'nowrap' : 'normal',
-                  wordWrap: collapsed ? 'normal' : 'break-word',
-                  overflowWrap: 'break-word'
+                  overflowWrap: collapsed ? 'normal' : 'break-word'
                 }}
                 onClick={() => {
                   // console.log(`🔍 Sidebar - Clicked on: ${item.id}, navigating to: ${item.path}`);
@@ -576,7 +574,7 @@ const Sidebar = ({ collapsed, onClose }) => {
                     transition: "transform 0.3s cubic-bezier(.68,-0.55,.27,1.55)",
                   }}
                 />
-                {!collapsed && <span className="sidebar-nav-label" style={{ wordWrap: 'break-word', overflowWrap: 'break-word', lineHeight: '1.2' }}>{item.label}</span>}
+                {!collapsed && <span className="sidebar-nav-label" style={{ overflowWrap: 'break-word', lineHeight: '1.2' }}>{item.label}</span>}
               </Link>
             </Nav.Item>
           );
@@ -607,7 +605,7 @@ const Sidebar = ({ collapsed, onClose }) => {
                   <>
                     <span 
                       className="sidebar-nav-label flex-grow-1"
-                      style={{ cursor: "pointer", wordWrap: 'break-word', overflowWrap: 'break-word', lineHeight: '1.2' }}
+                      style={{ cursor: "pointer", overflowWrap: 'break-word', lineHeight: '1.2' }}
                       onClick={() => {
                         setIsDepartmentDropdownOpen(!isDepartmentDropdownOpen);
                         navigate('/academic/departments');
@@ -656,7 +654,6 @@ const Sidebar = ({ collapsed, onClose }) => {
                         style={{
                           fontSize: "0.875rem",
                           backgroundColor: location.pathname === `/academic/course/${dept.id}` ? "rgba(255, 255, 255, 0.15)" : "transparent",
-                          wordWrap: 'break-word',
                           overflowWrap: 'break-word',
                           whiteSpace: 'normal'
                         }}

@@ -219,7 +219,7 @@ const DisableDepartmentModal = ({
             <div className="col-4">
               <div className="text-center">
                 {loadingStats ? (
-                  <Spinner animation="border" size="sm" className="text-primary" style={{ width: '1rem', height: '1rem' }} />
+                  <Spinner animation="border" size="sm" className="text-primary" />
                 ) : (
                   <div className="h5 mb-1" style={{ color: '#1b3c53' }}>{statistics.courseCount}</div>
                 )}
@@ -229,7 +229,7 @@ const DisableDepartmentModal = ({
             <div className="col-4">
               <div className="text-center">
                 {loadingStats ? (
-                  <Spinner animation="border" size="sm" className="text-primary" style={{ width: '1rem', height: '1rem' }} />
+                  <Spinner animation="border" size="sm" className="text-primary" />
                 ) : (
                   <div className="h5 mb-1" style={{ color: '#1b3c53' }}>{statistics.traineeCount}</div>
                 )}
@@ -239,7 +239,7 @@ const DisableDepartmentModal = ({
             <div className="col-4">
               <div className="text-center">
                 {loadingStats ? (
-                  <Spinner animation="border" size="sm" className="text-primary" style={{ width: '1rem', height: '1rem' }} />
+                  <Spinner animation="border" size="sm" className="text-primary" />
                 ) : (
                   <div className="h5 mb-1" style={{ color: '#1b3c53' }}>{statistics.trainerCount}</div>
                 )}
@@ -271,7 +271,7 @@ const DisableDepartmentModal = ({
         >
           {isProcessing ? (
             <>
-              <span className="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true" style={{ width: '0.8rem', height: '0.8rem' }}></span>
+              <span className="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
               Processing...
             </>
           ) : (

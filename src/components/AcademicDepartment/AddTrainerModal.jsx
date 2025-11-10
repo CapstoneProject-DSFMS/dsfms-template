@@ -17,12 +17,32 @@ const AddTrainerModal = ({ show, onClose, onSave, loading = false }) => {
     setLoadingTrainers(true);
     try {
       const response = await userAPI.getTrainers();
-      if (response && response.data) {
-        setTrainers(response.data);
-      } else {
-        setTrainers([]);
+      
+      // Handle different response formats
+      let trainersList = [];
+      
+      if (response) {
+        // Format 1: { data: [...] }
+        if (response.data && Array.isArray(response.data)) {
+          trainersList = response.data;
+        }
+        // Format 2: { users: [...] }
+        else if (response.users && Array.isArray(response.users)) {
+          trainersList = response.users;
+        }
+        // Format 3: { data: { users: [...] } }
+        else if (response.data && response.data.users && Array.isArray(response.data.users)) {
+          trainersList = response.data.users;
+        }
+        // Format 4: Direct array
+        else if (Array.isArray(response)) {
+          trainersList = response;
+        }
       }
+      
+      setTrainers(Array.isArray(trainersList) ? trainersList : []);
     } catch (error) {
+      console.error('Error loading trainers:', error);
       setTrainers([]);
     } finally {
       setLoadingTrainers(false);
@@ -180,7 +200,7 @@ const AddTrainerModal = ({ show, onClose, onSave, loading = false }) => {
                         <Spinner animation="border" size="sm" className="me-2" />
                         Loading trainers...
                       </Dropdown.Item>
-                    ) : trainers.length === 0 ? (
+                    ) : !Array.isArray(trainers) || trainers.length === 0 ? (
                       <Dropdown.Item disabled>No trainers available</Dropdown.Item>
                     ) : (
                       trainers.map((trainer) => (
@@ -297,7 +317,6 @@ const AddTrainerModal = ({ show, onClose, onSave, loading = false }) => {
                 className="spinner-border spinner-border-sm me-2" 
                 role="status" 
                 aria-hidden="true"
-                style={{ width: '0.75rem', height: '0.75rem' }}
               ></span>
               Adding...
             </>
