@@ -1,8 +1,11 @@
 import React, { useState, useEffect } from 'react';
-import { Table, Badge, Button, Spinner } from 'react-bootstrap';
-import { Eye, Book } from 'react-bootstrap-icons';
+import { Table, Badge, Spinner } from 'react-bootstrap';
+import { Eye, Book, ThreeDotsVertical } from 'react-bootstrap-icons';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'react-toastify';
+import { LoadingSkeleton, SortIcon } from '../Common';
+import PortalUnifiedDropdown from '../Common/PortalUnifiedDropdown';
+import useTableSort from '../../hooks/useTableSort';
 import traineeAPI from '../../api/trainee';
 import '../../styles/scrollable-table.css';
 
@@ -10,6 +13,8 @@ const TraineeSubjectList = ({ traineeId, courseId }) => {
   const navigate = useNavigate();
   const [subjects, setSubjects] = useState([]);
   const [loading, setLoading] = useState(true);
+
+  const { sortedData, sortConfig, handleSort } = useTableSort(subjects);
 
   useEffect(() => {
     if (traineeId && courseId) {
@@ -99,20 +104,85 @@ const TraineeSubjectList = ({ traineeId, courseId }) => {
     navigate(`/trainee/${traineeId}/course/${courseId}/subject/${subjectId}`);
   };
 
-  if (loading) {
+  const SortableHeader = ({ columnKey, children, className = "" }) => {
+    const isActive = sortConfig.key === columnKey;
+    const direction = isActive ? sortConfig.direction : null;
+    
     return (
-      <div className="text-center py-4">
-        <Spinner animation="border" variant="primary" size="sm" />
-        <p className="mt-2 text-muted small">Loading subjects...</p>
-      </div>
+      <th 
+        className={`fw-semibold ${className}`}
+        style={{ 
+          cursor: 'pointer',
+          userSelect: 'none',
+          transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+          position: 'relative',
+          overflow: 'hidden',
+          backgroundColor: 'var(--bs-primary)',
+          color: 'white',
+          borderColor: 'var(--bs-primary)'
+        }}
+        onClick={() => handleSort(columnKey)}
+        onMouseEnter={(e) => {
+          e.target.style.backgroundColor = '#214760';
+          e.target.style.transform = 'translateY(-1px)';
+          e.target.style.boxShadow = '0 2px 8px rgba(0, 0, 0, 0.15)';
+        }}
+        onMouseLeave={(e) => {
+          e.target.style.backgroundColor = 'var(--bs-primary)';
+          e.target.style.transform = 'translateY(0)';
+          e.target.style.boxShadow = 'none';
+        }}
+      >
+        <div className="d-flex align-items-center justify-content-between position-relative">
+          <span style={{ 
+            transition: 'all 0.3s ease',
+            fontWeight: isActive ? '600' : '500',
+            color: 'white'
+          }}>
+            {children}
+          </span>
+          <div 
+            className="ms-2 d-flex align-items-center"
+            style={{ 
+              minWidth: '20px',
+              justifyContent: 'center'
+            }}
+          >
+            <SortIcon 
+              direction={direction} 
+              size={14}
+              color="white"
+            />
+          </div>
+        </div>
+        {isActive && (
+          <div 
+            style={{
+              position: 'absolute',
+              bottom: 0,
+              left: 0,
+              right: 0,
+              height: '2px',
+              background: 'rgba(255, 255, 255, 0.5)',
+              animation: 'slideIn 0.3s ease-out'
+            }}
+          />
+        )}
+      </th>
     );
+  };
+
+  if (loading) {
+    return <LoadingSkeleton rows={5} columns={8} />;
   }
 
   if (subjects.length === 0) {
     return (
-      <div className="text-center py-4">
-        <Book size={32} className="text-muted mb-2" />
-        <p className="text-muted mb-0">No subjects found</p>
+      <div className="text-center py-5">
+        <div className="text-muted">
+          <h5>No subjects found</h5>
+          <p>Try adjusting your search criteria.</p>
+        </div>
       </div>
     );
   }
@@ -122,18 +192,41 @@ const TraineeSubjectList = ({ traineeId, courseId }) => {
       <Table hover className="mb-0 table-mobile-responsive" style={{ fontSize: '0.875rem' }}>
         <thead className="sticky-header">
           <tr>
-            <th className="border-neutral-200 text-primary-custom fw-semibold show-mobile">Subject Code</th>
-            <th className="border-neutral-200 text-primary-custom fw-semibold show-mobile">Subject Name</th>
-            <th className="border-neutral-200 text-primary-custom fw-semibold show-mobile">Level</th>
-            <th className="border-neutral-200 text-primary-custom fw-semibold show-mobile">Duration</th>
-            <th className="border-neutral-200 text-primary-custom fw-semibold show-mobile">Method</th>
-            <th className="border-neutral-200 text-primary-custom fw-semibold show-mobile">Status</th>
-            <th className="border-neutral-200 text-primary-custom fw-semibold show-mobile">Progress</th>
-            <th className="border-neutral-200 text-primary-custom fw-semibold text-center show-mobile">Actions</th>
+            <SortableHeader columnKey="code" className="show-mobile">
+              Subject Code
+            </SortableHeader>
+            <SortableHeader columnKey="name" className="show-mobile">
+              Subject Name
+            </SortableHeader>
+            <SortableHeader columnKey="level" className="show-mobile">
+              Level
+            </SortableHeader>
+            <SortableHeader columnKey="duration" className="show-mobile">
+              Duration
+            </SortableHeader>
+            <SortableHeader columnKey="method" className="show-mobile">
+              Method
+            </SortableHeader>
+            <SortableHeader columnKey="status" className="show-mobile">
+              Status
+            </SortableHeader>
+            <SortableHeader columnKey="progress" className="show-mobile">
+              Progress
+            </SortableHeader>
+            <th 
+              className="fw-semibold text-center show-mobile"
+              style={{
+                backgroundColor: 'var(--bs-primary)',
+                color: 'white',
+                borderColor: 'var(--bs-primary)'
+              }}
+            >
+              Actions
+            </th>
           </tr>
         </thead>
         <tbody>
-          {subjects.map((subject, index) => (
+          {sortedData.map((subject, index) => (
             <tr 
               key={subject.id}
               className={`${index % 2 === 0 ? 'bg-white' : 'bg-neutral-50'} transition-all`}
@@ -147,7 +240,7 @@ const TraineeSubjectList = ({ traineeId, courseId }) => {
                 e.currentTarget.style.backgroundColor = index % 2 === 0 ? 'white' : 'var(--bs-neutral-50)';
               }}
             >
-              <td className="border-neutral-200 align-middle show-mobile">
+              <td className="align-middle show-mobile">
                 <Badge 
                   bg="primary" 
                   className="px-2 py-1"
@@ -158,29 +251,29 @@ const TraineeSubjectList = ({ traineeId, courseId }) => {
                   {subject.code}
                 </Badge>
               </td>
-              <td className="border-neutral-200 align-middle show-mobile">
+              <td className="align-middle show-mobile">
                 <div className="fw-medium text-dark">
                   {subject.name}
                 </div>
                 <small className="text-muted">{subject.description}</small>
               </td>
-              <td className="border-neutral-200 align-middle show-mobile">
+              <td className="align-middle show-mobile">
                 {getLevelBadge(subject.level)}
               </td>
-              <td className="border-neutral-200 align-middle show-mobile">
+              <td className="align-middle show-mobile">
                 <span className="text-dark">
                   {subject.duration} hours
                 </span>
               </td>
-              <td className="border-neutral-200 align-middle show-mobile">
+              <td className="align-middle show-mobile">
                 <Badge bg="info" className="fw-normal">
                   {subject.method || 'Classroom'}
                 </Badge>
               </td>
-              <td className="border-neutral-200 align-middle show-mobile">
+              <td className="align-middle show-mobile">
                 {getStatusBadge(subject.status)}
               </td>
-              <td className="border-neutral-200 align-middle show-mobile">
+              <td className="align-middle show-mobile">
                 <div className="d-flex align-items-center">
                   <div className="progress flex-grow-1 me-2" style={{ height: '6px' }}>
                     <div 
@@ -191,14 +284,25 @@ const TraineeSubjectList = ({ traineeId, courseId }) => {
                   <small className="text-muted">{subject.progress || 0}%</small>
                 </div>
               </td>
-              <td className="border-neutral-200 align-middle text-center show-mobile">
-                <Button
-                  variant="outline-primary"
-                  size="sm"
-                  onClick={() => handleViewSubject(subject.id)}
-                >
-                  <Eye size={14} />
-                </Button>
+              <td className="align-middle text-center show-mobile">
+                <PortalUnifiedDropdown
+                  align="end"
+                  className="table-dropdown"
+                  placement="bottom-end"
+                  trigger={{
+                    variant: 'link',
+                    className: 'btn btn-link p-0 text-primary-custom',
+                    style: { border: 'none', background: 'transparent' },
+                    children: <ThreeDotsVertical size={16} />
+                  }}
+                  items={[
+                    {
+                      label: 'View Details',
+                      icon: <Eye />,
+                      onClick: () => handleViewSubject(subject.id)
+                    }
+                  ]}
+                />
               </td>
             </tr>
           ))}

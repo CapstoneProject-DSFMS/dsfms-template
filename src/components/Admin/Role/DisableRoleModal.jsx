@@ -120,7 +120,6 @@ const DisableRoleModal = ({
                 <div 
                   className="spinner-border spinner-border-sm me-2" 
                   role="status"
-                  style={{ width: '0.8rem', height: '0.8rem', borderWidth: '0.15em' }}
                 >
                   <span className="visually-hidden">Loading...</span>
                 </div>

@@ -2,7 +2,6 @@ import React, { useState, useEffect } from 'react';
 import { Modal, Button, Alert, Badge } from 'react-bootstrap';
 import { ExclamationTriangle } from 'react-bootstrap-icons';
 import subjectAPI from '../../api/subject';
-import apiClient from '../../api/config';
 
 const DisableSubjectModal = ({ show, onClose, onDisable, subject, loading = false }) => {
   const [confirmText, setConfirmText] = useState('');
@@ -36,17 +35,9 @@ const DisableSubjectModal = ({ show, onClose, onDisable, subject, loading = fals
       } else if (response?.enrollments && Array.isArray(response.enrollments)) {
         setEnrollmentCount(response.enrollments.length);
       } else {
-        // Try to fetch enrollments separately
-        try {
-          const enrollmentsResponse = await apiClient.get(`/subjects/${subject.id}/enrollments`);
-          if (enrollmentsResponse?.data?.enrollments) {
-            setEnrollmentCount(enrollmentsResponse.data.enrollments.length);
-          } else if (enrollmentsResponse?.data?.count !== undefined) {
-            setEnrollmentCount(enrollmentsResponse.data.count);
-          }
-        } catch {
-          setEnrollmentCount(0);
-        }
+        // If enrollment data is not available in subject response, set to 0
+        // Note: Backend endpoint /subjects/{subjectId}/enrollments is not available
+        setEnrollmentCount(0);
       }
     } catch {
       setEnrollmentCount(0);

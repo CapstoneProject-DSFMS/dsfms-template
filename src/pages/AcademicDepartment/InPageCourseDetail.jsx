@@ -525,7 +525,7 @@ const InPageCourseDetail = ({ course, department }) => {
                         }}>Pass Score</h6>
                         <div className="d-flex align-items-center">
                           <Award size={16} className="me-2 text-primary" />
-                          <span className="text-dark" style={{ fontSize: '0.9rem' }}>{courseDetails.passScore}%</span>
+                          <span className="text-dark" style={{ fontSize: '0.9rem' }}>{courseDetails.passScore}</span>
                         </div>
                       </div>
                       <div className="mb-4">
