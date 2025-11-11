@@ -25,6 +25,8 @@ const TemplateDetailModal = ({ show, onHide, template }) => {
   const [loadingReviewedBy, setLoadingReviewedBy] = useState(false);
   const [fullTemplateData, setFullTemplateData] = useState(null);
   const [loadingFullData, setLoadingFullData] = useState(false);
+  const [pdfUrl, setPdfUrl] = useState(null);
+  const [loadingPDF, setLoadingPDF] = useState(false);
 
   // Fetch reviewed by user info if reviewedByUserId exists
   useEffect(() => {
@@ -75,6 +77,47 @@ const TemplateDetailModal = ({ show, onHide, template }) => {
 
     fetchFullTemplateData();
   }, [template?.id, show, template?.sections]);
+
+  // Load PDF when content tab is active
+  useEffect(() => {
+    const loadPDF = async () => {
+      if (activeTab === 'content' && template?.id && show) {
+        try {
+          setLoadingPDF(true);
+          // Use template.id as templateFormId (or template.formId if available)
+          const templateFormId = template.formId || template.id;
+          const pdfBlob = await templateAPI.getTemplatePDF(templateFormId);
+          const url = URL.createObjectURL(pdfBlob);
+          setPdfUrl(url);
+        } catch (error) {
+          console.error('Error loading PDF:', error);
+          setPdfUrl(null);
+        } finally {
+          setLoadingPDF(false);
+        }
+      } else {
+        // Clean up PDF URL when tab changes or modal closes
+        setPdfUrl(prevUrl => {
+          if (prevUrl) {
+            URL.revokeObjectURL(prevUrl);
+          }
+          return null;
+        });
+      }
+    };
+
+    loadPDF();
+
+    // Cleanup function
+    return () => {
+      setPdfUrl(prevUrl => {
+        if (prevUrl) {
+          URL.revokeObjectURL(prevUrl);
+        }
+        return null;
+      });
+    };
+  }, [activeTab, template?.id, template?.formId, show]);
 
   if (!template) return null;
 
@@ -405,32 +448,43 @@ const TemplateDetailModal = ({ show, onHide, template }) => {
   };
 
   const renderContentPreview = () => {
-    if (template.templateContent && template.templateContent.startsWith('http')) {
+    if (loadingPDF) {
       return (
         <div className="content-preview">
-          <div className="alert alert-info">
-            <FileEarmarkPdf className="me-2" />
-            Template content is stored as a file. You can download it using the "Download File" button below.
-          </div>
           <div className="border rounded p-4 bg-light text-center" style={{ minHeight: '400px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
             <div>
-              <FileEarmarkPdf size={64} className="text-muted mb-3" />
-              <p className="text-muted mb-0">File preview is not available. Use the download button to view the file.</p>
+              <Spinner animation="border" variant="primary" className="mb-3" />
+              <p className="text-muted mb-0">Loading PDF preview...</p>
             </div>
           </div>
         </div>
       );
     }
-    
+
+    if (pdfUrl) {
+      return (
+        <div className="content-preview" style={{ height: '60vh', overflow: 'hidden' }}>
+          <iframe
+            src={pdfUrl}
+            style={{
+              width: '100%',
+              height: '100%',
+              border: '1px solid #dee2e6',
+              borderRadius: '0.375rem',
+              display: 'block'
+            }}
+            title="Template PDF Preview"
+          />
+        </div>
+      );
+    }
+
     return (
       <div className="content-preview">
-        <div 
-          className="border rounded p-4 bg-white"
-          style={{ minHeight: '400px' }}
-          dangerouslySetInnerHTML={{ 
-            __html: template.templateContent || '<p class="text-muted">No content available</p>'
-          }}
-        />
+        <Alert variant="warning" className="mb-0">
+          <FileEarmarkPdf className="me-2" />
+          PDF preview is not available. Please try again or contact support.
+        </Alert>
       </div>
     );
   };
@@ -439,46 +493,50 @@ const TemplateDetailModal = ({ show, onHide, template }) => {
     <Modal 
       show={show} 
       onHide={onHide} 
-      size="xl" 
+      size="lg" 
       centered 
       className="template-detail-modal"
       dialogClassName="template-detail-modal-dialog"
       contentClassName="template-detail-modal-content"
     >
       <Modal.Header 
-        className="bg-primary-custom text-white border-0 template-detail-header"
+        className="bg-primary-custom text-white border-0 template-detail-header d-flex align-items-center justify-content-between"
         style={{ 
           borderTopLeftRadius: '0.75rem',
           borderTopRightRadius: '0.75rem',
           padding: '1.25rem 1.5rem'
         }}
       >
-        <Modal.Title className="d-flex align-items-center text-white mb-0 template-detail-title">
-          <FileText className="me-2 d-none d-sm-inline" size={20} />
-          <FileText className="me-2 d-inline d-sm-none" size={18} />
-          <span className="template-detail-title-text">
+        <Modal.Title className="d-flex align-items-center text-white mb-0 template-detail-title flex-grow-1" style={{ minWidth: 0 }}>
+          <FileText className="me-2 flex-shrink-0" size={20} />
+          <span className="template-detail-title-text text-truncate" style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }} title={`Template Detail: ${template.name}`}>
             <span className="d-none d-md-inline">Template Detail: </span>
-            <span className="text-truncate d-inline-block" style={{ maxWidth: '200px' }} title={template.name}>
-              {template.name}
-            </span>
+            {template.name}
           </span>
         </Modal.Title>
         <Button 
           variant="link" 
           onClick={onHide} 
-          className="text-white p-0 ms-auto"
+          className="text-white p-0 flex-shrink-0"
           style={{ 
             border: 'none', 
             background: 'none', 
             opacity: 0.9,
-            color: '#ffffff !important'
+            color: '#ffffff !important',
+            marginLeft: '1rem'
           }}
         >
           <X size={24} color="#ffffff" />
         </Button>
       </Modal.Header>
       
-      <Modal.Body className="p-0 template-detail-body" style={{ maxHeight: '70vh', overflowY: 'auto' }}>
+      <Modal.Body 
+        className="p-0 template-detail-body" 
+        style={{ 
+          maxHeight: activeTab === 'content' ? '60vh' : '70vh', 
+          overflowY: activeTab === 'content' ? 'hidden' : 'auto'
+        }}
+      >
         {/* Tabs */}
         <div className="bg-primary-custom text-white template-detail-tabs-container">
           <div className="d-flex border-bottom border-white border-opacity-25 template-detail-tabs" style={{ overflowX: 'auto', overflowY: 'hidden', WebkitOverflowScrolling: 'touch' }}>
@@ -572,16 +630,17 @@ const TemplateDetailModal = ({ show, onHide, template }) => {
       </Modal.Body>
       
       <Modal.Footer 
-        className="bg-light border-0 template-detail-footer d-flex flex-column flex-md-row gap-2 gap-md-2"
+        className="bg-light border-0 template-detail-footer d-flex flex-wrap gap-2"
         style={{ 
           padding: '1rem 1.5rem',
-          borderTop: '1px solid var(--bs-neutral-200)'
+          borderTop: '1px solid var(--bs-neutral-200)',
+          justifyContent: 'flex-end'
         }}
       >
         <Button 
           variant="secondary"
           onClick={onHide}
-          className="w-100 w-md-auto order-2 order-md-1"
+          className="d-flex align-items-center justify-content-center"
           style={{
             backgroundColor: 'var(--bs-secondary)',
             borderColor: 'var(--bs-secondary)',
@@ -607,7 +666,7 @@ const TemplateDetailModal = ({ show, onHide, template }) => {
         <Button
           variant="primary"
           onClick={handleCreateNewVersion}
-          className="d-flex align-items-center justify-content-center w-100 w-md-auto order-1 order-md-2"
+          className="d-flex align-items-center justify-content-center"
           style={{
             backgroundColor: 'var(--bs-primary)',
             borderColor: 'var(--bs-primary)',
@@ -634,13 +693,13 @@ const TemplateDetailModal = ({ show, onHide, template }) => {
           <span className="d-none d-sm-inline">Update New Version</span>
           <span className="d-inline d-sm-none">New Version</span>
         </Button>
-        {template.templateContent && template.templateContent.startsWith('http') && (
+        {template.templateConfig && (
           <Button 
             variant="primary"
-            href={template.templateContent} 
+            href={template.templateConfig} 
             target="_blank"
             rel="noopener noreferrer"
-            className="d-flex align-items-center justify-content-center w-100 w-md-auto order-3"
+            className="d-flex align-items-center justify-content-center"
             style={{
               backgroundColor: 'var(--bs-primary)',
               borderColor: 'var(--bs-primary)',

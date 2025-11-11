@@ -1169,7 +1169,7 @@ console.log('🌐 Full S3 URL:', s3Url)
                                         ))}
                                     </Dropdown.Menu>
                                 </Dropdown>
-                            </div>
+              </div>
               
               {/* OnlyOffice Editor Container */}
               <div 

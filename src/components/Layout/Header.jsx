@@ -141,12 +141,13 @@ const Header = ({ onToggleSidebar }) => {
       '/admin/departments': 'Department Management',
       '/admin/forms': 'Template List',
       '/admin/main-menu': 'Main Menu',
-      '/admin/system-config': 'System Configuration',
+      '/admin/system-config': 'Global Field List',
       
       // Academic routes
       '/academic': 'Academic Dashboard',
       '/academic/dashboard': 'Academic Dashboard',
       '/academic/departments': 'Department Management',
+      '/academic/assessment-events': 'Assessment Event',
       
       // Trainee routes
       '/trainee': 'Trainee Dashboard',

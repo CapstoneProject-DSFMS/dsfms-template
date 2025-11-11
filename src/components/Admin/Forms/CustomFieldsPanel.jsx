@@ -326,7 +326,7 @@ const CustomFieldsPanel = ({
       // Flatten all fields to maintain backward compatibility for parent state
       const flattened = nextSections.flatMap((s) => s.fields || []);
       setTimeout(() => {
-        onAddField(flattened);
+      onAddField(flattened);
       }, 0);
     }
     
@@ -490,7 +490,7 @@ const CustomFieldsPanel = ({
     if (onAddField) {
       const flattened = nextSections.flatMap((s) => s.fields || []);
       setTimeout(() => {
-        onAddField(flattened);
+      onAddField(flattened);
       }, 0);
     }
     // Build inner template based on selected type (TEXT/TOGGLE/IMAGE)
@@ -642,7 +642,7 @@ const CustomFieldsPanel = ({
                         <span className="badge rounded-pill ms-1 field-count-badge flex-shrink-0">
                           {section.fields?.length || 0}
                         </span>
-                      </div>
+                    </div>
                       <small className="text-muted" style={{ fontSize: '0.75rem' }}>Edit by: {section.editBy}</small>
                     </div>
                     <div onClick={(e) => e.stopPropagation()} className="flex-shrink-0">
@@ -880,19 +880,19 @@ const CustomFieldsPanel = ({
                 </Form.Group>
               </Col>
               {newSection.editBy === 'TRAINER' && (
-                <Col md={6}>
-                  <Form.Group>
-                    <Form.Label className="text-primary-custom">Role In Subject</Form.Label>
+              <Col md={6}>
+                <Form.Group>
+                  <Form.Label className="text-primary-custom">Role In Subject</Form.Label>
                     <Form.Select
                       value={newSection.roleInSubject || 'ASSESSMENT_REVIEWER'}
-                      onChange={(e) => setNewSection((prev) => ({ ...prev, roleInSubject: e.target.value }))}
+                    onChange={(e) => setNewSection((prev) => ({ ...prev, roleInSubject: e.target.value }))}
                       style={{ minWidth: '200px' }}
                     >
                       <option value="ASSESSMENT_REVIEWER">ASSESSMENT_REVIEWER</option>
                       <option value="EXAMINER">EXAMINER</option>
                     </Form.Select>
-                  </Form.Group>
-                </Col>
+                </Form.Group>
+              </Col>
               )}
               <Col md={12}>
                 <Form.Group className="d-flex flex-row align-items-center gap-4">
