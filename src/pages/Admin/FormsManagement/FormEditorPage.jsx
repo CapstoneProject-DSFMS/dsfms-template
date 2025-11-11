@@ -23,6 +23,13 @@ const FormEditorPage = () => {
   });
   const [departments, setDepartments] = useState([]);
   const [loadingDepartments, setLoadingDepartments] = useState(false);
+  const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
+  const [showDiscardModal, setShowDiscardModal] = useState(false);
+
+  // Debug: Log when hasUnsavedChanges changes
+  useEffect(() => {
+    console.log('🔔 hasUnsavedChanges changed:', hasUnsavedChanges);
+  }, [hasUnsavedChanges]);
 
   // Get data from navigation state
   useEffect(() => {
@@ -136,7 +143,24 @@ const FormEditorPage = () => {
 
 
   const handleBack = () => {
+    console.log('🔙 Back button clicked, hasUnsavedChanges:', hasUnsavedChanges);
+    if (hasUnsavedChanges) {
+      console.log('⚠️ Showing discard modal');
+      setShowDiscardModal(true);
+    } else {
+      console.log('✅ No unsaved changes, navigating back');
+      navigate('/admin/forms');
+    }
+  };
+
+  const handleConfirmDiscard = () => {
+    setShowDiscardModal(false);
+    setHasUnsavedChanges(false);
     navigate('/admin/forms');
+  };
+
+  const handleCancelDiscard = () => {
+    setShowDiscardModal(false);
   };
 
   return (
@@ -213,9 +237,76 @@ const FormEditorPage = () => {
               fileName={fileName}
               showImportInfo={!!importType}
               importType={importType}
+              onHasUnsavedChangesChange={setHasUnsavedChanges}
             />
           </Card.Body>
         </Card>
+
+        {/* Discard Changes Warning Modal */}
+        <Modal 
+          show={showDiscardModal} 
+          onHide={handleCancelDiscard} 
+          centered
+        >
+          <Modal.Header 
+            className="bg-warning text-dark border-0"
+            style={{ 
+              borderTopLeftRadius: '0.75rem',
+              borderTopRightRadius: '0.75rem',
+              padding: '1.25rem 1.5rem'
+            }}
+          >
+            <Modal.Title className="text-dark mb-0" style={{ fontSize: '1.25rem', fontWeight: 600 }}>
+              Discard Changes?
+            </Modal.Title>
+          </Modal.Header>
+          <Modal.Body style={{ padding: '1.5rem' }}>
+            <p className="mb-0" style={{ fontSize: '1rem', color: 'var(--bs-dark)' }}>
+              You have unsaved changes in the document. Are you sure you want to leave without saving?
+            </p>
+            <p className="mt-2 mb-0 text-muted" style={{ fontSize: '0.875rem' }}>
+              All unsaved changes will be lost.
+            </p>
+          </Modal.Body>
+          <Modal.Footer 
+            className="border-0"
+            style={{ 
+              padding: '1rem 1.5rem',
+              borderTop: '1px solid var(--bs-neutral-200)'
+            }}
+          >
+            <Button
+              variant="secondary"
+              onClick={handleCancelDiscard}
+              style={{
+                backgroundColor: 'var(--bs-secondary)',
+                borderColor: 'var(--bs-secondary)',
+                color: 'white',
+                fontWeight: 500,
+                padding: '0.5rem 1.5rem',
+                borderRadius: '0.375rem',
+                transition: 'all 0.3s ease'
+              }}
+            >
+              Cancel
+            </Button>
+            <Button
+              variant="warning"
+              onClick={handleConfirmDiscard}
+              style={{
+                backgroundColor: '#ffc107',
+                borderColor: '#ffc107',
+                color: '#212529',
+                fontWeight: 500,
+                padding: '0.5rem 1.5rem',
+                borderRadius: '0.375rem',
+                transition: 'all 0.3s ease'
+              }}
+            >
+              Discard Changes
+            </Button>
+          </Modal.Footer>
+        </Modal>
 
         {/* Edit Template Information Modal */}
         <Modal 

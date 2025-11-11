@@ -6,7 +6,7 @@ import { PermissionWrapper, LoadingSkeleton } from '../../../components/Common';
 import { API_PERMISSIONS } from '../../../constants/apiPermissions';
 import { templateAPI } from '../../../api';
 import ImportFileModal from '../../../components/Admin/Forms/ImportFileModal';
-import TemplatePreviewModal from '../../../components/Admin/Forms/TemplatePreviewModal';
+import TemplateDetailModal from '../../../components/Admin/Forms/TemplateDetailModal';
 
 const FormsPage = () => {
   const [showImportModal, setShowImportModal] = useState(false);
@@ -101,7 +101,7 @@ const FormsPage = () => {
             <Col>
               <div className="d-flex align-items-center">
                 <FileText className="me-2 text-white" size={24} />
-                <h4 className="mb-0 text-white">Form Templates</h4>
+                <h4 className="mb-0 text-white">Template List</h4>
               </div>
             </Col>
             <Col xs="auto">
@@ -156,9 +156,9 @@ const FormsPage = () => {
                       e.currentTarget.style.boxShadow = '0 2px 10px rgba(0,0,0,0.1)';
                     }}
                   >
-                    <Card.Body className="p-3 d-flex flex-column">
+                    <Card.Body className="p-3 d-flex flex-column" style={{ height: '100%' }}>
                       {/* Header with Icon and Title */}
-                      <div className="d-flex align-items-start mb-2" style={{ minHeight: '60px' }}>
+                      <div className="d-flex align-items-start mb-2" style={{ height: '60px', flexShrink: 0 }}>
                         <div 
                           className="bg-primary-custom text-white rounded d-flex align-items-center justify-content-center me-2 flex-shrink-0"
                           style={{ width: '40px', height: '40px', minWidth: '40px' }}
@@ -186,7 +186,7 @@ const FormsPage = () => {
                       </div>
                       
                       {/* Description */}
-                      <div className="mb-2 flex-grow-1" style={{ minHeight: '40px' }}>
+                      <div className="mb-2" style={{ height: '40px', overflow: 'hidden' }}>
                         <p 
                           className="text-muted mb-0" 
                           style={{ 
@@ -196,7 +196,9 @@ const FormsPage = () => {
                             WebkitBoxOrient: 'vertical',
                             overflow: 'hidden',
                             wordBreak: 'break-word',
-                            lineHeight: '1.4'
+                            lineHeight: '1.4',
+                            height: '100%',
+                            margin: 0
                           }}
                           title={template.description || 'No description'}
                         >
@@ -205,7 +207,7 @@ const FormsPage = () => {
                       </div>
 
                       {/* Department and Status */}
-                      <div className="d-flex align-items-center justify-content-between mb-2 flex-wrap">
+                      <div className="d-flex align-items-center justify-content-between mb-2 flex-wrap" style={{ flexShrink: 0, height: '24px' }}>
                         <div className="d-flex align-items-center" style={{ minWidth: 0, flex: '1 1 auto' }}>
                           <Building size={12} className="text-muted me-1 flex-shrink-0" />
                           <small 
@@ -222,7 +224,7 @@ const FormsPage = () => {
                       </div>
 
                       {/* Created By and Date */}
-                      <div className="d-flex align-items-center justify-content-between mb-2 flex-wrap">
+                      <div className="d-flex align-items-center justify-content-between mb-2 flex-wrap" style={{ flexShrink: 0, height: '24px' }}>
                         <div 
                           className="d-flex align-items-center" 
                           style={{ minWidth: 0, flex: '1 1 auto' }}
@@ -240,7 +242,7 @@ const FormsPage = () => {
                       </div>
 
                       {/* Footer with Sections and Preview */}
-                      <div className="mt-auto pt-2 border-top">
+                      <div className="mt-auto pt-2 border-top" style={{ flexShrink: 0 }}>
                         <div className="d-flex align-items-center justify-content-between flex-wrap">
                           <small className="text-muted d-flex align-items-center flex-shrink-0">
                             <FileText size={12} className="me-1" />
@@ -276,8 +278,8 @@ const FormsPage = () => {
             onImportError={handleImportError}
           />
 
-          {/* Template Preview Modal */}
-          <TemplatePreviewModal
+          {/* Template Detail Modal */}
+          <TemplateDetailModal
             show={showPreviewModal}
             onHide={() => {
               setShowPreviewModal(false);

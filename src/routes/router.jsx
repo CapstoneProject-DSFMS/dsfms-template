@@ -15,6 +15,7 @@ import CourseDetailsWrapper from '../pages/AcademicDepartment/CourseDetailsWrapp
 import SubjectDetailsWrapper from '../pages/AcademicDepartment/SubjectDetailsWrapper'
 import CourseDetailPage from '../pages/AcademicDepartment/CourseDetailPage'
 import EnrollTraineesPage from '../pages/AcademicDepartment/EnrollTraineesPage'
+import AssessmentEventPage from '../pages/AcademicDepartment/AssessmentEventPage'
 import TraineeCourseDetailPage from '../pages/Trainee/TraineeCourseDetailPage'
 import TraineeSubjectDetailPage from '../pages/Trainee/TraineeSubjectDetailPage'
 import TraineeAssessmentPage from '../pages/Trainee/TraineeAssessmentPage'
@@ -27,6 +28,7 @@ import EnrolledCoursesPage from '../pages/Trainee/EnrolledCoursesPage'
 import FormsPage from '../pages/Admin/FormsManagement/FormsPage';
 import FormEditorPage from '../pages/Admin/FormsManagement/FormEditorPage';
 import MainMenuPage from '../pages/Admin/MainMenuPage';
+import GlobalFieldListPage from '../pages/Admin/GlobalField/GlobalFieldListPage';
 import SignatureRequiredPage from '../pages/Trainee/SignatureRequiredPage';
 import SectionCompletionPage from '../pages/Trainee/SectionCompletionPage';
 import YourAssessmentsPage from '../pages/Trainee/YourAssessmentsPage';
@@ -190,7 +192,7 @@ export const router = createBrowserRouter([
             permission={API_PERMISSIONS.GLOBAL_FIELDS.VIEW_ALL}
             fallback={<div className="p-4 text-center text-muted">You don't have permission to access system configuration.</div>}
           >
-            <div>System Configuration Page</div>
+            <GlobalFieldListPage />
           </PermissionRoute>
         )
       },
@@ -236,6 +238,10 @@ export const router = createBrowserRouter([
       {
         path: "course/:courseId/subject/:subjectId",
         element: <SubjectDetailsWrapper />
+      },
+      {
+        path: "assessment-events",
+        element: <AssessmentEventPage />
       }
     ]
   },
