@@ -22,6 +22,21 @@ const templateAPI = {
     }
   },
 
+  // Get templates by department
+  getTemplatesByDepartment: async (departmentId, params = {}) => {
+    try {
+      const response = await apiClient.get(`/templates/department/${departmentId}`, {
+        params: {
+          status: 'PUBLISHED',
+          ...params
+        }
+      });
+      return response.data;
+    } catch (error) {
+      throw error;
+    }
+  },
+
   // Create new template
   createTemplate: async (templateData) => {
     try {
@@ -46,6 +61,18 @@ const templateAPI = {
   deleteTemplate: async (templateId) => {
     try {
       const response = await apiClient.delete(`/templates/${templateId}`);
+      return response.data;
+    } catch (error) {
+      throw error;
+    }
+  },
+
+  // Get template PDF preview
+  getTemplatePDF: async (templateFormId) => {
+    try {
+      const response = await apiClient.get(`/templates/pdf/${templateFormId}`, {
+        responseType: 'blob' // Important: get PDF as blob
+      });
       return response.data;
     } catch (error) {
       throw error;

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Modal, Button, Badge } from 'react-bootstrap';
 import { 
   X, 
@@ -10,21 +10,50 @@ import {
   CheckCircle,
   Clock,
   Download,
-  FileEarmarkPlus
+  FileEarmarkPlus,
+  Calendar
 } from 'react-bootstrap-icons';
+import { userAPI } from '../../../api/user';
 
 const TemplatePreviewModal = ({ show, onHide, template }) => {
   const [activeTab, setActiveTab] = useState('details');
+  const [reviewedByUser, setReviewedByUser] = useState(null);
+  const [loadingReviewedBy, setLoadingReviewedBy] = useState(false);
+
+  // Fetch reviewed by user info if reviewedByUserId exists
+  useEffect(() => {
+    const fetchReviewedByUser = async () => {
+      if (template?.reviewedByUserId && show) {
+        try {
+          setLoadingReviewedBy(true);
+          const userData = await userAPI.getUserById(template.reviewedByUserId);
+          const user = userData.data || userData;
+          setReviewedByUser(user);
+        } catch (error) {
+          console.error('Error fetching reviewed by user:', error);
+          setReviewedByUser(null);
+        } finally {
+          setLoadingReviewedBy(false);
+        }
+      } else {
+        setReviewedByUser(null);
+      }
+    };
+
+    fetchReviewedByUser();
+  }, [template?.reviewedByUserId, show]);
 
   if (!template) return null;
 
-  const formatDate = (dateString) => {
+  const formatDateTime = (dateString) => {
     if (!dateString) return 'N/A';
     try {
-      return new Date(dateString).toLocaleDateString('en-US', {
+      return new Date(dateString).toLocaleString('en-US', {
         year: 'numeric',
         month: 'short',
-        day: 'numeric'
+        day: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit'
       });
     } catch {
       return dateString;
@@ -108,7 +137,7 @@ const TemplatePreviewModal = ({ show, onHide, template }) => {
             <FileText className="text-primary-custom me-3" size={20} />
             <div className="flex-grow-1">
               <strong className="text-muted small d-block mb-1">Version</strong>
-              <span className="text-dark">v{template.version}</span>
+              <span className="text-dark">Version {template.version}</span>
             </div>
           </div>
         </div>
@@ -118,7 +147,9 @@ const TemplatePreviewModal = ({ show, onHide, template }) => {
             <FileText className="text-primary-custom me-3" size={20} />
             <div className="flex-grow-1">
               <strong className="text-muted small d-block mb-1">Sections</strong>
-              <span className="text-dark">{template._count?.sections || 0}</span>
+              <span className="text-dark">
+                {template._count?.sections || 0} {template._count?.sections === 1 ? 'section' : 'sections'}
+              </span>
             </div>
           </div>
         </div>
@@ -129,24 +160,59 @@ const TemplatePreviewModal = ({ show, onHide, template }) => {
             <div className="flex-grow-1">
               <strong className="text-muted small d-block mb-1">Created By</strong>
               <span className="text-dark">
-                {template.createdByUser?.firstName} {template.createdByUser?.lastName}
+                {template.createdByUser?.firstName || ''} {template.createdByUser?.lastName || ''}
               </span>
-              <small className="text-muted d-block">{formatDate(template.createdAt)}</small>
+              <small className="text-muted d-block">
+                <Calendar className="me-1" size={12} />
+                {formatDateTime(template.createdAt)}
+              </small>
             </div>
           </div>
         </div>
 
-        {template.reviewedByUserId && (
-          <div className="list-group-item border-0 px-0 py-3">
-            <div className="d-flex align-items-center">
-              <CheckCircle className="text-primary-custom me-3" size={20} />
-              <div className="flex-grow-1">
-                <strong className="text-muted small d-block mb-1">Reviewed</strong>
-                <span className="text-dark">{formatDate(template.reviewedAt)}</span>
-              </div>
+        <div className="list-group-item border-0 px-0 py-3">
+          <div className="d-flex align-items-center">
+            <Clock className="text-primary-custom me-3" size={20} />
+            <div className="flex-grow-1">
+              <strong className="text-muted small d-block mb-1">Last Updated</strong>
+              <span className="text-dark">
+                {formatDateTime(template.updatedAt)}
+              </span>
             </div>
           </div>
-        )}
+        </div>
+
+        <div className="list-group-item border-0 px-0 py-3">
+          <div className="d-flex align-items-center">
+            <CheckCircle className="text-primary-custom me-3" size={20} />
+            <div className="flex-grow-1">
+              <strong className="text-muted small d-block mb-1">Reviewed By</strong>
+              {template.reviewedByUserId ? (
+                <>
+                  {loadingReviewedBy ? (
+                    <span className="text-muted">Loading...</span>
+                  ) : reviewedByUser ? (
+                    <>
+                      <span className="text-dark">
+                        {reviewedByUser.firstName || ''} {reviewedByUser.lastName || ''}
+                      </span>
+                      {template.reviewedAt && (
+                        <small className="text-muted d-block">
+                          <Calendar className="me-1" size={12} />
+                          {formatDateTime(template.reviewedAt)}
+                        </small>
+                      )}
+                    </>
+                  ) : (
+                    <span className="text-muted">User ID: {template.reviewedByUserId}</span>
+                  )}
+                </>
+              ) : (
+                <span className="text-muted">Not reviewed</span>
+              )}
+            </div>
+          </div>
+        </div>
       </div>
     </div>
   );

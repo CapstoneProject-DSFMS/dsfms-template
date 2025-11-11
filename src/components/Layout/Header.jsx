@@ -139,14 +139,15 @@ const Header = ({ onToggleSidebar }) => {
       '/admin/users': 'User Management',
       '/admin/roles': 'Role Management',
       '/admin/departments': 'Department Management',
-      '/admin/forms': 'Form Templates',
+      '/admin/forms': 'Template List',
       '/admin/main-menu': 'Main Menu',
-      '/admin/system-config': 'System Configuration',
+      '/admin/system-config': 'Global Field List',
       
       // Academic routes
       '/academic': 'Academic Dashboard',
       '/academic/dashboard': 'Academic Dashboard',
       '/academic/departments': 'Department Management',
+      '/academic/assessment-events': 'Assessment Event',
       
       // Trainee routes
       '/trainee': 'Trainee Dashboard',
@@ -257,7 +258,7 @@ const Header = ({ onToggleSidebar }) => {
     
     // Check for admin form editor (pattern: /admin/forms/editor)
     if (path.startsWith('/admin/forms/editor')) {
-      return 'Form Templates';
+      return 'Template List';
     }
     
     // Check for SQA template detail pages (pattern: /sqa/templates/:templateId)

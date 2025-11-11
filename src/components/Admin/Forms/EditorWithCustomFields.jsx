@@ -10,6 +10,7 @@ const EditorWithCustomFields = ({
   exportAndUploadEditedDoc,
   forceSaveAndPoll,
   getDocumentKey,
+  addSystemFieldToSectionRef,
   readOnly = false,
   className = ''
 }) => {
@@ -23,6 +24,7 @@ const EditorWithCustomFields = ({
       exportAndUploadEditedDoc={exportAndUploadEditedDoc}
       forceSaveAndPoll={forceSaveAndPoll}
       getDocumentKey={getDocumentKey}
+      addSystemFieldToSectionRef={addSystemFieldToSectionRef}
       readOnly={readOnly}
       className={className}
     />

@@ -838,10 +838,90 @@ html body .forms-page .forms-page-header .text-white {
   color: white !important;
 }
 
+/* Override for bg-primary-custom on card-header */
+.card-header.bg-primary-custom {
+  background-color: var(--bs-primary) !important;
+  color: white !important;
+}
+
+.card-header.bg-primary-custom h4,
+.card-header.bg-primary-custom h5,
+.card-header.bg-primary-custom h6 {
+  color: white !important;
+}
+
+.card-header.bg-primary-custom .text-white {
+  color: white !important;
+}
+
 /* Form enhancements */
 .form-control:focus {
   border-color: var(--bs-primary) !important;
   box-shadow: 0 0 0 0.25rem rgba(27, 60, 83, 0.25) !important;
+}
+
+/* Force select dropdown to open downward */
+.form-select {
+  position: relative;
+}
+
+/* Ensure select dropdown opens downward in CreateAssessmentEventForm */
+.create-assessment-event-form {
+  position: relative;
+  overflow: visible;
+}
+
+.create-assessment-event-form .form-select,
+.create-assessment-event-form .form-select:focus,
+.create-assessment-event-form .form-select:active {
+  position: relative;
+  z-index: 1001; /* Higher z-index to ensure dropdown overlays other elements */
+  font-size: 0.9rem; /* Slightly smaller font for select */
+}
+
+/* Reduce dropdown list height by making options more compact */
+.create-assessment-event-form .form-select option {
+  font-size: 0.8rem !important; /* Smaller font size for options */
+  padding: 0.2rem 0.4rem !important; /* Smaller padding */
+  line-height: 1.2 !important; /* Tighter line height */
+  height: auto !important;
+}
+
+/* Ensure Form.Group has enough space for dropdown */
+.create-assessment-event-form .form-group {
+  position: relative;
+  overflow: visible;
+  margin-bottom: 1rem;
+  padding-bottom: 0;
+}
+
+/* Ensure Col has overflow visible for dropdown */
+.create-assessment-event-form .col,
+.create-assessment-event-form [class*="col-"] {
+  overflow: visible;
+}
+
+/* Force select dropdown to open downward by ensuring space below */
+.create-assessment-event-form .row {
+  position: relative;
+  overflow: visible;
+  margin-bottom: 2rem;
+}
+
+/* Add extra space below Course and Subject selects - using class instead of :has() for better browser support */
+.create-assessment-event-form .course-select-group,
+.create-assessment-event-form .subject-select-group {
+  margin-bottom: 2rem;
+  position: relative;
+  z-index: 1000; /* Ensure dropdown can overlay other elements */
+}
+
+/* Reduce dropdown height by making options smaller */
+.create-assessment-event-form .course-select-group .form-select option,
+.create-assessment-event-form .subject-select-group .form-select option {
+  font-size: 0.875rem; /* Smaller font size */
+  padding: 0.25rem 0.5rem; /* Smaller padding */
+  line-height: 1.3; /* Tighter line height */
 }
 
 .form-select:focus {
