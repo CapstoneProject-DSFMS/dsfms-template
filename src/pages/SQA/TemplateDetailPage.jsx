@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { Container, Row, Col, Button, Badge, Card, Alert } from 'react-bootstrap';
 import { 
   ArrowLeft,
@@ -12,6 +12,7 @@ import {
 import { useParams, useNavigate } from 'react-router-dom';
 import { LoadingSkeleton, AdminTable, PermissionWrapper } from '../../components/Common';
 import { API_PERMISSIONS } from '../../constants/apiPermissions';
+import templateAPI from '../../api/template';
 
 const TemplateDetailPage = () => {
   const { templateId } = useParams();
@@ -21,88 +22,60 @@ const TemplateDetailPage = () => {
   const [error, setError] = useState(null);
   const [activeTab, setActiveTab] = useState('overview');
 
-  useEffect(() => {
-    loadTemplateDetail();
-  }, [templateId]);
+  const loadTemplateDetail = useCallback(async () => {
+    if (!templateId) {
+      setError('Template ID is required');
+      setLoading(false);
+      return;
+    }
 
-  const loadTemplateDetail = async () => {
     try {
       setLoading(true);
       setError(null);
       
-      // Mock data - replace with actual API call
-      const mockTemplate = {
-        id: templateId,
-        name: 'Safety Assessment Template',
-        description: 'Comprehensive safety assessment template for training courses. This template covers all essential safety protocols and procedures required for workplace safety training.',
-        version: 'v2.1',
-        category: 'SAFETY',
-        totalSections: 5,
-        totalFields: 23,
-        status: 'ACTIVE',
-        createdBy: 'John Smith',
-        createdAt: '2024-01-15T00:00:00.000Z',
-        lastModified: '2024-01-20T00:00:00.000Z',
-        lastModifiedBy: 'Sarah Johnson',
-        sections: [
-          {
-            id: '1',
-            name: 'Personal Protective Equipment',
-            fields: 8,
-            order: 1
-          },
-          {
-            id: '2',
-            name: 'Emergency Procedures',
-            fields: 6,
-            order: 2
-          },
-          {
-            id: '3',
-            name: 'Hazard Identification',
-            fields: 5,
-            order: 3
-          },
-          {
-            id: '4',
-            name: 'Safety Training Records',
-            fields: 3,
-            order: 4
-          },
-          {
-            id: '5',
-            name: 'Compliance Verification',
-            fields: 1,
-            order: 5
-          }
-        ],
-        history: [
-          {
-            version: 'v2.1',
-            date: '2024-01-20T00:00:00.000Z',
-            modifiedBy: 'Sarah Johnson',
-            changes: 'Updated emergency procedures section'
-          },
-          {
-            version: 'v2.0',
-            date: '2024-01-15T00:00:00.000Z',
-            modifiedBy: 'John Smith',
-            changes: 'Initial creation of template'
-          }
-        ]
+      // Fetch template detail from API
+      const response = await templateAPI.getTemplateById(templateId);
+      const templateData = response?.data || response;
+      
+      if (!templateData) {
+        setError('Template not found');
+        return;
+      }
+
+      // Map API response to component format
+      const mappedTemplate = {
+        id: templateData.id,
+        name: templateData.name || 'N/A',
+        description: templateData.description || '',
+        version: templateData.version || 'v1.0',
+        category: templateData.category || '',
+        totalSections: templateData.sections?.length || 0,
+        totalFields: templateData.sections?.reduce((total, section) => total + (section.fields?.length || 0), 0) || 0,
+        status: templateData.status || 'DRAFT',
+        createdBy: templateData.createdBy?.firstName && templateData.createdBy?.lastName 
+          ? `${templateData.createdBy.firstName} ${templateData.createdBy.lastName}`
+          : templateData.createdBy?.fullName || templateData.createdBy?.name || 'N/A',
+        createdAt: templateData.createdAt || templateData.createdDate,
+        lastModified: templateData.updatedAt || templateData.updatedDate || templateData.createdAt,
+        lastModifiedBy: templateData.updatedBy?.firstName && templateData.updatedBy?.lastName
+          ? `${templateData.updatedBy.firstName} ${templateData.updatedBy.lastName}`
+          : templateData.updatedBy?.fullName || templateData.updatedBy?.name || 'N/A',
+        sections: templateData.sections || [],
+        history: templateData.history || templateData.versions || []
       };
       
-      // Simulate API delay
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      
-      setTemplate(mockTemplate);
+      setTemplate(mappedTemplate);
     } catch (error) {
       console.error('Error loading template detail:', error);
-      setError('Failed to load template details');
+      setError(error.response?.data?.message || error.message || 'Failed to load template details');
     } finally {
       setLoading(false);
     }
-  };
+  }, [templateId]);
+
+  useEffect(() => {
+    loadTemplateDetail();
+  }, [loadTemplateDetail]);
 
   const getStatusConfig = (status) => {
     switch (status) {

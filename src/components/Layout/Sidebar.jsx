@@ -580,6 +580,36 @@ const Sidebar = ({ collapsed, onClose }) => {
           );
         })}
 
+        {/* Assessment Event - Academic Department */}
+        {isAcademicRole && (
+          <Nav.Item className="mb-3">
+            <Link
+              to="/academic/assessment-events"
+              className={`sidebar-nav-link text-white d-flex align-items-center py-3 pe-1 rounded nav-link ${collapsed ? "justify-content-center" : ""} ${location.pathname === '/academic/assessment-events' ? "active" : ""}`}
+              style={{
+                minHeight: collapsed ? "48px" : "auto",
+                backgroundColor: location.pathname === '/academic/assessment-events' ? "rgba(255, 255, 255, 0.1)" : "transparent",
+                whiteSpace: collapsed ? 'nowrap' : 'normal',
+                overflowWrap: collapsed ? 'normal' : 'break-word'
+              }}
+              onClick={() => {
+                onClose();
+              }}
+            >
+              <CalendarEvent
+                size={20}
+                className={collapsed ? "me-2" : "me-3"}
+                style={{
+                  display: "inline-block",
+                  flexShrink: 0,
+                  transition: "transform 0.3s cubic-bezier(.68,-0.55,.27,1.55)",
+                }}
+              />
+              {!collapsed && <span className="sidebar-nav-label" style={{ overflowWrap: 'break-word', lineHeight: '1.2' }}>Assessment Event</span>}
+            </Link>
+          </Nav.Item>
+        )}
+
         {/* Department dropdown */}
         {isAcademicRole && (
           <Nav.Item className="mb-3">

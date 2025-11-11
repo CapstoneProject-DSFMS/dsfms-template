@@ -8,4 +8,6 @@ export { default as traineeAPI } from './trainee.js';
 export { default as subjectAPI } from './subject.js';
 export { default as templateAPI } from './template.js';
 export { default as uploadAPI } from './upload.js';
+export { default as assessmentAPI } from './assessment.js';
+export { default as globalFieldAPI } from './globalField.js';
 export { default as apiClient } from './config.js';
