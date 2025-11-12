@@ -1,6 +1,6 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Container, Row, Col, Card, Button, Alert, Modal, Form } from 'react-bootstrap';
-import { ArrowLeft, Pencil } from 'react-bootstrap-icons';
+import { ArrowLeft, Pencil, Save } from 'react-bootstrap-icons';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { toast } from 'react-toastify';
 import OnlyOfficeFormEditor from '../../../components/Admin/Forms/OnlyOfficeFormEditor';
@@ -25,6 +25,8 @@ const FormEditorPage = () => {
   const [loadingDepartments, setLoadingDepartments] = useState(false);
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
   const [showDiscardModal, setShowDiscardModal] = useState(false);
+  const [isSavingDraft, setIsSavingDraft] = useState(false);
+  const onlyOfficeEditorRef = useRef(null);
 
   // Debug: Log when hasUnsavedChanges changes
   useEffect(() => {
@@ -163,6 +165,42 @@ const FormEditorPage = () => {
     setShowDiscardModal(false);
   };
 
+  const handleSaveDraft = async () => {
+    if (!onlyOfficeEditorRef.current) {
+      toast.warning('Editor is not ready yet. Please wait...');
+      return;
+    }
+
+    setIsSavingDraft(true);
+    toast.info('Saving draft...');
+
+    try {
+      // Use saveAndDownload convenience method if available
+      // This ensures save() is called before downloadAs()
+      if (typeof onlyOfficeEditorRef.current.saveAndDownload === 'function') {
+        await onlyOfficeEditorRef.current.saveAndDownload('docx');
+        // Note: onDownloadAs event will be triggered asynchronously
+        // The callback will handle setIsSavingDraft(false)
+      } else {
+        // Fallback: manual save then download
+        if (typeof onlyOfficeEditorRef.current.save === 'function') {
+          console.log('💾 Step 1: Calling save() to save all changes...');
+          onlyOfficeEditorRef.current.save();
+          await new Promise(resolve => setTimeout(resolve, 1000));
+        }
+        
+        if (typeof onlyOfficeEditorRef.current.downloadAs === 'function') {
+          console.log('💾 Step 2: Calling downloadAs() to get document URL...');
+          onlyOfficeEditorRef.current.downloadAs('docx');
+        }
+      }
+    } catch (error) {
+      console.error('❌ Error saving draft:', error);
+      toast.error('Failed to save draft: ' + (error.message || 'Unknown error'));
+      setIsSavingDraft(false);
+    }
+  };
+
   return (
     <PermissionWrapper 
       permission={API_PERMISSIONS.TEMPLATES.CREATE}
@@ -228,16 +266,54 @@ const FormEditorPage = () => {
                   </div>
                 </div>
               </Col>
+              <Col xs={12} md={4} className="d-flex justify-content-end align-items-center mt-2 mt-md-0">
+                <Button
+                  variant="outline-light"
+                  size="sm"
+                  onClick={handleSaveDraft}
+                  disabled={isSavingDraft}
+                  className="d-flex align-items-center gap-2"
+                  style={{
+                    borderWidth: '2px',
+                    fontWeight: '500',
+                    backgroundColor: 'rgba(255, 255, 255, 0.1)',
+                    backdropFilter: 'blur(4px)',
+                    whiteSpace: 'nowrap'
+                  }}
+                  onMouseEnter={(e) => {
+                    if (!isSavingDraft) {
+                      e.currentTarget.style.backgroundColor = 'rgba(255, 255, 255, 0.2)';
+                      e.currentTarget.style.borderColor = '#fff';
+                    }
+                  }}
+                  onMouseLeave={(e) => {
+                    if (!isSavingDraft) {
+                      e.currentTarget.style.backgroundColor = 'rgba(255, 255, 255, 0.1)';
+                      e.currentTarget.style.borderColor = '#fff';
+                    }
+                  }}
+                >
+                  <Save size={16} />
+                  {isSavingDraft ? 'Saving...' : 'Save Draft'}
+                </Button>
+              </Col>
             </Row>
           </Card.Header>
 
           <Card.Body className="p-0">
             <OnlyOfficeFormEditor
+              ref={onlyOfficeEditorRef}
               initialContent={content}
               fileName={fileName}
               showImportInfo={!!importType}
               importType={importType}
               onHasUnsavedChangesChange={setHasUnsavedChanges}
+              onDraftSaved={(draftUrl) => {
+                setIsSavingDraft(false);
+                // You can save draftUrl to localStorage or send to backend
+                console.log('✅ Draft saved:', draftUrl);
+                toast.success('Draft saved successfully!');
+              }}
             />
           </Card.Body>
         </Card>

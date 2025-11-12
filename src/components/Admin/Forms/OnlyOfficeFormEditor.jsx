@@ -1,14 +1,14 @@
-import { useCallback, useEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useRef, useState, forwardRef, useImperativeHandle } from 'react'
 import { Alert, Card, Col, Row, Spinner, Dropdown, Modal, Button as BootstrapButton } from 'react-bootstrap'
 import { toast } from 'react-toastify'
 import { uploadAPI } from '../../../api'
-import EditorWithCustomFields from './EditorWithCustomFields'
+import CustomFieldsPanel from './CustomFieldsPanel'
 import EditorWithMergeFields from './EditorWithMergeFields'
 import apiClient from '../../../api/config.js'
 import { API_CONFIG } from '../../../config/api.js'
 const CALLBACK_URL = `${API_CONFIG.BASE_URL}/media/docs/onlyoffice/callback`
 
-const OnlyOfficeFormEditor = ({
+const OnlyOfficeFormEditor = forwardRef(({
   initialContent = '',
   fileName = 'Untitled Document',
   readOnly = false,
@@ -16,7 +16,8 @@ const OnlyOfficeFormEditor = ({
   importType = '',
     className = '',
   onHasUnsavedChangesChange,
-}) => {
+  onDraftSaved,
+}, ref) => {
     const [isLoading, setIsLoading] = useState(true)
     const [editor, setEditor] = useState(null)
     const [isEditorReady, setIsEditorReady] = useState(false)
@@ -29,14 +30,61 @@ const OnlyOfficeFormEditor = ({
     const exportResolverRef = useRef(null)
     const documentKeyRef = useRef(null) // Store documentKey for callback flow
     
+    // Expose downloadAs and save methods via ref
+    useImperativeHandle(ref, () => ({
+        downloadAs: (format = 'docx') => {
+            if (editorRef.current && typeof editorRef.current.downloadAs === 'function') {
+                editorRef.current.downloadAs(format)
+            } else {
+                throw new Error('Editor is not ready or downloadAs method is not available')
+            }
+        },
+        save: () => {
+            if (editorRef.current && typeof editorRef.current.save === 'function') {
+                editorRef.current.save()
+            } else {
+                throw new Error('Editor is not ready or save method is not available')
+            }
+        },
+        // Convenience method: save and download (ensures changes are saved before download)
+        saveAndDownload: async (format = 'docx') => {
+            if (!editorRef.current) {
+                throw new Error('Editor is not ready')
+            }
+
+            // Step 1: Save first to ensure all changes are saved
+            if (typeof editorRef.current.save === 'function') {
+                console.log('💾 Step 1: Calling save() to save all changes...')
+                editorRef.current.save()
+                
+                // Wait for save to complete
+                await new Promise(resolve => setTimeout(resolve, 1000))
+                console.log('✅ save() completed')
+            }
+
+            // Step 2: Download
+            if (typeof editorRef.current.downloadAs === 'function') {
+                console.log('💾 Step 2: Calling downloadAs() to get document URL...')
+                editorRef.current.downloadAs(format)
+            } else {
+                throw new Error('downloadAs method is not available')
+            }
+        }
+    }), [])
+    
     // Expose hasUnsavedChanges to parent via callback
     // Use useRef to store callback to avoid dependency issues
     const onHasUnsavedChangesChangeRef = useRef(onHasUnsavedChangesChange)
+    const onDraftSavedRef = useRef(onDraftSaved)
     
-    // Update ref when callback changes
+    // Update refs when callbacks change
     useEffect(() => {
         onHasUnsavedChangesChangeRef.current = onHasUnsavedChangesChange
     }, [onHasUnsavedChangesChange])
+    
+    useEffect(() => {
+        onDraftSavedRef.current = onDraftSaved
+    }, [onDraftSaved])
     
     // Update ref when state changes
     useEffect(() => {
@@ -366,6 +414,53 @@ fullEvent: event,
                                 event.data?.mode
                             )
                         },
+                        onDownloadAs: async (event) => {
+                            try {
+                                const data = event?.data || {}
+                                console.log(
+                                    '═══════════════════════════════════════════════════════════'
+                                )
+                                console.log(
+                                    '💾 OnlyOffice Event: onDownloadAs'
+                                )
+                                console.log(
+                                    '═══════════════════════════════════════════════════════════'
+                                )
+                                console.log(
+                                    '📦 Event data received:',
+                                    JSON.stringify(data, null, 2)
+                                )
+                                
+                                // Extract URL from event data
+                                // According to OnlyOffice docs, onDownloadAs provides URL in data.url
+                                const downloadUrl =
+                                    data.url ||
+                                    data.downloadUrl ||
+                                    data.fileUrl ||
+                                    (Array.isArray(data.files)
+                                        ? data.files[0]?.url
+                                        : undefined) ||
+                                    (data.file && data.file.url)
+
+                                if (downloadUrl) {
+                                    console.log('✅ Draft download URL received:', downloadUrl)
+                                    
+                                    // Call onDraftSaved callback if provided
+                                    if (onDraftSavedRef.current && typeof onDraftSavedRef.current === 'function') {
+                                        onDraftSavedRef.current(downloadUrl)
+                                    }
+                                    
+                                    // Reset unsaved changes flag
+                                    setHasUnsavedChanges(false)
+                                } else {
+                                    console.warn('⚠️ onDownloadAs received but no URL found in payload')
+                                    toast.warning('Draft saved but URL not found')
+                                }
+                            } catch (err) {
+                                console.error('❌ Error in onDownloadAs handler:', err)
+                                toast.error('Error processing draft save')
+                            }
+                        },
                         onRequestSaveAs: async (event) => {
                             try {
                                 const data = event?.data || {}
@@ -548,20 +643,20 @@ JSON.stringify(data, null, 2)
   const handleInsertField = (fieldOrTemplate) => {
     if (editor && isEditorReady) {
       try {
-        // Method 0: Try OnlyOffice Automation API - createConnector (Official Automation API)
-        if (typeof editor.createConnector === 'function') {
-          try {
-                        const connector = editor.createConnector()
-
-            // Enable key events first (as per documentation)
-            if (typeof editor.asc_enableKeyEvents === 'function') {
+            // Method 0: Try OnlyOffice Automation API - createConnector (Official Automation API)
+            if (typeof editor.createConnector === 'function') {
               try {
+                        const connector = editor.createConnector()
+                
+                // Enable key events first (as per documentation)
+                if (typeof editor.asc_enableKeyEvents === 'function') {
+                  try {
                                 editor.asc_enableKeyEvents(true)
               } catch {
                 // Silent fail
               }
             }
-
+            
             // ONLY OnlyOffice Automation API - Official method
             if (connector && connector.isConnected) {
               try {
@@ -577,7 +672,7 @@ JSON.stringify(data, null, 2)
                 connector.callCommand(
                     function () {
                   try {
-                    // eslint-disable-next-line no-undef
+                  // eslint-disable-next-line no-undef
                             const oDocument = Api.GetDocument()
 
                             // Method 1: Use Search() to find range containing current sentence, then get style
@@ -634,12 +729,12 @@ JSON.stringify(data, null, 2)
                             }
 
                             // Create new paragraph with text
-                    // eslint-disable-next-line no-undef
+                  // eslint-disable-next-line no-undef
                             const oNewParagraph = Api.CreateParagraph()
 
                             if (oTextPr) {
                                 // Create run with copied style
-                    // eslint-disable-next-line no-undef
+                  // eslint-disable-next-line no-undef
                                 const oRun = Api.CreateRun()
                                 // eslint-disable-next-line no-undef
                                 oRun.AddText(Asc.scope.__templateText)
@@ -851,7 +946,7 @@ JSON.stringify(data, null, 2)
                         editorRef.current.save()
                         console.log('✅ Fallback: save() triggered')
                         fallbackTriggered = true
-                    } catch (e) {
+              } catch (e) {
                         console.warn('⚠️ Fallback: save() failed:', e)
                     }
                 }
@@ -862,7 +957,7 @@ JSON.stringify(data, null, 2)
                         editorRef.current.downloadAs('docx')
                         console.log('✅ Fallback: downloadAs() triggered')
                         fallbackTriggered = true
-                    } catch (e) {
+          } catch (e) {
                         console.warn('⚠️ Fallback: downloadAs() failed:', e)
                     }
                 }
@@ -905,7 +1000,7 @@ JSON.stringify(data, null, 2)
                 toast.warning('Could not get result URL from backend')
                 return null
             }
-        } catch (error) {
+      } catch (error) {
 console.error('❌ Force save and poll failed:', error)
             toast.error(`Failed: ${error.message}`)
             throw error
@@ -1222,7 +1317,7 @@ console.log('🌐 Full S3 URL:', s3Url)
                                         overflowX: 'hidden',
                                     }}
                                 >
-                                    <EditorWithCustomFields
+                                    <CustomFieldsPanel
                 customFields={customFields}
                 onAddField={handleAddCustomField}
                 onRemoveField={handleRemoveCustomField}
@@ -1238,8 +1333,8 @@ console.log('🌐 Full S3 URL:', s3Url)
                 className="h-100"
               />
             </div>
-          </Col>
-        )}
+            </Col>
+          )}
         </Row>
       </div>
       
@@ -1439,6 +1534,6 @@ console.log('🌐 Full S3 URL:', s3Url)
       </Modal>
     </div>
     )
-}
+})
 
 export default OnlyOfficeFormEditor

@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Card, Button, Row, Col, Container, Badge, Nav, Tab } from 'react-bootstrap';
-import { Plus, Upload, Pencil, ArrowLeft, People, Calendar, GeoAlt, FileText, Award, PersonCheck, Book } from 'react-bootstrap-icons';
+import { Plus, Upload, Pencil, ArrowLeft, People, Calendar, GeoAlt, FileText, Award, PersonCheck, Book, CalendarEvent } from 'react-bootstrap-icons';
 import { useNavigate, useParams, useLocation } from 'react-router-dom';
 import { toast } from 'react-toastify';
 import courseAPI from '../../api/course';
@@ -11,6 +11,8 @@ import AddSubjectModal from '../../components/AcademicDepartment/AddSubjectModal
 import BulkImportSubjectsModal from '../../components/AcademicDepartment/BulkImportSubjectsModal';
 import EditCourseModal from '../../components/AcademicDepartment/EditCourseModal';
 import DisableSubjectModal from '../../components/AcademicDepartment/DisableSubjectModal';
+import AssessmentEventsList from '../../components/AcademicDepartment/AssessmentEventsList';
+import AssessmentEventDetailModal from '../../components/AcademicDepartment/AssessmentEventDetailModal';
 
 const InPageCourseDetail = ({ course, department }) => {
   const navigate = useNavigate();
@@ -24,6 +26,8 @@ const InPageCourseDetail = ({ course, department }) => {
   const [showDisableSubject, setShowDisableSubject] = useState(false);
   const [selectedSubject, setSelectedSubject] = useState(null);
   const [isDisabling, setIsDisabling] = useState(false);
+  const [showAssessmentEventDetail, setShowAssessmentEventDetail] = useState(false);
+  const [selectedAssessmentEvent, setSelectedAssessmentEvent] = useState(null);
   
   // Course details state
   const [courseDetails, setCourseDetails] = useState(null);
@@ -408,6 +412,23 @@ const InPageCourseDetail = ({ course, department }) => {
                   Trainees Roster
                 </Nav.Link>
               </Nav.Item>
+              <Nav.Item>
+                <Nav.Link 
+                  eventKey="assessment-events" 
+                  className="d-flex align-items-center"
+                  style={{ 
+                    border: 'none',
+                    backgroundColor: 'transparent',
+                    color: '#ffffff',
+                    fontWeight: activeTab === 'assessment-events' ? '600' : '400',
+                    opacity: activeTab === 'assessment-events' ? '1' : '0.7',
+                    borderRadius: '4px 4px 0 0'
+                  }}
+                >
+                  <CalendarEvent className="me-2" size={16} />
+                  All Related Assessment Events
+                </Nav.Link>
+              </Nav.Item>
             </Nav>
           </Card.Header>
           
@@ -574,13 +595,22 @@ const InPageCourseDetail = ({ course, department }) => {
 
               {/* Trainees Tab */}
               <Tab.Pane eventKey="trainees" style={{ height: '100%' }}>
-                <div className="p-4">
-                  <EnrolledTraineesTable 
-                    courseId={courseId}
-                    loading={false}
-                    title="Trainees Roster"
-                  />
-                </div>
+                <EnrolledTraineesTable 
+                  courseId={courseId}
+                  loading={false}
+                  title="Trainees Roster"
+                />
+              </Tab.Pane>
+
+              {/* Assessment Events Tab */}
+              <Tab.Pane eventKey="assessment-events" style={{ height: '100%' }}>
+                <AssessmentEventsList
+                  courseId={courseId}
+                  onView={(event) => {
+                    setSelectedAssessmentEvent(event);
+                    setShowAssessmentEventDetail(true);
+                  }}
+                />
               </Tab.Pane>
             </Tab.Content>
           </Card.Body>
@@ -618,6 +648,15 @@ const InPageCourseDetail = ({ course, department }) => {
         onDisable={handleConfirmDisableSubject}
         subject={selectedSubject}
         loading={isDisabling}
+      />
+
+      <AssessmentEventDetailModal
+        show={showAssessmentEventDetail}
+        onClose={() => {
+          setShowAssessmentEventDetail(false);
+          setSelectedAssessmentEvent(null);
+        }}
+        event={selectedAssessmentEvent}
       />
     </Container>
   );
