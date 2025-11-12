@@ -40,9 +40,7 @@ const TraineeSelectionPanel = ({ selectedTrainees, onSelectionChange }) => {
       
       const response = await traineeAPI.getTraineesForEnrollment();
       
-      
-      // Backend returns: { message: "...", data: { users: [...], totalItems: 7 } }
-      // So we need to access response.data.users, not response.data
+ 
       if (response && response.data && response.data.users && Array.isArray(response.data.users)) {
         // Transform API data to match component format
         const transformedTrainees = response.data.users.map(trainee => ({

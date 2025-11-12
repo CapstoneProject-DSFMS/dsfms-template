@@ -59,6 +59,31 @@ export const uploadAPI = {
   buildUploadUrl: (docsType) => {
     const baseUrl = import.meta.env.VITE_API_BASE_URL || 'https://dsfms.id.vn';
     return `${baseUrl}/media/docs/upload/${docsType}`;
+  },
+
+  // Upload document from URL
+  uploadFromUrl: async (sourceUrl, fileName) => {
+    try {
+      console.log('📤 Uploading from URL:', sourceUrl);
+      console.log('📝 File name:', fileName);
+      
+      const response = await apiClient.post('/media/docs/upload-from-url', {
+        sourceUrl: sourceUrl,
+        fileName: fileName
+      });
+      
+      // Response format: { "data": [{ "id": "...", "url": "..." }] }
+      if (response.data && response.data.data && response.data.data.length > 0) {
+        const uploadedUrl = response.data.data[0].url;
+        console.log('✅ File uploaded from URL successfully! New URL:', uploadedUrl);
+        return uploadedUrl;
+      } else {
+        throw new Error('Invalid response format from upload-from-url API');
+      }
+    } catch (error) {
+      console.error('❌ Error uploading from URL:', error);
+      throw error;
+    }
   }
 };
 

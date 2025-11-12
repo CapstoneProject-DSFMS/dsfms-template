@@ -1,6 +1,6 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Container, Row, Col, Card, Button, Alert, Modal, Form } from 'react-bootstrap';
-import { ArrowLeft, Pencil } from 'react-bootstrap-icons';
+import { ArrowLeft, Pencil, Save } from 'react-bootstrap-icons';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { toast } from 'react-toastify';
 import OnlyOfficeFormEditor from '../../../components/Admin/Forms/OnlyOfficeFormEditor';
@@ -25,6 +25,8 @@ const FormEditorPage = () => {
   const [loadingDepartments, setLoadingDepartments] = useState(false);
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
   const [showDiscardModal, setShowDiscardModal] = useState(false);
+  const [isSavingDraft, setIsSavingDraft] = useState(false);
+  const onlyOfficeEditorRef = useRef(null);
 
   // Debug: Log when hasUnsavedChanges changes
   useEffect(() => {
@@ -163,6 +165,42 @@ const FormEditorPage = () => {
     setShowDiscardModal(false);
   };
 
+  const handleSaveDraft = async () => {
+    if (!onlyOfficeEditorRef.current) {
+      toast.warning('Editor is not ready yet. Please wait...');
+      return;
+    }
+
+    setIsSavingDraft(true);
+    toast.info('Saving draft...');
+
+    try {
+      // Use saveAndDownload convenience method if available
+      // This ensures save() is called before downloadAs()
+      if (typeof onlyOfficeEditorRef.current.saveAndDownload === 'function') {
+        await onlyOfficeEditorRef.current.saveAndDownload('docx');
+        // Note: onDownloadAs event will be triggered asynchronously
+        // The callback will handle setIsSavingDraft(false)
+      } else {
+        // Fallback: manual save then download
+        if (typeof onlyOfficeEditorRef.current.save === 'function') {
+          console.log('💾 Step 1: Calling save() to save all changes...');
+          onlyOfficeEditorRef.current.save();
+          await new Promise(resolve => setTimeout(resolve, 1000));
+        }
+        
+        if (typeof onlyOfficeEditorRef.current.downloadAs === 'function') {
+          console.log('💾 Step 2: Calling downloadAs() to get document URL...');
+          onlyOfficeEditorRef.current.downloadAs('docx');
+        }
+      }
+    } catch (error) {
+      console.error('❌ Error saving draft:', error);
+      toast.error('Failed to save draft: ' + (error.message || 'Unknown error'));
+      setIsSavingDraft(false);
+    }
+  };
+
   return (
     <PermissionWrapper 
       permission={API_PERMISSIONS.TEMPLATES.CREATE}
@@ -228,16 +266,128 @@ const FormEditorPage = () => {
                   </div>
                 </div>
               </Col>
+              <Col xs={12} md={4} className="d-flex justify-content-end align-items-center mt-2 mt-md-0">
+                <Button
+                  variant="outline-light"
+                  size="sm"
+                  onClick={handleSaveDraft}
+                  disabled={isSavingDraft}
+                  className="d-flex align-items-center gap-2"
+                  style={{
+                    borderWidth: '2px',
+                    fontWeight: '500',
+                    backgroundColor: 'rgba(255, 255, 255, 0.1)',
+                    backdropFilter: 'blur(4px)',
+                    whiteSpace: 'nowrap'
+                  }}
+                  onMouseEnter={(e) => {
+                    if (!isSavingDraft) {
+                      e.currentTarget.style.backgroundColor = 'rgba(255, 255, 255, 0.2)';
+                      e.currentTarget.style.borderColor = '#fff';
+                    }
+                  }}
+                  onMouseLeave={(e) => {
+                    if (!isSavingDraft) {
+                      e.currentTarget.style.backgroundColor = 'rgba(255, 255, 255, 0.1)';
+                      e.currentTarget.style.borderColor = '#fff';
+                    }
+                  }}
+                >
+                  <Save size={16} />
+                  {isSavingDraft ? 'Saving...' : 'Save Draft'}
+                </Button>
+              </Col>
             </Row>
           </Card.Header>
 
           <Card.Body className="p-0">
             <OnlyOfficeFormEditor
+              ref={onlyOfficeEditorRef}
               initialContent={content}
               fileName={fileName}
               showImportInfo={!!importType}
               importType={importType}
               onHasUnsavedChangesChange={setHasUnsavedChanges}
+              onDraftSaved={async (draftUrl) => {
+                // CRITICAL: Check if we're in Submit flow using sessionStorage
+                // This prevents building DRAFT template when user is actually submitting
+                try {
+                  console.log('🔍 onDraftSaved called - checking sessionStorage...')
+                  
+                  const isSubmitting = sessionStorage.getItem('onlyoffice_submitting') === 'true'
+                  const submitDocKey = sessionStorage.getItem('onlyoffice_submit_docKey')
+                  
+                  console.log('🔍 SessionStorage check:', {
+                    isSubmitting,
+                    submitDocKey,
+                    draftUrl: draftUrl.substring(0, 100) + '...'
+                  })
+                  
+                  if (isSubmitting && submitDocKey) {
+                    // Extract documentKey from URL - try shardkey parameter first, then path
+                    let urlDocKey = null
+                    
+                    // Method 1: Extract from shardkey parameter (most reliable)
+                    const shardkeyMatch = draftUrl.match(/[?&]shardkey=([^&]+)/)
+                    if (shardkeyMatch) {
+                      urlDocKey = shardkeyMatch[1]
+                      console.log('🔍 Extracted docKey from shardkey:', urlDocKey)
+                    } else {
+                      // Method 2: Extract from path (format: doc-{timestamp}-{random}_xxxx)
+                      const pathMatch = draftUrl.match(/doc-([^_/]+)/)
+                      if (pathMatch) {
+                        urlDocKey = `doc-${pathMatch[1]}`
+                        console.log('🔍 Extracted docKey from path:', urlDocKey)
+                      }
+                    }
+                    
+                    console.log('🔍 Comparing:', {
+                      submitDocKey,
+                      urlDocKey,
+                      match: urlDocKey && submitDocKey === urlDocKey
+                    })
+                    
+                    if (urlDocKey && submitDocKey === urlDocKey) {
+                      // This is from Submit flow - don't build DRAFT template
+                      console.log('⚠️ Draft save ignored - Submit in progress')
+                      console.log(`   Submit docKey: ${submitDocKey}, URL docKey: ${urlDocKey}`)
+                      setIsSavingDraft(false)
+                      return // Exit early - don't build template
+                    } else {
+                      console.log('⚠️ Submit in progress but documentKey mismatch - treating as Draft anyway')
+                      console.log(`   Submit docKey: ${submitDocKey}, URL docKey: ${urlDocKey}`)
+                    }
+                  }
+                  
+                  // This is a real Draft save (not from Submit flow)
+                  // Step: Upload from OnlyOffice URL to S3, then build and submit template with status DRAFT
+                  try {
+                    console.log('📤 Processing draft save - uploading to S3 and building template...');
+                    
+                    // Call buildAndSubmitDraftTemplate from OnlyOfficeFormEditor
+                    // This function will:
+                    // 1. Upload from OnlyOffice URL to S3
+                    // 2. Build template payload with status DRAFT
+                    // 3. Submit to backend
+                    if (onlyOfficeEditorRef.current && typeof onlyOfficeEditorRef.current.buildAndSubmitDraftTemplate === 'function') {
+                      await onlyOfficeEditorRef.current.buildAndSubmitDraftTemplate(draftUrl);
+                      console.log('✅ Draft template saved successfully!');
+                    } else {
+                      console.warn('⚠️ buildAndSubmitDraftTemplate function not available');
+                      toast.warning('Draft URL saved but template not created');
+                    }
+                  } catch (draftErr) {
+                    console.error('❌ Error building/submitting draft template:', draftErr);
+                    toast.error('Failed to save draft template: ' + (draftErr.message || 'Unknown error'));
+                  } finally {
+                    setIsSavingDraft(false);
+                  }
+                } catch (error) {
+                  console.error('❌ Error in onDraftSaved callback:', error)
+                  setIsSavingDraft(false)
+                  toast.error('Error processing draft save')
+                }
+              }}
             />
           </Card.Body>
         </Card>
