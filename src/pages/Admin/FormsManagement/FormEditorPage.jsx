@@ -308,11 +308,85 @@ const FormEditorPage = () => {
               showImportInfo={!!importType}
               importType={importType}
               onHasUnsavedChangesChange={setHasUnsavedChanges}
-              onDraftSaved={(draftUrl) => {
-                setIsSavingDraft(false);
-                // You can save draftUrl to localStorage or send to backend
-                console.log('✅ Draft saved:', draftUrl);
-                toast.success('Draft saved successfully!');
+              onDraftSaved={async (draftUrl) => {
+                // CRITICAL: Check if we're in Submit flow using sessionStorage
+                // This prevents building DRAFT template when user is actually submitting
+                try {
+                  console.log('🔍 onDraftSaved called - checking sessionStorage...')
+                  
+                  const isSubmitting = sessionStorage.getItem('onlyoffice_submitting') === 'true'
+                  const submitDocKey = sessionStorage.getItem('onlyoffice_submit_docKey')
+                  
+                  console.log('🔍 SessionStorage check:', {
+                    isSubmitting,
+                    submitDocKey,
+                    draftUrl: draftUrl.substring(0, 100) + '...'
+                  })
+                  
+                  if (isSubmitting && submitDocKey) {
+                    // Extract documentKey from URL - try shardkey parameter first, then path
+                    let urlDocKey = null
+                    
+                    // Method 1: Extract from shardkey parameter (most reliable)
+                    const shardkeyMatch = draftUrl.match(/[?&]shardkey=([^&]+)/)
+                    if (shardkeyMatch) {
+                      urlDocKey = shardkeyMatch[1]
+                      console.log('🔍 Extracted docKey from shardkey:', urlDocKey)
+                    } else {
+                      // Method 2: Extract from path (format: doc-{timestamp}-{random}_xxxx)
+                      const pathMatch = draftUrl.match(/doc-([^_/]+)/)
+                      if (pathMatch) {
+                        urlDocKey = `doc-${pathMatch[1]}`
+                        console.log('🔍 Extracted docKey from path:', urlDocKey)
+                      }
+                    }
+                    
+                    console.log('🔍 Comparing:', {
+                      submitDocKey,
+                      urlDocKey,
+                      match: urlDocKey && submitDocKey === urlDocKey
+                    })
+                    
+                    if (urlDocKey && submitDocKey === urlDocKey) {
+                      // This is from Submit flow - don't build DRAFT template
+                      console.log('⚠️ Draft save ignored - Submit in progress')
+                      console.log(`   Submit docKey: ${submitDocKey}, URL docKey: ${urlDocKey}`)
+                      setIsSavingDraft(false)
+                      return // Exit early - don't build template
+                    } else {
+                      console.log('⚠️ Submit in progress but documentKey mismatch - treating as Draft anyway')
+                      console.log(`   Submit docKey: ${submitDocKey}, URL docKey: ${urlDocKey}`)
+                    }
+                  }
+                  
+                  // This is a real Draft save (not from Submit flow)
+                  // Step: Upload from OnlyOffice URL to S3, then build and submit template with status DRAFT
+                  try {
+                    console.log('📤 Processing draft save - uploading to S3 and building template...');
+                    
+                    // Call buildAndSubmitDraftTemplate from OnlyOfficeFormEditor
+                    // This function will:
+                    // 1. Upload from OnlyOffice URL to S3
+                    // 2. Build template payload with status DRAFT
+                    // 3. Submit to backend
+                    if (onlyOfficeEditorRef.current && typeof onlyOfficeEditorRef.current.buildAndSubmitDraftTemplate === 'function') {
+                      await onlyOfficeEditorRef.current.buildAndSubmitDraftTemplate(draftUrl);
+                      console.log('✅ Draft template saved successfully!');
+                    } else {
+                      console.warn('⚠️ buildAndSubmitDraftTemplate function not available');
+                      toast.warning('Draft URL saved but template not created');
+                    }
+                  } catch (draftErr) {
+                    console.error('❌ Error building/submitting draft template:', draftErr);
+                    toast.error('Failed to save draft template: ' + (draftErr.message || 'Unknown error'));
+                  } finally {
+                    setIsSavingDraft(false);
+                  }
+                } catch (error) {
+                  console.error('❌ Error in onDraftSaved callback:', error)
+                  setIsSavingDraft(false)
+                  toast.error('Error processing draft save')
+                }
               }}
             />
           </Card.Body>

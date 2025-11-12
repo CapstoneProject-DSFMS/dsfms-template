@@ -6,6 +6,7 @@ import { roleAPI } from '../../../api/role';
 import { readTemplateMetaFromStorage, buildTemplatePayload } from '../../../utils/templateBuilder';
 import apiClient from '../../../api/config.js';
 import { API_CONFIG } from '../../../config/api.js';
+import { uploadAPI } from '../../../api/upload.js';
 
 const CustomFieldsPanel = ({ 
   customFields = [], 
@@ -51,7 +52,8 @@ const CustomFieldsPanel = ({
     fieldName: '',
     fieldType: 'TEXT',
     roleRequired: 'TRAINER',
-    parentTempId: null
+    parentTempId: null,
+    option: null // For VALUE_LIST: JSON string like '{"items": ["Pass", "Fail"]}'
   });
 
   // If legacy customFields prop provided, seed a default section once
@@ -117,6 +119,84 @@ const CustomFieldsPanel = ({
           }
           
           return true; // Return true to indicate success
+        },
+        // Expose function to build and submit draft template
+        buildAndSubmitDraftTemplate: async (draftUrl) => {
+          try {
+            console.log('📤 Building and submitting draft template...');
+            console.log('📄 Draft URL (OnlyOffice):', draftUrl);
+            
+            // Step 1: Upload from OnlyOffice URL to S3
+            let s3Url = null;
+            const meta = readTemplateMetaFromStorage(); // Read meta once at the beginning
+            
+            try {
+              console.log('📤 Uploading from OnlyOffice URL to S3...');
+              
+              // Get fileName from template name
+              const templateName = meta.name || 'template';
+              const sanitizedFileName = templateName
+                .replace(/[^a-zA-Z0-9]/g, '_')
+                .toLowerCase()
+                .substring(0, 50);
+              const fileName = `${sanitizedFileName}_draft.docx`;
+              
+              console.log('📝 File name for upload:', fileName);
+              
+              // Upload from URL to S3
+              s3Url = await uploadAPI.uploadFromUrl(draftUrl, fileName);
+              
+              if (s3Url) {
+                console.log('✅ Upload from URL success! S3 URL:', s3Url);
+              } else {
+                console.warn('⚠️ No S3 URL received from upload-from-url');
+                throw new Error('Failed to upload to S3');
+              }
+            } catch (uploadErr) {
+              console.error('❌ Upload from URL failed:', uploadErr);
+              toast.error('Could not upload draft document to S3');
+              throw uploadErr;
+            }
+            
+            // Step 2: Build template payload with status DRAFT
+            const effectiveMeta = {
+              ...meta,
+              templateContent: meta.templateContent, // Original file import
+              templateConfig: s3Url // S3 URL of edited document
+            };
+            
+            const basePayload = buildTemplatePayload(effectiveMeta, sections);
+            
+            // Build payload with status DRAFT
+            const payload = {
+              name: basePayload.name,
+              description: basePayload.description,
+              departmentId: basePayload.departmentId,
+              templateContent: basePayload.templateContent,
+              templateConfig: basePayload.templateConfig || null,
+              status: 'DRAFT', // Set status to DRAFT
+              sections: basePayload.sections
+            };
+            
+            console.log('🧩 Draft template payload built:');
+            console.log('  📄 templateContent (file import):', payload.templateContent);
+            console.log('  ✏️ templateConfig (file đã chỉnh sửa):', payload.templateConfig || 'null');
+            console.log('  📊 Status:', payload.status);
+            console.log('🧩 Full payload:\n', JSON.stringify(payload, null, 2));
+            
+            // Step 3: Submit to backend
+            console.log('📤 Submitting draft template to backend...');
+            const res = await apiClient.post('/templates', payload);
+            
+            toast.success('Draft template saved successfully!');
+            console.log('✅ Draft template submitted successfully:', res?.data ?? res);
+            
+            return res?.data ?? res;
+          } catch (error) {
+            console.error('❌ Error building/submitting draft template:', error);
+            toast.error('Failed to save draft template: ' + (error.message || 'Unknown error'));
+            throw error;
+          }
         }
       };
     }
@@ -188,8 +268,23 @@ const CustomFieldsPanel = ({
     const sectionToAdd = {
       ...newSection,
       name: newSection.label, // Use label as name
-      roleInSubject: newSection.editBy === 'TRAINEE' ? null : (newSection.roleInSubject || null)
+      roleInSubject: newSection.editBy === 'TRAINEE' ? null : (newSection.roleInSubject || null),
+      fields: [...(newSection.fields || [])]
     };
+    
+    // If isToggleDependent is true, automatically create a SECTION_CONTROL_TOGGLE field
+    if (sectionToAdd.isToggleDependent) {
+      const toggleFieldName = `${sectionToAdd.name.toLowerCase().replace(/\s+/g, '_')}_toggle`;
+      const toggleField = {
+        label: `${sectionToAdd.label} Toggle`,
+        fieldName: toggleFieldName,
+        fieldType: 'SECTION_CONTROL_TOGGLE',
+        roleRequired: sectionToAdd.editBy || 'TRAINER',
+        parentTempId: null
+      };
+      sectionToAdd.fields = [toggleField];
+    }
+    
     setSections((prev) => [...prev, sectionToAdd]);
     setShowSectionModal(false);
   };
@@ -226,7 +321,8 @@ const CustomFieldsPanel = ({
       fieldType: 'TEXT',
       roleRequired: roleRequired,
       displayOrder: 1,
-      parentTempId: null
+      parentTempId: null,
+      option: null
     });
     setEditingSectionIndex(sectionIndex);
     setShowFieldModal(true);
@@ -281,6 +377,24 @@ const CustomFieldsPanel = ({
     if (!newField.label || !newField.fieldName) {
       toast.warning('Please fill in all required fields');
       return;
+    }
+
+    // Validate VALUE_LIST option if fieldType is VALUE_LIST
+    if (newField.fieldType === 'VALUE_LIST') {
+      if (!newField.option || !newField.option.trim()) {
+        toast.warning('Please provide options (JSON format) for VALUE_LIST field');
+        return;
+      }
+      try {
+        const parsed = JSON.parse(newField.option);
+        if (!parsed.items || !Array.isArray(parsed.items) || parsed.items.length === 0) {
+          toast.warning('Options must be a JSON object with a non-empty "items" array');
+          return;
+        }
+      } catch {
+        toast.warning('Invalid JSON format for options. Example: {"items": ["Pass", "Fail"]}');
+        return;
+      }
     }
 
     // Validate fieldName format based on fieldType
@@ -370,12 +484,42 @@ const CustomFieldsPanel = ({
       if (forceSaveAndPoll) {
         try {
           console.log('📤 Triggering callback flow...');
-          templateConfigUrl = await forceSaveAndPoll();
+          const onlyOfficeUrl = await forceSaveAndPoll();
           
-          if (templateConfigUrl) {
-            console.log('✅ Callback flow success! templateConfig URL:', templateConfigUrl);
+          if (onlyOfficeUrl) {
+            console.log('✅ Callback flow success! OnlyOffice URL:', onlyOfficeUrl);
+            
+            // Step: Upload from OnlyOffice URL to S3
+            try {
+              console.log('📤 Uploading from OnlyOffice URL to S3...');
+              
+              // Get fileName from template name (sanitize for filename)
+              const templateName = meta.name || 'template';
+              const sanitizedFileName = templateName
+                .replace(/[^a-zA-Z0-9]/g, '_') // Replace special chars with underscore
+                .toLowerCase()
+                .substring(0, 50); // Limit length
+              const fileName = `${sanitizedFileName}.docx`;
+              
+              console.log('📝 File name for upload:', fileName);
+              
+              // Upload from URL to S3
+              templateConfigUrl = await uploadAPI.uploadFromUrl(onlyOfficeUrl, fileName);
+              
+              if (templateConfigUrl) {
+                console.log('✅ Upload from URL success! S3 URL:', templateConfigUrl);
+              } else {
+                console.warn('⚠️ No S3 URL received from upload-from-url');
+                templateConfigUrl = null;
+              }
+            } catch (uploadErr) {
+              console.error('❌ Upload from URL failed:', uploadErr);
+              toast.warning('Could not upload document to S3');
+              templateConfigUrl = null;
+            }
           } else {
-            console.warn('⚠️ No templateConfig URL received');
+            console.warn('⚠️ No OnlyOffice URL received');
+            templateConfigUrl = null;
           }
         } catch (err) {
           console.error('❌ Callback flow failed:', err);
@@ -389,6 +533,23 @@ const CustomFieldsPanel = ({
       
       console.log('📤 Submitting template to backend...');
       
+      // Validate FINAL_SCORE_TEXT and FINAL_SCORE_NUM (must have exactly 1 of each)
+      const allFields = sections.flatMap(s => s.fields || []);
+      const finalScoreTextFields = allFields.filter(f => f.fieldType === 'FINAL_SCORE_TEXT');
+      const finalScoreNumFields = allFields.filter(f => f.fieldType === 'FINAL_SCORE_NUM');
+      
+      if (finalScoreTextFields.length !== 1) {
+        toast.error(`Template must have exactly 1 FINAL_SCORE_TEXT field. Found: ${finalScoreTextFields.length}`);
+        setIsSubmitting(false);
+        return;
+      }
+      
+      if (finalScoreNumFields.length !== 1) {
+        toast.error(`Template must have exactly 1 FINAL_SCORE_NUM field. Found: ${finalScoreNumFields.length}`);
+        setIsSubmitting(false);
+        return;
+      }
+      
       // Build payload:
       // - templateContent: URL file import ban đầu
       // - templateConfig: URL file đã chỉnh sửa (nếu callback thành công)
@@ -398,11 +559,23 @@ const CustomFieldsPanel = ({
         templateConfig: templateConfigUrl // URL file đã chỉnh sửa từ backend
       };
       
-      const payload = buildTemplatePayload(effectiveMeta, sections);
+      const basePayload = buildTemplatePayload(effectiveMeta, sections);
+      
+      // Build payload with status right after templateConfig
+      const payload = {
+        name: basePayload.name,
+        description: basePayload.description,
+        departmentId: basePayload.departmentId,
+        templateContent: basePayload.templateContent,
+        templateConfig: basePayload.templateConfig || null,
+        status: 'PENDING', // Override status to PENDING when submitting
+        sections: basePayload.sections
+      };
       
       console.log('🧩 Template payload built:');
       console.log('  📄 templateContent (file import):', payload.templateContent);
       console.log('  ✏️ templateConfig (file đã chỉnh sửa):', payload.templateConfig || 'null');
+      console.log('  📊 Status:', payload.status);
       console.log('  🔑 documentKey:', documentKey);
       console.log('🧩 Full payload:\n', JSON.stringify(payload, null, 2));
       
@@ -427,9 +600,15 @@ const CustomFieldsPanel = ({
       case 'PART':
         // {#condition} {test_field} {/condition}
         return `{#${name}} {test_field} {/${name}}`;
+      case 'IMAGE':
+      case 'SIGNATURE_DRAW':
+      case 'SIGN_IMAGE':
+      case 'FINAL_SCORE_TEXT':
+      case 'FINAL_SCORE_NUM':
+      case 'VALUE_LIST':
       case 'TEXT':
       default:
-        // text : {field_name}
+        // text : {field_name} (IMAGE is also treated as TEXT - URL link)
         return `{${name}}`;
     }
   };
@@ -977,13 +1156,25 @@ const CustomFieldsPanel = ({
                   <Form.Label className="text-primary-custom">Field Type <span className="text-danger">*</span></Form.Label>
                   <Form.Select
                     value={newField.fieldType}
-                    onChange={(e) => setNewField(prev => ({ ...prev, fieldType: e.target.value }))}
+                    onChange={(e) => {
+                      const newType = e.target.value;
+                      setNewField(prev => ({ 
+                        ...prev, 
+                        fieldType: newType,
+                        option: newType === 'VALUE_LIST' ? prev.option : null // Clear option if not VALUE_LIST
+                      }));
+                    }}
                     required
                   >
                     <option value="TEXT">TEXT</option>
+                    <option value="IMAGE">IMAGE</option>
                     <option value="PART">PART</option>
                     <option value="TOGGLE">TOGGLE</option>
                     <option value="SECTION_CONTROL_TOGGLE">SECTION_CONTROL_TOGGLE</option>
+                    <option value="SIGNATURE_DRAW">SIGNATURE_DRAW</option>
+                    <option value="SIGN_IMAGE">SIGN_IMAGE</option>
+                    <option value="FINAL_SCORE_TEXT">FINAL_SCORE_TEXT</option>
+                    <option value="FINAL_SCORE_NUM">FINAL_SCORE_NUM</option>
                     <option value="VALUE_LIST">VALUE_LIST</option>
                   </Form.Select>
                 </Form.Group>
@@ -1004,6 +1195,51 @@ const CustomFieldsPanel = ({
                   </Form.Text>
                 </Form.Group>
               </Col>
+              {/* VALUE_LIST Options Field */}
+              {newField.fieldType === 'VALUE_LIST' && (
+                <Col md={12}>
+                  <Form.Group>
+                    <Form.Label className="text-primary-custom">Options (JSON) <span className="text-danger">*</span></Form.Label>
+                    <Form.Control
+                      as="textarea"
+                      rows={3}
+                      placeholder='{"items": ["Pass", "Fail"]}'
+                      value={newField.option || ''}
+                      onChange={(e) => {
+                        try {
+                          // Validate JSON format
+                          const value = e.target.value.trim();
+                          if (value) {
+                            const parsed = JSON.parse(value);
+                            if (!parsed.items || !Array.isArray(parsed.items)) {
+                              throw new Error('Invalid format');
+                            }
+                          }
+                          setNewField(prev => ({ ...prev, option: value }));
+                        } catch {
+                          // Still allow typing, but show warning
+                          setNewField(prev => ({ ...prev, option: e.target.value }));
+                        }
+                      }}
+                      required
+                    />
+                    <Form.Text className="text-muted">
+                      JSON format with items array. Example: {`{"items": ["Pass", "Fail"]}`}
+                    </Form.Text>
+                    {newField.option && (() => {
+                      try {
+                        const parsed = JSON.parse(newField.option);
+                        if (!parsed.items || !Array.isArray(parsed.items)) {
+                          return <Form.Text className="text-danger">Invalid format: must have "items" array</Form.Text>;
+                        }
+                        return <Form.Text className="text-success">✓ Valid JSON with {parsed.items.length} items</Form.Text>;
+                      } catch {
+                        return <Form.Text className="text-danger">Invalid JSON format</Form.Text>;
+                      }
+                    })()}
+                  </Form.Group>
+                </Col>
+              )}
               <Col md={12}>
                 <Form.Group>
                   <Form.Label className="text-primary-custom">Parent Template ID</Form.Label>
@@ -1056,13 +1292,25 @@ const CustomFieldsPanel = ({
                   <Form.Label className="text-primary-custom">Field Type <span className="text-danger">*</span></Form.Label>
                   <Form.Select
                     value={newField.fieldType}
-                    onChange={(e) => setNewField(prev => ({ ...prev, fieldType: e.target.value }))}
+                    onChange={(e) => {
+                      const newType = e.target.value;
+                      setNewField(prev => ({ 
+                        ...prev, 
+                        fieldType: newType,
+                        option: newType === 'VALUE_LIST' ? prev.option : null // Clear option if not VALUE_LIST
+                      }));
+                    }}
                     required
                   >
                     <option value="TEXT">TEXT</option>
+                    <option value="IMAGE">IMAGE</option>
                     <option value="PART">PART</option>
                     <option value="TOGGLE">TOGGLE</option>
                     <option value="SECTION_CONTROL_TOGGLE">SECTION_CONTROL_TOGGLE</option>
+                    <option value="SIGNATURE_DRAW">SIGNATURE_DRAW</option>
+                    <option value="SIGN_IMAGE">SIGN_IMAGE</option>
+                    <option value="FINAL_SCORE_TEXT">FINAL_SCORE_TEXT</option>
+                    <option value="FINAL_SCORE_NUM">FINAL_SCORE_NUM</option>
                     <option value="VALUE_LIST">VALUE_LIST</option>
                   </Form.Select>
                 </Form.Group>
@@ -1109,6 +1357,51 @@ const CustomFieldsPanel = ({
                   </Form.Text>
                 </Form.Group>
               </Col>
+              {/* VALUE_LIST Options Field */}
+              {newField.fieldType === 'VALUE_LIST' && (
+                <Col md={12}>
+                  <Form.Group>
+                    <Form.Label className="text-primary-custom">Options (JSON) <span className="text-danger">*</span></Form.Label>
+                    <Form.Control
+                      as="textarea"
+                      rows={3}
+                      placeholder='{"items": ["Pass", "Fail"]}'
+                      value={newField.option || ''}
+                      onChange={(e) => {
+                        try {
+                          // Validate JSON format
+                          const value = e.target.value.trim();
+                          if (value) {
+                            const parsed = JSON.parse(value);
+                            if (!parsed.items || !Array.isArray(parsed.items)) {
+                              throw new Error('Invalid format');
+                            }
+                          }
+                          setNewField(prev => ({ ...prev, option: value }));
+                        } catch {
+                          // Still allow typing, but show warning
+                          setNewField(prev => ({ ...prev, option: e.target.value }));
+                        }
+                      }}
+                      required
+                    />
+                    <Form.Text className="text-muted">
+                      JSON format with items array. Example: {`{"items": ["Pass", "Fail"]}`}
+                    </Form.Text>
+                    {newField.option && (() => {
+                      try {
+                        const parsed = JSON.parse(newField.option);
+                        if (!parsed.items || !Array.isArray(parsed.items)) {
+                          return <Form.Text className="text-danger">Invalid format: must have "items" array</Form.Text>;
+                        }
+                        return <Form.Text className="text-success">✓ Valid JSON with {parsed.items.length} items</Form.Text>;
+                      } catch {
+                        return <Form.Text className="text-danger">Invalid JSON format</Form.Text>;
+                      }
+                    })()}
+                  </Form.Group>
+                </Col>
+              )}
               <Col md={12}>
                 <Form.Group>
                   <Form.Label className="text-primary-custom">Parent Template ID</Form.Label>
