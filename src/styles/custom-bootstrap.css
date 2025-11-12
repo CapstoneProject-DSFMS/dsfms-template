@@ -1403,13 +1403,31 @@ span.spinner-border.spinner-border-sm {
     z-index: 10 !important;
   }
   
-  /* Hide less important columns on mobile */
-  .hide-mobile {
-    display: none !important;
+  /* Hide less important columns on mobile - ONLY in media query */
+  @media (max-width: 768px) {
+    .hide-mobile {
+      display: none !important;
+    }
+    
+    /* Show important columns only */
+    .show-mobile {
+      display: table-cell !important;
+    }
   }
   
-  /* Show important columns only */
-  .show-mobile {
+  /* Override: Course table should ALWAYS show ALL columns regardless of screen size */
+  .course-table-responsive .hide-mobile,
+  .course-table-responsive .hide-mobile-sm,
+  .course-table-responsive th.hide-mobile,
+  .course-table-responsive td.hide-mobile,
+  .course-table-responsive th.hide-mobile-sm,
+  .course-table-responsive td.hide-mobile-sm {
+    display: table-cell !important;
+  }
+  
+  .course-table-responsive .show-mobile,
+  .course-table-responsive th.show-mobile,
+  .course-table-responsive td.show-mobile {
     display: table-cell !important;
   }
 

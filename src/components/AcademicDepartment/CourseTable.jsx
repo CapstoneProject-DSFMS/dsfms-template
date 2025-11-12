@@ -100,7 +100,7 @@ const CourseTable = ({
   };
 
   return (
-    <div className="department-table-container">
+    <div className="department-table-container course-table-responsive">
       <Table hover className="mb-0 table-mobile-responsive">
         <thead className="sticky-header bg-gradient-primary-custom">
           <tr>

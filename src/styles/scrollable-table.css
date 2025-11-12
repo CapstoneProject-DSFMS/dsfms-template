@@ -165,6 +165,13 @@
   .scrollable-table-container .table .hide-mobile-sm {
     display: none !important;
   }
+  
+  /* Override: Course table should ALWAYS show ALL columns including hide-mobile-sm */
+  .course-table-responsive .table .hide-mobile-sm,
+  .course-table-responsive .table th.hide-mobile-sm,
+  .course-table-responsive .table td.hide-mobile-sm {
+    display: table-cell !important;
+  }
 }
 
 /* Table row hover effect */
@@ -572,6 +579,12 @@ table .department-table-container .badge {
   display: block !important;
   overflow-y: auto !important;
   overflow-x: hidden !important;
+}
+
+/* Override for course table - allow horizontal scroll */
+.department-table-container.course-table-responsive {
+  overflow-x: auto !important;
+  overflow-y: auto !important;
 }
 /* Enroll page specific: make table container fill card body */
 

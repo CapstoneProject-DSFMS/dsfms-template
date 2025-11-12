@@ -277,26 +277,22 @@ const EnrolledTraineesTable = ({ courseId, loading = false, title = 'Enrolled Tr
 
   if (loading || loadingEnrolled) {
     return (
-      <Card style={{ width: '100%' }}>
-        <Card.Body className="p-0">
-          <LoadingSkeleton rows={4} columns={4} />
-        </Card.Body>
-      </Card>
+      <div>
+        <LoadingSkeleton rows={4} columns={4} />
+      </div>
     );
   }
 
   if (enrolledTrainees.length === 0) {
     return (
-      <Card style={{ width: '100%' }}>
-        <Card.Body className="p-0">
-          <div className="text-center py-5">
-            <div className="text-muted">
-              <h5>No enrolled trainees</h5>
-              <p>No trainees have been enrolled in any subjects yet.</p>
-            </div>
+      <div>
+        <div className="text-center py-5">
+          <div className="text-muted">
+            <h5>No enrolled trainees</h5>
+            <p>No trainees have been enrolled in any subjects yet.</p>
           </div>
-        </Card.Body>
-      </Card>
+        </div>
+      </div>
     );
   }
 
@@ -370,8 +366,8 @@ const EnrolledTraineesTable = ({ courseId, loading = false, title = 'Enrolled Tr
 
   return (
     <>
-      <Card className="d-flex flex-column" style={{ height: '400px', width: '100%' }}>
-        <Card.Body 
+      <div className="d-flex flex-column" style={{ height: '400px', width: '100%' }}>
+        <div 
           className="p-0" 
           style={{ 
             flex: 1,
@@ -456,8 +452,8 @@ const EnrolledTraineesTable = ({ courseId, loading = false, title = 'Enrolled Tr
               </tbody>
             </Table>
           </div>
-        </Card.Body>
-      </Card>
+        </div>
+      </div>
 
       {/* Subject List Modal */}
       <Modal show={showSubjectModal} onHide={() => setShowSubjectModal(false)} size="lg" centered>

@@ -9,7 +9,8 @@ import {
   Clock,
   PersonCheckFill,
   Calendar,
-  ArrowLeft
+  ArrowLeft,
+  CalendarEvent
 } from 'react-bootstrap-icons';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { PermissionWrapper } from '../Common';
@@ -21,6 +22,8 @@ import DisableSubjectModal from './DisableSubjectModal';
 import EditSubjectModal from './EditSubjectModal';
 import EditTrainerModal from './EditTrainerModal';
 import AddTrainerModal from './AddTrainerModal';
+import AssessmentEventsList from './AssessmentEventsList';
+import AssessmentEventDetailModal from './AssessmentEventDetailModal';
 import subjectAPI from '../../api/subject';
 
 const SubjectDetailsView = ({ subjectId, courseId }) => {
@@ -38,6 +41,8 @@ const SubjectDetailsView = ({ subjectId, courseId }) => {
   const [isEditing, setIsEditing] = useState(false);
   const [isAddingTrainer, setIsAddingTrainer] = useState(false);
   const [isEditingTrainer, setIsEditingTrainer] = useState(false);
+  const [showAssessmentEventDetail, setShowAssessmentEventDetail] = useState(false);
+  const [selectedAssessmentEvent, setSelectedAssessmentEvent] = useState(null);
   
   // Tab state
   const [activeTab, setActiveTab] = useState('subject-info');
@@ -308,7 +313,7 @@ const SubjectDetailsView = ({ subjectId, courseId }) => {
       {/* Tab Interface */}
       <Card className="border-0 shadow-sm">
         <Tab.Container activeKey={activeTab} onSelect={setActiveTab}>
-          <Card.Header className="border-bottom py-2 bg-primary">
+          <Card.Header className="border-bottom py-2 bg-primary d-flex justify-content-between align-items-center">
             <Nav variant="tabs" className="border-0">
               <Nav.Item>
                 <Nav.Link 
@@ -341,57 +346,88 @@ const SubjectDetailsView = ({ subjectId, courseId }) => {
                   }}
                 >
                   <PersonCheckFill className="me-2" size={16} />
-                  Trainers ({trainers.length})
+                  Trainers
+                </Nav.Link>
+              </Nav.Item>
+              <Nav.Item>
+                <Nav.Link 
+                  eventKey="assessment-events" 
+                  className="d-flex align-items-center"
+                  style={{ 
+                    border: 'none',
+                    backgroundColor: 'transparent',
+                    color: '#ffffff',
+                    fontWeight: activeTab === 'assessment-events' ? '600' : '400',
+                    opacity: activeTab === 'assessment-events' ? '1' : '0.7',
+                    borderRadius: '4px 4px 0 0'
+                  }}
+                >
+                  <CalendarEvent className="me-2" size={16} />
+                  All Related Assessment Events
                 </Nav.Link>
               </Nav.Item>
             </Nav>
+            {activeTab === 'trainers' && (
+              <Button 
+                variant="light"
+                size="sm"
+                onClick={() => setShowAddTrainer(true)}
+                className="d-flex align-items-center"
+                style={{
+                  backgroundColor: '#ffffff',
+                  borderColor: '#dee2e6',
+                  color: '#000000',
+                  fontWeight: 500
+                }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.backgroundColor = '#f8f9fa';
+                  e.currentTarget.style.borderColor = '#dee2e6';
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.backgroundColor = '#ffffff';
+                  e.currentTarget.style.borderColor = '#dee2e6';
+                }}
+              >
+                <Plus size={14} className="me-1" />
+                Add Trainer
+              </Button>
+            )}
           </Card.Header>
           
-          <Card.Body className="p-4">
+          <Card.Body className="p-0">
             <Tab.Content>
               {/* Subject Information Tab */}
               <Tab.Pane eventKey="subject-info">
-                <Row>
-                  <Col md={6}>
-                    <p><strong>Name:</strong> {subject.name}</p>
-                    <p><strong>Code:</strong> {subject.code}</p>
-                    <p><strong>Description:</strong> {subject.description}</p>
-                    <p><strong>Method:</strong> {subject.method}</p>
-                    <p><strong>Duration:</strong> {subject.duration} days</p>
-                  </Col>
-                  <Col md={6}>
-                    <p><strong>Type:</strong> {subject.type}</p>
-                    <p><strong>Pass Score:</strong> {subject.passScore}</p>
-                    <p><strong>Room:</strong> {subject.roomName}</p>
-                    <p><strong>Time Slot:</strong> {subject.timeSlot}</p>
-                    <p><strong>Start Date:</strong> {new Date(subject.startDate).toLocaleDateString()}</p>
-                    <p><strong>End Date:</strong> {new Date(subject.endDate).toLocaleDateString()}</p>
-                  </Col>
-                </Row>
-                {subject.remarkNote && (
+                <div className="p-4">
                   <Row>
-                    <Col xs={12}>
-                      <p><strong>Remark Note:</strong> {subject.remarkNote}</p>
+                    <Col md={6}>
+                      <p><strong>Name:</strong> {subject.name}</p>
+                      <p><strong>Code:</strong> {subject.code}</p>
+                      <p><strong>Description:</strong> {subject.description}</p>
+                      <p><strong>Method:</strong> {subject.method}</p>
+                      <p><strong>Duration:</strong> {subject.duration} days</p>
+                    </Col>
+                    <Col md={6}>
+                      <p><strong>Type:</strong> {subject.type}</p>
+                      <p><strong>Pass Score:</strong> {subject.passScore}</p>
+                      <p><strong>Room:</strong> {subject.roomName}</p>
+                      <p><strong>Time Slot:</strong> {subject.timeSlot}</p>
+                      <p><strong>Start Date:</strong> {new Date(subject.startDate).toLocaleDateString()}</p>
+                      <p><strong>End Date:</strong> {new Date(subject.endDate).toLocaleDateString()}</p>
                     </Col>
                   </Row>
-                )}
+                  {subject.remarkNote && (
+                    <Row>
+                      <Col xs={12}>
+                        <p><strong>Remark Note:</strong> {subject.remarkNote}</p>
+                      </Col>
+                    </Row>
+                  )}
+                </div>
               </Tab.Pane>
 
               {/* Trainers Tab */}
               <Tab.Pane eventKey="trainers">
-                {/* Add Trainer Button */}
-                <div className="d-flex justify-content-between align-items-center mb-3">
-                  <h6 className="mb-0">Trainers ({trainers.length})</h6>
-                  <Button 
-                    variant="primary" 
-                    size="sm"
-                    onClick={() => setShowAddTrainer(true)}
-                  >
-                    <Plus size={14} className="me-1" />
-                    Add Trainer
-                  </Button>
-                </div>
-                
                 <Table hover>
                   <thead>
                     <tr>
@@ -440,6 +476,18 @@ const SubjectDetailsView = ({ subjectId, courseId }) => {
                 </Table>
               </Tab.Pane>
 
+              {/* Assessment Events Tab */}
+              <Tab.Pane eventKey="assessment-events" style={{ height: '100%' }}>
+                <AssessmentEventsList
+                  subjectId={subjectId}
+                  courseId={courseId}
+                  onView={(event) => {
+                    setSelectedAssessmentEvent(event);
+                    setShowAssessmentEventDetail(true);
+                  }}
+                />
+              </Tab.Pane>
+
             </Tab.Content>
           </Card.Body>
         </Tab.Container>
@@ -475,6 +523,15 @@ const SubjectDetailsView = ({ subjectId, courseId }) => {
         onSave={handleEditTrainer}
         trainer={selectedTrainer}
         loading={isEditingTrainer}
+      />
+
+      <AssessmentEventDetailModal
+        show={showAssessmentEventDetail}
+        onClose={() => {
+          setShowAssessmentEventDetail(false);
+          setSelectedAssessmentEvent(null);
+        }}
+        event={selectedAssessmentEvent}
       />
     </Container>
   );

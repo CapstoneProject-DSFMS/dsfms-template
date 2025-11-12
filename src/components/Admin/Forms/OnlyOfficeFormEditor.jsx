@@ -1,14 +1,13 @@
-import { useCallback, useEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useRef, useState, forwardRef, useImperativeHandle } from 'react'
 import { Alert, Card, Col, Row, Spinner, Dropdown, Modal, Button as BootstrapButton } from 'react-bootstrap'
 import { toast } from 'react-toastify'
 import { uploadAPI } from '../../../api'
-import EditorWithCustomFields from './EditorWithCustomFields'
+import CustomFieldsPanel from './CustomFieldsPanel'
 import EditorWithMergeFields from './EditorWithMergeFields'
-import apiClient from '../../../api/config.js'
 import { API_CONFIG } from '../../../config/api.js'
 const CALLBACK_URL = `${API_CONFIG.BASE_URL}/media/docs/onlyoffice/callback`
 
-const OnlyOfficeFormEditor = ({
+const OnlyOfficeFormEditor = forwardRef(({
   initialContent = '',
   fileName = 'Untitled Document',
   readOnly = false,
@@ -16,7 +15,8 @@ const OnlyOfficeFormEditor = ({
   importType = '',
     className = '',
   onHasUnsavedChangesChange,
-}) => {
+  onDraftSaved,
+}, ref) => {
     const [isLoading, setIsLoading] = useState(true)
     const [editor, setEditor] = useState(null)
     const [isEditorReady, setIsEditorReady] = useState(false)
@@ -29,19 +29,83 @@ const OnlyOfficeFormEditor = ({
     const exportResolverRef = useRef(null)
     const documentKeyRef = useRef(null) // Store documentKey for callback flow
     
+    // Expose downloadAs and save methods via ref
+    useImperativeHandle(ref, () => ({
+        downloadAs: (format = 'docx') => {
+            if (editorRef.current && typeof editorRef.current.downloadAs === 'function') {
+                editorRef.current.downloadAs(format)
+            } else {
+                throw new Error('Editor is not ready or downloadAs method is not available')
+            }
+        },
+        save: () => {
+            if (editorRef.current && typeof editorRef.current.save === 'function') {
+                editorRef.current.save()
+            } else {
+                throw new Error('Editor is not ready or save method is not available')
+            }
+        },
+        // Convenience method: save and download (ensures changes are saved before download)
+        saveAndDownload: async (format = 'docx') => {
+            if (!editorRef.current) {
+                throw new Error('Editor is not ready')
+            }
+
+            // Step 1: Save first to ensure all changes are saved
+            if (typeof editorRef.current.save === 'function') {
+                console.log('💾 Step 1: Calling save() to save all changes...')
+                editorRef.current.save()
+                
+                // Wait for save to complete
+                await new Promise(resolve => setTimeout(resolve, 1000))
+                console.log('✅ save() completed')
+            }
+
+            // Step 2: Download
+            if (typeof editorRef.current.downloadAs === 'function') {
+                console.log('💾 Step 2: Calling downloadAs() to get document URL...')
+                editorRef.current.downloadAs(format)
+            } else {
+                throw new Error('downloadAs method is not available')
+            }
+        },
+        // Expose function to build and submit draft template from CustomFieldsPanel
+        buildAndSubmitDraftTemplate: async (draftUrl) => {
+            if (addSystemFieldToSectionRef.current && typeof addSystemFieldToSectionRef.current.buildAndSubmitDraftTemplate === 'function') {
+                return await addSystemFieldToSectionRef.current.buildAndSubmitDraftTemplate(draftUrl)
+            } else {
+                throw new Error('buildAndSubmitDraftTemplate function is not available')
+            }
+        }
+    }), [])
+    
     // Expose hasUnsavedChanges to parent via callback
     // Use useRef to store callback to avoid dependency issues
     const onHasUnsavedChangesChangeRef = useRef(onHasUnsavedChangesChange)
+    const onDraftSavedRef = useRef(onDraftSaved)
     
-    // Update ref when callback changes
+    // Update refs when callbacks change
     useEffect(() => {
         onHasUnsavedChangesChangeRef.current = onHasUnsavedChangesChange
     }, [onHasUnsavedChangesChange])
+    
+    useEffect(() => {
+        onDraftSavedRef.current = onDraftSaved
+    }, [onDraftSaved])
     
     // Update ref when state changes
     useEffect(() => {
         hasUnsavedChangesRef.current = hasUnsavedChanges
     }, [hasUnsavedChanges])
+    
+    // Track if we're in Submit flow (to avoid calling onDraftSaved during Submit)
+    const isSubmittingRef = useRef(false)
+    
+    // Ref to store Promise resolver for Submit flow to get URL from onDownloadAs
+    const submitUrlResolverRef = useRef(null)
+    
+    // Track processed URLs to prevent duplicate handling (debounce mechanism)
+    const processedUrlsRef = useRef(new Map()) // Map<url, timestamp>
     
     // Call callback after render to avoid "Cannot update component while rendering" warning
     useEffect(() => {
@@ -366,6 +430,172 @@ fullEvent: event,
                                 event.data?.mode
                             )
                         },
+                        onDownloadAs: async (event) => {
+                            try {
+                                const data = event?.data || {}
+                                console.log(
+                                    '═══════════════════════════════════════════════════════════'
+                                )
+                                console.log(
+                                    '💾 OnlyOffice Event: onDownloadAs'
+                                )
+                                console.log(
+                                    '═══════════════════════════════════════════════════════════'
+                                )
+                                console.log(
+                                    '📦 Event data received:',
+                                    JSON.stringify(data, null, 2)
+                                )
+                                
+                                // Extract URL from event data
+                                // According to OnlyOffice docs, onDownloadAs provides URL in data.url
+                                const downloadUrl =
+                                    data.url ||
+                                    data.downloadUrl ||
+                                    data.fileUrl ||
+                                    (Array.isArray(data.files)
+                                        ? data.files[0]?.url
+                                        : undefined) ||
+                                    (data.file && data.file.url)
+
+                                if (downloadUrl) {
+                                    // CRITICAL: Check if we have a Submit resolver FIRST (only current instance has this)
+                                    // This is the most reliable way to detect if we're in Submit flow from current instance
+                                    // NOTE: We check resolver BEFORE documentKey to avoid issues with hot reload
+                                    if (submitUrlResolverRef.current) {
+                                        // We have a resolver - this is definitely Submit flow from current instance
+                                        console.log('📤 This is a Submit flow - resolving Promise with URL')
+                                        
+                                        // Optional: Log documentKey for debugging (but don't block on mismatch)
+                                        const currentDocKey = documentKeyRef.current
+                                        const urlDocKeyMatch = downloadUrl.match(/doc-([^_/]+)/)
+                                        const urlDocKey = urlDocKeyMatch ? urlDocKeyMatch[1] : null
+                                        
+                                        if (currentDocKey && urlDocKey) {
+                                            const currentKeyStr = currentDocKey
+                                            const urlKeyStr = `doc-${urlDocKey}`
+                                            
+                                            if (currentKeyStr !== urlKeyStr) {
+                                                console.log('⚠️ Warning: URL documentKey does not match current, but resolving anyway (resolver exists)')
+                                                console.log(`   Current: ${currentKeyStr}, URL: ${urlKeyStr}`)
+                                                console.log('   This can happen during hot reload - resolving anyway because resolver exists')
+                                            }
+                                        }
+                                        
+                                        const resolver = submitUrlResolverRef.current
+                                        submitUrlResolverRef.current = null // Clear immediately to prevent duplicate resolves
+                                        resolver.resolve(downloadUrl)
+                                        
+                                        // Reset unsaved changes flag
+                                        setHasUnsavedChanges(false)
+                                        return // Exit early - don't process as Draft
+                                    }
+                                    
+                                    // CRITICAL: Check Submit flag as fallback
+                                    // If isSubmittingRef is true but no resolver, this might be from old instance
+                                    if (isSubmittingRef.current) {
+                                        // Submit flow but no resolver - likely from old instance or duplicate event
+                                        console.log('⚠️ onDownloadAs event during Submit but no resolver - ignoring (likely from old instance)')
+                                        return // Exit early - don't process as Draft
+                                    }
+                                    
+                                    // We're NOT in Submit flow - this is a Draft save
+                                    // BUT: Check sessionStorage FIRST to see if Submit is in progress
+                                    // This prevents old instances from calling onDraftSaved during Submit
+                                    try {
+                                        const isSubmitting = sessionStorage.getItem('onlyoffice_submitting') === 'true'
+                                        const submitDocKey = sessionStorage.getItem('onlyoffice_submit_docKey')
+                                        
+                                        if (isSubmitting && submitDocKey) {
+                                            // Extract documentKey from URL
+                                            let urlDocKey = null
+                                            const shardkeyMatch = downloadUrl.match(/[?&]shardkey=([^&]+)/)
+                                            if (shardkeyMatch) {
+                                                urlDocKey = shardkeyMatch[1]
+                                            } else {
+                                                const pathMatch = downloadUrl.match(/doc-([^_/]+)/)
+                                                if (pathMatch) {
+                                                    urlDocKey = `doc-${pathMatch[1]}`
+                                                }
+                                            }
+                                            
+                                            // If documentKey matches, this is from Submit flow - don't call onDraftSaved
+                                            if (urlDocKey && submitDocKey === urlDocKey) {
+                                                console.log('⚠️ onDownloadAs: Ignoring Draft save - Submit in progress (sessionStorage check)')
+                                                console.log(`   Submit docKey: ${submitDocKey}, URL docKey: ${urlDocKey}`)
+                                                return // Exit early - don't call onDraftSaved
+                                            }
+                                        }
+                                    } catch (e) {
+                                        console.warn('⚠️ Error checking sessionStorage in onDownloadAs:', e)
+                                        // Continue anyway
+                                    }
+                                    
+                                    // We're NOT in Submit flow - this is a Draft save
+                                    // Check documentKey match for Draft flow (to avoid processing events from old instances)
+                                    const currentDocKey = documentKeyRef.current
+                                    const urlDocKeyMatch = downloadUrl.match(/doc-([^_/]+)/)
+                                    const urlDocKey = urlDocKeyMatch ? urlDocKeyMatch[1] : null
+                                    
+                                    // Only process events that match current documentKey for Draft flow
+                                    if (currentDocKey && urlDocKey) {
+                                        const currentKeyStr = currentDocKey
+                                        const urlKeyStr = `doc-${urlDocKey}`
+                                        
+                                        // If keys don't match exactly, this is from an old instance - ignore
+                                        if (currentKeyStr !== urlKeyStr) {
+                                            console.log('⚠️ onDownloadAs event ignored - URL from old documentKey instance (Draft flow)')
+                                            console.log(`   Current: ${currentKeyStr}, URL: ${urlKeyStr}`)
+                                            return
+                                        }
+                                    }
+                                    
+                                    // We're NOT in Submit flow - this is a Draft save
+                                    // Debounce: Check if we've already processed this URL recently (within 2 seconds)
+                                    const now = Date.now()
+                                    const lastProcessed = processedUrlsRef.current.get(downloadUrl)
+                                    if (lastProcessed && (now - lastProcessed) < 2000) {
+                                        console.log('⚠️ Duplicate onDownloadAs event ignored (debounced):', downloadUrl.substring(0, 50) + '...')
+                                        return // Ignore duplicate event
+                                    }
+                                    
+                                    // Mark this URL as processed
+                                    processedUrlsRef.current.set(downloadUrl, now)
+                                    
+                                    // Clean up old entries (older than 5 seconds) to prevent memory leak
+                                    for (const [url, timestamp] of processedUrlsRef.current.entries()) {
+                                        if (now - timestamp > 5000) {
+                                            processedUrlsRef.current.delete(url)
+                                        }
+                                    }
+                                    
+                                    console.log('✅ Download URL received:', downloadUrl)
+                                    console.log('💾 This is a Draft save - calling onDraftSaved callback')
+                                    
+                                    // Draft flow: call onDraftSaved callback
+                                    if (onDraftSavedRef.current && typeof onDraftSavedRef.current === 'function') {
+                                        onDraftSavedRef.current(downloadUrl)
+                                    }
+                                    
+                                    // Reset unsaved changes flag
+                                    setHasUnsavedChanges(false)
+                                } else {
+                                    console.warn('⚠️ onDownloadAs received but no URL found in payload')
+                                    if (isSubmittingRef.current && submitUrlResolverRef.current) {
+                                        // Submit flow: reject the Promise
+                                        const resolver = submitUrlResolverRef.current
+                                        submitUrlResolverRef.current = null
+                                        resolver.reject(new Error('No URL found in onDownloadAs event'))
+                                    } else if (!isSubmittingRef.current) {
+                                        // Draft flow: show warning
+                                        toast.warning('Draft saved but URL not found')
+                                    }
+                                }
+                            } catch (err) {
+                                console.error('❌ Error in onDownloadAs handler:', err)
+                                toast.error('Error processing draft save')
+                            }
+                        },
                         onRequestSaveAs: async (event) => {
                             try {
                                 const data = event?.data || {}
@@ -548,20 +778,20 @@ JSON.stringify(data, null, 2)
   const handleInsertField = (fieldOrTemplate) => {
     if (editor && isEditorReady) {
       try {
-        // Method 0: Try OnlyOffice Automation API - createConnector (Official Automation API)
-        if (typeof editor.createConnector === 'function') {
-          try {
-                        const connector = editor.createConnector()
-
-            // Enable key events first (as per documentation)
-            if (typeof editor.asc_enableKeyEvents === 'function') {
+            // Method 0: Try OnlyOffice Automation API - createConnector (Official Automation API)
+            if (typeof editor.createConnector === 'function') {
               try {
+                        const connector = editor.createConnector()
+                
+                // Enable key events first (as per documentation)
+                if (typeof editor.asc_enableKeyEvents === 'function') {
+                  try {
                                 editor.asc_enableKeyEvents(true)
               } catch {
                 // Silent fail
               }
             }
-
+            
             // ONLY OnlyOffice Automation API - Official method
             if (connector && connector.isConnected) {
               try {
@@ -577,7 +807,7 @@ JSON.stringify(data, null, 2)
                 connector.callCommand(
                     function () {
                   try {
-                    // eslint-disable-next-line no-undef
+                  // eslint-disable-next-line no-undef
                             const oDocument = Api.GetDocument()
 
                             // Method 1: Use Search() to find range containing current sentence, then get style
@@ -634,12 +864,12 @@ JSON.stringify(data, null, 2)
                             }
 
                             // Create new paragraph with text
-                    // eslint-disable-next-line no-undef
+                  // eslint-disable-next-line no-undef
                             const oNewParagraph = Api.CreateParagraph()
 
                             if (oTextPr) {
                                 // Create run with copied style
-                    // eslint-disable-next-line no-undef
+                  // eslint-disable-next-line no-undef
                                 const oRun = Api.CreateRun()
                                 // eslint-disable-next-line no-undef
                                 oRun.AddText(Asc.scope.__templateText)
@@ -761,39 +991,7 @@ JSON.stringify(data, null, 2)
         }
     }
 
-    // Get result URL from API (single call, no polling)
-    const pollForResult = useCallback(async (documentKey) => {
-        try {
-            const response = await apiClient.get('/media/docs/onlyoffice/result', {
-                params: { key: documentKey }
-            })
-            
-            // Extract URL from response
-            let resultUrl = null
-            if (response.data?.url) {
-                resultUrl = response.data.url
-            } else if (response.data?.data?.url) {
-                resultUrl = response.data.data.url
-            } else if (response.data?.fileUrl) {
-                resultUrl = response.data.fileUrl
-            } else if (response.data?.resultUrl) {
-                resultUrl = response.data.resultUrl
-            } else if (typeof response.data === 'string' && response.data.startsWith('http')) {
-                resultUrl = response.data
-            }
-            
-            if (resultUrl) {
-                console.log('✅ Got result URL:', resultUrl)
-                return resultUrl
-            } else {
-                console.warn('⚠️ No URL in response')
-                return null
-            }
-        } catch (error) {
-            console.error('❌ Error getting result:', error.response?.status || error.message)
-            return null
-        }
-    }, [])
+    // Note: pollForResult removed - we now get URL directly from onDownloadAs event in Submit flow
 
     // Force save and poll for edited URL from backend
     const forceSaveAndPoll = useCallback(async () => {
@@ -807,110 +1005,178 @@ JSON.stringify(data, null, 2)
                 throw new Error('Document key not found')
             }
 
-            console.log('🚀 Starting callback flow...')
+            // IMPORTANT: Set Submit flag FIRST, before any async operations
+            // This ensures onDownloadAs events know we're in Submit flow immediately
+            isSubmittingRef.current = true
+            
+            // CRITICAL: Set sessionStorage to track Submit state globally
+            // This allows all component instances (including old ones from hot reload) to know we're submitting
+            // Key format: 'onlyoffice_submitting' = 'true' | undefined
+            // Key format: 'onlyoffice_submit_docKey' = documentKey
+            try {
+                sessionStorage.setItem('onlyoffice_submitting', 'true')
+                sessionStorage.setItem('onlyoffice_submit_docKey', documentKey)
+                console.log('🔒 Submit state saved to sessionStorage')
+              } catch (e) {
+                console.warn('⚠️ Failed to set sessionStorage:', e)
+                // Continue anyway - refs will still work
+            }
+            
+            console.log('🚀 Starting callback flow (Submit)...')
             console.log(`🔑 DocumentKey: ${documentKey}`)
             console.log(`📡 Callback URL: ${API_CONFIG.BASE_URL}/media/docs/onlyoffice/callback`)
 
-            // IMPORTANT: According to OnlyOffice documentation:
-            // https://api.onlyoffice.com/docs/docs-api/additional-api/command-service/forcesave/
-            // The correct way to trigger forcesave is via Command Service API:
-            // POST https://documentserver/command with body: { "c": "forcesave", "key": "documentKey" }
-            // However, frontend cannot call this directly due to CORS, so we need backend endpoint
-            
-            console.log('🔄 Triggering forcesave via backend Command Service API...')
-            
-            // Step 1: Call backend API to trigger forcesave command
-            // Backend will call OnlyOffice Command Service API: POST /command with { "c": "forcesave", "key": documentKey }
-            console.log('🔄 Step 1: Calling backend API to trigger forcesave command...')
-            try {
-                const response = await apiClient.post('/media/docs/onlyoffice/forcesave', {
-                    key: documentKey
-                })
-                
-                console.log('✅ Forcesave command sent via backend:', response.data)
-                
-                // Check if forcesave was successful
-                // Error code 4 means "No changes were applied to the document"
-                if (response.data?.error === 4) {
-                    console.warn('⚠️ No changes in document - forcesave skipped')
-                    toast.warning('No changes to save')
-                    // Still continue to poll - document might already be saved
-                } else if (response.data?.error !== 0 && response.data?.error !== undefined) {
-                    throw new Error(`Forcesave failed with error code: ${response.data.error}`)
-                }
-            } catch (error) {
-                console.error('❌ Failed to trigger forcesave via backend:', error)
-                
-                // Fallback: Try to use editor methods if backend endpoint doesn't exist
-                console.log('🔄 Fallback: Trying editor methods...')
-                let fallbackTriggered = false
-                
-                // Try save() first
-                if (typeof editorRef.current.save === 'function') {
-                    try {
-                        editorRef.current.save()
-                        console.log('✅ Fallback: save() triggered')
-                        fallbackTriggered = true
-                    } catch (e) {
-                        console.warn('⚠️ Fallback: save() failed:', e)
-                    }
-                }
-                
-                // Try downloadAs()
-                if (typeof editorRef.current.downloadAs === 'function') {
-                    try {
-                        editorRef.current.downloadAs('docx')
-                        console.log('✅ Fallback: downloadAs() triggered')
-                        fallbackTriggered = true
-                    } catch (e) {
-                        console.warn('⚠️ Fallback: downloadAs() failed:', e)
-                    }
-                }
-                
-                if (!fallbackTriggered) {
-                    throw new Error('Both backend API and editor methods failed')
+            // IMPORTANT: Use the same approach as Save Draft - save() then downloadAs()
+            // This ensures all changes are saved and callback is triggered properly
+            console.log('💾 Step 1: Saving all changes first (auto Ctrl+S)...')
+            if (typeof editorRef.current.save === 'function') {
+                try {
+                    editorRef.current.save()
+                    // Wait longer for save to complete (2 seconds to ensure it's done)
+                    await new Promise(resolve => setTimeout(resolve, 2000))
+                    console.log('✅ All changes saved successfully')
+              } catch (e) {
+                    console.warn('⚠️ save() failed:', e)
+                    // Continue anyway - might still work
                 }
             }
-            
-            // Step 2: Wait for forcesave to complete and trigger callback
-            // According to docs, callback is sent after forcesave completes
-            console.log('⏳ Waiting for forcesave to complete and trigger callback...')
-            toast.info('Waiting for forcesave to complete...')
-            
-            // Wait for OnlyOffice to process forcesave command
-            // According to docs, there's a delay (savetimeoutdelay, default 5 seconds)
-            await new Promise(resolve => setTimeout(resolve, 5000))
-            
-            console.log('⏳ Waiting for callback to be processed by backend...')
-            toast.info('Waiting for backend to process callback...')
-            
-            // Wait for backend to process callback
-            // Backend needs time to: receive callback → download file → upload to S3 → store result
-            await new Promise(resolve => setTimeout(resolve, 8000))
 
-            // Poll API to get result URL
-            console.log('🔄 Polling for result URL...')
-            toast.info('Polling backend for result...')
+            // Step 2: Create a Promise to wait for URL from onDownloadAs event
+            // Instead of polling, we'll get the URL directly from the event
+            console.log('💾 Step 2: Triggering downloadAs() and waiting for URL from event...')
             
-            const resultUrl = await pollForResult(documentKey)
+            // Clear any old resolver first
+            submitUrlResolverRef.current = null
             
-            if (resultUrl) {
-                console.log('✅ Result URL received:', resultUrl)
-                toast.success('Document processed successfully!')
-                setHasUnsavedChanges(false) // Reset unsaved changes flag after successful save
-                return resultUrl
+            const urlPromise = new Promise((resolve, reject) => {
+                // Store resolver in ref so onDownloadAs can call it
+                submitUrlResolverRef.current = { resolve, reject }
+                
+                // Timeout after 15 seconds
+                setTimeout(() => {
+                    if (submitUrlResolverRef.current) {
+                        submitUrlResolverRef.current.reject(new Error('Timeout waiting for download URL'))
+                        submitUrlResolverRef.current = null
+                    }
+                }, 15000)
+            })
+            
+            // Trigger downloadAs() - this will trigger onDownloadAs event
+            if (typeof editorRef.current.downloadAs === 'function') {
+                try {
+                    editorRef.current.downloadAs('docx')
+                    console.log('✅ downloadAs() triggered - waiting for URL from onDownloadAs event...')
+          } catch (e) {
+                    console.warn('⚠️ downloadAs() failed:', e)
+                    if (submitUrlResolverRef.current) {
+                        submitUrlResolverRef.current.reject(new Error('Failed to trigger downloadAs()'))
+                        submitUrlResolverRef.current = null
+                    }
+                    isSubmittingRef.current = false // Reset flag on error
+                    
+                    // Cleanup sessionStorage on error
+                    try {
+                        sessionStorage.removeItem('onlyoffice_submitting')
+                        sessionStorage.removeItem('onlyoffice_submit_docKey')
+                    } catch (e) {
+                        console.warn('⚠️ Failed to clear sessionStorage:', e)
+                    }
+                    
+                    throw new Error('Failed to trigger downloadAs()')
+                }
             } else {
-                console.warn('⚠️ No result URL received after polling')
-                console.warn(`   → DocumentKey: ${documentKey}`)
-                toast.warning('Could not get result URL from backend')
-                return null
+                if (submitUrlResolverRef.current) {
+                    submitUrlResolverRef.current.reject(new Error('downloadAs method is not available'))
+                    submitUrlResolverRef.current = null
+                }
+                isSubmittingRef.current = false // Reset flag on error
+                
+                // Cleanup sessionStorage on error
+                try {
+                    sessionStorage.removeItem('onlyoffice_submitting')
+                    sessionStorage.removeItem('onlyoffice_submit_docKey')
+                } catch (e) {
+                    console.warn('⚠️ Failed to clear sessionStorage:', e)
+                }
+                
+                throw new Error('downloadAs method is not available')
             }
-        } catch (error) {
-console.error('❌ Force save and poll failed:', error)
+            
+            // Step 3: Wait for URL from onDownloadAs event
+            console.log('⏳ Waiting for URL from onDownloadAs event...')
+            toast.info('Waiting for document URL...')
+            
+            try {
+                const resultUrl = await urlPromise
+                
+                if (resultUrl) {
+                    console.log('✅ URL received from onDownloadAs event:', resultUrl)
+                    toast.success('Document processed successfully!')
+                    setHasUnsavedChanges(false) // Reset unsaved changes flag after successful save
+                    isSubmittingRef.current = false // Reset flag after success
+                    submitUrlResolverRef.current = null // Clear resolver
+                    
+                    // CRITICAL: Cleanup sessionStorage after successful Submit
+                    try {
+                        sessionStorage.removeItem('onlyoffice_submitting')
+                        sessionStorage.removeItem('onlyoffice_submit_docKey')
+                        console.log('🔓 Submit state cleared from sessionStorage')
+                    } catch (e) {
+                        console.warn('⚠️ Failed to clear sessionStorage:', e)
+                    }
+                    
+                    return resultUrl
+                } else {
+                    console.warn('⚠️ No URL received from onDownloadAs event')
+                    toast.warning('Could not get document URL')
+                    isSubmittingRef.current = false // Reset flag even on failure
+                    submitUrlResolverRef.current = null // Clear resolver
+                    
+                    // Cleanup sessionStorage on failure
+                    try {
+                        sessionStorage.removeItem('onlyoffice_submitting')
+                        sessionStorage.removeItem('onlyoffice_submit_docKey')
+                    } catch (e) {
+                        console.warn('⚠️ Failed to clear sessionStorage:', e)
+                    }
+                    
+                    return null
+                }
+      } catch (error) {
+                console.error('❌ Error waiting for URL from onDownloadAs:', error)
+                toast.error(`Failed to get document URL: ${error.message}`)
+                isSubmittingRef.current = false // Reset flag on error
+                submitUrlResolverRef.current = null // Clear resolver on error
+                
+                // CRITICAL: Cleanup sessionStorage on error
+                try {
+                    sessionStorage.removeItem('onlyoffice_submitting')
+                    sessionStorage.removeItem('onlyoffice_submit_docKey')
+                    console.log('🔓 Submit state cleared from sessionStorage (error)')
+                } catch (e) {
+                    console.warn('⚠️ Failed to clear sessionStorage:', e)
+                }
+                
+                throw error
+            }
+      } catch (error) {
+            console.error('❌ Force save and poll failed:', error)
             toast.error(`Failed: ${error.message}`)
+            isSubmittingRef.current = false // Reset flag on error
+            submitUrlResolverRef.current = null // Clear resolver on error
+            
+            // CRITICAL: Cleanup sessionStorage on outer catch error
+            try {
+                sessionStorage.removeItem('onlyoffice_submitting')
+                sessionStorage.removeItem('onlyoffice_submit_docKey')
+                console.log('🔓 Submit state cleared from sessionStorage (outer catch)')
+            } catch (e) {
+                console.warn('⚠️ Failed to clear sessionStorage:', e)
+            }
+            
             throw error
         }
-    }, [isEditorReady, pollForResult])
+    }, [isEditorReady])
 
     // Expose export method to child panels - returns temp URL
     // Try both downloadAs() and forceSave() methods
@@ -1222,7 +1488,7 @@ console.log('🌐 Full S3 URL:', s3Url)
                                         overflowX: 'hidden',
                                     }}
                                 >
-                                    <EditorWithCustomFields
+                                    <CustomFieldsPanel
                 customFields={customFields}
                 onAddField={handleAddCustomField}
                 onRemoveField={handleRemoveCustomField}
@@ -1238,8 +1504,8 @@ console.log('🌐 Full S3 URL:', s3Url)
                 className="h-100"
               />
             </div>
-          </Col>
-        )}
+            </Col>
+          )}
         </Row>
       </div>
       
@@ -1439,6 +1705,6 @@ console.log('🌐 Full S3 URL:', s3Url)
       </Modal>
     </div>
     )
-}
+})
 
 export default OnlyOfficeFormEditor
