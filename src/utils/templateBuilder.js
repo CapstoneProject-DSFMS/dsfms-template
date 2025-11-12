@@ -1,5 +1,39 @@
 // Utility helpers to build template payload for backend
 
+// Map frontend field types to backend-accepted field types
+// Backend only accepts: TEXT, IMAGE, TOGGLE, PART, SECTION_CONTROL_TOGGLE, SIGNATURE_DRAW, FINAL_SCORE_TEXT, FINAL_SCORE_NUM, VALUE_LIST
+function mapFieldTypeToBackend(fieldType) {
+  const typeUpper = String(fieldType || '').toUpperCase();
+  
+  // Backend-accepted types (return as-is)
+  const acceptedTypes = [
+    'TEXT',
+    'IMAGE',
+    'TOGGLE',
+    'PART',
+    'SECTION_CONTROL_TOGGLE',
+    'SIGNATURE_DRAW',
+    'FINAL_SCORE_TEXT',
+    'FINAL_SCORE_NUM',
+    'VALUE_LIST'
+  ];
+  
+  if (acceptedTypes.includes(typeUpper)) {
+    return fieldType; // Return original case
+  }
+  
+  // Map unsupported types to accepted types
+  switch (typeUpper) {
+    case 'SIGN_IMAGE':
+      // SIGN_IMAGE maps to TEXT (as per requirement: SIGN_IMAGE is TEXT)
+      return 'TEXT';
+    default:
+      // Default to TEXT for unknown types
+      console.warn(`Unknown field type "${fieldType}", mapping to TEXT`);
+      return 'TEXT';
+  }
+}
+
 export function readTemplateMetaFromStorage() {
   try {
     const raw = localStorage.getItem('templateInfo');
@@ -77,20 +111,38 @@ export function buildTemplatePayload(meta, sections) {
 
     const fields = inVisualOrder.map((f, fIdx) => {
       const isSignature = String(f.fieldType || '').toUpperCase().startsWith('SIGNATURE');
+      const fieldTypeUpper = String(f.fieldType || '').toUpperCase();
+      
+      // Map fieldType to backend-accepted type
+      const backendFieldType = mapFieldTypeToBackend(f.fieldType);
+      
       const base = {
         label: f.label,
         fieldName: f.fieldName,
-        fieldType: f.fieldType,
+        fieldType: backendFieldType, // Use mapped field type for backend
         displayOrder: fIdx + 1,
         parentTempId: f.parentTempId ? f.parentTempId : null
       };
       if (isSignature) {
         base.roleRequired = f.roleRequired || 'TRAINER';
       }
-      if (String(f.fieldType || '').toUpperCase() === 'PART') {
+      if (fieldTypeUpper === 'PART') {
         // ensure PART tempId exists and is stable
         const name = f.fieldName || '';
         base.tempId = f.tempId || (name ? `${name}-parent` : undefined);
+      }
+      // Add option for VALUE_LIST fields
+      if (fieldTypeUpper === 'VALUE_LIST' && f.option) {
+        try {
+          // Parse and validate JSON, then add as parsed object
+          const parsed = JSON.parse(f.option);
+          if (parsed.items && Array.isArray(parsed.items)) {
+            base.option = parsed;
+          }
+        } catch (e) {
+          // If parsing fails, skip option (should not happen if validation worked)
+          console.warn('Failed to parse VALUE_LIST option:', e);
+        }
       }
       return base;
     });
