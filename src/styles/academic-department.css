@@ -331,6 +331,22 @@ div.subject-details .card {
   .hide-mobile {
     display: none !important;
   }
+  
+  /* Override: Course table should ALWAYS show ALL columns */
+  .course-table-responsive .hide-mobile,
+  .course-table-responsive .hide-mobile-sm,
+  .course-table-responsive th.hide-mobile,
+  .course-table-responsive td.hide-mobile,
+  .course-table-responsive th.hide-mobile-sm,
+  .course-table-responsive td.hide-mobile-sm {
+    display: table-cell !important;
+  }
+  
+  .course-table-responsive .show-mobile,
+  .course-table-responsive th.show-mobile,
+  .course-table-responsive td.show-mobile {
+    display: table-cell !important;
+  }
 }
 
 @media (max-width: 576px) {
@@ -834,4 +850,308 @@ div.subject-details .card {
   color: var(--bs-primary) !important;
   transform: translateY(-1px);
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15) !important;
+}
+
+/* Course Table Responsive Styles - MUST override department-table-container */
+.course-table-responsive,
+.department-table-container.course-table-responsive {
+  overflow-x: auto !important;
+  overflow-y: auto !important;
+  -webkit-overflow-scrolling: touch;
+  width: 100%;
+  position: relative;
+  max-height: 600px; /* Enable vertical scroll when there are many rows */
+}
+
+/* Override ALL hide-mobile rules for course table with maximum specificity */
+.department-table-container.course-table-responsive .table th.hide-mobile,
+.department-table-container.course-table-responsive .table td.hide-mobile,
+.department-table-container.course-table-responsive .table th.hide-mobile-sm,
+.department-table-container.course-table-responsive .table td.hide-mobile-sm,
+.department-table-container.course-table-responsive th.hide-mobile,
+.department-table-container.course-table-responsive td.hide-mobile,
+.department-table-container.course-table-responsive th.hide-mobile-sm,
+.department-table-container.course-table-responsive td.hide-mobile-sm {
+  display: table-cell !important;
+}
+
+.department-table-container.course-table-responsive .table th.show-mobile,
+.department-table-container.course-table-responsive .table td.show-mobile,
+.department-table-container.course-table-responsive th.show-mobile,
+.department-table-container.course-table-responsive td.show-mobile {
+  display: table-cell !important;
+}
+
+.course-table-responsive .table {
+  min-width: 100%;
+  width: 100%;
+  table-layout: auto;
+}
+
+/* Desktop - Full table display */
+@media (min-width: 992px) {
+  .course-table-responsive .table {
+    min-width: 100%;
+  }
+}
+
+/* Tablet responsive (768px and below) */
+@media (max-width: 768px) {
+  .course-table-responsive,
+  .department-table-container.course-table-responsive {
+    margin: 0 -0.75rem;
+    padding: 0 0.75rem;
+    overflow-x: auto !important;
+    overflow-y: auto !important;
+    max-height: 500px; /* Slightly smaller max-height on tablet */
+  }
+
+  .course-table-responsive .table,
+  .department-table-container.course-table-responsive .table {
+    font-size: 0.8rem;
+    min-width: 1000px; /* Minimum width to show ALL columns with scroll */
+    width: 100%;
+  }
+
+  .course-table-responsive .table th,
+  .course-table-responsive .table td,
+  .department-table-container.course-table-responsive .table th,
+  .department-table-container.course-table-responsive .table td {
+    padding: 0.5rem 0.4rem !important;
+    white-space: nowrap;
+    font-size: 0.8rem;
+  }
+  
+  /* Force show ALL columns in course table on tablet */
+  .department-table-container.course-table-responsive .table th,
+  .department-table-container.course-table-responsive .table td {
+    display: table-cell !important;
+  }
+
+  /* Set minimum widths for each column to ensure proper display */
+  .course-table-responsive .table th:nth-child(1),
+  .course-table-responsive .table td:nth-child(1) {
+    min-width: 180px !important; /* Course Name */
+  }
+
+  .course-table-responsive .table th:nth-child(2),
+  .course-table-responsive .table td:nth-child(2) {
+    min-width: 120px !important; /* Code */
+  }
+
+  .course-table-responsive .table th:nth-child(3),
+  .course-table-responsive .table td:nth-child(3) {
+    min-width: 120px !important; /* Start Date */
+  }
+
+  .course-table-responsive .table th:nth-child(4),
+  .course-table-responsive .table td:nth-child(4) {
+    min-width: 120px !important; /* End Date */
+  }
+
+  .course-table-responsive .table th:nth-child(5),
+  .course-table-responsive .table td:nth-child(5) {
+    min-width: 140px !important; /* Venue */
+  }
+
+  .course-table-responsive .table th:nth-child(6),
+  .course-table-responsive .table td:nth-child(6) {
+    min-width: 150px !important; /* Note */
+  }
+
+  .course-table-responsive .table th:nth-child(7),
+  .course-table-responsive .table td:nth-child(7) {
+    min-width: 100px !important; /* Status */
+  }
+
+  .course-table-responsive .table th:nth-child(8),
+  .course-table-responsive .table td:nth-child(8) {
+    min-width: 80px !important; /* Actions */
+  }
+
+  /* Allow Course Name to wrap if needed */
+  .course-table-responsive .table th:first-child,
+  .course-table-responsive .table td:first-child {
+    white-space: normal !important;
+    word-wrap: break-word;
+  }
+
+  /* Adjust badge sizes */
+  .course-table-responsive .table .badge {
+    font-size: 0.7rem !important;
+    padding: 0.25rem 0.5rem !important;
+  }
+
+  /* Sticky header adjustments */
+  .course-table-responsive .sticky-header th {
+    font-size: 0.75rem !important;
+    padding: 0.5rem 0.4rem !important;
+  }
+}
+
+/* Mobile responsive (576px and below) */
+@media (max-width: 576px) {
+  .course-table-responsive,
+  .department-table-container.course-table-responsive {
+    margin: 0 -0.5rem;
+    padding: 0 0.5rem;
+    overflow-x: auto !important;
+    overflow-y: auto !important;
+    max-height: 400px; /* Smaller max-height on mobile for better UX */
+  }
+
+  .course-table-responsive .table,
+  .department-table-container.course-table-responsive .table {
+    min-width: 1000px; /* Keep all columns, allow horizontal scroll */
+    font-size: 0.75rem;
+  }
+
+  .course-table-responsive .table th,
+  .course-table-responsive .table td,
+  .department-table-container.course-table-responsive .table th,
+  .department-table-container.course-table-responsive .table td {
+    padding: 0.4rem 0.3rem !important;
+    white-space: nowrap;
+    font-size: 0.75rem;
+  }
+  
+  /* Force show ALL columns in course table on mobile */
+  .department-table-container.course-table-responsive .table th,
+  .department-table-container.course-table-responsive .table td {
+    display: table-cell !important;
+  }
+
+  /* Set minimum widths for each column */
+  .course-table-responsive .table th:nth-child(1),
+  .course-table-responsive .table td:nth-child(1) {
+    min-width: 150px !important; /* Course Name */
+  }
+
+  .course-table-responsive .table th:nth-child(2),
+  .course-table-responsive .table td:nth-child(2) {
+    min-width: 100px !important; /* Code */
+  }
+
+  .course-table-responsive .table th:nth-child(3),
+  .course-table-responsive .table td:nth-child(3) {
+    min-width: 110px !important; /* Start Date */
+  }
+
+  .course-table-responsive .table th:nth-child(4),
+  .course-table-responsive .table td:nth-child(4) {
+    min-width: 110px !important; /* End Date */
+  }
+
+  .course-table-responsive .table th:nth-child(5),
+  .course-table-responsive .table td:nth-child(5) {
+    min-width: 130px !important; /* Venue */
+  }
+
+  .course-table-responsive .table th:nth-child(6),
+  .course-table-responsive .table td:nth-child(6) {
+    min-width: 140px !important; /* Note */
+  }
+
+  .course-table-responsive .table th:nth-child(7),
+  .course-table-responsive .table td:nth-child(7) {
+    min-width: 90px !important; /* Status */
+  }
+
+  .course-table-responsive .table th:nth-child(8),
+  .course-table-responsive .table td:nth-child(8) {
+    min-width: 70px !important; /* Actions */
+  }
+
+  /* Allow Course Name to wrap */
+  .course-table-responsive .table th:first-child,
+  .course-table-responsive .table td:first-child {
+    white-space: normal !important;
+    word-wrap: break-word;
+  }
+
+  /* Smaller badges */
+  .course-table-responsive .table .badge {
+    font-size: 0.65rem !important;
+    padding: 0.2rem 0.4rem !important;
+  }
+
+  /* Sticky header */
+  .course-table-responsive .sticky-header th {
+    font-size: 0.7rem !important;
+    padding: 0.4rem 0.3rem !important;
+  }
+}
+
+/* Very small phones (480px and below) */
+@media (max-width: 480px) {
+  .course-table-responsive .table {
+    min-width: 1000px; /* Keep all columns */
+    font-size: 0.7rem;
+  }
+
+  .course-table-responsive .table th,
+  .course-table-responsive .table td {
+    padding: 0.35rem 0.25rem !important;
+    font-size: 0.7rem;
+  }
+
+  .course-table-responsive .table .badge {
+    font-size: 0.6rem !important;
+    padding: 0.15rem 0.35rem !important;
+  }
+
+  .course-table-responsive .sticky-header th {
+    font-size: 0.65rem !important;
+    padding: 0.35rem 0.25rem !important;
+  }
+}
+
+/* Custom scrollbar for course table */
+.course-table-responsive::-webkit-scrollbar,
+.department-table-container.course-table-responsive::-webkit-scrollbar {
+  height: 8px;
+  width: 8px;
+}
+
+.course-table-responsive::-webkit-scrollbar-track,
+.department-table-container.course-table-responsive::-webkit-scrollbar-track {
+  background: #f1f1f1;
+  border-radius: 4px;
+}
+
+.course-table-responsive::-webkit-scrollbar-thumb,
+.department-table-container.course-table-responsive::-webkit-scrollbar-thumb {
+  background: #888;
+  border-radius: 4px;
+}
+
+.course-table-responsive::-webkit-scrollbar-thumb:hover,
+.department-table-container.course-table-responsive::-webkit-scrollbar-thumb:hover {
+  background: #555;
+}
+
+/* FINAL OVERRIDE - Force all columns to display in course table - MUST be at the end */
+.department-table-container.course-table-responsive table th,
+.department-table-container.course-table-responsive table td {
+  display: table-cell !important;
+}
+
+/* Force horizontal scroll for course table */
+.department-table-container.course-table-responsive {
+  overflow-x: auto !important;
+  overflow-y: auto !important;
+}
+
+@media (max-width: 768px) {
+  .department-table-container.course-table-responsive table th,
+  .department-table-container.course-table-responsive table td {
+    display: table-cell !important;
+  }
+}
+
+@media (max-width: 576px) {
+  .department-table-container.course-table-responsive table th,
+  .department-table-container.course-table-responsive table td {
+    display: table-cell !important;
+  }
 }
