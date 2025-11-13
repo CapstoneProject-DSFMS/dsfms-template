@@ -14,6 +14,7 @@ const OnlyOfficeFormEditor = forwardRef(({
   showMergeFields = true,
   importType = '',
     className = '',
+  initialSections = null, // ← NEW prop to restore sections from draft
   onHasUnsavedChangesChange,
   onDraftSaved,
 }, ref) => {
@@ -1493,6 +1494,7 @@ console.log('🌐 Full S3 URL:', s3Url)
                 onAddField={handleAddCustomField}
                 onRemoveField={handleRemoveCustomField}
                 onInsertField={handleInsertField}
+                initialSections={initialSections}
                                         exportEditedDoc={exportEditedDoc}
                                         exportAndUploadEditedDoc={
                                             exportAndUploadEditedDoc

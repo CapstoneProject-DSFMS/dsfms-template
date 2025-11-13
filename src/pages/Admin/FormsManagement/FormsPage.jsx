@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Container, Row, Col, Card, Button, Badge } from 'react-bootstrap';
 import { Upload, FileText, FileEarmark, Eye, CheckCircle, Clock, Building, Person } from 'react-bootstrap-icons';
+import { useNavigate } from 'react-router-dom';
 import { toast } from 'react-toastify';
 import { PermissionWrapper, LoadingSkeleton } from '../../../components/Common';
 import { API_PERMISSIONS } from '../../../constants/apiPermissions';
@@ -9,6 +10,7 @@ import ImportFileModal from '../../../components/Admin/Forms/ImportFileModal';
 import TemplateDetailModal from '../../../components/Admin/Forms/TemplateDetailModal';
 
 const FormsPage = () => {
+  const navigate = useNavigate();
   const [showImportModal, setShowImportModal] = useState(false);
   const [templates, setTemplates] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -105,20 +107,31 @@ const FormsPage = () => {
               </div>
             </Col>
             <Col xs="auto">
-              <PermissionWrapper 
-                permission={API_PERMISSIONS.TEMPLATES.CREATE}
-                fallback={null}
-              >
+              <div className="d-flex gap-2">
                 <Button
-                  variant="primary-custom"
-                  onClick={handleImportFile}
+                  variant="outline-light"
+                  onClick={() => navigate('/admin/forms/drafts')}
                   className="d-flex align-items-center"
                   size="sm"
                 >
-                  <Upload className="me-2" size={16} />
-                  Create New Template
+                  <FileText className="me-2" size={16} />
+                  Your Drafts
                 </Button>
-              </PermissionWrapper>
+                <PermissionWrapper 
+                  permission={API_PERMISSIONS.TEMPLATES.CREATE}
+                  fallback={null}
+                >
+                  <Button
+                    variant="primary-custom"
+                    onClick={handleImportFile}
+                    className="d-flex align-items-center"
+                    size="sm"
+                  >
+                    <Upload className="me-2" size={16} />
+                    Create New Template
+                  </Button>
+                </PermissionWrapper>
+              </div>
             </Col>
           </Row>
         </Card.Header>
