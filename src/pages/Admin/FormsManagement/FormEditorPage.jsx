@@ -33,6 +33,8 @@ const FormEditorPage = () => {
     console.log('🔔 hasUnsavedChanges changed:', hasUnsavedChanges);
   }, [hasUnsavedChanges]);
 
+  const [initialSections, setInitialSections] = useState(null);
+
   // Get data from navigation state
   useEffect(() => {
     if (location.state) {
@@ -41,7 +43,8 @@ const FormEditorPage = () => {
         documentUrl: initialDocumentUrl,
         fileName: initialFileName, 
         importType: initialImportType,
-        templateInfo: initialTemplateInfo
+        templateInfo: initialTemplateInfo,
+        initialSections: sectionsFromState // ← Get initialSections from navigation state
       } = location.state;
       
       // Use documentUrl if available (from upload), otherwise use content
@@ -50,6 +53,12 @@ const FormEditorPage = () => {
       setFileName(initialFileName || 'Untitled Document');
       setImportType(initialImportType || '');
       setTemplateInfo(initialTemplateInfo || null);
+      
+      // Set initialSections to pass down to OnlyOfficeFormEditor
+      if (sectionsFromState && Array.isArray(sectionsFromState)) {
+        setInitialSections(sectionsFromState);
+        console.log('📥 FormEditorPage received initialSections:', sectionsFromState);
+      }
       
       // Initialize edit form with template info
       if (initialTemplateInfo) {
@@ -65,6 +74,7 @@ const FormEditorPage = () => {
         content: initialContent, 
         fileName: initialFileName,
         templateInfo: initialTemplateInfo,
+        initialSections: sectionsFromState,
         finalContent: finalContent
       });
     }
@@ -307,6 +317,7 @@ const FormEditorPage = () => {
               fileName={fileName}
               showImportInfo={!!importType}
               importType={importType}
+              initialSections={initialSections}
               onHasUnsavedChangesChange={setHasUnsavedChanges}
               onDraftSaved={async (draftUrl) => {
                 // CRITICAL: Check if we're in Submit flow using sessionStorage

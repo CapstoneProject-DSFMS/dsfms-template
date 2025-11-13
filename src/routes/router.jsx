@@ -27,6 +27,7 @@ import AcademicDetailsPage from '../pages/Trainee/AcademicDetailsPage'
 import EnrolledCoursesPage from '../pages/Trainee/EnrolledCoursesPage'
 import FormsPage from '../pages/Admin/FormsManagement/FormsPage';
 import FormEditorPage from '../pages/Admin/FormsManagement/FormEditorPage';
+import YourDraftsPage from '../pages/Admin/FormsManagement/YourDraftsPage';
 import MainMenuPage from '../pages/Admin/MainMenuPage';
 import GlobalFieldListPage from '../pages/Admin/GlobalField/GlobalFieldListPage';
 import SignatureRequiredPage from '../pages/Trainee/SignatureRequiredPage';
@@ -182,6 +183,17 @@ export const router = createBrowserRouter([
             fallback={<div className="p-4 text-center text-muted">You don't have permission to edit form templates.</div>}
           >
             <FormEditorPage />
+          </PermissionRoute>
+        )
+      },
+      {
+        path: "forms/drafts",
+        element: (
+          <PermissionRoute 
+            permission={API_PERMISSIONS.TEMPLATES.CREATE}
+            fallback={<div className="p-4 text-center text-muted">You don't have permission to view drafts.</div>}
+          >
+            <YourDraftsPage />
           </PermissionRoute>
         )
       },

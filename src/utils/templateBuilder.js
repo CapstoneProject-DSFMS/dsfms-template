@@ -1,7 +1,7 @@
 // Utility helpers to build template payload for backend
 
 // Map frontend field types to backend-accepted field types
-// Backend only accepts: TEXT, IMAGE, TOGGLE, PART, SECTION_CONTROL_TOGGLE, SIGNATURE_DRAW, FINAL_SCORE_TEXT, FINAL_SCORE_NUM, VALUE_LIST
+// Backend accepts: TEXT, IMAGE, TOGGLE, PART, SECTION_CONTROL_TOGGLE, SIGNATURE_DRAW, SIGN_IMAGE, FINAL_SCORE_TEXT, FINAL_SCORE_NUM, VALUE_LIST
 function mapFieldTypeToBackend(fieldType) {
   const typeUpper = String(fieldType || '').toUpperCase();
   
@@ -13,6 +13,7 @@ function mapFieldTypeToBackend(fieldType) {
     'PART',
     'SECTION_CONTROL_TOGGLE',
     'SIGNATURE_DRAW',
+    'SIGN_IMAGE', // Backend supports SIGN_IMAGE
     'FINAL_SCORE_TEXT',
     'FINAL_SCORE_NUM',
     'VALUE_LIST'
@@ -22,16 +23,9 @@ function mapFieldTypeToBackend(fieldType) {
     return fieldType; // Return original case
   }
   
-  // Map unsupported types to accepted types
-  switch (typeUpper) {
-    case 'SIGN_IMAGE':
-      // SIGN_IMAGE maps to TEXT (as per requirement: SIGN_IMAGE is TEXT)
-      return 'TEXT';
-    default:
-      // Default to TEXT for unknown types
-      console.warn(`Unknown field type "${fieldType}", mapping to TEXT`);
-      return 'TEXT';
-  }
+  // If fieldType is not in acceptedTypes, return as-is (let backend validate)
+  // No mapping/fallback - backend will handle validation
+  return fieldType;
 }
 
 export function readTemplateMetaFromStorage() {
@@ -40,10 +34,12 @@ export function readTemplateMetaFromStorage() {
     if (raw) {
       const parsed = JSON.parse(raw);
       return {
+        id: parsed.id || null, // Include template ID for update operations
         name: parsed.name || '',
         description: parsed.description || '',
         departmentId: parsed.departmentId || '',
-        templateContent: parsed.templateContent || ''
+        templateContent: parsed.templateContent || '',
+        templateConfig: parsed.templateConfig || null
       };
     }
   } catch {
@@ -51,10 +47,12 @@ export function readTemplateMetaFromStorage() {
   }
 
   return {
+    id: null,
     name: localStorage.getItem('templateName') || '',
     description: localStorage.getItem('templateDesc') || '',
     departmentId: localStorage.getItem('departmentId') || '',
-    templateContent: localStorage.getItem('templateContent') || ''
+    templateContent: localStorage.getItem('templateContent') || '',
+    templateConfig: null
   };
 }
 
@@ -148,7 +146,6 @@ export function buildTemplatePayload(meta, sections) {
     });
 
     return {
-      name: section.name,
       label: section.label,
       displayOrder: sIdx + 1, // Calculate displayOrder based on array index at submit time
       editBy: section.editBy || 'TRAINER',
@@ -168,6 +165,76 @@ export function buildTemplatePayload(meta, sections) {
     templateConfig: meta.templateConfig || null,
     sections: normalizedSections
   };
+}
+
+// Convert backend sections/fields format → frontend format
+// Used when loading drafts to restore editor state
+export function convertBackendToFrontendSections(backendSections) {
+  if (!Array.isArray(backendSections)) {
+    return [];
+  }
+
+  return backendSections.map((section) => {
+    // Build map: parentId (UUID) → tempId (string) for PART fields
+    const partFields = (section.fields || []).filter(f => f.fieldType === 'PART');
+    const partIdMap = {}; // Map: { parentId (UUID): tempId (string) }
+    
+    partFields.forEach(partField => {
+      // Backend: partField.id = UUID
+      // Frontend: tempId = "{fieldName}-parent"
+      const tempId = `${partField.fieldName}-parent`;
+      partIdMap[partField.id] = tempId;
+    });
+    
+    // Convert fields
+    const fields = (section.fields || []).map((field) => {
+      const frontendField = {
+        label: field.label || '',
+        fieldName: field.fieldName || '',
+        fieldType: field.fieldType || 'TEXT', // Keep original fieldType
+        roleRequired: field.roleRequired || null,
+        parentTempId: null, // Will be set below
+        option: null // Will be set below for VALUE_LIST
+      };
+      
+      // Convert parentId (UUID) → parentTempId (string)
+      if (field.parentId) {
+        // Find PART field with id = field.parentId
+        const parentField = section.fields.find(f => f.id === field.parentId);
+        if (parentField && parentField.fieldType === 'PART') {
+          // Generate tempId from fieldName
+          frontendField.parentTempId = `${parentField.fieldName}-parent`;
+        }
+      }
+      
+      // Add tempId for PART fields
+      if (field.fieldType === 'PART') {
+        frontendField.tempId = `${field.fieldName}-parent`;
+      }
+      
+      // Convert options (object) → option (JSON string) for VALUE_LIST
+      if (field.fieldType === 'VALUE_LIST' && field.options) {
+        try {
+          frontendField.option = JSON.stringify(field.options);
+        } catch (e) {
+          console.warn('Failed to stringify VALUE_LIST options:', e);
+        }
+      }
+      
+      return frontendField;
+    });
+    
+    return {
+      name: section.label || section.name || '', // Frontend needs name (use label)
+      label: section.label || section.name || '',
+      displayOrder: section.displayOrder || 1,
+      editBy: section.editBy || 'TRAINER',
+      roleInSubject: section.roleInSubject || '',
+      isSubmittable: Boolean(section.isSubmittable),
+      isToggleDependent: Boolean(section.isToggleDependent),
+      fields: fields
+    };
+  });
 }
 
 

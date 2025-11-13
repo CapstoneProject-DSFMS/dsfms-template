@@ -20,10 +20,23 @@ const CustomFieldsPanel = ({
   forceSaveAndPoll,
   getDocumentKey,
   addSystemFieldToSectionRef,
+  initialSections = null, // ← NEW prop to restore sections from draft
   readOnly = false,
   className = ""
 }) => {
   const [sections, setSections] = useState([]);
+  
+  // Restore sections from prop (when loading draft)
+  useEffect(() => {
+    if (initialSections && Array.isArray(initialSections) && initialSections.length > 0) {
+      // Only restore if sections are empty (avoid overwriting when user is editing)
+      if (sections.length === 0) {
+        console.log('📥 Restoring sections from draft:', initialSections);
+        setSections(initialSections);
+      }
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [initialSections]); // Only run when initialSections changes (sections.length check is intentional)
   const [collapsedSections, setCollapsedSections] = useState({});
   const [dragState, setDragState] = useState({ sectionIndex: null, fromIndex: null, overIndex: null, position: 'above' });
   const [sectionDragState, setSectionDragState] = useState({ fromIndex: null, overIndex: null, position: 'above' });
@@ -184,12 +197,32 @@ const CustomFieldsPanel = ({
             console.log('  📊 Status:', payload.status);
             console.log('🧩 Full payload:\n', JSON.stringify(payload, null, 2));
             
-            // Step 3: Submit to backend
-            console.log('📤 Submitting draft template to backend...');
-            const res = await apiClient.post('/templates', payload);
+            // Step 3: Submit to backend (UPDATE if templateId exists, CREATE if not)
+            const templateId = meta.id; // Get template ID from localStorage
             
-            toast.success('Draft template saved successfully!');
-            console.log('✅ Draft template submitted successfully:', res?.data ?? res);
+            let res;
+            if (templateId) {
+              // UPDATE existing draft
+              console.log('🔄 Updating existing draft:', templateId);
+              res = await apiClient.put(`/templates/${templateId}`, payload);
+              toast.success('Draft template updated successfully!');
+            } else {
+              // CREATE new draft
+              console.log('➕ Creating new draft');
+              res = await apiClient.post('/templates', payload);
+              toast.success('Draft template saved successfully!');
+              
+              // Save template ID to localStorage for future updates
+              if (res?.data?.data?.templateForm?.id) {
+                const updatedMeta = {
+                  ...meta,
+                  id: res.data.data.templateForm.id
+                };
+                localStorage.setItem('templateInfo', JSON.stringify(updatedMeta));
+              }
+            }
+            
+            console.log('✅ Draft template saved successfully:', res?.data ?? res);
             
             return res?.data ?? res;
           } catch (error) {
@@ -579,8 +612,21 @@ const CustomFieldsPanel = ({
       console.log('  🔑 documentKey:', documentKey);
       console.log('🧩 Full payload:\n', JSON.stringify(payload, null, 2));
       
-      const res = await apiClient.post('/templates', payload);
-      toast.success('Template submitted successfully');
+      // Check if this is updating an existing template (draft)
+      const templateId = meta.id;
+      let res;
+      if (templateId) {
+        // UPDATE existing template (convert draft to PENDING)
+        console.log('🔄 Updating existing template (draft → PENDING):', templateId);
+        res = await apiClient.put(`/templates/${templateId}`, payload);
+        toast.success('Template updated and submitted successfully');
+      } else {
+        // CREATE new template
+        console.log('➕ Creating new template');
+        res = await apiClient.post('/templates', payload);
+        toast.success('Template submitted successfully');
+      }
+      
       console.log('✅ Backend response:', res?.data ?? res);
     } catch (err) {
       console.error('❌ Submit template failed:', err);
