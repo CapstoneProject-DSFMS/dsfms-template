@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Button, Alert, Modal, Form, Row, Col, Card } from 'react-bootstrap';
 import { Plus, X, ArrowDown, Pencil, ChevronDown, ChevronRight } from 'react-bootstrap-icons';
+import { useNavigate } from 'react-router-dom';
 import { toast } from 'react-toastify';
 import { roleAPI } from '../../../api/role';
 import { readTemplateMetaFromStorage, buildTemplatePayload } from '../../../utils/templateBuilder';
@@ -24,6 +25,7 @@ const CustomFieldsPanel = ({
   readOnly = false,
   className = ""
 }) => {
+  const navigate = useNavigate();
   const [sections, setSections] = useState([]);
   
   // Restore sections from prop (when loading draft)
@@ -197,37 +199,77 @@ const CustomFieldsPanel = ({
             console.log('  📊 Status:', payload.status);
             console.log('🧩 Full payload:\n', JSON.stringify(payload, null, 2));
             
-            // Step 3: Submit to backend (UPDATE if templateId exists, CREATE if not)
-            const templateId = meta.id; // Get template ID from localStorage
+            // Step 3: Check currentTemplateId and call appropriate API
+            // IMPORTANT: Read currentTemplateId fresh from localStorage (not from meta which was read at start)
+            const freshMeta = readTemplateMetaFromStorage();
+            const currentTemplateId = freshMeta.currentTemplateId || localStorage.getItem('currentTemplateId');
             
-            let res;
-            if (templateId) {
+            console.log('🔍 Checking currentTemplateId:');
+            console.log('  📦 freshMeta.currentTemplateId:', freshMeta.currentTemplateId);
+            console.log('  📦 localStorage.getItem("currentTemplateId"):', localStorage.getItem('currentTemplateId'));
+            console.log('  ✅ Final currentTemplateId:', currentTemplateId);
+            
+            if (currentTemplateId) {
               // UPDATE existing draft
-              console.log('🔄 Updating existing draft:', templateId);
-              res = await apiClient.put(`/templates/${templateId}`, payload);
+              console.log('📝 Updating existing draft:', currentTemplateId);
+              const res = await apiClient.put(`/templates/update-draft/${currentTemplateId}`, {
+                ...payload,
+                id: currentTemplateId,
+                status: 'DRAFT'
+              });
               toast.success('Draft template updated successfully!');
+              console.log('✅ Draft updated successfully:', res?.data ?? res);
+              return res?.data ?? res;
             } else {
               // CREATE new draft
               console.log('➕ Creating new draft');
-              res = await apiClient.post('/templates', payload);
-              toast.success('Draft template saved successfully!');
+              const res = await apiClient.post('/templates', payload);
               
-              // Save template ID to localStorage for future updates
-              if (res?.data?.data?.templateForm?.id) {
+              // Save currentTemplateId from response
+              // Log full response structure to debug
+              console.log('🔍 Response structure check:');
+              console.log('  📦 Full res?.data:', JSON.stringify(res?.data, null, 2));
+              console.log('  📦 res?.data?.id:', res?.data?.id);
+              console.log('  📦 res?.data?.data:', res?.data?.data);
+              console.log('  📦 res?.data?.data?.id:', res?.data?.data?.id);
+              console.log('  📦 res?.data?.data?.templateForm?.id:', res?.data?.data?.templateForm?.id);
+              console.log('  📦 res?.data?.data?.template?.id:', res?.data?.data?.template?.id);
+              console.log('  📦 res?.data?.template?.id:', res?.data?.template?.id);
+              
+              // Try multiple possible response structures
+              const newTemplateId = res?.data?.id || 
+                                   res?.data?.data?.id || 
+                                   res?.data?.data?.templateForm?.id ||
+                                   res?.data?.data?.template?.id ||
+                                   res?.data?.template?.id ||
+                                   (res?.data?.data?.template ? res.data.data.template.id : null);
+              
+              console.log('  ✅ Extracted newTemplateId:', newTemplateId);
+              
+              if (newTemplateId) {
+                // Read fresh meta to preserve all existing fields
+                const freshMetaForUpdate = readTemplateMetaFromStorage();
                 const updatedMeta = {
-                  ...meta,
-                  id: res.data.data.templateForm.id
+                  ...freshMetaForUpdate,
+                  currentTemplateId: newTemplateId
                 };
                 localStorage.setItem('templateInfo', JSON.stringify(updatedMeta));
+                localStorage.setItem('currentTemplateId', newTemplateId);
+                console.log('💾 Saved currentTemplateId:', newTemplateId);
+                console.log('💾 Updated templateInfo:', updatedMeta);
+              } else {
+                console.warn('⚠️ No template ID found in response! Response structure:', res?.data);
               }
+              
+              toast.success('Draft template saved successfully!');
+              console.log('✅ Draft created successfully:', res?.data ?? res);
+              return res?.data ?? res;
             }
-            
-            console.log('✅ Draft template saved successfully:', res?.data ?? res);
-            
-            return res?.data ?? res;
           } catch (error) {
             console.error('❌ Error building/submitting draft template:', error);
-            toast.error('Failed to save draft template: ' + (error.message || 'Unknown error'));
+            // Extract error message from backend response
+            const errorMessage = error.response?.data?.message || error.message || 'Unknown error';
+            toast.error(errorMessage);
             throw error;
           }
         }
@@ -612,25 +654,45 @@ const CustomFieldsPanel = ({
       console.log('  🔑 documentKey:', documentKey);
       console.log('🧩 Full payload:\n', JSON.stringify(payload, null, 2));
       
-      // Check if this is updating an existing template (draft)
-      const templateId = meta.id;
-      let res;
-      if (templateId) {
-        // UPDATE existing template (convert draft to PENDING)
-        console.log('🔄 Updating existing template (draft → PENDING):', templateId);
-        res = await apiClient.put(`/templates/${templateId}`, payload);
-        toast.success('Template updated and submitted successfully');
+      // Check currentTemplateId and call appropriate API
+      const currentTemplateId = meta.currentTemplateId || localStorage.getItem('currentTemplateId');
+      
+      if (currentTemplateId) {
+        // UPDATE existing draft to PENDING (submit)
+        console.log('📝 Updating existing draft to PENDING:', currentTemplateId);
+        const res = await apiClient.put(`/templates/update-draft/${currentTemplateId}`, {
+          ...payload,
+          id: currentTemplateId,
+          status: 'PENDING'
+        });
+        toast.success('Template submitted successfully');
+        console.log('✅ Template updated and submitted:', res?.data ?? res);
+        
+        // Clear currentTemplateId after successful submit
+        const updatedMeta = {
+          ...meta,
+          currentTemplateId: null
+        };
+        localStorage.setItem('templateInfo', JSON.stringify(updatedMeta));
+        localStorage.removeItem('currentTemplateId');
+        console.log('🗑️ Cleared currentTemplateId after submit');
       } else {
         // CREATE new template
         console.log('➕ Creating new template');
-        res = await apiClient.post('/templates', payload);
+        const res = await apiClient.post('/templates', payload);
         toast.success('Template submitted successfully');
+        console.log('✅ Backend response:', res?.data ?? res);
       }
-      
-      console.log('✅ Backend response:', res?.data ?? res);
+
+      // Navigate back to forms list after successful submit
+      setTimeout(() => {
+        navigate('/admin/forms');
+      }, 1500);
     } catch (err) {
       console.error('❌ Submit template failed:', err);
-      toast.error('Failed to submit template: ' + (err.message || 'Unknown error'));
+      // Extract error message from backend response
+      const errorMessage = err.response?.data?.message || err.message || 'Unknown error';
+      toast.error(errorMessage);
     } finally {
       setIsSubmitting(false);
     }
@@ -648,7 +710,7 @@ const CustomFieldsPanel = ({
         return `{#${name}} {test_field} {/${name}}`;
       case 'IMAGE':
       case 'SIGNATURE_DRAW':
-      case 'SIGN_IMAGE':
+      case 'SIGNATURE_IMAGE':
       case 'FINAL_SCORE_TEXT':
       case 'FINAL_SCORE_NUM':
       case 'VALUE_LIST':
@@ -1218,7 +1280,7 @@ const CustomFieldsPanel = ({
                     <option value="TOGGLE">TOGGLE</option>
                     <option value="SECTION_CONTROL_TOGGLE">SECTION_CONTROL_TOGGLE</option>
                     <option value="SIGNATURE_DRAW">SIGNATURE_DRAW</option>
-                    <option value="SIGN_IMAGE">SIGN_IMAGE</option>
+                    <option value="SIGNATURE_IMAGE">SIGNATURE_IMAGE</option>
                     <option value="FINAL_SCORE_TEXT">FINAL_SCORE_TEXT</option>
                     <option value="FINAL_SCORE_NUM">FINAL_SCORE_NUM</option>
                     <option value="VALUE_LIST">VALUE_LIST</option>
@@ -1354,7 +1416,7 @@ const CustomFieldsPanel = ({
                     <option value="TOGGLE">TOGGLE</option>
                     <option value="SECTION_CONTROL_TOGGLE">SECTION_CONTROL_TOGGLE</option>
                     <option value="SIGNATURE_DRAW">SIGNATURE_DRAW</option>
-                    <option value="SIGN_IMAGE">SIGN_IMAGE</option>
+                    <option value="SIGNATURE_IMAGE">SIGNATURE_IMAGE</option>
                     <option value="FINAL_SCORE_TEXT">FINAL_SCORE_TEXT</option>
                     <option value="FINAL_SCORE_NUM">FINAL_SCORE_NUM</option>
                     <option value="VALUE_LIST">VALUE_LIST</option>

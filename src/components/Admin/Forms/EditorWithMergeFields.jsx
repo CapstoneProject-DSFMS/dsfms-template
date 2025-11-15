@@ -1,20 +1,41 @@
-import React, { useEffect, useState, useRef } from 'react';
+import React, { useEffect, useState, useRef, forwardRef, useImperativeHandle, useCallback } from 'react';
 import { Button, Alert, Card, Modal, Form, Row, Col } from 'react-bootstrap';
-import { Pencil, ChevronDown, ChevronRight, ArrowDown, X } from 'react-bootstrap-icons';
+import { Pencil, ChevronDown, ChevronRight, ArrowDown, X, Plus } from 'react-bootstrap-icons';
+import { useNavigate } from 'react-router-dom';
 import apiClient from '../../../api/config.js';
 import { roleAPI } from '../../../api/role';
 import { toast } from 'react-toastify';
+import { uploadAPI } from '../../../api';
+import { readTemplateMetaFromStorage, buildTemplatePayload } from '../../../utils/templateBuilder';
 
-const EditorWithMergeFields = ({ onInsertField, exportEditedDoc, initialUrl, readOnly = false, className = '' }) => {
+const EditorWithMergeFields = forwardRef(({ 
+  onInsertField, 
+  exportEditedDoc, 
+  initialUrl, 
+  readOnly = false, 
+  className = '',
+  forceSaveAndPoll,
+  getDocumentKey
+}, ref) => {
+  const navigate = useNavigate();
   const [mergeFields, setMergeFields] = useState([]);
   const [sections, setSections] = useState([]);
   const [collapsedSections, setCollapsedSections] = useState({});
   const [loading, setLoading] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
+  const [showFieldModal, setShowFieldModal] = useState(false);
   const [showSectionModal, setShowSectionModal] = useState(false);
   const [editingSectionIndex, setEditingSectionIndex] = useState(null);
   const [editingFieldIndex, setEditingFieldIndex] = useState(null);
   const [editingField, setEditingField] = useState(null);
+  const [newField, setNewField] = useState({
+    label: '',
+    fieldName: '',
+    fieldType: 'TEXT',
+    roleRequired: 'TRAINER',
+    parentTempId: null,
+    option: null // For VALUE_LIST: JSON string like '{"items": ["Pass", "Fail"]}'
+  });
   const [newSection, setNewSection] = useState({
     name: '',
     label: '',
@@ -30,6 +51,7 @@ const EditorWithMergeFields = ({ onInsertField, exportEditedDoc, initialUrl, rea
   const isReorderRef = useRef(false);
   const [dragState, setDragState] = useState({ sectionIndex: null, fromIndex: null, overIndex: null, position: 'above' });
   const [sectionDragState, setSectionDragState] = useState({ fromIndex: null, overIndex: null, position: 'above' });
+  const [isSubmitting, setIsSubmitting] = useState(false);
   
   // Toggle section collapse/expand
   const toggleSection = (index) => {
@@ -455,7 +477,21 @@ const EditorWithMergeFields = ({ onInsertField, exportEditedDoc, initialUrl, rea
   const handleEditField = (sectionIndex, fieldIndex) => {
     const field = sections[sectionIndex]?.fields?.[fieldIndex];
     if (!field) return;
-    setEditingField({ ...field });
+    
+    // Ensure fieldType is properly copied (handle both fieldType and type properties)
+    const fieldToEdit = {
+      ...field,
+      fieldType: field.fieldType || field.type || 'TEXT', // Support both fieldType and type
+      option: field.option || null // Ensure option is copied for VALUE_LIST
+    };
+    
+    console.log('🔍 Editing field:', {
+      originalField: field,
+      fieldToEdit: fieldToEdit,
+      fieldType: fieldToEdit.fieldType
+    });
+    
+    setEditingField(fieldToEdit);
     setEditingSectionIndex(sectionIndex);
     setEditingFieldIndex(fieldIndex);
     setShowEditModal(true);
@@ -506,10 +542,29 @@ const EditorWithMergeFields = ({ onInsertField, exportEditedDoc, initialUrl, rea
     }
   };
 
-  const handleSaveField = () => {
+  // Save field handler for Edit Field Modal
+  const handleSaveEditField = () => {
     if (!editingField || !editingField.label || !editingField.name) {
       toast.warning('Please fill in all required fields');
       return;
+    }
+
+    // Validate VALUE_LIST option if fieldType is VALUE_LIST
+    if (editingField.fieldType === 'VALUE_LIST') {
+      if (!editingField.option || !editingField.option.trim()) {
+        toast.warning('Please provide options (JSON format) for VALUE_LIST field');
+        return;
+      }
+      try {
+        const parsed = JSON.parse(editingField.option);
+        if (!parsed.items || !Array.isArray(parsed.items) || parsed.items.length === 0) {
+          toast.warning('Options must be a JSON object with a non-empty "items" array');
+          return;
+        }
+      } catch {
+        toast.warning('Invalid JSON format for options. Example: {"items": ["Pass", "Fail"]}');
+        return;
+      }
     }
 
     // Validate fieldName format based on fieldType
@@ -562,6 +617,126 @@ const EditorWithMergeFields = ({ onInsertField, exportEditedDoc, initialUrl, rea
     setEditingField(null);
     setEditingSectionIndex(null);
     setEditingFieldIndex(null);
+  };
+
+  const handleCloseModals = () => {
+    setShowFieldModal(false);
+    setShowEditModal(false);
+    setShowSectionModal(false);
+    setEditingSectionIndex(null);
+    setEditingFieldIndex(null);
+    setEditingField(null);
+  };
+
+  // Add field handler - Similar to CustomFieldsPanel
+  const handleAddField = (sectionIndex) => {
+    const section = sections[sectionIndex];
+    const roleRequired = section?.editBy || 'TRAINER';
+    setNewField({
+      label: '',
+      fieldName: '',
+      fieldType: 'TEXT',
+      roleRequired: roleRequired,
+      parentTempId: null,
+      option: null
+    });
+    setEditingSectionIndex(sectionIndex);
+    setShowFieldModal(true);
+  };
+
+  // Save field handler for Add Field Modal - Similar to CustomFieldsPanel
+  const handleSaveField = () => {
+    if (!newField.label || !newField.fieldName) {
+      toast.warning('Please fill in all required fields');
+      return;
+    }
+
+    // Validate VALUE_LIST option if fieldType is VALUE_LIST
+    if (newField.fieldType === 'VALUE_LIST') {
+      if (!newField.option || !newField.option.trim()) {
+        toast.warning('Please provide options (JSON format) for VALUE_LIST field');
+        return;
+      }
+      try {
+        const parsed = JSON.parse(newField.option);
+        if (!parsed.items || !Array.isArray(parsed.items) || parsed.items.length === 0) {
+          toast.warning('Options must be a JSON object with a non-empty "items" array');
+          return;
+        }
+      } catch {
+        toast.warning('Invalid JSON format for options. Example: {"items": ["Pass", "Fail"]}');
+        return;
+      }
+    }
+
+    // Validate fieldName format based on fieldType
+    const validation = validateFieldName(newField.fieldName, newField.fieldType);
+    if (!validation.valid) {
+      toast.warning(validation.message);
+      return;
+    }
+
+    // Section must be selected
+    if (editingSectionIndex === null || editingSectionIndex < 0 || editingSectionIndex >= sections.length) {
+      toast.warning('Invalid section');
+      return;
+    }
+
+    // Check if fieldName already exists within the section (exclude current field if editing)
+    const sectionFields = sections[editingSectionIndex].fields || [];
+    const existingFields = editingFieldIndex !== null 
+      ? sectionFields.filter((_, index) => index !== editingFieldIndex)
+      : sectionFields;
+    
+    // Check by fieldName (for extracted fields) or name (for manually added fields)
+    if (existingFields.some(field => {
+      const existingName = field.fieldName || field.name;
+      const newName = newField.fieldName || newField.name;
+      return existingName === newName;
+    })) {
+      toast.warning('Field name must be unique within this section');
+      return;
+    }
+
+    // Convert newField format to match EditorWithMergeFields format
+    // EditorWithMergeFields uses: { name, label, fieldType, parentTempId, tempId }
+    // CustomFieldsPanel uses: { fieldName, label, fieldType, parentTempId, option }
+    const fieldToAdd = {
+      name: newField.fieldName,
+      label: newField.label || `{${newField.fieldName}}`,
+      fieldType: newField.fieldType,
+      parentTempId: newField.parentTempId || null,
+      tempId: newField.fieldType === 'PART' ? `${newField.fieldName}-parent` : null,
+      option: newField.option || null
+    };
+
+    const nextSections = [...sections];
+    if (editingFieldIndex !== null) {
+      // Update existing field
+      nextSections[editingSectionIndex].fields = [
+        ...sectionFields.slice(0, editingFieldIndex),
+        fieldToAdd,
+        ...sectionFields.slice(editingFieldIndex + 1)
+      ];
+    } else {
+      // Add new field
+      nextSections[editingSectionIndex].fields = [...sectionFields, fieldToAdd];
+    }
+
+    setSections(nextSections);
+    setShowFieldModal(false);
+    setShowEditModal(false);
+    setEditingSectionIndex(null);
+    setEditingFieldIndex(null);
+    setNewField({
+      label: '',
+      fieldName: '',
+      fieldType: 'TEXT',
+      roleRequired: 'TRAINER',
+      parentTempId: null,
+      option: null
+    });
+    toast.success('Field added successfully');
   };
 
   const extractFromUrl = async () => {
@@ -628,16 +803,329 @@ const EditorWithMergeFields = ({ onInsertField, exportEditedDoc, initialUrl, rea
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [initialUrl]);
 
+  // Submit template handler - Similar to CustomFieldsPanel but for "File with fields"
+  const handleSubmitTemplate = useCallback(async () => {
+    try {
+      setIsSubmitting(true);
+      const meta = readTemplateMetaFromStorage();
+
+      // CRITICAL: Check if templateContent exists (file without fields)
+      if (!meta.templateContent) {
+        toast.error('Please upload original template (file without fields) first using "Original Template" button.');
+        setIsSubmitting(false);
+        return;
+      }
+
+      // Get documentKey for logging
+      const documentKey = getDocumentKey ? getDocumentKey() : null;
+      console.log('🔑 DocumentKey:', documentKey);
+
+      // Step: ForceSave → Backend Callback → Polling → Get S3 URL for templateConfig
+      // This is the same flow as "File without fields"
+      let templateConfigUrl = null;
+      const originalTemplateContent = meta.templateContent;
+
+      if (forceSaveAndPoll) {
+        try {
+          console.log('📤 Triggering callback flow...');
+          const onlyOfficeUrl = await forceSaveAndPoll();
+
+          if (onlyOfficeUrl) {
+            console.log('✅ Callback flow success! OnlyOffice URL:', onlyOfficeUrl);
+
+            // Step: Upload from OnlyOffice URL to S3
+            try {
+              console.log('📤 Uploading from OnlyOffice URL to S3...');
+
+              // Get fileName from template name (sanitize for filename)
+              const templateName = meta.name || 'template';
+              const sanitizedFileName = templateName
+                .replace(/[^a-zA-Z0-9]/g, '_')
+                .toLowerCase()
+                .substring(0, 50);
+              const fileName = `${sanitizedFileName}.docx`;
+
+              console.log('📝 File name for upload:', fileName);
+
+              // Upload from URL to S3
+              templateConfigUrl = await uploadAPI.uploadFromUrl(onlyOfficeUrl, fileName);
+
+              if (templateConfigUrl) {
+                console.log('✅ Upload from URL success! S3 URL:', templateConfigUrl);
+              } else {
+                console.warn('⚠️ No S3 URL received from upload-from-url');
+                templateConfigUrl = null;
+              }
+            } catch (uploadErr) {
+              console.error('❌ Upload from URL failed:', uploadErr);
+              toast.warning('Could not upload document to S3');
+              templateConfigUrl = null;
+            }
+          } else {
+            console.warn('⚠️ No OnlyOffice URL received');
+            templateConfigUrl = null;
+          }
+        } catch (err) {
+          console.error('❌ Callback flow failed:', err);
+          toast.warning('Could not get edited document from backend');
+          templateConfigUrl = null;
+        }
+      } else {
+        console.warn('⚠️ forceSaveAndPoll function not available');
+        templateConfigUrl = null;
+      }
+
+      console.log('📤 Submitting template to backend...');
+
+      // Validate FINAL_SCORE_TEXT and FINAL_SCORE_NUM (must have exactly 1 of each)
+      const allFields = sections.flatMap(s => s.fields || []);
+      const finalScoreTextFields = allFields.filter(f => f.fieldType === 'FINAL_SCORE_TEXT');
+      const finalScoreNumFields = allFields.filter(f => f.fieldType === 'FINAL_SCORE_NUM');
+
+      if (finalScoreTextFields.length !== 1) {
+        toast.error(`Template must have exactly 1 FINAL_SCORE_TEXT field. Found: ${finalScoreTextFields.length}`);
+        setIsSubmitting(false);
+        return;
+      }
+
+      if (finalScoreNumFields.length !== 1) {
+        toast.error(`Template must have exactly 1 FINAL_SCORE_NUM field. Found: ${finalScoreNumFields.length}`);
+        setIsSubmitting(false);
+        return;
+      }
+
+      // Build payload:
+      // - templateContent: File không có field (upload qua "Original Template")
+      // - templateConfig: File đã chỉnh sửa từ OnlyOffice editor (lấy khi submit)
+      const effectiveMeta = {
+        ...meta,
+        templateContent: originalTemplateContent, // File không có field
+        templateConfig: templateConfigUrl // File đã chỉnh sửa từ backend
+      };
+
+      const basePayload = buildTemplatePayload(effectiveMeta, sections);
+
+      // Build payload with status PENDING
+      const payload = {
+        name: basePayload.name,
+        description: basePayload.description,
+        departmentId: basePayload.departmentId,
+        templateContent: basePayload.templateContent,
+        templateConfig: basePayload.templateConfig || null,
+        status: 'PENDING',
+        sections: basePayload.sections
+      };
+
+      console.log('🧩 Template payload built:');
+      console.log('  📄 templateContent (file without fields):', payload.templateContent);
+      console.log('  ✏️ templateConfig (file đã chỉnh sửa):', payload.templateConfig || 'null');
+      console.log('  📊 Status:', payload.status);
+      console.log('  🔑 documentKey:', documentKey);
+      console.log('🧩 Full payload:\n', JSON.stringify(payload, null, 2));
+
+     // Check currentTemplateId and call appropriate API
+      const currentTemplateId = meta.currentTemplateId || localStorage.getItem('currentTemplateId');
+      
+      if (currentTemplateId) {
+        // UPDATE existing draft to PENDING (submit)
+        console.log('📝 Updating existing draft to PENDING:', currentTemplateId);
+        const res = await apiClient.put(`/templates/update-draft/${currentTemplateId}`, {
+          ...payload,
+          id: currentTemplateId,
+          status: 'PENDING'
+        });
+        toast.success('Template submitted successfully');
+        console.log('✅ Template updated and submitted:', res?.data ?? res);
+        
+        // Clear currentTemplateId after successful submit
+        const updatedMeta = {
+          ...meta,
+          currentTemplateId: null
+        };
+        localStorage.setItem('templateInfo', JSON.stringify(updatedMeta));
+        localStorage.removeItem('currentTemplateId');
+        console.log('🗑️ Cleared currentTemplateId after submit');
+      } else {
+        // CREATE new template
+        console.log('➕ Creating new template');
+        const res = await apiClient.post('/templates', payload);
+        toast.success('Template submitted successfully');
+        console.log('✅ Backend response:', res?.data ?? res);
+      }
+
+      
+      // Navigate back to forms list after successful submit
+      setTimeout(() => {
+        navigate('/admin/forms');
+      }, 1500);
+    } catch (err) {
+      console.error('❌ Submit template failed:', err);
+      // Extract error message from backend response
+      const errorMessage = err.response?.data?.message || err.message || 'Unknown error';
+      toast.error(errorMessage);
+    } finally {
+      setIsSubmitting(false);
+    }
+  }, [sections, forceSaveAndPoll, getDocumentKey, navigate]);
+
+  // Build and submit draft template function (for save draft flow)
+  const buildAndSubmitDraftTemplate = useCallback(async (draftUrl) => {
+    try {
+      console.log('📤 Building and submitting draft template (File with fields)...');
+      console.log('📄 Draft URL (OnlyOffice):', draftUrl);
+      
+      // Step 1: Upload from OnlyOffice URL to S3
+      let s3Url = null;
+      const meta = readTemplateMetaFromStorage(); // Read meta once at the beginning
+      
+      try {
+        console.log('📤 Uploading from OnlyOffice URL to S3...');
+        
+        // Get fileName from template name
+        const templateName = meta.name || 'template';
+        const sanitizedFileName = templateName
+          .replace(/[^a-zA-Z0-9]/g, '_')
+          .toLowerCase()
+          .substring(0, 50);
+        const fileName = `${sanitizedFileName}_draft.docx`;
+        
+        console.log('📝 File name for upload:', fileName);
+        
+        // Upload from URL to S3
+        s3Url = await uploadAPI.uploadFromUrl(draftUrl, fileName);
+        
+        if (s3Url) {
+          console.log('✅ Upload from URL success! S3 URL:', s3Url);
+        } else {
+          console.warn('⚠️ No S3 URL received from upload-from-url');
+          throw new Error('Failed to upload to S3');
+        }
+      } catch (uploadErr) {
+        console.error('❌ Upload from URL failed:', uploadErr);
+        toast.error('Could not upload draft document to S3');
+        throw uploadErr;
+      }
+      
+      // Step 2: Build template payload with status DRAFT
+      const effectiveMeta = {
+        ...meta,
+        templateContent: meta.templateContent, // Original file import
+        templateConfig: s3Url // S3 URL of edited document
+      };
+      
+      const basePayload = buildTemplatePayload(effectiveMeta, sections);
+      
+      // Build payload with status DRAFT
+      const payload = {
+        name: basePayload.name,
+        description: basePayload.description,
+        departmentId: basePayload.departmentId,
+        templateContent: basePayload.templateContent,
+        templateConfig: basePayload.templateConfig || null,
+        status: 'DRAFT', // Set status to DRAFT
+        sections: basePayload.sections
+      };
+      
+      console.log('🧩 Draft template payload built:');
+      console.log('  📄 templateContent (file import):', payload.templateContent);
+      console.log('  ✏️ templateConfig (file đã chỉnh sửa):', payload.templateConfig || 'null');
+      console.log('  📊 Status:', payload.status);
+      console.log('🧩 Full payload:\n', JSON.stringify(payload, null, 2));
+      
+      // Step 3: Check currentTemplateId and call appropriate API
+      // IMPORTANT: Read currentTemplateId fresh from localStorage (not from meta which was read at start)
+      const freshMeta = readTemplateMetaFromStorage();
+      const currentTemplateId = freshMeta.currentTemplateId || localStorage.getItem('currentTemplateId');
+      
+      console.log('🔍 Checking currentTemplateId:');
+      console.log('  📦 freshMeta.currentTemplateId:', freshMeta.currentTemplateId);
+      console.log('  📦 localStorage.getItem("currentTemplateId"):', localStorage.getItem('currentTemplateId'));
+      console.log('  ✅ Final currentTemplateId:', currentTemplateId);
+      
+      if (currentTemplateId) {
+        // UPDATE existing draft
+        console.log('📝 Updating existing draft:', currentTemplateId);
+        const res = await apiClient.put(`/templates/update-draft/${currentTemplateId}`, {
+          ...payload,
+          id: currentTemplateId,
+          status: 'DRAFT'
+        });
+        toast.success('Draft template updated successfully!');
+        console.log('✅ Draft updated successfully:', res?.data ?? res);
+        return res?.data ?? res;
+      } else {
+        // CREATE new draft
+        console.log('➕ Creating new draft');
+        const res = await apiClient.post('/templates', payload);
+        
+        // Save currentTemplateId from response
+        // Log full response structure to debug
+        console.log('🔍 Response structure check:');
+        console.log('  📦 Full res?.data:', JSON.stringify(res?.data, null, 2));
+        console.log('  📦 res?.data?.id:', res?.data?.id);
+        console.log('  📦 res?.data?.data:', res?.data?.data);
+        console.log('  📦 res?.data?.data?.id:', res?.data?.data?.id);
+        console.log('  📦 res?.data?.data?.templateForm?.id:', res?.data?.data?.templateForm?.id);
+        console.log('  📦 res?.data?.data?.template?.id:', res?.data?.data?.template?.id);
+        console.log('  📦 res?.data?.template?.id:', res?.data?.template?.id);
+        
+        // Try multiple possible response structures
+        const newTemplateId = res?.data?.id || 
+                             res?.data?.data?.id || 
+                             res?.data?.data?.templateForm?.id ||
+                             res?.data?.data?.template?.id ||
+                             res?.data?.template?.id ||
+                             (res?.data?.data?.template ? res.data.data.template.id : null);
+        
+        console.log('  ✅ Extracted newTemplateId:', newTemplateId);
+        
+        if (newTemplateId) {
+          // Read fresh meta to preserve all existing fields
+          const freshMetaForUpdate = readTemplateMetaFromStorage();
+          const updatedMeta = {
+            ...freshMetaForUpdate,
+            currentTemplateId: newTemplateId
+          };
+          localStorage.setItem('templateInfo', JSON.stringify(updatedMeta));
+          localStorage.setItem('currentTemplateId', newTemplateId);
+          console.log('💾 Saved currentTemplateId:', newTemplateId);
+          console.log('💾 Updated templateInfo:', updatedMeta);
+        } else {
+          console.warn('⚠️ No template ID found in response! Response structure:', res?.data);
+        }
+        
+        toast.success('Draft template saved successfully!');
+        console.log('✅ Draft created successfully:', res?.data ?? res);
+        return res?.data ?? res;
+      }
+    } catch (error) {
+      console.error('❌ Error building/submitting draft template:', error);
+      // Extract error message from backend response
+      const errorMessage = error.response?.data?.message || error.message || 'Unknown error';
+      toast.error(errorMessage);
+      throw error;
+    }
+  }, [sections]);
+
+  // Expose functions via ref
+  useImperativeHandle(ref, () => ({
+    getSections: () => sections,
+    submitTemplate: handleSubmitTemplate,
+    buildAndSubmitDraftTemplate: buildAndSubmitDraftTemplate
+  }), [sections, handleSubmitTemplate, buildAndSubmitDraftTemplate]);
+
   return (
     <div className={`h-100 d-flex flex-column editor-merge-fields-wrapper ${className}`} style={{ width: '100%', maxWidth: '100%', overflow: 'hidden', boxSizing: 'border-box' }}>
       <div className="p-2 border-bottom bg-white" style={{ flexShrink: 0 }}>
         <div className="d-flex align-items-center gap-2">
           <Button size="sm" variant="outline-primary" onClick={addSection} disabled={loading}>
-            + Add Section
+            <Plus size={14} className="me-1" />
+            <span className="d-none d-sm-inline">Add Section</span>
+            <span className="d-inline d-sm-none">Section</span>
           </Button>
         </div>
       </div>
-      <div className="flex-grow-1 d-flex flex-column" style={{ overflow: 'hidden', minHeight: 0, width: '100%', maxWidth: '100%', boxSizing: 'border-box' }}>
+      <div className="flex-grow-1 custom-fields-content" style={{ overflowY: 'auto', overflowX: 'hidden', minHeight: '0', flex: '1 1 auto' }}>
         <style>{`
           .editor-merge-fields-wrapper {
             width: 100% !important;
@@ -701,15 +1189,14 @@ const EditorWithMergeFields = ({ onInsertField, exportEditedDoc, initialUrl, rea
           .section-card.section-drop-target-above { border-top: 4px solid var(--bs-primary) !important; border-top-left-radius: 0.5rem; border-top-right-radius: 0.5rem; }
           .section-card.section-drop-target-below { border-bottom: 4px solid var(--bs-primary) !important; border-bottom-left-radius: 0.5rem; border-bottom-right-radius: 0.5rem; }
         `}</style>
-        {/* Sections on Top */}
-        <div className="flex-shrink-0" style={{ maxHeight: '60%', overflowY: 'auto', borderBottom: '1px solid #eee', minHeight: 0, width: '100%', maxWidth: '100%', boxSizing: 'border-box' }}>
-          <div className="p-3" style={{ width: '100%', maxWidth: '100%', boxSizing: 'border-box' }}>
-            {sections.length === 0 && (
-              <Alert variant="light" className="mb-0">
-                <small>No sections yet. Click "+ Add Section" to start.</small>
-              </Alert>
-            )}
-            {sections.length > 0 && (
+        {/* Sections - Scrollable area like CustomFieldsPanel */}
+        <div className="d-grid gap-2 custom-fields-grid" style={{ padding: '0.75rem' }}>
+          {sections.length === 0 && (
+            <Alert variant="light" className="mb-0">
+              <small>No sections yet. Click "+ Add Section" to start.</small>
+            </Alert>
+          )}
+          {sections.length > 0 && (
             <div className="d-grid gap-2">
               {sections
                 .map((sec, sIdx) => {
@@ -780,7 +1267,19 @@ const EditorWithMergeFields = ({ onInsertField, exportEditedDoc, initialUrl, rea
                       </div>
                       <small className="text-muted">Edit by: {sec.editBy || 'TRAINER'}</small>
                     </div>
-                    <div onClick={(e) => e.stopPropagation()}>
+                    <div className="d-flex gap-2" onClick={(e) => e.stopPropagation()}>
+                      <Button
+                        size="sm"
+                        variant="outline-primary"
+                        onClick={() => handleAddField(sIdx)}
+                        disabled={readOnly}
+                        className="custom-fields-add-field-btn"
+                        style={{ whiteSpace: 'nowrap', fontSize: '0.75rem', padding: '0.25rem 0.5rem' }}
+                      >
+                        <Plus className="me-1" size={12} />
+                        <span className="d-none d-sm-inline">Add Field</span>
+                        <span className="d-inline d-sm-none">Field</span>
+                      </Button>
                       <Button
                         size="sm"
                         variant="outline-danger"
@@ -814,26 +1313,7 @@ const EditorWithMergeFields = ({ onInsertField, exportEditedDoc, initialUrl, rea
                           return !f.parentTempId || f.parentTempId === null || f.parentTempId === '';
                         });
                         
-                        console.log(`📊 Section ${sIdx} fields analysis:`, {
-                          totalFields: allSorted.length,
-                          topLevelCount: topLevel.length,
-                          topLevelFields: topLevel.map(f => ({ 
-                            name: f.name, 
-                            fieldType: f.fieldType, 
-                            tempId: f.tempId,
-                            parentTempId: f.parentTempId,
-                            isPart: isPart(f)
-                          })),
-                          allFields: allSorted.map(f => ({ 
-                            name: f.name, 
-                            fieldType: f.fieldType, 
-                            tempId: f.tempId,
-                            parentTempId: f.parentTempId,
-                            isPart: isPart(f)
-                          }))
-                        });
-                        
-                        // DEBUG: Verify PART fields don't have incorrect parentTempId
+                        // Verify PART fields don't have incorrect parentTempId
                         topLevel.forEach(f => {
                           if (isPart(f) && f.parentTempId) {
                             console.error(`❌ CRITICAL BUG: PART field ${f.name} in topLevel has parentTempId: ${f.parentTempId}`, f);
@@ -855,9 +1335,6 @@ const EditorWithMergeFields = ({ onInsertField, exportEditedDoc, initialUrl, rea
 
                         const renderRow = (field, realIndex, topLevelIdx = null) => {
                           const isPartField = isPart(field);
-                          
-                          // DEBUG: Log which field is being rendered
-                          console.log(`🎨 renderRow: ${field.name} (${field.fieldType}), realIndex: ${realIndex}, topLevelIdx: ${topLevelIdx}, isPart: ${isPartField}, parentTempId: ${field.parentTempId}, tempId: ${field.tempId}`);
                           
                           // CRITICAL: If this field is a PART field, it should NEVER be rendered as a child
                           // Double-check that PART fields don't have parentTempId set incorrectly
@@ -1313,21 +1790,14 @@ const EditorWithMergeFields = ({ onInsertField, exportEditedDoc, initialUrl, rea
                           );
                         };
 
-                        // DEBUG: Log what's being rendered
-                        console.log(`🎨 Rendering ${topLevel.length} topLevel fields for section ${sIdx}:`, 
-                          topLevel.map(f => ({ name: f.name, fieldType: f.fieldType, tempId: f.tempId, parentTempId: f.parentTempId }))
-                        );
-                        
                         return (
                           <>
                             {topLevel.map((field, topLevelIdx) => {
                               const realIndex = sec.fields.indexOf(field);
-                              // DEBUG: Verify this field is indeed top-level and NOT a child
+                              // Verify this field is indeed top-level and NOT a child
                               if (isPart(field) && field.parentTempId) {
                                 console.error(`❌ CRITICAL BUG: Rendering PART field ${field.name} with parentTempId ${field.parentTempId} as topLevel!`, field);
                               }
-                              // DEBUG: Log which field is being rendered at topLevel
-                              console.log(`🎯 Rendering topLevel[${topLevelIdx}]: ${field.name} (${field.fieldType}), tempId: ${field.tempId}, parentTempId: ${field.parentTempId}, isPart: ${isPart(field)}`);
                               return renderRow(field, realIndex, topLevelIdx);
                             })}
                           </>
@@ -1335,7 +1805,7 @@ const EditorWithMergeFields = ({ onInsertField, exportEditedDoc, initialUrl, rea
                       })()
                     ) : (
                       <Alert variant="light" className="mb-0">
-                        <small>No fields in this section. Drag fields here.</small>
+                        <small>No fields in this section. Click "Add Field" or drag fields here.</small>
                       </Alert>
                     )}
                   </Card.Body>
@@ -1343,25 +1813,14 @@ const EditorWithMergeFields = ({ onInsertField, exportEditedDoc, initialUrl, rea
                 </Card>
                 );
                 })}
-            </div>
-            )}
           </div>
+          )}
         </div>
-        {/* Fields on Bottom */}
-        <div className="flex-grow-1" style={{ overflowY: 'auto', minHeight: 0, width: '100%', maxWidth: '100%', boxSizing: 'border-box' }}>
-          <div className="p-2" style={{ width: '100%', maxWidth: '100%', boxSizing: 'border-box' }}>
-            <style>{`
-              .bg-part { background-color: rgba(13, 110, 253, 0.06); border-color: rgba(13, 110, 253, 0.35) !important; }
-              .part-badge { background-color: rgba(13, 110, 253, 0.15); color: #0d6efd; font-size: 0.7rem; padding: 2px 6px; }
-              .part-children { border-left: 3px dashed rgba(13, 110, 253, 0.35); margin-left: 0.5rem; padding-left: 0.75rem; }
-              /* CRITICAL: Force PART fields to have no margin - they are always top-level */
-              .part-field-top-level { margin-left: 0 !important; padding-left: 0 !important; }
-              .part-field-top-level::before { display: none !important; }
-              /* Ensure children have proper indentation */
-              .field-child { margin-left: 1rem !important; }
-            `}</style>
-            <div className="text-muted small mb-2">Fields</div>
-            {mergeFields?.length ? (
+        
+        {/* Extracted Fields Section - Similar to CustomFieldsPanel */}
+        <div style={{ borderTop: '1px solid #dee2e6', paddingTop: '0.75rem', marginTop: '0.75rem', paddingLeft: '0.75rem', paddingRight: '0.75rem' }}>
+          <div className="text-muted small mb-2 fw-bold">Fields</div>
+          {mergeFields?.length ? (
               (() => {
                 // Sort fields by displayOrder
                 const sortedFields = [...mergeFields].sort((a, b) => (a.displayOrder || 0) - (b.displayOrder || 0));
@@ -1429,9 +1888,10 @@ const EditorWithMergeFields = ({ onInsertField, exportEditedDoc, initialUrl, rea
                 return topLevelFields.map((field) => renderField(field));
               })()
             ) : (
-              <Alert variant="light" className="m-0">No extracted fields.</Alert>
+              <Alert variant="light" className="mb-0">
+                <small>No extracted fields.</small>
+              </Alert>
             )}
-          </div>
         </div>
       </div>
 
@@ -1526,6 +1986,162 @@ const EditorWithMergeFields = ({ onInsertField, exportEditedDoc, initialUrl, rea
         </Modal.Footer>
       </Modal>
 
+      {/* Add Field Modal */}
+      <Modal show={showFieldModal} onHide={handleCloseModals} size="lg">
+        <Modal.Header closeButton>
+          <Modal.Title>Add New Field</Modal.Title>
+        </Modal.Header>
+        <Modal.Body>
+          <Form>
+            <Row className="g-3">
+              <Col md={12}>
+                <Alert variant="light" className="py-2">
+                  Adding field to section: <strong>{editingSectionIndex !== null ? sections[editingSectionIndex]?.label : 'N/A'}</strong>
+                </Alert>
+              </Col>
+              <Col md={12}>
+                <Form.Group>
+                  <Form.Label className="text-primary-custom">Label <span className="text-danger">*</span></Form.Label>
+                  <Form.Control
+                    type="text"
+                    placeholder="e.g., Crew Communication"
+                    value={newField.label}
+                    onChange={(e) => setNewField(prev => ({ ...prev, label: e.target.value }))}
+                    required
+                  />
+                  <Form.Text className="text-muted">
+                    The question or label displayed to the user (e.g., "Crew Communication").
+                  </Form.Text>
+                </Form.Group>
+              </Col>
+              <Col md={12}>
+                <Form.Group>
+                  <Form.Label className="text-primary-custom">Field Name <span className="text-danger">*</span></Form.Label>
+                  <Form.Control
+                    type="text"
+                    placeholder="e.g., crew_communication"
+                    value={newField.fieldName}
+                    onChange={(e) => setNewField(prev => ({ ...prev, fieldName: e.target.value }))}
+                    required
+                  />
+                  <Form.Text className="text-muted">
+                    The variable name used in the docxtemplate (e.g., {`{crew_communication}`}). Must be unique within a template.
+                  </Form.Text>
+                </Form.Group>
+              </Col>
+              <Col md={6}>
+                <Form.Group>
+                  <Form.Label className="text-primary-custom">Field Type <span className="text-danger">*</span></Form.Label>
+                  <Form.Select
+                    value={newField.fieldType}
+                    onChange={(e) => {
+                      const newType = e.target.value;
+                      setNewField(prev => ({ 
+                        ...prev, 
+                        fieldType: newType,
+                        option: newType === 'VALUE_LIST' ? prev.option : null // Clear option if not VALUE_LIST
+                      }));
+                    }}
+                    required
+                  >
+                    <option value="TEXT">TEXT</option>
+                    <option value="IMAGE">IMAGE</option>
+                    <option value="PART">PART</option>
+                    <option value="TOGGLE">TOGGLE</option>
+                    <option value="SECTION_CONTROL_TOGGLE">SECTION_CONTROL_TOGGLE</option>
+                    <option value="SIGNATURE_DRAW">SIGNATURE_DRAW</option>
+                    <option value="SIGNATURE_IMAGE">SIGNATURE_IMAGE</option>
+                    <option value="FINAL_SCORE_TEXT">FINAL_SCORE_TEXT</option>
+                    <option value="FINAL_SCORE_NUM">FINAL_SCORE_NUM</option>
+                    <option value="VALUE_LIST">VALUE_LIST</option>
+                  </Form.Select>
+                </Form.Group>
+              </Col>
+              <Col md={6}>
+                <Form.Group>
+                  <Form.Label className="text-primary-custom">Role Required <span className="text-danger">*</span></Form.Label>
+                  <Form.Control
+                    type="text"
+                    value={editingSectionIndex !== null ? (sections[editingSectionIndex]?.editBy || 'TRAINER') : 'TRAINER'}
+                    readOnly
+                    disabled
+                    style={{ backgroundColor: '#e9ecef', cursor: 'not-allowed' }}
+                    required
+                  />
+                  <Form.Text className="text-muted">
+                    Automatically set from section's "Edit By" value.
+                  </Form.Text>
+                </Form.Group>
+              </Col>
+              {/* VALUE_LIST Options Field */}
+              {newField.fieldType === 'VALUE_LIST' && (
+                <Col md={12}>
+                  <Form.Group>
+                    <Form.Label className="text-primary-custom">Options (JSON) <span className="text-danger">*</span></Form.Label>
+                    <Form.Control
+                      as="textarea"
+                      rows={3}
+                      placeholder='{"items": ["Pass", "Fail"]}'
+                      value={newField.option || ''}
+                      onChange={(e) => {
+                        try {
+                          // Validate JSON format
+                          const value = e.target.value.trim();
+                          if (value) {
+                            const parsed = JSON.parse(value);
+                            if (!parsed.items || !Array.isArray(parsed.items)) {
+                              throw new Error('Invalid format');
+                            }
+                          }
+                          setNewField(prev => ({ ...prev, option: value }));
+                        } catch {
+                          // Still allow typing, but show warning
+                          setNewField(prev => ({ ...prev, option: e.target.value }));
+                        }
+                      }}
+                      required
+                    />
+                    <Form.Text className="text-muted">
+                      JSON format with items array. Example: {`{"items": ["Pass", "Fail"]}`}
+                    </Form.Text>
+                    {newField.option && (() => {
+                      try {
+                        const parsed = JSON.parse(newField.option);
+                        if (!parsed.items || !Array.isArray(parsed.items)) {
+                          return <Form.Text className="text-danger">Invalid format: must have "items" array</Form.Text>;
+                        }
+                        return <Form.Text className="text-success">✓ Valid JSON with {parsed.items.length} items</Form.Text>;
+                      } catch {
+                        return <Form.Text className="text-danger">Invalid JSON format</Form.Text>;
+                      }
+                    })()}
+                  </Form.Group>
+                </Col>
+              )}
+              <Col md={12}>
+                <Form.Group>
+                  <Form.Label className="text-primary-custom">Parent Template ID</Form.Label>
+                  <Form.Control
+                    type="text"
+                    placeholder="Leave empty for root level"
+                    value={newField.parentTempId || ''}
+                    onChange={(e) => setNewField(prev => ({ ...prev, parentTempId: e.target.value || null }))}
+                  />
+                </Form.Group>
+              </Col>
+            </Row>
+          </Form>
+        </Modal.Body>
+        <Modal.Footer>
+          <Button variant="outline-secondary" onClick={handleCloseModals}>
+            Cancel
+          </Button>
+          <Button variant="primary" onClick={handleSaveField}>
+            Save Field
+          </Button>
+        </Modal.Footer>
+      </Modal>
+
       {/* Edit Field Modal */}
       <Modal show={showEditModal} onHide={handleCloseEditModal} size="lg">
         <Modal.Header closeButton>
@@ -1586,13 +2202,25 @@ const EditorWithMergeFields = ({ onInsertField, exportEditedDoc, initialUrl, rea
                     <Form.Label>Field Type <span className="text-danger">*</span></Form.Label>
                     <Form.Select
                       value={editingField.fieldType || 'TEXT'}
-                      onChange={(e) => setEditingField(prev => ({ ...prev, fieldType: e.target.value }))}
+                      onChange={(e) => {
+                        const newType = e.target.value;
+                        setEditingField(prev => ({ 
+                          ...prev, 
+                          fieldType: newType,
+                          option: newType === 'VALUE_LIST' ? prev.option : null // Clear option if not VALUE_LIST
+                        }));
+                      }}
                       required
                     >
                       <option value="TEXT">TEXT</option>
+                      <option value="IMAGE">IMAGE</option>
                       <option value="PART">PART</option>
                       <option value="TOGGLE">TOGGLE</option>
                       <option value="SECTION_CONTROL_TOGGLE">SECTION_CONTROL_TOGGLE</option>
+                      <option value="SIGNATURE_DRAW">SIGNATURE_DRAW</option>
+                      <option value="SIGNATURE_IMAGE">SIGNATURE_IMAGE</option>
+                      <option value="FINAL_SCORE_TEXT">FINAL_SCORE_TEXT</option>
+                      <option value="FINAL_SCORE_NUM">FINAL_SCORE_NUM</option>
                       <option value="VALUE_LIST">VALUE_LIST</option>
                     </Form.Select>
                   </Form.Group>
@@ -1612,6 +2240,51 @@ const EditorWithMergeFields = ({ onInsertField, exportEditedDoc, initialUrl, rea
                     </Form.Text>
                   </Form.Group>
                 </Col>
+                {/* VALUE_LIST Options Field */}
+                {editingField.fieldType === 'VALUE_LIST' && (
+                  <Col md={12}>
+                    <Form.Group>
+                      <Form.Label>Options (JSON) <span className="text-danger">*</span></Form.Label>
+                      <Form.Control
+                        as="textarea"
+                        rows={3}
+                        placeholder='{"items": ["Pass", "Fail"]}'
+                        value={editingField.option || ''}
+                        onChange={(e) => {
+                          try {
+                            // Validate JSON format
+                            const value = e.target.value.trim();
+                            if (value) {
+                              const parsed = JSON.parse(value);
+                              if (!parsed.items || !Array.isArray(parsed.items)) {
+                                throw new Error('Invalid format');
+                              }
+                            }
+                            setEditingField(prev => ({ ...prev, option: value }));
+                          } catch {
+                            // Still allow typing, but show warning
+                            setEditingField(prev => ({ ...prev, option: e.target.value }));
+                          }
+                        }}
+                        required
+                      />
+                      <Form.Text className="text-muted">
+                        JSON format with items array. Example: {`{"items": ["Pass", "Fail"]}`}
+                      </Form.Text>
+                      {editingField.option && (() => {
+                        try {
+                          const parsed = JSON.parse(editingField.option);
+                          if (!parsed.items || !Array.isArray(parsed.items)) {
+                            return <Form.Text className="text-danger">Invalid format: must have "items" array</Form.Text>;
+                          }
+                          return <Form.Text className="text-success">✓ Valid JSON with {parsed.items.length} items</Form.Text>;
+                        } catch {
+                          return <Form.Text className="text-danger">Invalid JSON format</Form.Text>;
+                        }
+                      })()}
+                    </Form.Group>
+                  </Col>
+                )}
                 <Col md={12}>
                   <Form.Group>
                     <Form.Label>Parent Template ID</Form.Label>
@@ -1647,14 +2320,32 @@ const EditorWithMergeFields = ({ onInsertField, exportEditedDoc, initialUrl, rea
           <Button variant="outline-secondary" onClick={handleCloseEditModal}>
             Cancel
           </Button>
-          <Button variant="primary" onClick={handleSaveField}>
+          <Button variant="primary" onClick={handleSaveEditField}>
             Save Changes
           </Button>
         </Modal.Footer>
       </Modal>
+
+      {/* Submit Button - Similar to CustomFieldsPanel */}
+      <div className="d-flex flex-column flex-md-row justify-content-between align-items-start align-items-md-center mt-2 mt-md-3 gap-2 flex-shrink-0" style={{ borderTop: '1px solid #dee2e6', paddingTop: '0.75rem', paddingLeft: '0.75rem', paddingRight: '0.75rem' }}>
+        <Alert variant="info" className="mb-0" style={{ fontSize: '0.75rem', padding: '0.5rem', flex: '1 1 auto', marginRight: '0.5rem' }}>
+          <strong>Tip:</strong> <span className="d-none d-sm-inline">Make sure to upload template content (file without fields) before submitting.</span>
+          <span className="d-inline d-sm-none">Upload template content before submitting.</span>
+        </Alert>
+        <Button 
+          variant="primary" 
+          size="sm" 
+          onClick={handleSubmitTemplate} 
+          disabled={isSubmitting}
+          className="flex-shrink-0"
+          style={{ whiteSpace: 'nowrap', fontSize: '0.8rem', padding: '0.375rem 0.75rem' }}
+        >
+          {isSubmitting ? 'Submitting...' : <><span className="d-none d-sm-inline">Submit Template</span><span className="d-inline d-sm-none">Submit</span></>}
+        </Button>
+      </div>
     </div>
   );
-};
+});
 
 export default EditorWithMergeFields;
 
