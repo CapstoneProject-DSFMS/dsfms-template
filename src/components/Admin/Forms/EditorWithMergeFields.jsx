@@ -36,6 +36,8 @@ const EditorWithMergeFields = forwardRef(({
     parentTempId: null,
     option: null // For VALUE_LIST: JSON string like '{"items": ["Pass", "Fail"]}'
   });
+  const [valueListOptions, setValueListOptions] = useState([]); // For VALUE_LIST: Array of option strings
+  const [newOptionInput, setNewOptionInput] = useState(''); // Input for adding new option
   const [newSection, setNewSection] = useState({
     name: '',
     label: '',
@@ -126,7 +128,7 @@ const EditorWithMergeFields = forwardRef(({
       e.dataTransfer.setData('text/plain', JSON.stringify(fieldsToMove));
     } else {
       // Regular field, just store the single field
-      e.dataTransfer.setData('text/plain', JSON.stringify(field));
+    e.dataTransfer.setData('text/plain', JSON.stringify(field));
     }
   };
 
@@ -471,7 +473,32 @@ const EditorWithMergeFields = forwardRef(({
   }, [showSectionModal]);
 
   const removeSection = (sectionIndex) => {
+    if (readOnly) return;
+    
+    const section = sections[sectionIndex];
+    if (!section) return;
+    
+    // Get fields from section to restore to mergeFields
+    const fieldsToRestore = section.fields || [];
+    
+    // Remove section from sections array
     setSections((prev) => prev.filter((_, idx) => idx !== sectionIndex));
+    
+    // Restore fields back to mergeFields list
+    if (fieldsToRestore.length > 0) {
+      setMergeFields((prev) => {
+        const existingFieldNames = new Set(prev.map(f => f.name));
+        const fieldsToAdd = fieldsToRestore.filter(field => {
+          // Check if field already exists in mergeFields
+          return !existingFieldNames.has(field.name);
+        });
+        
+        if (fieldsToAdd.length > 0) {
+          return [...prev, ...fieldsToAdd];
+        }
+        return prev;
+      });
+    }
   };
 
   const handleEditField = (sectionIndex, fieldIndex) => {
@@ -490,6 +517,23 @@ const EditorWithMergeFields = forwardRef(({
       fieldToEdit: fieldToEdit,
       fieldType: fieldToEdit.fieldType
     });
+    
+    // Load options from JSON if VALUE_LIST
+    if (fieldToEdit.fieldType === 'VALUE_LIST' && fieldToEdit.option) {
+      try {
+        const parsed = JSON.parse(fieldToEdit.option);
+        if (parsed.items && Array.isArray(parsed.items)) {
+          setValueListOptions(parsed.items);
+        } else {
+          setValueListOptions([]);
+        }
+      } catch {
+        setValueListOptions([]);
+      }
+    } else {
+      setValueListOptions([]);
+    }
+    setNewOptionInput('');
     
     setEditingField(fieldToEdit);
     setEditingSectionIndex(sectionIndex);
@@ -550,21 +594,16 @@ const EditorWithMergeFields = forwardRef(({
     }
 
     // Validate VALUE_LIST option if fieldType is VALUE_LIST
+    let optionValue = editingField.option || null;
     if (editingField.fieldType === 'VALUE_LIST') {
-      if (!editingField.option || !editingField.option.trim()) {
-        toast.warning('Please provide options (JSON format) for VALUE_LIST field');
+      if (!valueListOptions || valueListOptions.length === 0) {
+        toast.warning('Please add at least one option for VALUE_LIST field');
         return;
       }
-      try {
-        const parsed = JSON.parse(editingField.option);
-        if (!parsed.items || !Array.isArray(parsed.items) || parsed.items.length === 0) {
-          toast.warning('Options must be a JSON object with a non-empty "items" array');
-          return;
-        }
-      } catch {
-        toast.warning('Invalid JSON format for options. Example: {"items": ["Pass", "Fail"]}');
-        return;
-      }
+      // Convert array to JSON string
+      optionValue = JSON.stringify({ items: valueListOptions });
+      // Update editingField state for UI consistency
+      setEditingField(prev => ({ ...prev, option: optionValue }));
     }
 
     // Validate fieldName format based on fieldType
@@ -594,7 +633,8 @@ const EditorWithMergeFields = forwardRef(({
     const roleRequired = section?.editBy || 'TRAINER';
     const fieldToUpdate = {
       ...editingField,
-      roleRequired: roleRequired
+      roleRequired: roleRequired,
+      option: optionValue // Ensure option is included in fieldToUpdate
     };
 
     // Update the field
@@ -605,11 +645,19 @@ const EditorWithMergeFields = forwardRef(({
     ];
 
     setSections(nextSections);
+    
+    // Debug: Log the updated field to verify option is saved
+    console.log('✅ Field updated:', {
+      fieldName: fieldToUpdate.name,
+      fieldType: fieldToUpdate.fieldType,
+      hasOption: !!fieldToUpdate.option,
+      option: fieldToUpdate.option
+    });
+    
     setShowEditModal(false);
     setEditingField(null);
     setEditingSectionIndex(null);
     setEditingFieldIndex(null);
-    toast.success('Field updated successfully');
   };
 
   const handleCloseEditModal = () => {
@@ -626,6 +674,8 @@ const EditorWithMergeFields = forwardRef(({
     setEditingSectionIndex(null);
     setEditingFieldIndex(null);
     setEditingField(null);
+    setValueListOptions([]); // Reset options
+    setNewOptionInput(''); // Reset input
   };
 
   // Add field handler - Similar to CustomFieldsPanel
@@ -640,6 +690,8 @@ const EditorWithMergeFields = forwardRef(({
       parentTempId: null,
       option: null
     });
+    setValueListOptions([]); // Reset options array
+    setNewOptionInput(''); // Reset input
     setEditingSectionIndex(sectionIndex);
     setShowFieldModal(true);
   };
@@ -652,21 +704,16 @@ const EditorWithMergeFields = forwardRef(({
     }
 
     // Validate VALUE_LIST option if fieldType is VALUE_LIST
+    let optionValue = newField.option || null;
     if (newField.fieldType === 'VALUE_LIST') {
-      if (!newField.option || !newField.option.trim()) {
-        toast.warning('Please provide options (JSON format) for VALUE_LIST field');
+      if (!valueListOptions || valueListOptions.length === 0) {
+        toast.warning('Please add at least one option for VALUE_LIST field');
         return;
       }
-      try {
-        const parsed = JSON.parse(newField.option);
-        if (!parsed.items || !Array.isArray(parsed.items) || parsed.items.length === 0) {
-          toast.warning('Options must be a JSON object with a non-empty "items" array');
-          return;
-        }
-      } catch {
-        toast.warning('Invalid JSON format for options. Example: {"items": ["Pass", "Fail"]}');
-        return;
-      }
+      // Convert array to JSON string
+      optionValue = JSON.stringify({ items: valueListOptions });
+      // Update newField state for UI consistency
+      setNewField(prev => ({ ...prev, option: optionValue }));
     }
 
     // Validate fieldName format based on fieldType
@@ -707,7 +754,7 @@ const EditorWithMergeFields = forwardRef(({
       fieldType: newField.fieldType,
       parentTempId: newField.parentTempId || null,
       tempId: newField.fieldType === 'PART' ? `${newField.fieldName}-parent` : null,
-      option: newField.option || null
+      option: optionValue // Use the computed optionValue instead of newField.option
     };
 
     const nextSections = [...sections];
@@ -724,6 +771,15 @@ const EditorWithMergeFields = forwardRef(({
     }
 
     setSections(nextSections);
+    
+    // Debug: Log the added field to verify option is saved
+    console.log('✅ Field added:', {
+      fieldName: fieldToAdd.name,
+      fieldType: fieldToAdd.fieldType,
+      hasOption: !!fieldToAdd.option,
+      option: fieldToAdd.option
+    });
+    
     setShowFieldModal(false);
     setShowEditModal(false);
     setEditingSectionIndex(null);
@@ -736,7 +792,6 @@ const EditorWithMergeFields = forwardRef(({
       parentTempId: null,
       option: null
     });
-    toast.success('Field added successfully');
   };
 
   const extractFromUrl = async () => {
@@ -749,7 +804,7 @@ const EditorWithMergeFields = forwardRef(({
         try {
           const uploaded = await exportEditedDoc();
           if (uploaded) url = uploaded;
-      } catch {
+        } catch {
           // Continue with fallback
         }
       }
@@ -798,7 +853,7 @@ const EditorWithMergeFields = forwardRef(({
     // Only extract if URL changed and we haven't extracted for this URL yet
     if (initialUrl && initialUrl !== lastExtractedUrlRef.current) {
       lastExtractedUrlRef.current = initialUrl;
-      extractFromUrl();
+    extractFromUrl();
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [initialUrl]);
@@ -892,6 +947,43 @@ const EditorWithMergeFields = forwardRef(({
         toast.error(`Template must have exactly 1 FINAL_SCORE_NUM field. Found: ${finalScoreNumFields.length}`);
         setIsSubmitting(false);
         return;
+      }
+
+      // Validate FINAL_SCORE_TEST fields
+      const finalScoreTestFields = allFields.filter(f => f.fieldType === 'FINAL_SCORE_TEST');
+      const hasFinalScoreNum = finalScoreNumFields.length > 0;
+      const hasFinalScoreText = finalScoreTextFields.length > 0;
+      const hasBoth = hasFinalScoreNum && hasFinalScoreText;
+
+      for (const testField of finalScoreTestFields) {
+        // If both FINAL_SCORE_NUM and FINAL_SCORE_TEXT exist, options are not required
+        if (hasBoth) {
+          // Options not required - skip validation
+          continue;
+        }
+
+        // If only FINAL_SCORE_TEXT exists (no FINAL_SCORE_NUM), options are required
+        if (hasFinalScoreText && !hasFinalScoreNum) {
+          if (!testField.option || !testField.option.trim()) {
+            toast.error(`FINAL_SCORE_TEST field "${testField.label || testField.name}" requires options when only FINAL_SCORE_TEXT exists. Please provide options in JSON format: {"items": ["value1", "value2", ...]}`);
+            setIsSubmitting(false);
+            return;
+          }
+
+          // Validate options format
+          try {
+            const parsed = JSON.parse(testField.option);
+            if (!parsed.items || !Array.isArray(parsed.items) || parsed.items.length === 0) {
+              toast.error(`FINAL_SCORE_TEST field "${testField.label || testField.name}" options must be a JSON object with a non-empty "items" array. Example: {"items": ["value1", "value2"]}`);
+              setIsSubmitting(false);
+              return;
+            }
+          } catch {
+            toast.error(`FINAL_SCORE_TEST field "${testField.label || testField.name}" has invalid JSON format for options. Example: {"items": ["value1", "value2"]}`);
+            setIsSubmitting(false);
+            return;
+          }
+        }
       }
 
       // Build payload:
@@ -1820,7 +1912,7 @@ const EditorWithMergeFields = forwardRef(({
         {/* Extracted Fields Section - Similar to CustomFieldsPanel */}
         <div style={{ borderTop: '1px solid #dee2e6', paddingTop: '0.75rem', marginTop: '0.75rem', paddingLeft: '0.75rem', paddingRight: '0.75rem' }}>
           <div className="text-muted small mb-2 fw-bold">Fields</div>
-          {mergeFields?.length ? (
+            {mergeFields?.length ? (
               (() => {
                 // Sort fields by displayOrder
                 const sortedFields = [...mergeFields].sort((a, b) => (a.displayOrder || 0) - (b.displayOrder || 0));
@@ -1850,7 +1942,7 @@ const EditorWithMergeFields = forwardRef(({
                         onDragStart={canDragField ? (e) => onDragStart(e, field) : undefined}
                         style={{ cursor: canDragField ? 'grab' : 'default', opacity: canDragField ? 1 : 0.8 }}
                       >
-                        <Card.Body className="py-2 px-2">
+                  <Card.Body className="py-2 px-2">
                           <div className="d-flex justify-content-between align-items-start mb-2">
                             <div className="flex-grow-1" style={{ minWidth: 0, overflow: 'hidden', marginRight: '0.5rem' }}>
                               <div className="fw-bold" style={{ fontSize: '0.9rem', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
@@ -1871,9 +1963,9 @@ const EditorWithMergeFields = forwardRef(({
                             >
                               Insert Field
                             </Button>
-                          </div>
-                        </Card.Body>
-                      </Card>
+                    </div>
+                  </Card.Body>
+                </Card>
                       
                       {/* Render children if this is a PART field */}
                       {isPartField && children.length > 0 && (
@@ -1892,8 +1984,8 @@ const EditorWithMergeFields = forwardRef(({
                 <small>No extracted fields.</small>
               </Alert>
             )}
+          </div>
         </div>
-      </div>
 
       {/* Add Section Modal */}
       <Modal show={showSectionModal} onHide={handleCloseSectionModal} centered size="lg">
@@ -1961,7 +2053,7 @@ const EditorWithMergeFields = forwardRef(({
                       id="section-submittable"
                     />
                     <Form.Label htmlFor="section-submittable" className="mb-0 ms-2">Submittable</Form.Label>
-                  </div>
+                        </div>
                   <div className="d-flex align-items-center">
                     <Form.Check
                       type="checkbox"
@@ -1970,7 +2062,7 @@ const EditorWithMergeFields = forwardRef(({
                       id="section-toggle-dependent"
                     />
                     <Form.Label htmlFor="section-toggle-dependent" className="mb-0 ms-2">Toggle Dependent</Form.Label>
-                  </div>
+                      </div>
                 </Form.Group>
               </Col>
             </Row>
@@ -1991,7 +2083,7 @@ const EditorWithMergeFields = forwardRef(({
         <Modal.Header closeButton>
           <Modal.Title>Add New Field</Modal.Title>
         </Modal.Header>
-        <Modal.Body>
+        <Modal.Body style={{ maxHeight: '70vh', overflowY: 'auto' }}>
           <Form>
             <Row className="g-3">
               <Col md={12}>
@@ -2041,6 +2133,11 @@ const EditorWithMergeFields = forwardRef(({
                         fieldType: newType,
                         option: newType === 'VALUE_LIST' ? prev.option : null // Clear option if not VALUE_LIST
                       }));
+                      // Reset options array when changing field type
+                      if (newType !== 'VALUE_LIST') {
+                        setValueListOptions([]);
+                        setNewOptionInput('');
+                      }
                     }}
                     required
                   >
@@ -2077,58 +2174,74 @@ const EditorWithMergeFields = forwardRef(({
               {newField.fieldType === 'VALUE_LIST' && (
                 <Col md={12}>
                   <Form.Group>
-                    <Form.Label className="text-primary-custom">Options (JSON) <span className="text-danger">*</span></Form.Label>
-                    <Form.Control
-                      as="textarea"
-                      rows={3}
-                      placeholder='{"items": ["Pass", "Fail"]}'
-                      value={newField.option || ''}
-                      onChange={(e) => {
-                        try {
-                          // Validate JSON format
-                          const value = e.target.value.trim();
-                          if (value) {
-                            const parsed = JSON.parse(value);
-                            if (!parsed.items || !Array.isArray(parsed.items)) {
-                              throw new Error('Invalid format');
+                    <Form.Label className="text-primary-custom">Options <span className="text-danger">*</span></Form.Label>
+                    <div className="d-flex gap-2 mb-2">
+                      <Form.Control
+                        type="text"
+                        placeholder="Enter option value (e.g., Pass, Fail)"
+                        value={newOptionInput}
+                        onChange={(e) => setNewOptionInput(e.target.value)}
+                        onKeyPress={(e) => {
+                          if (e.key === 'Enter') {
+                            e.preventDefault();
+                            const trimmedValue = newOptionInput.trim();
+                            if (trimmedValue) {
+                              // Check for duplicate
+                              if (valueListOptions.includes(trimmedValue)) {
+                                toast.warning('This option already exists. Please enter a different value.');
+                                return;
+                              }
+                              setValueListOptions(prev => [...prev, trimmedValue]);
+                              setNewOptionInput('');
                             }
                           }
-                          setNewField(prev => ({ ...prev, option: value }));
-                        } catch {
-                          // Still allow typing, but show warning
-                          setNewField(prev => ({ ...prev, option: e.target.value }));
-                        }
-                      }}
-                      required
-                    />
+                        }}
+                      />
+                      <Button
+                        variant="outline-primary"
+                        size="sm"
+                        onClick={() => {
+                          const trimmedValue = newOptionInput.trim();
+                          if (trimmedValue) {
+                            // Check for duplicate
+                            if (valueListOptions.includes(trimmedValue)) {
+                              toast.warning('This option already exists. Please enter a different value.');
+                              return;
+                            }
+                            setValueListOptions(prev => [...prev, trimmedValue]);
+                            setNewOptionInput('');
+                          }
+                        }}
+                        disabled={!newOptionInput.trim()}
+                      >
+                        <Plus size={14} />
+                      </Button>
+                    </div>
+                    {valueListOptions.length > 0 && (
+                      <div className="d-flex flex-column gap-2 mb-2" style={{ maxHeight: '200px', overflowY: 'auto' }}>
+                        {valueListOptions.map((option, idx) => (
+                          <div key={idx} className="d-flex align-items-center gap-2 p-2 border rounded">
+                            <span className="flex-grow-1">{option}</span>
+                            <Button
+                              variant="outline-danger"
+                              size="sm"
+                              onClick={() => {
+                                setValueListOptions(prev => prev.filter((_, i) => i !== idx));
+                              }}
+                              style={{ padding: '0.25rem 0.4rem' }}
+                            >
+                              <X size={12} />
+                            </Button>
+                          </div>
+            ))}
+          </div>
+                    )}
                     <Form.Text className="text-muted">
-                      JSON format with items array. Example: {`{"items": ["Pass", "Fail"]}`}
+                      Add options one by one.
                     </Form.Text>
-                    {newField.option && (() => {
-                      try {
-                        const parsed = JSON.parse(newField.option);
-                        if (!parsed.items || !Array.isArray(parsed.items)) {
-                          return <Form.Text className="text-danger">Invalid format: must have "items" array</Form.Text>;
-                        }
-                        return <Form.Text className="text-success">✓ Valid JSON with {parsed.items.length} items</Form.Text>;
-                      } catch {
-                        return <Form.Text className="text-danger">Invalid JSON format</Form.Text>;
-                      }
-                    })()}
                   </Form.Group>
                 </Col>
               )}
-              <Col md={12}>
-                <Form.Group>
-                  <Form.Label className="text-primary-custom">Parent Template ID</Form.Label>
-                  <Form.Control
-                    type="text"
-                    placeholder="Leave empty for root level"
-                    value={newField.parentTempId || ''}
-                    onChange={(e) => setNewField(prev => ({ ...prev, parentTempId: e.target.value || null }))}
-                  />
-                </Form.Group>
-              </Col>
             </Row>
           </Form>
         </Modal.Body>
@@ -2147,7 +2260,7 @@ const EditorWithMergeFields = forwardRef(({
         <Modal.Header closeButton>
           <Modal.Title>Edit Field</Modal.Title>
         </Modal.Header>
-        <Modal.Body style={{ maxHeight: '400px', overflowY: 'auto' }}>
+        <Modal.Body style={{ maxHeight: '70vh', overflowY: 'auto' }}>
           {editingField && (
             <Form>
               <Row className="g-3">
@@ -2209,6 +2322,11 @@ const EditorWithMergeFields = forwardRef(({
                           fieldType: newType,
                           option: newType === 'VALUE_LIST' ? prev.option : null // Clear option if not VALUE_LIST
                         }));
+                        // Reset options array when changing field type
+                        if (newType !== 'VALUE_LIST') {
+                          setValueListOptions([]);
+                          setNewOptionInput('');
+                        }
                       }}
                       required
                     >
@@ -2244,58 +2362,74 @@ const EditorWithMergeFields = forwardRef(({
                 {editingField.fieldType === 'VALUE_LIST' && (
                   <Col md={12}>
                     <Form.Group>
-                      <Form.Label>Options (JSON) <span className="text-danger">*</span></Form.Label>
-                      <Form.Control
-                        as="textarea"
-                        rows={3}
-                        placeholder='{"items": ["Pass", "Fail"]}'
-                        value={editingField.option || ''}
-                        onChange={(e) => {
-                          try {
-                            // Validate JSON format
-                            const value = e.target.value.trim();
-                            if (value) {
-                              const parsed = JSON.parse(value);
-                              if (!parsed.items || !Array.isArray(parsed.items)) {
-                                throw new Error('Invalid format');
+                      <Form.Label>Options <span className="text-danger">*</span></Form.Label>
+                      <div className="d-flex gap-2 mb-2">
+                        <Form.Control
+                          type="text"
+                          placeholder="Enter option value (e.g., Pass, Fail)"
+                          value={newOptionInput}
+                          onChange={(e) => setNewOptionInput(e.target.value)}
+                          onKeyPress={(e) => {
+                            if (e.key === 'Enter') {
+                              e.preventDefault();
+                              const trimmedValue = newOptionInput.trim();
+                              if (trimmedValue) {
+                                // Check for duplicate
+                                if (valueListOptions.includes(trimmedValue)) {
+                                  toast.warning('This option already exists. Please enter a different value.');
+                                  return;
+                                }
+                                setValueListOptions(prev => [...prev, trimmedValue]);
+                                setNewOptionInput('');
                               }
                             }
-                            setEditingField(prev => ({ ...prev, option: value }));
-                          } catch {
-                            // Still allow typing, but show warning
-                            setEditingField(prev => ({ ...prev, option: e.target.value }));
-                          }
-                        }}
-                        required
-                      />
+                          }}
+                        />
+                        <Button
+                          variant="outline-primary"
+                          size="sm"
+                          onClick={() => {
+                            const trimmedValue = newOptionInput.trim();
+                            if (trimmedValue) {
+                              // Check for duplicate
+                              if (valueListOptions.includes(trimmedValue)) {
+                                toast.warning('This option already exists. Please enter a different value.');
+                                return;
+                              }
+                              setValueListOptions(prev => [...prev, trimmedValue]);
+                              setNewOptionInput('');
+                            }
+                          }}
+                          disabled={!newOptionInput.trim()}
+                        >
+                          <Plus size={14} />
+                        </Button>
+        </div>
+                      {valueListOptions.length > 0 && (
+                        <div className="d-flex flex-column gap-2 mb-2">
+                          {valueListOptions.map((option, idx) => (
+                            <div key={idx} className="d-flex align-items-center gap-2 p-2 border rounded">
+                              <span className="flex-grow-1">{option}</span>
+                              <Button
+                                variant="outline-danger"
+                                size="sm"
+                                onClick={() => {
+                                  setValueListOptions(prev => prev.filter((_, i) => i !== idx));
+                                }}
+                                style={{ padding: '0.25rem 0.4rem' }}
+                              >
+                                <X size={12} />
+                              </Button>
+                            </div>
+                          ))}
+                        </div>
+                      )}
                       <Form.Text className="text-muted">
-                        JSON format with items array. Example: {`{"items": ["Pass", "Fail"]}`}
+                        Add options one by one. They will be converted to JSON format automatically.
                       </Form.Text>
-                      {editingField.option && (() => {
-                        try {
-                          const parsed = JSON.parse(editingField.option);
-                          if (!parsed.items || !Array.isArray(parsed.items)) {
-                            return <Form.Text className="text-danger">Invalid format: must have "items" array</Form.Text>;
-                          }
-                          return <Form.Text className="text-success">✓ Valid JSON with {parsed.items.length} items</Form.Text>;
-                        } catch {
-                          return <Form.Text className="text-danger">Invalid JSON format</Form.Text>;
-                        }
-                      })()}
                     </Form.Group>
                   </Col>
                 )}
-                <Col md={12}>
-                  <Form.Group>
-                    <Form.Label>Parent Template ID</Form.Label>
-                    <Form.Control
-                      type="text"
-                      placeholder="Leave empty for root level"
-                      value={editingField.parentTempId || ''}
-                      onChange={(e) => setEditingField(prev => ({ ...prev, parentTempId: e.target.value || null }))}
-                    />
-                  </Form.Group>
-                </Col>
                 {editingField.tempId && (
                   <Col md={12}>
                     <Form.Group>

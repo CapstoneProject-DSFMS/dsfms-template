@@ -152,17 +152,38 @@ export function buildTemplatePayload(meta, sections) {
         const partName = fieldName || '';
         base.tempId = f.tempId || (partName ? `${partName}-parent` : undefined);
       }
-      // Add option for VALUE_LIST fields
-      if (fieldTypeUpper === 'VALUE_LIST' && f.option) {
-        try {
-          // Parse and validate JSON, then add as parsed object
-          const parsed = JSON.parse(f.option);
-          if (parsed.items && Array.isArray(parsed.items)) {
-            base.option = parsed;
+      // Add options for VALUE_LIST fields (backend expects "options" object with "items" array)
+      if (fieldTypeUpper === 'VALUE_LIST') {
+        // Debug: Log field to see if option exists
+        console.log('🔍 VALUE_LIST field found:', {
+          fieldName: fieldName,
+          label: f.label,
+          hasOption: !!f.option,
+          option: f.option,
+          optionType: typeof f.option
+        });
+        
+        if (f.option) {
+          try {
+            // Parse and validate JSON, then extract items array
+            const parsed = JSON.parse(f.option);
+            if (parsed.items && Array.isArray(parsed.items)) {
+              // Backend expects "options" object with "items" array inside
+              base.options = { items: parsed.items };
+              console.log('✅ VALUE_LIST options parsed successfully:', base.options);
+            } else {
+              console.warn('⚠️ VALUE_LIST option missing items array:', parsed);
+            }
+          } catch (e) {
+            // If parsing fails, skip options (should not happen if validation worked)
+            console.warn('❌ Failed to parse VALUE_LIST option:', e, 'Raw option:', f.option);
           }
-        } catch (e) {
-          // If parsing fails, skip option (should not happen if validation worked)
-          console.warn('Failed to parse VALUE_LIST option:', e);
+        } else {
+          console.warn('⚠️ VALUE_LIST field missing option field:', {
+            fieldName: fieldName,
+            label: f.label,
+            field: f
+          });
         }
       }
       return base;
