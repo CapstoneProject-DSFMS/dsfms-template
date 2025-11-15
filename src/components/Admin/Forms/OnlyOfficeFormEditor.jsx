@@ -1400,42 +1400,41 @@ console.log('🌐 Full S3 URL:', s3Url)
     <div className={`onlyoffice-form-editor ${className}`}>
       <div className="p-0">
         <Row className="g-0" style={{ minHeight: '90vh' }}>
-          {/* OnlyOffice Editor */}
+          {/* OnlyOffice Editor - LEFT side */}
           <Col
-                        xs={12}
-                        md={
-                            showMergeFields &&
-                            ((importType === 'File without fields' &&
-                                showCustomFieldsPanel) ||
-                                importType !== 'File without fields')
-                                ? 9
-                                : 12
-                        }
-                        className="editor-col"
-                        style={{ order: 1 }}
-                    >
+            xs={12}
+            md={
+              showMergeFields &&
+              ((importType === 'File without fields' && showCustomFieldsPanel) ||
+               importType !== 'File without fields')
+                ? 9
+                : 12
+            }
+            className="editor-col"
+            style={{ order: 1 }}
+          >
             <div className="p-3 editor-wrapper" style={{ height: '90vh' }}>
-                            {/* Header Bar with System Mapped Field Dropdown */}
-                            <div className="d-flex justify-content-end align-items-center mb-2">
-                                <Dropdown>
-                                    <Dropdown.Toggle 
-                                        variant="outline-primary" 
-                                        size="sm"
-                                        id="system-mapped-field-dropdown"
-                                    >
-                                        System Mapped Field
-                                    </Dropdown.Toggle>
-                                    <Dropdown.Menu style={{ maxHeight: '400px', overflowY: 'auto' }}>
-                                        {systemMappedFields.map((field, index) => (
-                                            <Dropdown.Item
-                                                key={index}
-                                                onClick={() => handleSystemFieldSelect(field)}
-                                            >
-                                                {field.label}
-                                            </Dropdown.Item>
-                                        ))}
-                                    </Dropdown.Menu>
-                                </Dropdown>
+              {/* Header Bar with System Mapped Field Dropdown */}
+              <div className="d-flex justify-content-end align-items-center mb-2">
+                <Dropdown>
+                  <Dropdown.Toggle 
+                    variant="outline-primary" 
+                    size="sm"
+                    id="system-mapped-field-dropdown"
+                  >
+                    System Mapped Field
+                  </Dropdown.Toggle>
+                  <Dropdown.Menu style={{ maxHeight: '400px', overflowY: 'auto' }}>
+                    {systemMappedFields.map((field, index) => (
+                      <Dropdown.Item
+                        key={index}
+                        onClick={() => handleSystemFieldSelect(field)}
+                      >
+                        {field.label}
+                      </Dropdown.Item>
+                    ))}
+                  </Dropdown.Menu>
+                </Dropdown>
               </div>
               
               {/* OnlyOffice Editor Container */}
@@ -1445,36 +1444,42 @@ console.log('🌐 Full S3 URL:', s3Url)
                   width: '100%', 
                   height: '100%',
                   border: '1px solid #ddd',
-                                    borderRadius: '4px',
+                  borderRadius: '4px',
                 }}
               />
             </div>
           </Col>
 
-                    {/* Merge Fields Flow (File with fields) - RIGHT sidebar */}
-                    {showMergeFields &&
-                        importType !== 'File without fields' && (
-                            <Col
-                                md={3}
-                                className="border-start"
-                                style={{ overflow: 'hidden' }}
-                            >
-                                <div
-                                    style={{
-                                        height: '90vh',
-                                        overflowY: 'auto',
-                                    }}
-                                >
-                                    <EditorWithMergeFields
+          {/* Merge Fields Flow (File with fields) - RIGHT sidebar */}
+          {showMergeFields &&
+            importType !== 'File without fields' && (
+              <Col
+                xs={12}
+                md={3}
+                className="border-start border-md-start"
+                style={{ order: 2, overflow: 'hidden' }}
+              >
+                <div
+                  className="custom-fields-wrapper"
+                  style={{
+                    height: '90vh',
+                    overflowY: 'auto',
+                    overflowX: 'hidden',
+                  }}
+                >
+                  <EditorWithMergeFields
+                    ref={addSystemFieldToSectionRef}
                 onInsertField={handleInsertField}
-                                        exportEditedDoc={exportEditedDoc}
-                                        initialUrl={initialContent}
+                    exportEditedDoc={exportEditedDoc}
+                    initialUrl={initialContent}
+                    forceSaveAndPoll={forceSaveAndPoll}
+                    getDocumentKey={getDocumentKey}
                 readOnly={readOnly}
                 className="h-100"
               />
-            </div>
-          </Col>
-        )}
+                </div>
+              </Col>
+            )}
 
                     {/* Custom Fields Flow (File without fields) - Collapsible */}
                     {showMergeFields &&

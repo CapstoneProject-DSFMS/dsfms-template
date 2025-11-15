@@ -4,9 +4,11 @@ import { ArrowLeft, Pencil, Save } from 'react-bootstrap-icons';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { toast } from 'react-toastify';
 import OnlyOfficeFormEditor from '../../../components/Admin/Forms/OnlyOfficeFormEditor';
+import AddTemplateContentButton from '../../../components/Admin/Forms/AddTemplateContentButton';
 import { PermissionWrapper } from '../../../components/Common';
 import { API_PERMISSIONS } from '../../../constants/apiPermissions';
 import { departmentAPI } from '../../../api/department';
+import { readTemplateMetaFromStorage } from '../../../utils/templateBuilder';
 
 const FormEditorPage = () => {
   const navigate = useNavigate();
@@ -47,8 +49,13 @@ const FormEditorPage = () => {
         initialSections: sectionsFromState // ← Get initialSections from navigation state
       } = location.state;
       
-      // Use documentUrl if available (from upload), otherwise use content
-      const finalContent = initialDocumentUrl || initialContent || '';
+      // For "File with fields": Use editorDocumentUrl if available (from import), otherwise use documentUrl/content
+      // This is the file to load in OnlyOffice editor (not templateContent)
+      let finalContent = initialDocumentUrl || initialContent || '';
+      if (initialTemplateInfo?.editorDocumentUrl) {
+        finalContent = initialTemplateInfo.editorDocumentUrl;
+      }
+      
       setContent(finalContent);
       setFileName(initialFileName || 'Untitled Document');
       setImportType(initialImportType || '');
@@ -276,7 +283,16 @@ const FormEditorPage = () => {
                   </div>
                 </div>
               </Col>
-              <Col xs={12} md={4} className="d-flex justify-content-end align-items-center mt-2 mt-md-0">
+              <Col xs={12} md={4} className="d-flex justify-content-end align-items-center gap-2 mt-2 mt-md-0">
+                {/* Show Original Template button only for "File with fields" */}
+                {importType === 'File with fields' && (
+                  <AddTemplateContentButton
+                    onSuccess={(url) => {
+                      console.log('✅ Template content uploaded:', url);
+                      // Toast notification is already handled in AddTemplateContentButton component
+                    }}
+                  />
+                )}
                 <Button
                   variant="outline-light"
                   size="sm"

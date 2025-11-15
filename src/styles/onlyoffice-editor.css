@@ -12,6 +12,8 @@
 .onlyoffice-form-editor .row.g-0 {
   height: 100%;
   margin: 0;
+  display: flex;
+  flex-direction: row; /* Ensure row layout on desktop */
 }
 
 .onlyoffice-form-editor .col {
