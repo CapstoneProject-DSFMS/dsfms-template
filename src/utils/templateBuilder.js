@@ -41,6 +41,7 @@ export function readTemplateMetaFromStorage() {
       return {
         id: parsed.id || null, // Include template ID for update operations
         currentTemplateId: parsed.currentTemplateId || null, // Current draft template ID
+        originalTemplateId: parsed.originalTemplateId || null, // Original template ID for create-version API
         name: parsed.name || '',
         description: parsed.description || '',
         departmentId: parsed.departmentId || '',
@@ -54,12 +55,14 @@ export function readTemplateMetaFromStorage() {
     // ignore parse errors and fall back to individual keys
   }
 
-  // Fallback: check localStorage for currentTemplateId
+  // Fallback: check localStorage for currentTemplateId and originalTemplateId
   const currentTemplateId = localStorage.getItem('currentTemplateId');
+  const originalTemplateId = localStorage.getItem('originalTemplateId'); // Also check for originalTemplateId
 
   return {
     id: null,
     currentTemplateId: currentTemplateId || null,
+    originalTemplateId: originalTemplateId || null,
     name: localStorage.getItem('templateName') || '',
     description: localStorage.getItem('templateDesc') || '',
     departmentId: localStorage.getItem('departmentId') || '',
@@ -70,7 +73,29 @@ export function readTemplateMetaFromStorage() {
   };
 }
 
-export function buildTemplatePayload(meta, sections) {
+export function buildTemplatePayload(meta, sections, existingFields = null) {
+  // Build map: tempId → id (UUID) for PART fields from existing draft (when updating)
+  // Format: { "apk-parent": "f6249b29-f13f-4095-a807-6de328cf7554", ... }
+  const tempIdToUuidMap = {};
+  if (existingFields && Array.isArray(existingFields)) {
+    console.log(`📋 Existing fields count: ${existingFields.length}`);
+    existingFields.forEach(field => {
+      if (field.fieldType === 'PART' && field.id && field.fieldName) {
+        const tempId = `${field.fieldName}-parent`;
+        tempIdToUuidMap[tempId] = field.id;
+        console.log(`🔗 Mapped PART field: tempId="${tempId}" → id="${field.id}"`);
+      }
+    });
+    // Debug: Log all child fields with parentId
+    const childFields = existingFields.filter(f => f.parentId);
+    console.log(`📋 Child fields with parentId:`, childFields.map(f => ({
+      fieldName: f.fieldName,
+      fieldType: f.fieldType,
+      parentId: f.parentId,
+      id: f.id
+    })));
+  }
+
   const normalizedSections = (sections || []).map((section, sIdx) => {
     const rawFields = section.fields || [];
     // Ensure PART fields have a stable tempId and children reference that tempId
@@ -141,9 +166,51 @@ export function buildTemplatePayload(meta, sections) {
         label: f.label,
         fieldName: fieldName, // Ensure fieldName is always present
         fieldType: backendFieldType, // Use mapped field type for backend
-        displayOrder: fIdx + 1,
-        parentTempId: f.parentTempId ? f.parentTempId : null
+        displayOrder: fIdx + 1
       };
+      
+      // Handle parent-child relationship
+      if (existingFields) {
+        // UPDATE mode: Keep parentTempId (string) like CREATE, but also add id (UUID) for all fields
+        // Backend accepts parentTempId for UPDATE, but needs id to identify existing fields
+        
+        // First, add parentTempId (keep same format as CREATE)
+        base.parentTempId = f.parentTempId ? f.parentTempId : null;
+        
+        // Then, add id (UUID) for child field if it exists in existingFields
+        if (f.parentTempId && tempIdToUuidMap[f.parentTempId]) {
+          // Child field: find by fieldName, fieldType (parentId may be null in existingFields)
+          // Try to find by fieldName and fieldType (parentId may be null in backend response)
+          let existingChildField = existingFields.find(
+            ef => ef.fieldName === fieldName && 
+                  ef.fieldType === backendFieldType &&
+                  ef.id
+          );
+          
+          if (existingChildField && existingChildField.id) {
+            base.id = existingChildField.id;
+            console.log(`🔗 Added id="${base.id}" for child field "${fieldName}" (parentTempId="${f.parentTempId}") (for update)`);
+          } else {
+            console.warn(`⚠️ Could not find existing child field: fieldName="${fieldName}", fieldType="${backendFieldType}"`);
+          }
+        } else {
+          // Top-level field (no parent): add id (UUID) if exists
+          const existingField = existingFields.find(
+            ef => ef.fieldName === fieldName && 
+                  ef.fieldType === backendFieldType &&
+                  !ef.parentId && // Top-level field (not a child)
+                  ef.id
+          );
+          if (existingField && existingField.id) {
+            base.id = existingField.id;
+            console.log(`🔗 Added id="${base.id}" for top-level field "${fieldName}" (for update)`);
+          }
+        }
+      } else {
+        // CREATE mode: use parentTempId (string) for child fields
+        base.parentTempId = f.parentTempId ? f.parentTempId : null;
+      }
+      
       if (isSignature) {
         base.roleRequired = f.roleRequired || 'TRAINER';
       }
@@ -151,6 +218,19 @@ export function buildTemplatePayload(meta, sections) {
         // ensure PART tempId exists and is stable
         const partName = fieldName || '';
         base.tempId = f.tempId || (partName ? `${partName}-parent` : undefined);
+        
+        // When updating draft: add id (UUID) for PART field so backend can match with child fields' parentId
+        if (existingFields) {
+          const existingPartField = existingFields.find(
+            ef => ef.fieldType === 'PART' && 
+                  (ef.fieldName === fieldName || ef.fieldName === f.name) &&
+                  ef.id
+          );
+          if (existingPartField && existingPartField.id) {
+            base.id = existingPartField.id;
+            console.log(`🔗 Added id="${base.id}" for PART field "${fieldName}" (for update)`);
+          }
+        }
       }
       // Add options for VALUE_LIST fields (backend expects "options" object with "items" array)
       if (fieldTypeUpper === 'VALUE_LIST') {
