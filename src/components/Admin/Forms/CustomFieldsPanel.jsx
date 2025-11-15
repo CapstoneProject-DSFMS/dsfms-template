@@ -176,14 +176,42 @@ const CustomFieldsPanel = ({
               throw uploadErr;
             }
             
-            // Step 2: Build template payload with status DRAFT
+            // Step 2: Check originalTemplateId FIRST, then currentTemplateId, and call appropriate API
+            // IMPORTANT: Read metadata fresh from localStorage (not from meta which was read at start)
+            const freshMeta = readTemplateMetaFromStorage();
+            const originalTemplateId = freshMeta.originalTemplateId;
+            // Check both currentTemplateId and id (for backward compatibility with "Your Drafts")
+            const currentTemplateId = freshMeta.currentTemplateId || 
+                                     freshMeta.id || 
+                                     localStorage.getItem('currentTemplateId');
+            
+            // Step 3: Load existing fields if updating draft (to convert parentTempId → parentId)
+            let existingFields = null;
+            if (currentTemplateId && !originalTemplateId) {
+              // Only load existing fields when updating draft (not creating new version)
+              try {
+                console.log('📥 Loading existing draft fields for parentId conversion...');
+                const existingDraftResponse = await templateAPI.getTemplateById(currentTemplateId);
+                const existingSections = existingDraftResponse?.data?.sections || 
+                                        existingDraftResponse?.data?.data?.sections || [];
+                // Flatten all fields from all sections
+                existingFields = existingSections.flatMap(section => section.fields || []);
+                console.log(`✅ Loaded ${existingFields.length} existing fields for conversion`);
+              } catch (loadError) {
+                console.warn('⚠️ Failed to load existing draft fields, will use parentTempId:', loadError);
+                // Continue without existingFields - will use parentTempId (for CREATE flow)
+              }
+            }
+            
+            // Step 4: Build template payload with status DRAFT
             const effectiveMeta = {
               ...meta,
               templateContent: meta.templateContent, // Original file import
               templateConfig: s3Url // S3 URL of edited document
             };
             
-            const basePayload = buildTemplatePayload(effectiveMeta, sections);
+            // Pass existingFields to buildTemplatePayload for parentId conversion
+            const basePayload = buildTemplatePayload(effectiveMeta, sections, existingFields);
             
             // Build payload with status DRAFT
             const payload = {
@@ -200,35 +228,133 @@ const CustomFieldsPanel = ({
             console.log('  📄 templateContent (file import):', payload.templateContent);
             console.log('  ✏️ templateConfig (file đã chỉnh sửa):', payload.templateConfig || 'null');
             console.log('  📊 Status:', payload.status);
+            console.log('  🔄 Using existingFields for conversion:', existingFields ? 'Yes' : 'No');
             console.log('🧩 Full payload:\n', JSON.stringify(payload, null, 2));
             
-            // Step 3: Check currentTemplateId and call appropriate API
-            // IMPORTANT: Read currentTemplateId fresh from localStorage (not from meta which was read at start)
-            const freshMeta = readTemplateMetaFromStorage();
-            // Check both currentTemplateId and id (for backward compatibility with "Your Drafts")
-            const currentTemplateId = freshMeta.currentTemplateId || 
-                                     freshMeta.id || 
-                                     localStorage.getItem('currentTemplateId');
-            
-            console.log('🔍 Checking currentTemplateId:');
+            console.log('🔍 Checking flow type:');
+            console.log('  📦 freshMeta.originalTemplateId:', originalTemplateId);
             console.log('  📦 freshMeta.currentTemplateId:', freshMeta.currentTemplateId);
             console.log('  📦 freshMeta.id:', freshMeta.id);
             console.log('  📦 localStorage.getItem("currentTemplateId"):', localStorage.getItem('currentTemplateId'));
+            console.log('  ✅ Final originalTemplateId:', originalTemplateId);
             console.log('  ✅ Final currentTemplateId:', currentTemplateId);
             
-            if (currentTemplateId) {
-              // UPDATE existing draft
+            // PRIORITY 1: Check originalTemplateId FIRST (Create Version flow)
+            // In "Create Version" flow, we ALWAYS use create-version API, even if currentTemplateId exists
+            if (originalTemplateId) {
+                // This is "Create Version" flow - use create-version API
+                console.log('🔄 Creating new draft for version (with originalTemplateId):', originalTemplateId);
+                
+                // Build version payload with originalTemplateId and status DRAFT
+                const versionPayload = {
+                  originalTemplateId: originalTemplateId,
+                  ...payload
+                };
+                
+                try {
+                  const res = await templateAPI.createVersion(versionPayload);
+                  
+                  // Save currentTemplateId from response
+                  const templateForm = res?.data?.templateForm || res?.data?.data?.templateForm || res?.data?.data?.template || res?.data?.template;
+                  const newTemplateId = templateForm?.id || 
+                                     res?.data?.id || 
+                                     res?.data?.data?.id || 
+                                     res?.data?.data?.templateForm?.id ||
+                                     res?.data?.data?.template?.id ||
+                                     res?.data?.template?.id ||
+                                     (res?.data?.data?.template ? res.data.data.template.id : null);
+                  
+                  if (newTemplateId) {
+                    const freshMetaForUpdate = readTemplateMetaFromStorage();
+                    const updatedMeta = {
+                      ...freshMetaForUpdate,
+                      currentTemplateId: newTemplateId
+                    };
+                    localStorage.setItem('templateInfo', JSON.stringify(updatedMeta));
+                    localStorage.setItem('currentTemplateId', newTemplateId);
+                    console.log('💾 Saved currentTemplateId:', newTemplateId);
+                  }
+                  
+                  toast.success('Draft template saved successfully!');
+                  console.log('✅ Draft version created successfully:', res?.data ?? res);
+                  return res?.data ?? res;
+                } catch (createError) {
+                  // Check if error is "Template name already exists"
+                  const errorMessage = createError?.response?.data?.message || createError?.message || '';
+                  const statusCode = createError?.response?.statusCode || createError?.response?.status;
+                  
+                  const isNameExistsError = statusCode === 400 && 
+                    (errorMessage.includes('already exists') || 
+                     errorMessage.includes('Template name') ||
+                     errorMessage.toLowerCase().includes('duplicate'));
+                  
+                  if (isNameExistsError) {
+                    // Retry without name - backend will auto-generate name
+                    console.log('⚠️ Template name already exists, retrying without name...');
+                    toast.warning('Template name already exists. System will auto-generate a new name...');
+                    
+                    // Create new payload without name
+                    const retryPayload = {
+                      originalTemplateId: originalTemplateId,
+                      description: payload.description,
+                      departmentId: payload.departmentId,
+                      templateContent: payload.templateContent,
+                      templateConfig: payload.templateConfig || null,
+                      status: 'DRAFT',
+                      sections: payload.sections
+                      // Note: name is intentionally omitted - backend will auto-generate
+                    };
+                    
+                    try {
+                      const retryRes = await templateAPI.createVersion(retryPayload);
+                      
+                      // Save currentTemplateId from response
+                      const templateForm = retryRes?.data?.templateForm || retryRes?.data?.data?.templateForm || retryRes?.data?.data?.template || retryRes?.data?.template;
+                      const newTemplateId = templateForm?.id || 
+                                         retryRes?.data?.id || 
+                                         retryRes?.data?.data?.id || 
+                                         retryRes?.data?.data?.templateForm?.id ||
+                                         retryRes?.data?.data?.template?.id ||
+                                         retryRes?.data?.template?.id ||
+                                         (retryRes?.data?.data?.template ? retryRes.data.data.template.id : null);
+                      
+                      if (newTemplateId) {
+                        const freshMetaForUpdate = readTemplateMetaFromStorage();
+                        const updatedMeta = {
+                          ...freshMetaForUpdate,
+                          currentTemplateId: newTemplateId
+                        };
+                        localStorage.setItem('templateInfo', JSON.stringify(updatedMeta));
+                        localStorage.setItem('currentTemplateId', newTemplateId);
+                        console.log('💾 Saved currentTemplateId (retry):', newTemplateId);
+                      }
+                      
+                      toast.success('Draft template saved successfully with auto-generated name!');
+                      console.log('✅ Draft version created successfully (retry):', retryRes?.data ?? retryRes);
+                      return retryRes?.data ?? retryRes;
+                    } catch (retryError) {
+                      // If retry also fails, throw error
+                      console.error('❌ Retry failed:', retryError);
+                      throw retryError;
+                    }
+                  } else {
+                    // If error is not "name already exists", throw error
+                    throw createError;
+                  }
+                }
+            } else if (currentTemplateId) {
+              // PRIORITY 2: Update existing draft (only when NOT in Create Version flow)
               console.log('📝 Updating existing draft:', currentTemplateId);
               const res = await apiClient.put(`/templates/update-draft/${currentTemplateId}`, {
                 ...payload,
                 id: currentTemplateId,
                 status: 'DRAFT'
               });
-              toast.success('Draft template updated successfully!');
+              toast.success('Draft template saved successfully!');
               console.log('✅ Draft updated successfully:', res?.data ?? res);
               return res?.data ?? res;
             } else {
-              // CREATE new draft
+              // PRIORITY 3: Create new draft (normal flow, not Create Version, not existing draft)
               console.log('➕ Creating new draft');
               const res = await apiClient.post('/templates', payload);
               
@@ -710,6 +836,28 @@ const CustomFieldsPanel = ({
         }
       }
       
+      // Check if this is a create version flow (has originalTemplateId) or update draft (has currentTemplateId)
+      const originalTemplateId = meta.originalTemplateId;
+      const currentTemplateId = meta.currentTemplateId || localStorage.getItem('currentTemplateId');
+      
+      // Load existing fields if updating draft (to convert parentTempId → parentId)
+      let existingFields = null;
+      if (currentTemplateId && !originalTemplateId) {
+        // Only load existing fields when updating draft (not creating new version or new template)
+        try {
+          console.log('📥 Loading existing draft fields for parentId conversion (Submit)...');
+          const existingDraftResponse = await templateAPI.getTemplateById(currentTemplateId);
+          const existingSections = existingDraftResponse?.data?.sections || 
+                                  existingDraftResponse?.data?.data?.sections || [];
+          // Flatten all fields from all sections
+          existingFields = existingSections.flatMap(section => section.fields || []);
+          console.log(`✅ Loaded ${existingFields.length} existing fields for conversion (Submit)`);
+        } catch (loadError) {
+          console.warn('⚠️ Failed to load existing draft fields, will use parentTempId:', loadError);
+          // Continue without existingFields - will use parentTempId (for CREATE flow)
+        }
+      }
+      
       // Build payload:
       // - templateContent: URL file import ban đầu
       // - templateConfig: URL file đã chỉnh sửa (nếu callback thành công)
@@ -719,7 +867,8 @@ const CustomFieldsPanel = ({
         templateConfig: templateConfigUrl // URL file đã chỉnh sửa từ backend
       };
       
-      const basePayload = buildTemplatePayload(effectiveMeta, sections);
+      // Pass existingFields to buildTemplatePayload for parentId conversion
+      const basePayload = buildTemplatePayload(effectiveMeta, sections, existingFields);
       
       // Build payload with status right after templateConfig
       const payload = {
@@ -737,10 +886,8 @@ const CustomFieldsPanel = ({
       console.log('  ✏️ templateConfig (file đã chỉnh sửa):', payload.templateConfig || 'null');
       console.log('  📊 Status:', payload.status);
       console.log('  🔑 documentKey:', documentKey);
+      console.log('  🔄 Using existingFields for conversion:', existingFields ? 'Yes' : 'No');
       console.log('🧩 Full payload:\n', JSON.stringify(payload, null, 2));
-      
-      // Check if this is a create version flow (has originalTemplateId)
-      const originalTemplateId = meta.originalTemplateId;
       
       if (originalTemplateId) {
         // CREATE NEW VERSION from published template
@@ -822,9 +969,7 @@ const CustomFieldsPanel = ({
           }
         }
       } else {
-        // Check currentTemplateId and call appropriate API
-        const currentTemplateId = meta.currentTemplateId || localStorage.getItem('currentTemplateId');
-        
+        // Use currentTemplateId already checked above
         if (currentTemplateId) {
           // UPDATE existing draft to PENDING (submit)
           console.log('📝 Updating existing draft to PENDING:', currentTemplateId);
