@@ -24,18 +24,22 @@ const FormsPage = () => {
   const loadTemplates = async () => {
     try {
       setLoading(true);
-      const response = await templateAPI.getTemplates();
+      // Only fetch PENDING templates (DRAFT templates are shown in "Your Drafts" page)
+      const response = await templateAPI.getTemplates({ status: 'PENDING' });
       
       // Handle response structure: { success: true, data: [...] }
+      let templatesData = [];
       if (response.success && response.data) {
-        setTemplates(response.data);
+        templatesData = response.data;
       } else if (Array.isArray(response)) {
-        setTemplates(response);
+        templatesData = response;
       } else if (response.data && Array.isArray(response.data)) {
-        setTemplates(response.data);
-      } else {
-        setTemplates([]);
+        templatesData = response.data;
       }
+      
+      // Filter to only show PENDING templates (double check)
+      const pendingTemplates = templatesData.filter(template => template.status === 'PENDING');
+      setTemplates(pendingTemplates);
     } catch (error) {
       console.error('Error loading templates:', error);
       toast.error('Failed to load templates');

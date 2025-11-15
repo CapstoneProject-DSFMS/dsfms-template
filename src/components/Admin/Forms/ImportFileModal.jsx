@@ -90,14 +90,18 @@ const ImportFileModal = ({ show, onHide, onImportSuccess, onImportError }) => {
       // Xử lý 2 luồng khác nhau
       if (importType === 'with-fields') {
         // Luồng 1: File with fields - Lưu thông tin và navigate
+        // NOTE: Không gán file vào templateContent ở đây
+        // User sẽ phải upload file không có field qua nút "Original Template"
         const templateData = {
           name: templateInfo.name,
           description: templateInfo.description,
           departmentId: templateInfo.departmentId,
-          templateContent: documentUrl,
+          templateContent: '', // Không gán file import vào templateContent
           fileName: selectedFile.name.replace('.docx', ''),
           importType: 'File with fields',
-          createdAt: new Date().toISOString()
+          createdAt: new Date().toISOString(),
+          // Lưu URL file import để dùng cho OnlyOffice editor (không phải templateContent)
+          editorDocumentUrl: documentUrl
         };
 
         // Lưu vào localStorage
