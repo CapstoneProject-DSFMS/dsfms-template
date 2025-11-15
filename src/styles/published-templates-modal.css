@@ -1,0 +1,39 @@
+/* Published Templates Modal Styles */
+.published-templates-modal-body {
+  max-height: 70vh;
+  overflow-y: auto;
+  overflow-x: hidden;
+}
+
+/* Responsive adjustments for mobile/tablet */
+@media (max-width: 768px) {
+  .published-templates-modal-body {
+    max-height: calc(100vh - 200px);
+  }
+}
+
+@media (max-width: 576px) {
+  .published-templates-modal-body {
+    max-height: calc(100vh - 180px);
+  }
+}
+
+/* Custom scrollbar for modal body */
+.published-templates-modal-body::-webkit-scrollbar {
+  width: 8px;
+}
+
+.published-templates-modal-body::-webkit-scrollbar-track {
+  background: #f1f1f1;
+  border-radius: 4px;
+}
+
+.published-templates-modal-body::-webkit-scrollbar-thumb {
+  background: #888;
+  border-radius: 4px;
+}
+
+.published-templates-modal-body::-webkit-scrollbar-thumb:hover {
+  background: #555;
+}
+

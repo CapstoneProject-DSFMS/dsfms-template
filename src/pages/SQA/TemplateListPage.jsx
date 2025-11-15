@@ -1,6 +1,5 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { Container, Row, Col, Button, Card } from 'react-bootstrap';
-import { FileEarmarkPdf } from 'react-bootstrap-icons';
+import { Container, Card } from 'react-bootstrap';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'react-toastify';
 import { LoadingSkeleton } from '../../components/Common';
@@ -113,24 +112,6 @@ const TemplateListPage = () => {
     <Container fluid className="py-4 template-list-page">
       <Card className="border-neutral-200 shadow-sm">
         <Card.Header className="bg-light-custom border-neutral-200">
-          <Row className="align-items-center">
-            <Col xs={12} md={6}>
-              <div>
-              </div>
-            </Col>
-            <Col xs={12} md={6} className="mt-2 mt-md-0">
-              <div className="d-flex justify-content-end gap-2">
-                <Button
-                  variant="outline-primary"
-                  size="sm"
-                  className="d-flex align-items-center"
-                >
-                  <FileEarmarkPdf className="me-1" size={16} />
-                  Export Templates
-                </Button>
-              </div>
-            </Col>
-          </Row>
         </Card.Header>
 
         {/* Tabs */}

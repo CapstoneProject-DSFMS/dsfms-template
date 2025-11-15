@@ -3,7 +3,7 @@ import { Alert, Card, Col, Row, Spinner, Dropdown, Modal, Button as BootstrapBut
 import { toast } from 'react-toastify'
 import { uploadAPI } from '../../../api'
 import CustomFieldsPanel from './CustomFieldsPanel'
-import EditorWithMergeFields from './EditorWithMergeFields'
+// EditorWithMergeFields removed - using CustomFieldsPanel for all import types
 import { API_CONFIG } from '../../../config/api.js'
 const CALLBACK_URL = `${API_CONFIG.BASE_URL}/media/docs/onlyoffice/callback`
 
@@ -12,7 +12,8 @@ const OnlyOfficeFormEditor = forwardRef(({
   fileName = 'Untitled Document',
   readOnly = false,
   showMergeFields = true,
-  importType = '',
+  // eslint-disable-next-line no-unused-vars
+  importType = '', // Kept for backward compatibility, no longer used after removing EditorWithMergeFields
     className = '',
   initialSections = null, // ← NEW prop to restore sections from draft
   onHasUnsavedChangesChange,
@@ -1373,7 +1374,7 @@ console.log('🌐 Full S3 URL:', s3Url)
         )
   }
 
-    const handleAddCustomField = (field, options) => {
+    const handleAddCustomField = (field) => {
     // Check if field is an array (for update) or single field (for add)
     if (Array.isArray(field)) {
             setCustomFields(field)
@@ -1394,9 +1395,7 @@ console.log('🌐 Full S3 URL:', s3Url)
           <Col
             xs={12}
             md={
-              showMergeFields &&
-              ((importType === 'File without fields' && showCustomFieldsPanel) ||
-               importType !== 'File without fields')
+              showMergeFields && showCustomFieldsPanel
                 ? 9
                 : 12
             }
@@ -1440,41 +1439,8 @@ console.log('🌐 Full S3 URL:', s3Url)
             </div>
           </Col>
 
-          {/* Merge Fields Flow (File with fields) - RIGHT sidebar */}
-          {showMergeFields &&
-            importType !== 'File without fields' && (
-              <Col
-                xs={12}
-                md={3}
-                className="border-start border-md-start"
-                style={{ order: 2, overflow: 'hidden' }}
-              >
-                <div
-                  className="custom-fields-wrapper"
-                  style={{
-                    height: '90vh',
-                    overflowY: 'auto',
-                    overflowX: 'hidden',
-                  }}
-                >
-                  <EditorWithMergeFields
-                    ref={addSystemFieldToSectionRef}
-                onInsertField={handleInsertField}
-                    exportEditedDoc={exportEditedDoc}
-                    initialUrl={initialContent}
-                    forceSaveAndPoll={forceSaveAndPoll}
-                    getDocumentKey={getDocumentKey}
-                readOnly={readOnly}
-                className="h-100"
-              />
-            </div>
-          </Col>
-        )}
-
-                    {/* Custom Fields Flow (File without fields) - Collapsible */}
-                    {showMergeFields &&
-                        importType === 'File without fields' &&
-                        showCustomFieldsPanel && (
+          {/* Custom Fields Panel - RIGHT sidebar (for all import types) */}
+          {showMergeFields && showCustomFieldsPanel && (
           <Col xs={12} md={3} className="border-start border-md-start custom-fields-col" style={{ order: 2 }}>
                                 <div
                                     className="custom-fields-wrapper"
