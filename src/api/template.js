@@ -78,6 +78,16 @@ const templateAPI = {
       throw error;
     }
   },
+
+  // Review template (approve or reject)
+  reviewTemplate: async (templateId, reviewData) => {
+    try {
+      const response = await apiClient.patch(`/templates/${templateId}/review`, reviewData);
+      return response.data;
+    } catch (error) {
+      throw error;
+    }
+  },
 };
 
 export default templateAPI;

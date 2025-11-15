@@ -136,20 +136,20 @@ const YourDraftsPage = () => {
   return (
     <Container fluid className="py-4 forms-page form-component">
       <Card className="border-neutral-200 shadow-sm">
-        <Card.Header className="border-neutral-200 forms-page-header" style={{backgroundColor: '#1b3c53'}}>
-          <Row className="align-items-center">
+        <Card.Header className="border-neutral-200 forms-page-header" style={{backgroundColor: '#1b3c53', padding: '12px 16px'}}>
+          <Row className="align-items-center g-0">
             <Col>
-              <div className="d-flex align-items-center">
+              <div className="d-flex align-items-center" style={{ gap: '8px' }}>
                 <Button
                   variant="link"
-                  className="text-white me-3 p-0"
+                  className="text-white p-0"
                   onClick={() => navigate('/admin/forms')}
-                  style={{ textDecoration: 'none' }}
+                  style={{ textDecoration: 'none', margin: 0, padding: '4px', minWidth: 'auto' }}
                 >
                   <ArrowLeft size={20} />
                 </Button>
-                <FileText className="me-2 text-white" size={24} />
-                <h4 className="mb-0 text-white">Your Drafts</h4>
+                <FileText className="text-white" size={24} style={{ marginLeft: '4px' }} />
+                <h4 className="mb-0 text-white" style={{ marginLeft: '8px' }}>Your Drafts</h4>
               </div>
             </Col>
           </Row>

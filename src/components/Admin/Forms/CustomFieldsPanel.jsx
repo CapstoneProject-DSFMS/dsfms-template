@@ -70,6 +70,8 @@ const CustomFieldsPanel = ({
     parentTempId: null,
     option: null // For VALUE_LIST: JSON string like '{"items": ["Pass", "Fail"]}'
   });
+  const [valueListOptions, setValueListOptions] = useState([]); // For VALUE_LIST: Array of option strings
+  const [newOptionInput, setNewOptionInput] = useState(''); // Input for adding new option
 
   // If legacy customFields prop provided, seed a default section once
   useEffect(() => {
@@ -334,6 +336,25 @@ const CustomFieldsPanel = ({
     });
   };
 
+  const removeSection = (sectionIndex) => {
+    if (readOnly) return;
+    
+    const section = sections[sectionIndex];
+    if (!section) return;
+    
+    // Remove section from sections array
+    setSections((prev) => prev.filter((_, idx) => idx !== sectionIndex));
+    
+    // Update flattened fields for parent component if needed
+    if (onAddField) {
+      const updatedSections = sections.filter((_, idx) => idx !== sectionIndex);
+      const flattened = updatedSections.flatMap((s) => s.fields || []);
+      setTimeout(() => {
+        onAddField(flattened, { silent: true });
+      }, 0);
+    }
+  };
+
   const handleSaveSection = () => {
     if (!newSection.label) {
       toast.warning('Please fill in section label');
@@ -399,6 +420,8 @@ const CustomFieldsPanel = ({
       parentTempId: null,
       option: null
     });
+    setValueListOptions([]); // Reset options array
+    setNewOptionInput(''); // Reset input
     setEditingSectionIndex(sectionIndex);
     setShowFieldModal(true);
   };
@@ -454,26 +477,24 @@ const CustomFieldsPanel = ({
       return;
     }
 
+    // Prepare field to save with option if VALUE_LIST
+    let fieldToSave = { ...newField };
+    
     // Validate VALUE_LIST option if fieldType is VALUE_LIST
     if (newField.fieldType === 'VALUE_LIST') {
-      if (!newField.option || !newField.option.trim()) {
-        toast.warning('Please provide options (JSON format) for VALUE_LIST field');
+      if (!valueListOptions || valueListOptions.length === 0) {
+        toast.warning('Please add at least one option for VALUE_LIST field');
         return;
       }
-      try {
-        const parsed = JSON.parse(newField.option);
-        if (!parsed.items || !Array.isArray(parsed.items) || parsed.items.length === 0) {
-          toast.warning('Options must be a JSON object with a non-empty "items" array');
-          return;
-        }
-      } catch {
-        toast.warning('Invalid JSON format for options. Example: {"items": ["Pass", "Fail"]}');
-        return;
-      }
+      // Convert array to JSON string and set directly on fieldToSave (not async state)
+      const optionJson = JSON.stringify({ items: valueListOptions });
+      fieldToSave.option = optionJson;
+      // Also update state for consistency
+      setNewField(prev => ({ ...prev, option: optionJson }));
     }
 
     // Validate fieldName format based on fieldType
-    const validation = validateFieldName(newField.fieldName, newField.fieldType);
+    const validation = validateFieldName(fieldToSave.fieldName, fieldToSave.fieldType);
     if (!validation.valid) {
       toast.warning(validation.message);
       return;
@@ -491,7 +512,7 @@ const CustomFieldsPanel = ({
       ? sectionFields.filter((_, index) => index !== editingFieldIndex)
       : sectionFields;
     
-    if (existingFields.some(field => field.fieldName === newField.fieldName)) {
+    if (existingFields.some(field => field.fieldName === fieldToSave.fieldName)) {
       toast.warning('Field name must be unique');
       return;
     }
@@ -501,12 +522,12 @@ const CustomFieldsPanel = ({
       // Update existing field in the selected section
       nextSections[editingSectionIndex].fields = [
         ...sectionFields.slice(0, editingFieldIndex),
-        newField,
+        fieldToSave,
         ...sectionFields.slice(editingFieldIndex + 1)
       ];
     } else {
       // Add new field in the selected section (no displayOrder; computed on submit)
-      nextSections[editingSectionIndex].fields = [...sectionFields, { ...newField }];
+      nextSections[editingSectionIndex].fields = [...sectionFields, fieldToSave];
     }
 
     setSections(nextSections);
@@ -523,12 +544,32 @@ const CustomFieldsPanel = ({
     setShowEditModal(false);
     setEditingSectionIndex(null);
     setEditingFieldIndex(null);
+    setValueListOptions([]); // Reset options
+    setNewOptionInput(''); // Reset input
   };
 
   const handleEditField = (sectionIndex, fieldIndex) => {
     const field = sections[sectionIndex]?.fields?.[fieldIndex];
     if (!field) return;
     setNewField({ ...field });
+    
+    // Load options from JSON if VALUE_LIST
+    if (field.fieldType === 'VALUE_LIST' && field.option) {
+      try {
+        const parsed = JSON.parse(field.option);
+        if (parsed.items && Array.isArray(parsed.items)) {
+          setValueListOptions(parsed.items);
+        } else {
+          setValueListOptions([]);
+        }
+      } catch {
+        setValueListOptions([]);
+      }
+    } else {
+      setValueListOptions([]);
+    }
+    setNewOptionInput('');
+    
     setEditingSectionIndex(sectionIndex);
     setEditingFieldIndex(fieldIndex);
     setShowEditModal(true);
@@ -540,6 +581,8 @@ const CustomFieldsPanel = ({
     setShowSectionModal(false);
     setEditingSectionIndex(null);
     setEditingFieldIndex(null);
+    setValueListOptions([]); // Reset options
+    setNewOptionInput(''); // Reset input
   };
 
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -624,6 +667,43 @@ const CustomFieldsPanel = ({
         setIsSubmitting(false);
         return;
       }
+
+      // Validate FINAL_SCORE_TEST fields
+      const finalScoreTestFields = allFields.filter(f => f.fieldType === 'FINAL_SCORE_TEST');
+      const hasFinalScoreNum = finalScoreNumFields.length > 0;
+      const hasFinalScoreText = finalScoreTextFields.length > 0;
+      const hasBoth = hasFinalScoreNum && hasFinalScoreText;
+
+      for (const testField of finalScoreTestFields) {
+        // If both FINAL_SCORE_NUM and FINAL_SCORE_TEXT exist, options are not required
+        if (hasBoth) {
+          // Options not required - skip validation
+          continue;
+        }
+
+        // If only FINAL_SCORE_TEXT exists (no FINAL_SCORE_NUM), options are required
+        if (hasFinalScoreText && !hasFinalScoreNum) {
+          if (!testField.option || !testField.option.trim()) {
+            toast.error(`FINAL_SCORE_TEST field "${testField.label || testField.fieldName || testField.name}" requires options when only FINAL_SCORE_TEXT exists. Please provide options in JSON format: {"items": ["value1", "value2", ...]}`);
+            setIsSubmitting(false);
+            return;
+          }
+
+          // Validate options format
+          try {
+            const parsed = JSON.parse(testField.option);
+            if (!parsed.items || !Array.isArray(parsed.items) || parsed.items.length === 0) {
+              toast.error(`FINAL_SCORE_TEST field "${testField.label || testField.fieldName || testField.name}" options must be a JSON object with a non-empty "items" array. Example: {"items": ["value1", "value2"]}`);
+              setIsSubmitting(false);
+              return;
+            }
+          } catch {
+            toast.error(`FINAL_SCORE_TEST field "${testField.label || testField.fieldName || testField.name}" has invalid JSON format for options. Example: {"items": ["value1", "value2"]}`);
+            setIsSubmitting(false);
+            return;
+          }
+        }
+      }
       
       // Build payload:
       // - templateContent: URL file import ban đầu
@@ -679,9 +759,9 @@ const CustomFieldsPanel = ({
       } else {
         // CREATE new template
         console.log('➕ Creating new template');
-        const res = await apiClient.post('/templates', payload);
-        toast.success('Template submitted successfully');
-        console.log('✅ Backend response:', res?.data ?? res);
+      const res = await apiClient.post('/templates', payload);
+      toast.success('Template submitted successfully');
+      console.log('✅ Backend response:', res?.data ?? res);
       }
 
       // Navigate back to forms list after successful submit
@@ -932,7 +1012,7 @@ const CustomFieldsPanel = ({
                     </div>
                       <small className="text-muted" style={{ fontSize: '0.75rem' }}>Edit by: {section.editBy}</small>
                     </div>
-                    <div onClick={(e) => e.stopPropagation()} className="flex-shrink-0">
+                    <div onClick={(e) => e.stopPropagation()} className="flex-shrink-0 d-flex gap-1">
                       <Button
                         variant="outline-primary"
                         size="sm"
@@ -944,6 +1024,17 @@ const CustomFieldsPanel = ({
                         <Plus className="me-1" size={12} />
                         <span className="d-none d-sm-inline">Add Field</span>
                         <span className="d-inline d-sm-none">Field</span>
+                      </Button>
+                      <Button
+                        variant="outline-danger"
+                        size="sm"
+                        onClick={() => removeSection(sIdx)}
+                        disabled={readOnly}
+                        title="Remove Section"
+                        className="text-danger border-danger"
+                        style={{ padding: '0.25rem 0.4rem' }}
+                      >
+                        <X size={12} />
                       </Button>
                     </div>
                   </Card.Header>
@@ -1221,7 +1312,7 @@ const CustomFieldsPanel = ({
         <Modal.Header closeButton>
           <Modal.Title>Add New Field</Modal.Title>
         </Modal.Header>
-        <Modal.Body>
+        <Modal.Body style={{ maxHeight: '70vh', overflowY: 'auto' }}>
           <Form>
             <Row className="g-3">
               <Col md={12}>
@@ -1271,6 +1362,11 @@ const CustomFieldsPanel = ({
                         fieldType: newType,
                         option: newType === 'VALUE_LIST' ? prev.option : null // Clear option if not VALUE_LIST
                       }));
+                      // Reset options array when changing field type
+                      if (newType !== 'VALUE_LIST') {
+                        setValueListOptions([]);
+                        setNewOptionInput('');
+                      }
                     }}
                     required
                   >
@@ -1305,60 +1401,76 @@ const CustomFieldsPanel = ({
               </Col>
               {/* VALUE_LIST Options Field */}
               {newField.fieldType === 'VALUE_LIST' && (
-                <Col md={12}>
-                  <Form.Group>
-                    <Form.Label className="text-primary-custom">Options (JSON) <span className="text-danger">*</span></Form.Label>
-                    <Form.Control
-                      as="textarea"
-                      rows={3}
-                      placeholder='{"items": ["Pass", "Fail"]}'
-                      value={newField.option || ''}
-                      onChange={(e) => {
-                        try {
-                          // Validate JSON format
-                          const value = e.target.value.trim();
-                          if (value) {
-                            const parsed = JSON.parse(value);
-                            if (!parsed.items || !Array.isArray(parsed.items)) {
-                              throw new Error('Invalid format');
-                            }
-                          }
-                          setNewField(prev => ({ ...prev, option: value }));
-                        } catch {
-                          // Still allow typing, but show warning
-                          setNewField(prev => ({ ...prev, option: e.target.value }));
-                        }
-                      }}
-                      required
-                    />
-                    <Form.Text className="text-muted">
-                      JSON format with items array. Example: {`{"items": ["Pass", "Fail"]}`}
-                    </Form.Text>
-                    {newField.option && (() => {
-                      try {
-                        const parsed = JSON.parse(newField.option);
-                        if (!parsed.items || !Array.isArray(parsed.items)) {
-                          return <Form.Text className="text-danger">Invalid format: must have "items" array</Form.Text>;
-                        }
-                        return <Form.Text className="text-success">✓ Valid JSON with {parsed.items.length} items</Form.Text>;
-                      } catch {
-                        return <Form.Text className="text-danger">Invalid JSON format</Form.Text>;
-                      }
-                    })()}
-                  </Form.Group>
-                </Col>
-              )}
               <Col md={12}>
                 <Form.Group>
-                  <Form.Label className="text-primary-custom">Parent Template ID</Form.Label>
+                    <Form.Label className="text-primary-custom">Options <span className="text-danger">*</span></Form.Label>
+                    <div className="d-flex gap-2 mb-2">
                   <Form.Control
                     type="text"
-                    placeholder="Leave empty for root level"
-                    value={newField.parentTempId || ''}
-                    onChange={(e) => setNewField(prev => ({ ...prev, parentTempId: e.target.value || null }))}
-                  />
+                        placeholder="Enter option value (e.g., Pass, Fail)"
+                        value={newOptionInput}
+                        onChange={(e) => setNewOptionInput(e.target.value)}
+                        onKeyPress={(e) => {
+                          if (e.key === 'Enter') {
+                            e.preventDefault();
+                            const trimmedValue = newOptionInput.trim();
+                            if (trimmedValue) {
+                              // Check for duplicate
+                              if (valueListOptions.includes(trimmedValue)) {
+                                toast.warning('This option already exists. Please enter a different value.');
+                                return;
+                              }
+                              setValueListOptions(prev => [...prev, trimmedValue]);
+                              setNewOptionInput('');
+                            }
+                          }
+                        }}
+                      />
+                      <Button
+                        variant="outline-primary"
+                        size="sm"
+                        onClick={() => {
+                          const trimmedValue = newOptionInput.trim();
+                          if (trimmedValue) {
+                            // Check for duplicate
+                            if (valueListOptions.includes(trimmedValue)) {
+                              toast.warning('This option already exists. Please enter a different value.');
+                              return;
+                            }
+                            setValueListOptions(prev => [...prev, trimmedValue]);
+                            setNewOptionInput('');
+                          }
+                        }}
+                        disabled={!newOptionInput.trim()}
+                      >
+                        <Plus size={14} />
+                      </Button>
+                    </div>
+                    {valueListOptions.length > 0 && (
+                      <div className="d-flex flex-column gap-2 mb-2" style={{ maxHeight: '200px', overflowY: 'auto' }}>
+                        {valueListOptions.map((option, idx) => (
+                          <div key={idx} className="d-flex align-items-center gap-2 p-2 border rounded">
+                            <span className="flex-grow-1">{option}</span>
+                            <Button
+                              variant="outline-danger"
+                              size="sm"
+                              onClick={() => {
+                                setValueListOptions(prev => prev.filter((_, i) => i !== idx));
+                              }}
+                              style={{ padding: '0.25rem 0.4rem' }}
+                            >
+                              <X size={12} />
+                            </Button>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                    <Form.Text className="text-muted">
+                      Add options one by one.
+                    </Form.Text>
                 </Form.Group>
               </Col>
+              )}
             </Row>
           </Form>
         </Modal.Body>
@@ -1377,7 +1489,7 @@ const CustomFieldsPanel = ({
         <Modal.Header closeButton>
           <Modal.Title>Edit Field</Modal.Title>
         </Modal.Header>
-        <Modal.Body>
+        <Modal.Body style={{ maxHeight: '70vh', overflowY: 'auto' }}>
           <Form>
             <Row className="g-3">
               <Col md={12}>
@@ -1407,6 +1519,11 @@ const CustomFieldsPanel = ({
                         fieldType: newType,
                         option: newType === 'VALUE_LIST' ? prev.option : null // Clear option if not VALUE_LIST
                       }));
+                      // Reset options array when changing field type
+                      if (newType !== 'VALUE_LIST') {
+                        setValueListOptions([]);
+                        setNewOptionInput('');
+                      }
                     }}
                     required
                   >
@@ -1469,58 +1586,74 @@ const CustomFieldsPanel = ({
               {newField.fieldType === 'VALUE_LIST' && (
                 <Col md={12}>
                   <Form.Group>
-                    <Form.Label className="text-primary-custom">Options (JSON) <span className="text-danger">*</span></Form.Label>
-                    <Form.Control
-                      as="textarea"
-                      rows={3}
-                      placeholder='{"items": ["Pass", "Fail"]}'
-                      value={newField.option || ''}
-                      onChange={(e) => {
-                        try {
-                          // Validate JSON format
-                          const value = e.target.value.trim();
-                          if (value) {
-                            const parsed = JSON.parse(value);
-                            if (!parsed.items || !Array.isArray(parsed.items)) {
-                              throw new Error('Invalid format');
+                    <Form.Label className="text-primary-custom">Options <span className="text-danger">*</span></Form.Label>
+                    <div className="d-flex gap-2 mb-2">
+                      <Form.Control
+                        type="text"
+                        placeholder="Enter option value (e.g., Pass, Fail)"
+                        value={newOptionInput}
+                        onChange={(e) => setNewOptionInput(e.target.value)}
+                        onKeyPress={(e) => {
+                          if (e.key === 'Enter') {
+                            e.preventDefault();
+                            const trimmedValue = newOptionInput.trim();
+                            if (trimmedValue) {
+                              // Check for duplicate
+                              if (valueListOptions.includes(trimmedValue)) {
+                                toast.warning('This option already exists. Please enter a different value.');
+                                return;
+                              }
+                              setValueListOptions(prev => [...prev, trimmedValue]);
+                              setNewOptionInput('');
                             }
                           }
-                          setNewField(prev => ({ ...prev, option: value }));
-                        } catch {
-                          // Still allow typing, but show warning
-                          setNewField(prev => ({ ...prev, option: e.target.value }));
-                        }
-                      }}
-                      required
-                    />
+                        }}
+                      />
+                      <Button
+                        variant="outline-primary"
+                        size="sm"
+                        onClick={() => {
+                          const trimmedValue = newOptionInput.trim();
+                          if (trimmedValue) {
+                            // Check for duplicate
+                            if (valueListOptions.includes(trimmedValue)) {
+                              toast.warning('This option already exists. Please enter a different value.');
+                              return;
+                            }
+                            setValueListOptions(prev => [...prev, trimmedValue]);
+                            setNewOptionInput('');
+                          }
+                        }}
+                        disabled={!newOptionInput.trim()}
+                      >
+                        <Plus size={14} />
+                      </Button>
+                    </div>
+                    {valueListOptions.length > 0 && (
+                      <div className="d-flex flex-column gap-2 mb-2" style={{ maxHeight: '200px', overflowY: 'auto' }}>
+                        {valueListOptions.map((option, idx) => (
+                          <div key={idx} className="d-flex align-items-center gap-2 p-2 border rounded">
+                            <span className="flex-grow-1">{option}</span>
+                            <Button
+                              variant="outline-danger"
+                              size="sm"
+                              onClick={() => {
+                                setValueListOptions(prev => prev.filter((_, i) => i !== idx));
+                              }}
+                              style={{ padding: '0.25rem 0.4rem' }}
+                            >
+                              <X size={12} />
+                            </Button>
+                          </div>
+                        ))}
+                      </div>
+                    )}
                     <Form.Text className="text-muted">
-                      JSON format with items array. Example: {`{"items": ["Pass", "Fail"]}`}
+                      Add options one by one.
                     </Form.Text>
-                    {newField.option && (() => {
-                      try {
-                        const parsed = JSON.parse(newField.option);
-                        if (!parsed.items || !Array.isArray(parsed.items)) {
-                          return <Form.Text className="text-danger">Invalid format: must have "items" array</Form.Text>;
-                        }
-                        return <Form.Text className="text-success">✓ Valid JSON with {parsed.items.length} items</Form.Text>;
-                      } catch {
-                        return <Form.Text className="text-danger">Invalid JSON format</Form.Text>;
-                      }
-                    })()}
                   </Form.Group>
                 </Col>
               )}
-              <Col md={12}>
-                <Form.Group>
-                  <Form.Label className="text-primary-custom">Parent Template ID</Form.Label>
-                  <Form.Control
-                    type="text"
-                    placeholder="Leave empty for root level"
-                    value={newField.parentTempId || ''}
-                    onChange={(e) => setNewField(prev => ({ ...prev, parentTempId: e.target.value || null }))}
-                  />
-                </Form.Group>
-              </Col>
             </Row>
           </Form>
         </Modal.Body>

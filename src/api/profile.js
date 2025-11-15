@@ -5,6 +5,10 @@ const profileAPI = {
   getProfile: async () => {
     try {
       const response = await apiClient.get('/profile');
+      // Handle response format: { message, data } or direct data
+      if (response.data && response.data.data) {
+        return response.data.data;
+      }
       return response.data;
     } catch (error) {
       console.error('Error fetching profile:', error);
@@ -40,6 +44,10 @@ const profileAPI = {
       });
       
       const response = await apiClient.put('/profile', updateData);
+      // Handle response format: { message, data } or direct data
+      if (response.data && response.data.data) {
+        return response.data.data;
+      }
       return response.data; // Expect updated profile
     } catch (error) {
       console.error('Error updating avatar:', error);
@@ -53,6 +61,10 @@ const profileAPI = {
       console.log('updateProfile - sending data:', profileData);
       const response = await apiClient.put('/profile', profileData);
       console.log('updateProfile - response:', response.data);
+      // Handle response format: { message, data } or direct data
+      if (response.data && response.data.data) {
+        return response.data.data;
+      }
       return response.data;
     } catch (error) {
       console.error('Error updating profile:', error);

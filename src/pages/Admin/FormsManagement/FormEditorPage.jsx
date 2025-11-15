@@ -189,7 +189,6 @@ const FormEditorPage = () => {
     }
 
     setIsSavingDraft(true);
-    toast.info('Saving draft...');
 
     try {
       // Use saveAndDownload convenience method if available
