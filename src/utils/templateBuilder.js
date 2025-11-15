@@ -1,9 +1,14 @@
 // Utility helpers to build template payload for backend
 
 // Map frontend field types to backend-accepted field types
-// Backend accepts: TEXT, IMAGE, TOGGLE, PART, SECTION_CONTROL_TOGGLE, SIGNATURE_DRAW, SIGN_IMAGE, FINAL_SCORE_TEXT, FINAL_SCORE_NUM, VALUE_LIST
+// Backend accepts: TEXT, IMAGE, TOGGLE, PART, SECTION_CONTROL_TOGGLE, SIGNATURE_DRAW, SIGNATURE_IMG, FINAL_SCORE_TEXT, FINAL_SCORE_NUM, VALUE_LIST
 function mapFieldTypeToBackend(fieldType) {
   const typeUpper = String(fieldType || '').toUpperCase();
+  
+  // Special mapping: Frontend uses SIGNATURE_IMAGE, but backend expects SIGNATURE_IMG
+  if (typeUpper === 'SIGNATURE_IMAGE') {
+    return 'SIGNATURE_IMG';
+  }
   
   // Backend-accepted types (return as-is)
   const acceptedTypes = [
@@ -13,7 +18,7 @@ function mapFieldTypeToBackend(fieldType) {
     'PART',
     'SECTION_CONTROL_TOGGLE',
     'SIGNATURE_DRAW',
-    'SIGN_IMAGE', // Backend supports SIGN_IMAGE
+    'SIGNATURE_IMG', // Backend uses SIGNATURE_IMG (not SIGNATURE_IMAGE)
     'FINAL_SCORE_TEXT',
     'FINAL_SCORE_NUM',
     'VALUE_LIST'
@@ -35,24 +40,33 @@ export function readTemplateMetaFromStorage() {
       const parsed = JSON.parse(raw);
       return {
         id: parsed.id || null, // Include template ID for update operations
+        currentTemplateId: parsed.currentTemplateId || null, // Current draft template ID
         name: parsed.name || '',
         description: parsed.description || '',
         departmentId: parsed.departmentId || '',
         templateContent: parsed.templateContent || '',
-        templateConfig: parsed.templateConfig || null
+        templateConfig: parsed.templateConfig || null,
+        templateContentMediaId: parsed.templateContentMediaId || null, // MediaId for deletion when replacing
+        editorDocumentUrl: parsed.editorDocumentUrl || '' // For "File with fields"
       };
     }
   } catch {
     // ignore parse errors and fall back to individual keys
   }
 
+  // Fallback: check localStorage for currentTemplateId
+  const currentTemplateId = localStorage.getItem('currentTemplateId');
+
   return {
     id: null,
+    currentTemplateId: currentTemplateId || null,
     name: localStorage.getItem('templateName') || '',
     description: localStorage.getItem('templateDesc') || '',
     departmentId: localStorage.getItem('departmentId') || '',
     templateContent: localStorage.getItem('templateContent') || '',
-    templateConfig: null
+    templateConfig: null,
+    templateContentMediaId: null,
+    editorDocumentUrl: ''
   };
 }
 
@@ -63,7 +77,8 @@ export function buildTemplatePayload(meta, sections) {
     const partIdMap = {};
     for (const f of rawFields) {
       if (String(f.fieldType || '').toUpperCase() === 'PART') {
-        const name = f.fieldName || '';
+        // Normalize: use fieldName or name
+        const name = f.fieldName || f.name || '';
         const ensuredTempId = f.tempId || (name ? `${name}-parent` : undefined);
         if (ensuredTempId) partIdMap[name] = ensuredTempId;
       }
@@ -88,7 +103,7 @@ export function buildTemplatePayload(meta, sections) {
     for (const top of topLevel) {
       inVisualOrder.push(top);
       const pid = (String(top.fieldType || '').toUpperCase() === 'PART')
-        ? (top.tempId || partIdMap[top.fieldName] || (top.fieldName ? `${top.fieldName}-parent` : undefined))
+        ? (top.tempId || partIdMap[top.fieldName || top.name || ''] || ((top.fieldName || top.name) ? `${top.fieldName || top.name}-parent` : undefined))
         : null;
       if (pid) {
         const children = indexed
@@ -114,9 +129,17 @@ export function buildTemplatePayload(meta, sections) {
       // Map fieldType to backend-accepted type
       const backendFieldType = mapFieldTypeToBackend(f.fieldType);
       
+      // Normalize fieldName: Some fields use 'name' property, others use 'fieldName'
+      // Backend requires 'fieldName', so use 'name' as fallback if 'fieldName' is missing
+      const fieldName = f.fieldName || f.name || '';
+      
+      if (!fieldName) {
+        console.warn('⚠️ Field missing fieldName/name:', f);
+      }
+      
       const base = {
         label: f.label,
-        fieldName: f.fieldName,
+        fieldName: fieldName, // Ensure fieldName is always present
         fieldType: backendFieldType, // Use mapped field type for backend
         displayOrder: fIdx + 1,
         parentTempId: f.parentTempId ? f.parentTempId : null
@@ -126,20 +149,41 @@ export function buildTemplatePayload(meta, sections) {
       }
       if (fieldTypeUpper === 'PART') {
         // ensure PART tempId exists and is stable
-        const name = f.fieldName || '';
-        base.tempId = f.tempId || (name ? `${name}-parent` : undefined);
+        const partName = fieldName || '';
+        base.tempId = f.tempId || (partName ? `${partName}-parent` : undefined);
       }
-      // Add option for VALUE_LIST fields
-      if (fieldTypeUpper === 'VALUE_LIST' && f.option) {
-        try {
-          // Parse and validate JSON, then add as parsed object
-          const parsed = JSON.parse(f.option);
-          if (parsed.items && Array.isArray(parsed.items)) {
-            base.option = parsed;
+      // Add options for VALUE_LIST fields (backend expects "options" object with "items" array)
+      if (fieldTypeUpper === 'VALUE_LIST') {
+        // Debug: Log field to see if option exists
+        console.log('🔍 VALUE_LIST field found:', {
+          fieldName: fieldName,
+          label: f.label,
+          hasOption: !!f.option,
+          option: f.option,
+          optionType: typeof f.option
+        });
+        
+        if (f.option) {
+          try {
+            // Parse and validate JSON, then extract items array
+            const parsed = JSON.parse(f.option);
+            if (parsed.items && Array.isArray(parsed.items)) {
+              // Backend expects "options" object with "items" array inside
+              base.options = { items: parsed.items };
+              console.log('✅ VALUE_LIST options parsed successfully:', base.options);
+            } else {
+              console.warn('⚠️ VALUE_LIST option missing items array:', parsed);
+            }
+          } catch (e) {
+            // If parsing fails, skip options (should not happen if validation worked)
+            console.warn('❌ Failed to parse VALUE_LIST option:', e, 'Raw option:', f.option);
           }
-        } catch (e) {
-          // If parsing fails, skip option (should not happen if validation worked)
-          console.warn('Failed to parse VALUE_LIST option:', e);
+        } else {
+          console.warn('⚠️ VALUE_LIST field missing option field:', {
+            fieldName: fieldName,
+            label: f.label,
+            field: f
+          });
         }
       }
       return base;
@@ -188,10 +232,17 @@ export function convertBackendToFrontendSections(backendSections) {
     
     // Convert fields
     const fields = (section.fields || []).map((field) => {
+      // Map backend fieldType to frontend fieldType
+      // Backend uses SIGNATURE_IMG, but frontend uses SIGNATURE_IMAGE
+      let frontendFieldType = field.fieldType || 'TEXT';
+      if (frontendFieldType === 'SIGNATURE_IMG') {
+        frontendFieldType = 'SIGNATURE_IMAGE';
+      }
+      
       const frontendField = {
         label: field.label || '',
         fieldName: field.fieldName || '',
-        fieldType: field.fieldType || 'TEXT', // Keep original fieldType
+        fieldType: frontendFieldType, // Map SIGNATURE_IMG → SIGNATURE_IMAGE
         roleRequired: field.roleRequired || null,
         parentTempId: null, // Will be set below
         option: null // Will be set below for VALUE_LIST

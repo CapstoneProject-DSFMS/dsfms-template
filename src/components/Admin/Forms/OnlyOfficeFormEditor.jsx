@@ -779,20 +779,20 @@ JSON.stringify(data, null, 2)
   const handleInsertField = (fieldOrTemplate) => {
     if (editor && isEditorReady) {
       try {
-            // Method 0: Try OnlyOffice Automation API - createConnector (Official Automation API)
-            if (typeof editor.createConnector === 'function') {
-              try {
+        // Method 0: Try OnlyOffice Automation API - createConnector (Official Automation API)
+        if (typeof editor.createConnector === 'function') {
+          try {
                         const connector = editor.createConnector()
-                
-                // Enable key events first (as per documentation)
-                if (typeof editor.asc_enableKeyEvents === 'function') {
-                  try {
+
+            // Enable key events first (as per documentation)
+            if (typeof editor.asc_enableKeyEvents === 'function') {
+              try {
                                 editor.asc_enableKeyEvents(true)
               } catch {
                 // Silent fail
               }
             }
-            
+
             // ONLY OnlyOffice Automation API - Official method
             if (connector && connector.isConnected) {
               try {
@@ -808,7 +808,7 @@ JSON.stringify(data, null, 2)
                 connector.callCommand(
                     function () {
                   try {
-                  // eslint-disable-next-line no-undef
+                    // eslint-disable-next-line no-undef
                             const oDocument = Api.GetDocument()
 
                             // Method 1: Use Search() to find range containing current sentence, then get style
@@ -865,12 +865,12 @@ JSON.stringify(data, null, 2)
                             }
 
                             // Create new paragraph with text
-                  // eslint-disable-next-line no-undef
+                    // eslint-disable-next-line no-undef
                             const oNewParagraph = Api.CreateParagraph()
 
                             if (oTextPr) {
                                 // Create run with copied style
-                  // eslint-disable-next-line no-undef
+                    // eslint-disable-next-line no-undef
                                 const oRun = Api.CreateRun()
                                 // eslint-disable-next-line no-undef
                                 oRun.AddText(Asc.scope.__templateText)
@@ -984,7 +984,6 @@ JSON.stringify(data, null, 2)
                 // Only show success toast and close modal if field was successfully added
                 setShowSectionModal(false)
                 setSelectedSystemField(null)
-                toast.success(`Added ${selectedSystemField.label} to section`)
             }
             // If success is false, addSystemField already showed warning toast, so we don't need to do anything else
         } else {
@@ -1105,14 +1104,12 @@ JSON.stringify(data, null, 2)
             
             // Step 3: Wait for URL from onDownloadAs event
             console.log('⏳ Waiting for URL from onDownloadAs event...')
-            toast.info('Waiting for document URL...')
             
             try {
                 const resultUrl = await urlPromise
                 
                 if (resultUrl) {
                     console.log('✅ URL received from onDownloadAs event:', resultUrl)
-                    toast.success('Document processed successfully!')
                     setHasUnsavedChanges(false) // Reset unsaved changes flag after successful save
                     isSubmittingRef.current = false // Reset flag after success
                     submitUrlResolverRef.current = null // Clear resolver
@@ -1255,7 +1252,6 @@ JSON.stringify(data, null, 2)
                 throw new Error('Editor not ready')
             }
 
-            toast.info('Exporting document...')
 
             // Step 1: Export and get temp URL
             const tempUrl = await exportEditedDoc()
@@ -1264,7 +1260,6 @@ JSON.stringify(data, null, 2)
             }
 
             console.log('📥 Got temp URL:', tempUrl)
-            toast.info('Downloading file...')
 
             // Step 2: Fetch file from temp URL
             const response = await fetch(tempUrl)
@@ -1283,7 +1278,6 @@ JSON.stringify(data, null, 2)
                 type: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
             })
 
-            toast.info('Uploading to S3...')
 
             // Step 4: Upload to S3 using existing API
             const docsType = uploadAPI.getDocsType(fileNameWithExt) || 'tem'
@@ -1323,7 +1317,6 @@ JSON.stringify(data, null, 2)
 
             console.log('🎯 Final S3 URL to be used in templateContent:', s3Url)
 console.log('🌐 Full S3 URL:', s3Url)
-            toast.success(`Document uploaded successfully!\nURL: ${s3Url}`)
 
             return s3Url
         } catch (error) {
@@ -1384,58 +1377,54 @@ console.log('🌐 Full S3 URL:', s3Url)
     // Check if field is an array (for update) or single field (for add)
     if (Array.isArray(field)) {
             setCustomFields(field)
-            if (!options?.silent) toast.success('Fields updated successfully')
     } else {
             setCustomFields((prev) => [...prev, field])
-            if (!options?.silent) toast.success(`Added field: ${field.label}`)
     }
     }
 
   const handleRemoveCustomField = (index) => {
         setCustomFields((prev) => prev.filter((_, i) => i !== index))
-        toast.success('Field removed')
   }
 
   return (
     <div className={`onlyoffice-form-editor ${className}`}>
       <div className="p-0">
         <Row className="g-0" style={{ minHeight: '90vh' }}>
-          {/* OnlyOffice Editor */}
+          {/* OnlyOffice Editor - LEFT side */}
           <Col
-                        xs={12}
-                        md={
-                            showMergeFields &&
-                            ((importType === 'File without fields' &&
-                                showCustomFieldsPanel) ||
-                                importType !== 'File without fields')
-                                ? 9
-                                : 12
-                        }
-                        className="editor-col"
-                        style={{ order: 1 }}
-                    >
+            xs={12}
+            md={
+              showMergeFields &&
+              ((importType === 'File without fields' && showCustomFieldsPanel) ||
+               importType !== 'File without fields')
+                ? 9
+                : 12
+            }
+            className="editor-col"
+            style={{ order: 1 }}
+          >
             <div className="p-3 editor-wrapper" style={{ height: '90vh' }}>
-                            {/* Header Bar with System Mapped Field Dropdown */}
-                            <div className="d-flex justify-content-end align-items-center mb-2">
-                                <Dropdown>
-                                    <Dropdown.Toggle 
-                                        variant="outline-primary" 
-                                        size="sm"
-                                        id="system-mapped-field-dropdown"
-                                    >
-                                        System Mapped Field
-                                    </Dropdown.Toggle>
-                                    <Dropdown.Menu style={{ maxHeight: '400px', overflowY: 'auto' }}>
-                                        {systemMappedFields.map((field, index) => (
-                                            <Dropdown.Item
-                                                key={index}
-                                                onClick={() => handleSystemFieldSelect(field)}
-                                            >
-                                                {field.label}
-                                            </Dropdown.Item>
-                                        ))}
-                                    </Dropdown.Menu>
-                                </Dropdown>
+              {/* Header Bar with System Mapped Field Dropdown */}
+              <div className="d-flex justify-content-end align-items-center mb-2">
+                <Dropdown>
+                  <Dropdown.Toggle 
+                    variant="outline-primary" 
+                    size="sm"
+                    id="system-mapped-field-dropdown"
+                  >
+                    System Mapped Field
+                  </Dropdown.Toggle>
+                  <Dropdown.Menu style={{ maxHeight: '400px', overflowY: 'auto' }}>
+                    {systemMappedFields.map((field, index) => (
+                      <Dropdown.Item
+                        key={index}
+                        onClick={() => handleSystemFieldSelect(field)}
+                      >
+                        {field.label}
+                      </Dropdown.Item>
+                    ))}
+                  </Dropdown.Menu>
+                </Dropdown>
               </div>
               
               {/* OnlyOffice Editor Container */}
@@ -1445,30 +1434,36 @@ console.log('🌐 Full S3 URL:', s3Url)
                   width: '100%', 
                   height: '100%',
                   border: '1px solid #ddd',
-                                    borderRadius: '4px',
+                  borderRadius: '4px',
                 }}
               />
             </div>
           </Col>
 
-                    {/* Merge Fields Flow (File with fields) - RIGHT sidebar */}
-                    {showMergeFields &&
-                        importType !== 'File without fields' && (
-                            <Col
-                                md={3}
-                                className="border-start"
-                                style={{ overflow: 'hidden' }}
-                            >
-                                <div
-                                    style={{
-                                        height: '90vh',
-                                        overflowY: 'auto',
-                                    }}
-                                >
-                                    <EditorWithMergeFields
+          {/* Merge Fields Flow (File with fields) - RIGHT sidebar */}
+          {showMergeFields &&
+            importType !== 'File without fields' && (
+              <Col
+                xs={12}
+                md={3}
+                className="border-start border-md-start"
+                style={{ order: 2, overflow: 'hidden' }}
+              >
+                <div
+                  className="custom-fields-wrapper"
+                  style={{
+                    height: '90vh',
+                    overflowY: 'auto',
+                    overflowX: 'hidden',
+                  }}
+                >
+                  <EditorWithMergeFields
+                    ref={addSystemFieldToSectionRef}
                 onInsertField={handleInsertField}
-                                        exportEditedDoc={exportEditedDoc}
-                                        initialUrl={initialContent}
+                    exportEditedDoc={exportEditedDoc}
+                    initialUrl={initialContent}
+                    forceSaveAndPoll={forceSaveAndPoll}
+                    getDocumentKey={getDocumentKey}
                 readOnly={readOnly}
                 className="h-100"
               />
@@ -1489,7 +1484,7 @@ console.log('🌐 Full S3 URL:', s3Url)
                                         overflowX: 'hidden',
                                     }}
                                 >
-                                    <CustomFieldsPanel
+              <CustomFieldsPanel
                 customFields={customFields}
                 onAddField={handleAddCustomField}
                 onRemoveField={handleRemoveCustomField}
@@ -1506,8 +1501,8 @@ console.log('🌐 Full S3 URL:', s3Url)
                 className="h-100"
               />
             </div>
-            </Col>
-          )}
+          </Col>
+        )}
         </Row>
       </div>
       

@@ -393,6 +393,128 @@ const TemplateDetailModal = ({ show, onHide, template }) => {
     );
   };
 
+  const renderOverview = () => {
+    const sectionsData = fullTemplateData?.sections || template?.sections || [];
+    
+    if (loadingFullData) {
+      return (
+        <div className="text-center py-5">
+          <Spinner animation="border" variant="primary" />
+          <p className="mt-3 text-muted">Loading template config...</p>
+        </div>
+      );
+    }
+
+    // Build a flat list: sections with their fields nested
+    const items = [];
+    
+    sectionsData.forEach((section, sectionIndex) => {
+      // Add section
+      items.push({
+        type: 'section',
+        id: section.id || `section-${sectionIndex}`,
+        name: section.label || section.name,
+        fieldCount: section.fields?.length || 0,
+        data: section
+      });
+      
+      // Add fields in this section (nested)
+      if (section.fields && section.fields.length > 0) {
+        section.fields.forEach((field, fieldIndex) => {
+          items.push({
+            type: 'field',
+            id: field.id || field.fieldName || `field-${sectionIndex}-${fieldIndex}`,
+            name: field.label || field.fieldName,
+            parentSectionId: section.id || `section-${sectionIndex}`,
+            data: field
+          });
+        });
+      }
+    });
+
+    if (items.length === 0) {
+      return (
+        <Alert variant="info" className="mb-0">
+          <div>
+            <strong>No template config found</strong>
+            <p className="mb-0 text-muted">This template has no sections or fields yet.</p>
+          </div>
+        </Alert>
+      );
+    }
+
+    return (
+      <div>
+        <h6 className="mb-3" style={{ color: '#333', fontWeight: 500 }}>Template fields & sections</h6>
+        <div className="list-group" style={{ border: 'none' }}>
+          {items.map((item, index) => {
+            const isSection = item.type === 'section';
+            const isField = item.type === 'field';
+            
+            return (
+              <div
+                key={item.id}
+                className="list-group-item"
+                style={{
+                  border: 'none',
+                  borderBottom: '1px solid #e9ecef',
+                  padding: '12px 16px',
+                  backgroundColor: 'white',
+                  paddingLeft: isField ? '40px' : '16px'
+                }}
+              >
+                <div className="d-flex align-items-center justify-content-between">
+                  <div className="d-flex align-items-center" style={{ flex: 1, minWidth: 0 }}>
+                    <span 
+                      style={{ 
+                        fontSize: '14px',
+                        color: '#333',
+                        fontWeight: isSection ? 500 : 400,
+                        wordBreak: 'break-word',
+                        overflowWrap: 'break-word'
+                      }}
+                    >
+                      {item.name}
+                    </span>
+                    {isSection && item.fieldCount > 0 && (
+                      <Badge 
+                        bg="info" 
+                        className="ms-2"
+                        style={{ 
+                          fontSize: '11px',
+                          padding: '2px 8px',
+                          borderRadius: '12px',
+                          backgroundColor: '#0dcaf0',
+                          color: '#000'
+                        }}
+                      >
+                        {item.fieldCount}
+                      </Badge>
+                    )}
+                  </div>
+                  <Badge
+                    bg={isSection ? 'warning' : 'secondary'}
+                    style={{
+                      fontSize: '11px',
+                      padding: '4px 10px',
+                      borderRadius: '4px',
+                      backgroundColor: isSection ? '#ffc107' : 'var(--bs-secondary)',
+                      color: isSection ? '#000' : '#fff',
+                      fontWeight: 500,
+                      marginLeft: '12px'
+                    }}
+                  >
+                    {isSection ? 'SECTION' : (item.data?.fieldType || item.data?.type || 'FIELD')}
+                  </Badge>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      </div>
+    );
+  };
+
   const renderHistory = () => {
     // History versions are not available in the current API response
     // This would need to be implemented separately if needed
@@ -557,33 +679,19 @@ const TemplateDetailModal = ({ show, onHide, template }) => {
             </button>
             <button
               className={`flex-fill py-3 px-2 px-md-4 border-0 bg-transparent text-white d-flex align-items-center justify-content-center template-detail-tab ${
-                activeTab === 'sections' ? 'border-bottom border-white border-3' : ''
+                activeTab === 'overview' ? 'border-bottom border-white border-3' : ''
               }`}
-              onClick={() => setActiveTab('sections')}
+              onClick={() => setActiveTab('overview')}
               style={{
-                fontWeight: activeTab === 'sections' ? 600 : 400,
-                transition: 'all 0.3s ease',
-                minWidth: 'fit-content',
-                whiteSpace: 'nowrap'
-              }}
-            >
-              <ListUl size={16} className="me-1 me-md-2" />
-              <span className="d-none d-sm-inline">Section List</span>
-            </button>
-            <button
-              className={`flex-fill py-3 px-2 px-md-4 border-0 bg-transparent text-white d-flex align-items-center justify-content-center template-detail-tab ${
-                activeTab === 'fields' ? 'border-bottom border-white border-3' : ''
-              }`}
-              onClick={() => setActiveTab('fields')}
-              style={{
-                fontWeight: activeTab === 'fields' ? 600 : 400,
+                fontWeight: activeTab === 'overview' ? 600 : 400,
                 transition: 'all 0.3s ease',
                 minWidth: 'fit-content',
                 whiteSpace: 'nowrap'
               }}
             >
               <ListCheck size={16} className="me-1 me-md-2" />
-              <span className="d-none d-sm-inline">Field List</span>
+              <span className="d-none d-sm-inline">Template Config Overview</span>
+              <span className="d-inline d-sm-none">Overview</span>
             </button>
             <button
               className={`flex-fill py-3 px-2 px-md-4 border-0 bg-transparent text-white d-flex align-items-center justify-content-center template-detail-tab ${
@@ -622,8 +730,7 @@ const TemplateDetailModal = ({ show, onHide, template }) => {
         {/* Tab Content */}
         <div className="p-3 p-md-4 template-detail-content">
           {activeTab === 'details' && renderDetails()}
-          {activeTab === 'sections' && renderSections()}
-          {activeTab === 'fields' && renderFields()}
+          {activeTab === 'overview' && renderOverview()}
           {activeTab === 'history' && renderHistory()}
           {activeTab === 'content' && renderContentPreview()}
         </div>
