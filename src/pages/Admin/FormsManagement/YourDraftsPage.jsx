@@ -87,14 +87,21 @@ const YourDraftsPage = () => {
       }
       
       // Step 4: Restore templateInfo to localStorage
+      // IMPORTANT: Set both id and currentTemplateId to ensure save draft will UPDATE instead of CREATE
       localStorage.setItem('templateInfo', JSON.stringify({
         id: template.id, // ← Save ID for update operations
+        currentTemplateId: template.id, // ← Set currentTemplateId so save draft will UPDATE existing draft
         name: template.name,
         description: template.description,
         departmentId: template.departmentId,
         templateContent: template.templateContent,
         templateConfig: template.templateConfig
       }));
+      
+      // Also set currentTemplateId as separate key for backward compatibility
+      localStorage.setItem('currentTemplateId', template.id);
+      
+      console.log('💾 Restored templateInfo with currentTemplateId:', template.id);
       
       // Step 5: Navigate to editor with restored data
       navigate('/admin/forms/editor', {

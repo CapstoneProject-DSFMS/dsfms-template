@@ -1,22 +1,16 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { Container, Row, Col, Button, Badge, Card, Alert, Spinner, Modal, Form } from 'react-bootstrap';
-import { 
-  ArrowLeft,
-  FileEarmarkPdf,
-  Clock,
-  CheckCircle,
-  Calendar,
-  Person,
-  FileText,
-  Download,
-  XCircle,
-  X
-} from 'react-bootstrap-icons';
+import { Container, Row, Col, Button, Card, Alert } from 'react-bootstrap';
+import { ArrowLeft, FileEarmarkPdf } from 'react-bootstrap-icons';
 import { useParams, useNavigate } from 'react-router-dom';
 import { PermissionWrapper } from '../../components/Common';
 import { API_PERMISSIONS } from '../../constants/apiPermissions';
 import templateAPI from '../../api/template';
 import { toast } from 'react-toastify';
+import BasicInfoTab from '../../components/SQA/BasicInfoTab';
+import PreviewTab from '../../components/SQA/PreviewTab';
+import OldTemplateVersionDetailsTab from '../../components/SQA/OldTemplateVersionDetailsTab';
+import ApproveTemplateModal from '../../components/SQA/ApproveTemplateModal';
+import RejectTemplateModal from '../../components/SQA/RejectTemplateModal';
 
 const TemplateDetailPage = () => {
   const { templateId } = useParams();
@@ -31,6 +25,7 @@ const TemplateDetailPage = () => {
   const [showRejectModal, setShowRejectModal] = useState(false);
   const [rejectComment, setRejectComment] = useState('');
   const [reviewing, setReviewing] = useState(false);
+  const [exportingPDF, setExportingPDF] = useState(false);
 
   const loadTemplateDetail = useCallback(async () => {
     if (!templateId) {
@@ -82,7 +77,8 @@ const TemplateDetailPage = () => {
         history: templateForm.history || templateForm.versions || [],
         templateContent: templateForm.templateContent || null,
         templateConfig: templateForm.templateConfig || null,
-        formId: templateForm.formId || templateForm.id
+        formId: templateForm.formId || templateForm.id,
+        referFirstVersionId: templateForm.referFirstVersionId || null
       };
       
       setTemplate(mappedTemplate);
@@ -138,23 +134,44 @@ const TemplateDetailPage = () => {
     };
   }, [activeTab, template?.formId, template?.templateContent]);
 
-  const getStatusConfig = (status) => {
-    switch (status) {
-      case 'ACTIVE':
-        return { variant: 'success', icon: CheckCircle, text: 'ACTIVE' };
-      case 'DRAFT':
-        return { variant: 'warning', icon: Clock, text: 'DRAFT' };
-      case 'INACTIVE':
-        return { variant: 'secondary', icon: Clock, text: 'INACTIVE' };
-      default:
-        return { variant: 'secondary', icon: Clock, text: status };
-    }
-  };
 
-  const handleExportPDF = () => {
-    console.log('Export PDF for template:', templateId);
-    // Export PDF functionality
-    alert('PDF export functionality will be implemented');
+  const handleExportPDF = async () => {
+    if (!template?.formId && !template?.id) {
+      toast.warning('Template ID is not available');
+      return;
+    }
+
+    try {
+      setExportingPDF(true);
+      const templateFormId = template.formId || template.id;
+      
+      // Call API to get PDF blob - this takes time because:
+      // 1. Network request to server (network latency)
+      // 2. Server needs to process/generate the PDF (server processing time)
+      // 3. Download the PDF blob from server (file size dependent)
+      const pdfBlob = await templateAPI.getTemplatePDF(templateFormId);
+      
+      // Create download link
+      const url = URL.createObjectURL(pdfBlob);
+      const link = document.createElement('a');
+      link.href = url;
+      
+      // Use template name for filename
+      const fileName = `${template.name || 'template'}.pdf`;
+      link.download = fileName;
+      
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      
+      // Clean up
+      URL.revokeObjectURL(url);
+    } catch (error) {
+      console.error('Error downloading PDF:', error);
+      toast.error(error.response?.data?.message || 'Failed to download template PDF');
+    } finally {
+      setExportingPDF(false);
+    }
   };
 
   const handleBackToList = () => {
@@ -234,117 +251,6 @@ const TemplateDetailPage = () => {
     setRejectComment('');
   };
 
-  const renderTemplateConfigSchema = () => {
-    const sectionsData = template?.sections || [];
-    
-    if (sectionsData.length === 0) {
-      return (
-        <Alert variant="info" className="mb-0">
-          <div>
-            <strong>No template config found</strong>
-            <p className="mb-0 text-muted">This template has no sections or fields yet.</p>
-          </div>
-        </Alert>
-      );
-    }
-
-    // Build a flat list: sections with their fields nested
-    const items = [];
-    
-    sectionsData.forEach((section, sectionIndex) => {
-      // Add section
-      items.push({
-        type: 'section',
-        id: section.id || `section-${sectionIndex}`,
-        name: section.label || section.name,
-        fieldCount: section.fields?.length || 0,
-        data: section
-      });
-      
-      // Add fields in this section (nested)
-      if (section.fields && section.fields.length > 0) {
-        section.fields.forEach((field, fieldIndex) => {
-          items.push({
-            type: 'field',
-            id: field.id || field.fieldName || `field-${sectionIndex}-${fieldIndex}`,
-            name: field.label || field.fieldName,
-            parentSectionId: section.id || `section-${sectionIndex}`,
-            data: field
-          });
-        });
-      }
-    });
-
-    return (
-      <div>
-        <div className="list-group" style={{ border: 'none' }}>
-          {items.map((item) => {
-            const isSection = item.type === 'section';
-            const isField = item.type === 'field';
-            
-            return (
-              <div
-                key={item.id}
-                className="list-group-item"
-                style={{
-                  border: 'none',
-                  borderBottom: '1px solid #e9ecef',
-                  padding: '12px 16px',
-                  backgroundColor: 'white',
-                  paddingLeft: isField ? '40px' : '16px'
-                }}
-              >
-                <div className="d-flex align-items-center justify-content-between">
-                  <div className="d-flex align-items-center" style={{ flex: 1, minWidth: 0 }}>
-                    <span 
-                      style={{ 
-                        fontSize: '14px',
-                        color: '#333',
-                        fontWeight: isSection ? 500 : 400,
-                        wordBreak: 'break-word',
-                        overflowWrap: 'break-word'
-                      }}
-                    >
-                      {item.name}
-                    </span>
-                    {isSection && item.fieldCount > 0 && (
-                      <Badge 
-                        bg="info" 
-                        className="ms-2"
-                        style={{ 
-                          fontSize: '11px',
-                          padding: '2px 8px',
-                          borderRadius: '12px',
-                          backgroundColor: '#0dcaf0',
-                          color: '#000'
-                        }}
-                      >
-                        {item.fieldCount}
-                      </Badge>
-                    )}
-                  </div>
-                  <Badge
-                    bg={isSection ? 'warning' : 'secondary'}
-                    style={{
-                      fontSize: '11px',
-                      padding: '4px 10px',
-                      borderRadius: '4px',
-                      backgroundColor: isSection ? '#ffc107' : 'var(--bs-secondary)',
-                      color: isSection ? '#000' : '#fff',
-                      fontWeight: 500,
-                      marginLeft: '12px'
-                    }}
-                  >
-                    {isSection ? 'SECTION' : (item.data?.fieldType || item.data?.type || 'FIELD')}
-                  </Badge>
-                </div>
-              </div>
-            );
-          })}
-        </div>
-      </div>
-    );
-  };
 
   if (loading) {
     return (
@@ -389,9 +295,6 @@ const TemplateDetailPage = () => {
     );
   }
 
-  const statusConfig = getStatusConfig(template.status);
-  const StatusIcon = statusConfig.icon;
-
   return (
     <Container fluid className="py-4">
       {/* Header */}
@@ -422,9 +325,19 @@ const TemplateDetailPage = () => {
                 size="sm"
                 onClick={handleExportPDF}
                 className="d-flex align-items-center"
+                disabled={exportingPDF}
               >
-                <FileEarmarkPdf className="me-1" size={16} />
-                Export PDF
+                {exportingPDF ? (
+                  <>
+                    <span className="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
+                    Exporting...
+                  </>
+                ) : (
+                  <>
+                    <FileEarmarkPdf className="me-1" size={16} />
+                    Export PDF
+                  </>
+                )}
               </Button>
             </PermissionWrapper>
           </div>
@@ -449,174 +362,36 @@ const TemplateDetailPage = () => {
                 >
                   Preview
                 </button>
+                <button 
+                  className={`custom-tab ${activeTab === 'old-version' ? 'active' : ''}`}
+                  onClick={() => setActiveTab('old-version')}
+                >
+                  Old Template Version Details
+                </button>
               </div>
             </Card.Header>
             <Card.Body className="p-0">
               {/* Basic Info Tab */}
               {activeTab === 'basic-info' && (
-                <div className="p-4">
-                  <Row>
-                    <Col md={6}>
-                      <div className="mb-3">
-                        <label className="text-muted small">Version</label>
-                        <div>
-                          <Badge 
-                            bg="info" 
-                            className="px-2 py-1"
-                            style={{ 
-                              fontSize: '0.75rem',
-                              backgroundColor: '#e3f2fd',
-                              color: '#1976d2'
-                            }}
-                          >
-                            {template.version}
-                          </Badge>
-                        </div>
-                      </div>
-                      
-                      <div className="mb-3">
-                        <label className="text-muted small">Status</label>
-                        <div>
-                          <Badge 
-                            bg={statusConfig.variant} 
-                            className="px-2 py-1 d-flex align-items-center"
-                            style={{ 
-                              fontSize: '0.75rem',
-                              width: 'fit-content'
-                            }}
-                          >
-                            <StatusIcon className="me-1" size={12} />
-                            {statusConfig.text}
-                          </Badge>
-                        </div>
-                      </div>
-                      
-                      <div className="mb-3">
-                        <label className="text-muted small">Total Sections</label>
-                        <div className="fw-medium">{template.totalSections} sections</div>
-                      </div>
-                    </Col>
-                    
-                    <Col md={6}>
-                      <div className="mb-3">
-                        <label className="text-muted small">Created By</label>
-                        <div className="d-flex align-items-center">
-                          <Person className="me-2" size={16} />
-                          <span>{template.createdBy}</span>
-                        </div>
-                      </div>
-                      
-                      <div className="mb-3">
-                        <label className="text-muted small">Created Date</label>
-                        <div className="d-flex align-items-center">
-                          <Calendar className="me-2" size={16} />
-                          <span>{new Date(template.createdAt).toLocaleDateString()}</span>
-                        </div>
-                      </div>
-                      
-                      <div className="mb-3">
-                        <label className="text-muted small">Last Modified</label>
-                        <div className="d-flex align-items-center">
-                          <Clock className="me-2" size={16} />
-                          <span>{new Date(template.lastModified).toLocaleDateString()}</span>
-                        </div>
-                      </div>
-                    </Col>
-                  </Row>
-                </div>
+                <BasicInfoTab template={template} />
               )}
 
               {/* Preview Tab */}
               {activeTab === 'preview' && (
-                <div className="p-4">
-                  <Row>
-                    <Col xs={12} className="mb-3">
-                      <div className="d-flex justify-content-end gap-2 mb-3">
-                        <Button
-                          variant="outline-primary"
-                          size="sm"
-                          onClick={handleViewTemplateConfig}
-                          className="d-flex align-items-center"
-                          disabled={!template?.templateConfig}
-                        >
-                          <Download className="me-2" size={16} />
-                          View Template Config
-                        </Button>
-                        <Button
-                          variant="primary"
-                          size="sm"
-                          onClick={handleOpenApproveModal}
-                          className="d-flex align-items-center"
-                          disabled={template?.status !== 'PENDING' || reviewing}
-                        >
-                          <CheckCircle className="me-2" size={16} />
-                          Approve
-                        </Button>
-                        <Button
-                          variant="outline-secondary"
-                          size="sm"
-                          onClick={handleOpenRejectModal}
-                          className="d-flex align-items-center"
-                          disabled={template?.status !== 'PENDING' || reviewing}
-                          style={{
-                            backgroundColor: 'white',
-                            borderColor: '#dee2e6',
-                            color: '#333'
-                          }}
-                        >
-                          <XCircle className="me-2" size={16} />
-                          Reject
-                        </Button>
-                      </div>
-                    </Col>
-                  </Row>
-                  
-                  <Row>
-                    {/* PDF Preview */}
-                    <Col xs={12} lg={7} className="mb-4">
-                      <div className="mb-2">
-                        <h6 className="mb-0" style={{ color: '#333', fontWeight: 500 }}>PDF Preview</h6>
-                      </div>
-                      {loadingPDF ? (
-                        <div className="border rounded p-4 bg-light text-center" style={{ minHeight: '500px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                          <div>
-                            <Spinner animation="border" variant="primary" className="mb-3" />
-                            <p className="text-muted mb-0">Loading PDF preview...</p>
-                          </div>
-                        </div>
-                      ) : pdfUrl ? (
-                        <div style={{ height: '60vh', overflow: 'hidden' }}>
-                          <iframe
-                            src={pdfUrl}
-                            style={{
-                              width: '100%',
-                              height: '100%',
-                              border: '1px solid #dee2e6',
-                              borderRadius: '0.375rem',
-                              display: 'block'
-                            }}
-                            title="Template PDF Preview"
-                          />
-                        </div>
-                      ) : (
-                        <Alert variant="warning" className="mb-0">
-                          <FileEarmarkPdf className="me-2" />
-                          PDF preview is not available. Please try again or contact support.
-                        </Alert>
-                      )}
-                    </Col>
+                <PreviewTab
+                  template={template}
+                  pdfUrl={pdfUrl}
+                  loadingPDF={loadingPDF}
+                  onViewTemplateConfig={handleViewTemplateConfig}
+                  onOpenApproveModal={handleOpenApproveModal}
+                  onOpenRejectModal={handleOpenRejectModal}
+                  reviewing={reviewing}
+                />
+              )}
 
-                    {/* Template Config Schema */}
-                    <Col xs={12} lg={5}>
-                      <div className="mb-2">
-                        <h6 className="mb-0" style={{ color: '#333', fontWeight: 500 }}>Template fields & sections</h6>
-                      </div>
-                      <div style={{ maxHeight: '60vh', overflowY: 'auto' }}>
-                        {renderTemplateConfigSchema()}
-                      </div>
-                    </Col>
-                  </Row>
-                </div>
+              {/* Old Template Version Details Tab */}
+              {activeTab === 'old-version' && (
+                <OldTemplateVersionDetailsTab template={template} />
               )}
             </Card.Body>
           </Card>
@@ -624,119 +399,24 @@ const TemplateDetailPage = () => {
       </Row>
 
       {/* Approve Template Modal */}
-      <Modal 
-        show={showApproveModal} 
+      <ApproveTemplateModal
+        show={showApproveModal}
         onHide={handleCloseApproveModal}
-        centered
-        backdrop="static"
-        keyboard={false}
-      >
-        <Modal.Header className="bg-primary-custom text-white border-0">
-          <Modal.Title className="d-flex align-items-center">
-            <CheckCircle className="me-2" size={20} />
-            Approve Template
-          </Modal.Title>
-        </Modal.Header>
-        <Modal.Body className="p-4">
-          <p className="mb-0">
-            Are you sure you want to approve the template <strong>"{template?.name}"</strong>?
-          </p>
-          <p className="text-muted mt-2 mb-0">
-            Once approved, the template will be published and available for use.
-          </p>
-        </Modal.Body>
-        <Modal.Footer className="border-0">
-          <Button 
-            variant="outline-secondary" 
-            onClick={handleCloseApproveModal}
-            disabled={reviewing}
-          >
-            Cancel
-          </Button>
-          <Button 
-            variant="primary" 
-            onClick={handleApprove}
-            disabled={reviewing}
-            className="d-flex align-items-center"
-          >
-            {reviewing ? (
-              <>
-                <Spinner animation="border" size="sm" className="me-2" />
-                Approving...
-              </>
-            ) : (
-              <>
-                <CheckCircle className="me-2" size={16} />
-                Approve
-              </>
-            )}
-          </Button>
-        </Modal.Footer>
-      </Modal>
+        template={template}
+        onApprove={handleApprove}
+        reviewing={reviewing}
+      />
 
       {/* Reject Template Modal */}
-      <Modal 
-        show={showRejectModal} 
+      <RejectTemplateModal
+        show={showRejectModal}
         onHide={handleCloseRejectModal}
-        centered
-        backdrop="static"
-        keyboard={false}
-      >
-        <Modal.Header className="bg-secondary text-white border-0">
-          <Modal.Title className="d-flex align-items-center">
-            <XCircle className="me-2" size={20} />
-            Reject Template
-          </Modal.Title>
-        </Modal.Header>
-        <Modal.Body className="p-4">
-          <p className="mb-3">
-            Are you sure you want to reject the template <strong>"{template?.name}"</strong>?
-          </p>
-          <Form.Group>
-            <Form.Label>
-              <strong>Reason for Rejection <span className="text-danger">*</span></strong>
-            </Form.Label>
-            <Form.Control
-              as="textarea"
-              rows={4}
-              value={rejectComment}
-              onChange={(e) => setRejectComment(e.target.value)}
-              placeholder="Please provide a reason for rejecting this template..."
-              disabled={reviewing}
-            />
-            <Form.Text className="text-muted">
-              This comment will be visible to the template creator.
-            </Form.Text>
-          </Form.Group>
-        </Modal.Body>
-        <Modal.Footer className="border-0">
-          <Button 
-            variant="outline-secondary" 
-            onClick={handleCloseRejectModal}
-            disabled={reviewing}
-          >
-            Cancel
-          </Button>
-          <Button 
-            variant="secondary" 
-            onClick={handleReject}
-            disabled={reviewing || !rejectComment.trim()}
-            className="d-flex align-items-center"
-          >
-            {reviewing ? (
-              <>
-                <Spinner animation="border" size="sm" className="me-2" />
-                Rejecting...
-              </>
-            ) : (
-              <>
-                <XCircle className="me-2" size={16} />
-                Reject
-              </>
-            )}
-          </Button>
-        </Modal.Footer>
-      </Modal>
+        template={template}
+        rejectComment={rejectComment}
+        onRejectCommentChange={setRejectComment}
+        onReject={handleReject}
+        reviewing={reviewing}
+      />
     </Container>
   );
 };

@@ -5,6 +5,7 @@ import { useNavigate } from 'react-router-dom';
 import { toast } from 'react-toastify';
 import { uploadAPI } from '../../../api';
 import { departmentAPI } from '../../../api/department';
+import templateAPI from '../../../api/template';
 
 const ImportFileModal = ({ show, onHide, onImportSuccess, onImportError }) => {
   const navigate = useNavigate();
@@ -90,6 +91,7 @@ const ImportFileModal = ({ show, onHide, onImportSuccess, onImportError }) => {
       // Xử lý 2 luồng khác nhau
       if (importType === 'with-fields') {
         // Luồng 1: File with fields - Lưu thông tin và navigate
+        // NOTE: Không cần check fields vì user đã chọn "File with Fields"
         // NOTE: Không gán file vào templateContent ở đây
         // User sẽ phải upload file không có field qua nút "Original Template"
         const templateData = {
@@ -121,33 +123,70 @@ const ImportFileModal = ({ show, onHide, onImportSuccess, onImportError }) => {
         handleClose();
         onImportSuccess('File with fields', selectedFile.name);
       } else {
-        // Luồng 2: File without fields - Lưu thông tin và navigate
-        const templateData = {
-          name: templateInfo.name,
-          description: templateInfo.description,
-          departmentId: templateInfo.departmentId,
-          templateContent: documentUrl,
-          fileName: selectedFile.name.replace('.docx', ''),
-          importType: 'File without fields',
-          createdAt: new Date().toISOString()
-        };
-
-        // Lưu vào localStorage
-        localStorage.setItem('templateInfo', JSON.stringify(templateData));
-        console.log('💾 Template info saved to localStorage:', templateData);
-
-        // Navigate đến editor
-        navigate('/admin/forms/editor', {
-          state: {
-            documentUrl: documentUrl,
-            fileName: templateData.fileName,
-            importType: 'File without fields',
-            templateInfo: templateData
+        // Luồng 2: File without fields - BẮT BUỘC phải check xem file có fields không
+        // Nếu file có fields → báo lỗi và không cho vào editor
+        // Nếu file không có fields → tiếp tục import như bình thường
+        console.log('🔍 Checking if file contains fields (File without Fields flow)...');
+        
+        try {
+          // Gọi API extract-fields để kiểm tra
+          const extractResponse = await templateAPI.extractFields(documentUrl);
+          
+          // Kiểm tra xem response có fields không
+          // Response structure: { success, message, fields: [], totalFields: number }
+          const hasFields = (extractResponse?.fields && 
+                           Array.isArray(extractResponse.fields) && 
+                           extractResponse.fields.length > 0) ||
+                           (extractResponse?.totalFields && extractResponse.totalFields > 0);
+          
+          if (hasFields) {
+            // File có fields → báo lỗi
+            toast.error('Your template already have field. Please use "File with Fields" import type instead.');
+            setIsUploading(false);
+            return;
           }
-        });
+          
+          // File không có fields → tiếp tục như bình thường
+          console.log('✅ File does not contain fields, proceeding with import...');
+          
+          const templateData = {
+            name: templateInfo.name,
+            description: templateInfo.description,
+            departmentId: templateInfo.departmentId,
+            templateContent: documentUrl,
+            fileName: selectedFile.name.replace('.docx', ''),
+            importType: 'File without fields',
+            createdAt: new Date().toISOString()
+          };
 
-        handleClose();
-        onImportSuccess('File without fields', selectedFile.name);
+          // Lưu vào localStorage
+          localStorage.setItem('templateInfo', JSON.stringify(templateData));
+          console.log('💾 Template info saved to localStorage:', templateData);
+
+          // Navigate đến editor
+          navigate('/admin/forms/editor', {
+            state: {
+              documentUrl: documentUrl,
+              fileName: templateData.fileName,
+              importType: 'File without fields',
+              templateInfo: templateData
+            }
+          });
+
+          handleClose();
+          onImportSuccess('File without fields', selectedFile.name);
+        } catch (extractError) {
+          // Nếu API extract-fields fail → báo lỗi và dừng lại, không cho vào editor
+          console.error('❌ Failed to extract fields:', extractError);
+          
+          const errorMessage = extractError?.response?.data?.message || 
+                              extractError?.message || 
+                              'Failed to validate file. Please try again.';
+          
+          toast.error(errorMessage);
+          setIsUploading(false);
+          return; // Dừng lại, không cho vào editor
+        }
       }
     } catch (error) {
       onImportError(error.message || 'Import failed');
