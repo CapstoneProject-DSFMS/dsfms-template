@@ -7,6 +7,7 @@ import { roleAPI } from '../../../api/role';
 import { toast } from 'react-toastify';
 import { uploadAPI } from '../../../api';
 import { readTemplateMetaFromStorage, buildTemplatePayload } from '../../../utils/templateBuilder';
+import templateAPI from '../../../api/template';
 
 const EditorWithMergeFields = forwardRef(({ 
   onInsertField, 
@@ -1015,34 +1016,57 @@ const EditorWithMergeFields = forwardRef(({
       console.log('  🔑 documentKey:', documentKey);
       console.log('🧩 Full payload:\n', JSON.stringify(payload, null, 2));
 
-     // Check currentTemplateId and call appropriate API
-      const currentTemplateId = meta.currentTemplateId || localStorage.getItem('currentTemplateId');
+      // Check if this is a create version flow (has originalTemplateId)
+      const originalTemplateId = meta.originalTemplateId;
       
-      if (currentTemplateId) {
-        // UPDATE existing draft to PENDING (submit)
-        console.log('📝 Updating existing draft to PENDING:', currentTemplateId);
-        const res = await apiClient.put(`/templates/update-draft/${currentTemplateId}`, {
-          ...payload,
-          id: currentTemplateId,
-          status: 'PENDING'
-        });
-        toast.success('Template submitted successfully');
-        console.log('✅ Template updated and submitted:', res?.data ?? res);
+      if (originalTemplateId) {
+        // CREATE NEW VERSION from published template
+        console.log('🔄 Creating new version from published template:', originalTemplateId);
+        const versionPayload = {
+          originalTemplateId: originalTemplateId,
+          ...payload
+        };
+        const res = await templateAPI.createVersion(versionPayload);
+        toast.success('Template version created successfully');
+        console.log('✅ Template version created:', res?.data ?? res);
         
-        // Clear currentTemplateId after successful submit
+        // Clear originalTemplateId after successful submit
         const updatedMeta = {
           ...meta,
-          currentTemplateId: null
+          originalTemplateId: null
         };
         localStorage.setItem('templateInfo', JSON.stringify(updatedMeta));
-        localStorage.removeItem('currentTemplateId');
-        console.log('🗑️ Cleared currentTemplateId after submit');
+        console.log('🗑️ Cleared originalTemplateId after version creation');
       } else {
-        // CREATE new template
-        console.log('➕ Creating new template');
-        const res = await apiClient.post('/templates', payload);
-        toast.success('Template submitted successfully');
-        console.log('✅ Backend response:', res?.data ?? res);
+        // Check currentTemplateId and call appropriate API
+        const currentTemplateId = meta.currentTemplateId || localStorage.getItem('currentTemplateId');
+        
+        if (currentTemplateId) {
+          // UPDATE existing draft to PENDING (submit)
+          console.log('📝 Updating existing draft to PENDING:', currentTemplateId);
+          const res = await apiClient.put(`/templates/update-draft/${currentTemplateId}`, {
+            ...payload,
+            id: currentTemplateId,
+            status: 'PENDING'
+          });
+          toast.success('Template submitted successfully');
+          console.log('✅ Template updated and submitted:', res?.data ?? res);
+          
+          // Clear currentTemplateId after successful submit
+          const updatedMeta = {
+            ...meta,
+            currentTemplateId: null
+          };
+          localStorage.setItem('templateInfo', JSON.stringify(updatedMeta));
+          localStorage.removeItem('currentTemplateId');
+          console.log('🗑️ Cleared currentTemplateId after submit');
+        } else {
+          // CREATE new template
+          console.log('➕ Creating new template');
+          const res = await apiClient.post('/templates', payload);
+          toast.success('Template submitted successfully');
+          console.log('✅ Backend response:', res?.data ?? res);
+        }
       }
 
       

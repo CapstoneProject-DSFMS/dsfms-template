@@ -8,6 +8,7 @@ import { readTemplateMetaFromStorage, buildTemplatePayload } from '../../../util
 import apiClient from '../../../api/config.js';
 import { API_CONFIG } from '../../../config/api.js';
 import { uploadAPI } from '../../../api/upload.js';
+import templateAPI from '../../../api/template';
 
 const CustomFieldsPanel = ({ 
   customFields = [], 
@@ -204,10 +205,14 @@ const CustomFieldsPanel = ({
             // Step 3: Check currentTemplateId and call appropriate API
             // IMPORTANT: Read currentTemplateId fresh from localStorage (not from meta which was read at start)
             const freshMeta = readTemplateMetaFromStorage();
-            const currentTemplateId = freshMeta.currentTemplateId || localStorage.getItem('currentTemplateId');
+            // Check both currentTemplateId and id (for backward compatibility with "Your Drafts")
+            const currentTemplateId = freshMeta.currentTemplateId || 
+                                     freshMeta.id || 
+                                     localStorage.getItem('currentTemplateId');
             
             console.log('🔍 Checking currentTemplateId:');
             console.log('  📦 freshMeta.currentTemplateId:', freshMeta.currentTemplateId);
+            console.log('  📦 freshMeta.id:', freshMeta.id);
             console.log('  📦 localStorage.getItem("currentTemplateId"):', localStorage.getItem('currentTemplateId'));
             console.log('  ✅ Final currentTemplateId:', currentTemplateId);
             
@@ -734,40 +739,129 @@ const CustomFieldsPanel = ({
       console.log('  🔑 documentKey:', documentKey);
       console.log('🧩 Full payload:\n', JSON.stringify(payload, null, 2));
       
-      // Check currentTemplateId and call appropriate API
-      const currentTemplateId = meta.currentTemplateId || localStorage.getItem('currentTemplateId');
+      // Check if this is a create version flow (has originalTemplateId)
+      const originalTemplateId = meta.originalTemplateId;
       
-      if (currentTemplateId) {
-        // UPDATE existing draft to PENDING (submit)
-        console.log('📝 Updating existing draft to PENDING:', currentTemplateId);
-        const res = await apiClient.put(`/templates/update-draft/${currentTemplateId}`, {
-          ...payload,
-          id: currentTemplateId,
-          status: 'PENDING'
-        });
-        toast.success('Template submitted successfully');
-        console.log('✅ Template updated and submitted:', res?.data ?? res);
-        
-        // Clear currentTemplateId after successful submit
-        const updatedMeta = {
-          ...meta,
-          currentTemplateId: null
+      if (originalTemplateId) {
+        // CREATE NEW VERSION from published template
+        console.log('🔄 Creating new version from published template:', originalTemplateId);
+        const versionPayload = {
+          originalTemplateId: originalTemplateId,
+          ...payload
         };
-        localStorage.setItem('templateInfo', JSON.stringify(updatedMeta));
-        localStorage.removeItem('currentTemplateId');
-        console.log('🗑️ Cleared currentTemplateId after submit');
+        
+        try {
+          const res = await templateAPI.createVersion(versionPayload);
+          toast.success('Template version created successfully');
+          console.log('✅ Template version created:', res?.data ?? res);
+          
+          // Clear originalTemplateId after successful submit
+          const updatedMeta = {
+            ...meta,
+            originalTemplateId: null
+          };
+          localStorage.setItem('templateInfo', JSON.stringify(updatedMeta));
+          console.log('🗑️ Cleared originalTemplateId after version creation');
+          
+          // Navigate back to forms list after successful submit
+          setTimeout(() => {
+            navigate('/admin/forms');
+          }, 1500);
+        } catch (versionError) {
+          // Check if error is "Template name already exists"
+          const errorMessage = versionError?.response?.data?.message || versionError?.message || '';
+          const statusCode = versionError?.response?.statusCode || versionError?.response?.status;
+          
+          const isNameExistsError = statusCode === 400 && 
+            (errorMessage.includes('already exists') || 
+             errorMessage.includes('Template name') ||
+             errorMessage.toLowerCase().includes('duplicate'));
+          
+          if (isNameExistsError) {
+            // Retry without name - backend will auto-generate name
+            console.log('⚠️ Template name already exists, retrying without name...');
+            toast.warning('Template name already exists. System will auto-generate a new name...');
+            
+            // Create new payload without name
+            const retryPayload = {
+              originalTemplateId: originalTemplateId,
+              description: payload.description,
+              departmentId: payload.departmentId,
+              templateContent: payload.templateContent,
+              templateConfig: payload.templateConfig || null,
+              status: payload.status,
+              sections: payload.sections
+              // Note: name is intentionally omitted - backend will auto-generate
+            };
+            
+            try {
+              const retryRes = await templateAPI.createVersion(retryPayload);
+              toast.success('Template version created successfully with auto-generated name');
+              console.log('✅ Template version created (retry):', retryRes?.data ?? retryRes);
+              
+              // Clear originalTemplateId after successful submit
+              const updatedMeta = {
+                ...meta,
+                originalTemplateId: null
+              };
+              localStorage.setItem('templateInfo', JSON.stringify(updatedMeta));
+              console.log('🗑️ Cleared originalTemplateId after version creation (retry)');
+              
+              // Navigate back to forms list after successful submit
+              setTimeout(() => {
+                navigate('/admin/forms');
+              }, 1500);
+            } catch (retryError) {
+              // If retry also fails, throw error to outer catch block
+              console.error('❌ Retry failed:', retryError);
+              throw retryError;
+            }
+          } else {
+            // If error is not "name already exists", throw to outer catch block
+            throw versionError;
+          }
+        }
       } else {
-        // CREATE new template
-        console.log('➕ Creating new template');
+        // Check currentTemplateId and call appropriate API
+        const currentTemplateId = meta.currentTemplateId || localStorage.getItem('currentTemplateId');
+        
+        if (currentTemplateId) {
+          // UPDATE existing draft to PENDING (submit)
+          console.log('📝 Updating existing draft to PENDING:', currentTemplateId);
+          const res = await apiClient.put(`/templates/update-draft/${currentTemplateId}`, {
+            ...payload,
+            id: currentTemplateId,
+            status: 'PENDING'
+          });
+          toast.success('Template submitted successfully');
+          console.log('✅ Template updated and submitted:', res?.data ?? res);
+          
+          // Clear currentTemplateId after successful submit
+          const updatedMeta = {
+            ...meta,
+            currentTemplateId: null
+          };
+          localStorage.setItem('templateInfo', JSON.stringify(updatedMeta));
+          localStorage.removeItem('currentTemplateId');
+          console.log('🗑️ Cleared currentTemplateId after submit');
+          
+          // Navigate back to forms list after successful submit
+          setTimeout(() => {
+            navigate('/admin/forms');
+          }, 1500);
+        } else {
+          // CREATE new template
+          console.log('➕ Creating new template');
       const res = await apiClient.post('/templates', payload);
       toast.success('Template submitted successfully');
       console.log('✅ Backend response:', res?.data ?? res);
+          
+          // Navigate back to forms list after successful submit
+          setTimeout(() => {
+            navigate('/admin/forms');
+          }, 1500);
+        }
       }
-
-      // Navigate back to forms list after successful submit
-      setTimeout(() => {
-        navigate('/admin/forms');
-      }, 1500);
     } catch (err) {
       console.error('❌ Submit template failed:', err);
       // Extract error message from backend response

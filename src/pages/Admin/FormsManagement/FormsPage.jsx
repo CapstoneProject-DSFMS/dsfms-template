@@ -8,6 +8,7 @@ import { API_PERMISSIONS } from '../../../constants/apiPermissions';
 import { templateAPI } from '../../../api';
 import ImportFileModal from '../../../components/Admin/Forms/ImportFileModal';
 import TemplateDetailModal from '../../../components/Admin/Forms/TemplateDetailModal';
+import PublishedTemplatesModal from '../../../components/Admin/Forms/PublishedTemplatesModal';
 
 const FormsPage = () => {
   const navigate = useNavigate();
@@ -16,6 +17,7 @@ const FormsPage = () => {
   const [loading, setLoading] = useState(true);
   const [selectedTemplate, setSelectedTemplate] = useState(null);
   const [showPreviewModal, setShowPreviewModal] = useState(false);
+  const [showCreateVersionModal, setShowCreateVersionModal] = useState(false);
 
   useEffect(() => {
     loadTemplates();
@@ -125,6 +127,15 @@ const FormsPage = () => {
                   permission={API_PERMISSIONS.TEMPLATES.CREATE}
                   fallback={null}
                 >
+                  <Button
+                    variant="outline-light"
+                    onClick={() => setShowCreateVersionModal(true)}
+                    className="d-flex align-items-center"
+                    size="sm"
+                  >
+                    <FileText className="me-2" size={16} />
+                    Create New Template's Version
+                  </Button>
                   <Button
                     variant="primary-custom"
                     onClick={handleImportFile}
@@ -303,6 +314,12 @@ const FormsPage = () => {
               setSelectedTemplate(null);
             }}
             template={selectedTemplate}
+          />
+
+          {/* Published Templates Modal for Create Version */}
+          <PublishedTemplatesModal
+            show={showCreateVersionModal}
+            onHide={() => setShowCreateVersionModal(false)}
           />
         </Card.Body>
       </Card>

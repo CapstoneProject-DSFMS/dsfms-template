@@ -49,11 +49,15 @@ const FormEditorPage = () => {
         initialSections: sectionsFromState // ← Get initialSections from navigation state
       } = location.state;
       
-      // For "File with fields": Use editorDocumentUrl if available (from import), otherwise use documentUrl/content
+      // For "File with fields" or "Create Version": Use editorDocumentUrl if available (from import), otherwise use documentUrl/content
       // This is the file to load in OnlyOffice editor (not templateContent)
       let finalContent = initialDocumentUrl || initialContent || '';
       if (initialTemplateInfo?.editorDocumentUrl) {
         finalContent = initialTemplateInfo.editorDocumentUrl;
+      }
+      // For "Create Version": Use templateConfig or templateContent
+      if (initialImportType === 'Create Version' && !finalContent) {
+        finalContent = initialTemplateInfo?.templateConfig || initialTemplateInfo?.templateContent || '';
       }
       
       setContent(finalContent);
