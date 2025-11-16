@@ -101,7 +101,13 @@ export const mapError = (error, context = {}) => {
     }
     
     // Map the main message
-    const mappedMessage = ERROR_MAPPINGS[mainMessage] || mainMessage;
+    // Handle case where ERROR_MAPPINGS[mainMessage] is an object with default property
+    let mappedMessage = ERROR_MAPPINGS[mainMessage];
+    if (mappedMessage && typeof mappedMessage === 'object' && mappedMessage.default) {
+      mappedMessage = mappedMessage.default;
+    } else if (!mappedMessage || typeof mappedMessage !== 'string') {
+      mappedMessage = mainMessage;
+    }
     
     // If there are specific field errors, try to map them
     if (errors && Array.isArray(errors) && errors.length > 0) {
