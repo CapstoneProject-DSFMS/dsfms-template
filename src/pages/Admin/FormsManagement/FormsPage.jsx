@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Container, Row, Col, Card, Button, Badge } from 'react-bootstrap';
 import { Upload, FileText, FileEarmark, Eye, CheckCircle, Clock, Building, Person } from 'react-bootstrap-icons';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { toast } from 'react-toastify';
 import { PermissionWrapper, LoadingSkeleton } from '../../../components/Common';
 import { API_PERMISSIONS } from '../../../constants/apiPermissions';
@@ -12,6 +12,7 @@ import PublishedTemplatesModal from '../../../components/Admin/Forms/PublishedTe
 
 const FormsPage = () => {
   const navigate = useNavigate();
+  const [searchParams, setSearchParams] = useSearchParams();
   const [showImportModal, setShowImportModal] = useState(false);
   const [templates, setTemplates] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -21,6 +22,20 @@ const FormsPage = () => {
 
   useEffect(() => {
     loadTemplates();
+  }, []);
+
+  // Check for action=create query param and open modal on mount
+  useEffect(() => {
+    const action = searchParams.get('action');
+    if (action === 'create') {
+      setShowImportModal(true);
+      // Remove query param from URL
+      const newSearchParams = new URLSearchParams(searchParams);
+      newSearchParams.delete('action');
+      const newSearch = newSearchParams.toString();
+      navigate({ search: newSearch ? `?${newSearch}` : '' }, { replace: true });
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const loadTemplates = async () => {

@@ -19,6 +19,7 @@ const UserModal = ({ show, user, mode, onSave, onClose }) => {
     certificationNumber: '',
     specialization: '',
     yearsOfExperience: '',
+    bio: '',
     dateOfBirth: '',
     trainingBatch: '',
     passportNo: '',
@@ -122,6 +123,7 @@ const UserModal = ({ show, user, mode, onSave, onClose }) => {
         certificationNumber: user.certificationNumber || '',
         specialization: user.specialization || '',
         yearsOfExperience: user.yearsOfExperience || '',
+        bio: user.bio || '',
         dateOfBirth: user.dateOfBirth || '',
         trainingBatch: user.trainingBatch || '',
         passportNo: user.passportNo || '',
@@ -140,6 +142,7 @@ const UserModal = ({ show, user, mode, onSave, onClose }) => {
         certificationNumber: '',
         specialization: '',
         yearsOfExperience: '',
+        bio: '',
         dateOfBirth: '',
         trainingBatch: '',
         passportNo: '',
@@ -226,6 +229,11 @@ const UserModal = ({ show, user, mode, onSave, onClose }) => {
       if (!formData.certificationNumber.trim()) {
         newErrors.certificationNumber = 'Certification number is required for trainers';
       }
+      if (!formData.bio || !formData.bio.trim()) {
+        newErrors.bio = 'Bio is required for trainers';
+      } else if (formData.bio.trim().length < 1) {
+        newErrors.bio = 'Bio must be at least 1 character';
+      }
       // Department is NOT allowed for Trainer role
       if (formData.department && formData.department.trim() !== '') {
         newErrors.department = 'Department is not allowed for Trainer role';
@@ -302,6 +310,7 @@ const UserModal = ({ show, user, mode, onSave, onClose }) => {
       if (field === 'role') {
         delete newErrors.specialization;
         delete newErrors.certificationNumber;
+        delete newErrors.bio;
         delete newErrors.trainingBatch;
         delete newErrors.passportNo;
         delete newErrors.dateOfBirth;
@@ -667,6 +676,34 @@ const UserModal = ({ show, user, mode, onSave, onClose }) => {
                         borderWidth: '2px'
                       }}
                     />
+                  </Form.Group>
+                </Col>
+              </Row>
+              <Row>
+                <Col md={12}>
+                  <Form.Group className="mb-4">
+                    <Form.Label className="text-primary-custom fw-semibold">
+                      Bio *
+                    </Form.Label>
+                    <Form.Control
+                      as="textarea"
+                      rows={4}
+                      value={formData.bio}
+                      onChange={(e) => handleInputChange('bio', e.target.value)}
+                      isInvalid={!!errors.bio}
+                      readOnly={isReadOnly}
+                      placeholder="Enter trainer bio (at least 1 character, no unsupported characters)"
+                      style={{
+                        borderColor: errors.bio ? '#dc3545' : 'var(--bs-primary)',
+                        borderWidth: '2px'
+                      }}
+                    />
+                    <Form.Control.Feedback type="invalid">
+                      {errors.bio}
+                    </Form.Control.Feedback>
+                    <Form.Text className="text-muted">
+                      Bio is required and must contain at least 1 character. Only letters, numbers, spaces, and common punctuation are allowed.
+                    </Form.Text>
                   </Form.Group>
                 </Col>
               </Row>

@@ -62,6 +62,7 @@ export const useUserManagementAPI = () => {
           certificationNumber: user.certificationNumber || '',
           specialization: user.specialization || '',
           yearsOfExperience: user.yearsOfExperience || '',
+          bio: user.bio || '',
           dateOfBirth: user.dateOfBirth || '',
           trainingBatch: user.trainingBatch || '',
           passportNo: user.passportNo || '',
@@ -159,6 +160,7 @@ export const useUserManagementAPI = () => {
         certificationNumber: userDetail.trainerProfile?.certificationNumber || '',
         specialization: userDetail.trainerProfile?.specialization || '',
         yearsOfExperience: userDetail.trainerProfile?.yearsOfExp || '',
+        bio: userDetail.trainerProfile?.bio || '',
         // Trainee profile fields
         dateOfBirth: userDetail.traineeProfile?.dob ? userDetail.traineeProfile.dob.split('T')[0] : '',
         trainingBatch: userDetail.traineeProfile?.trainingBatch || '',
@@ -202,6 +204,7 @@ export const useUserManagementAPI = () => {
         certificationNumber: userDetail.trainerProfile?.certificationNumber || '',
         specialization: userDetail.trainerProfile?.specialization || '',
         yearsOfExperience: userDetail.trainerProfile?.yearsOfExp || '',
+        bio: userDetail.trainerProfile?.bio || '',
         // Trainee profile fields
         dateOfBirth: userDetail.traineeProfile?.dob ? userDetail.traineeProfile.dob.split('T')[0] : '',
         trainingBatch: userDetail.traineeProfile?.trainingBatch || '',
@@ -282,6 +285,7 @@ export const useUserManagementAPI = () => {
         certificationNumber: user.trainerProfile?.certificationNumber || '',
         specialization: user.trainerProfile?.specialization || '',
         yearsOfExperience: user.trainerProfile?.yearsOfExp || '',
+        bio: user.trainerProfile?.bio || '',
         // Trainee profile fields
         dateOfBirth: user.traineeProfile?.dob ? user.traineeProfile.dob.split('T')[0] : '',
         trainingBatch: user.traineeProfile?.trainingBatch || '',
@@ -325,8 +329,9 @@ export const useUserManagementAPI = () => {
       
       // Proceed with save
       await performSave(userData);
-    } catch {
-      // Don't set error here, let performSave handle it
+    } catch (err) {
+      // Error is already set in performSave, and toast will be shown via useEffect in UserManagementPage
+      // when error state changes, so we don't need to show toast here to avoid duplicate toasts
       setLoading(false);
     }
   };
@@ -375,7 +380,7 @@ export const useUserManagementAPI = () => {
           specialization: userData.specialization || '',
           certificationNumber: userData.certificationNumber || '',
           yearsOfExp: userData.yearsOfExperience ? parseInt(userData.yearsOfExperience) : 0,
-          bio: '' // Default empty, can be added to form later
+          bio: userData.bio || ''
         };
         // Department is NOT allowed for TRAINER role - do not add departmentId
       } else if (userData.role === 'DEPARTMENT_HEAD') {
@@ -461,6 +466,7 @@ export const useUserManagementAPI = () => {
         certificationNumber: user.trainerProfile?.certificationNumber || '',
         specialization: user.trainerProfile?.specialization || '',
         yearsOfExperience: user.trainerProfile?.yearsOfExp || '',
+        bio: user.trainerProfile?.bio || '',
         // Trainee profile fields
         dateOfBirth: user.traineeProfile?.dob ? user.traineeProfile.dob.split('T')[0] : '',
         trainingBatch: user.traineeProfile?.trainingBatch || '',
@@ -541,6 +547,7 @@ export const useUserManagementAPI = () => {
         certificationNumber: user.trainerProfile?.certificationNumber || '',
         specialization: user.trainerProfile?.specialization || '',
         yearsOfExperience: user.trainerProfile?.yearsOfExp || '',
+        bio: user.trainerProfile?.bio || '',
         // Trainee profile fields
         dateOfBirth: user.traineeProfile?.dob ? user.traineeProfile.dob.split('T')[0] : '',
         trainingBatch: user.traineeProfile?.trainingBatch || '',

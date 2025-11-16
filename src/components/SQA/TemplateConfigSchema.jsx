@@ -113,3 +113,4 @@ const TemplateConfigSchema = ({ sections = [] }) => {
 
 export default TemplateConfigSchema;
 
+
