@@ -498,16 +498,26 @@ export const useUserManagementAPI = () => {
       setLoading(true);
       const response = await userAPI.bulkImportUsers(usersData);
       
-      // Handle the response with success/failed arrays
-      if (response.success && response.success.length > 0) {
-        toast.success(`Successfully imported ${response.success.length} users!`);
+      // Normalise response (API sometimes wraps data inside data field)
+      const successList = response?.success ?? response?.data?.success ?? [];
+      const failedList = response?.failed ?? response?.data?.failed ?? [];
+      const summary = response?.summary ?? response?.data?.summary;
+      
+      if (successList.length > 0) {
+        const successMessage = summary?.successful
+          ? `Successfully imported ${summary.successful} / ${summary.total} users`
+          : `Successfully imported ${successList.length} users!`;
+        toast.success(successMessage);
       }
       
-      if (response.failed && response.failed.length > 0) {
-        const failedMessages = response.failed.map(failure => 
+      if (failedList.length > 0) {
+        const failedMessages = failedList.map(failure => 
           `User ${failure.index + 1}: ${failure.error}`
         );
-        toast.error(`Failed to import ${response.failed.length} users: ${failedMessages.join(', ')}`);
+        const failedMessage = summary?.failed
+          ? `Failed to import ${summary.failed} user(s): ${failedMessages.join(', ')}`
+          : `Failed to import ${failedList.length} user(s): ${failedMessages.join(', ')}`;
+        toast.error(failedMessage);
       }
       
       // Refresh users and departments list

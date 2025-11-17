@@ -42,23 +42,33 @@ const SortIcon = ({ direction, size = 16, color }) => {
     return (
       <span 
         style={{
-          ...baseStyle,
-          color: color || undefined
+          display: 'inline-flex',
+          alignItems: 'center',
+          gap: '1px',
+          lineHeight: 1,
+          verticalAlign: 'middle'
         }}
         className={color ? '' : 'text-muted sort-icon'}
       >
         <span style={{ 
           display: 'inline-block',
-          transform: 'translateY(-1px)',
+          fontSize: `${size}px`,
+          color: color || undefined,
           opacity: color ? 0.8 : 0.5,
-          marginRight: '1px'
+          lineHeight: 1,
+          transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+          fontWeight: 'bold'
         }}>
           ▲
         </span>
         <span style={{ 
           display: 'inline-block',
-          transform: 'translateY(1px)',
-          opacity: color ? 0.8 : 0.5
+          fontSize: `${size}px`,
+          color: color || undefined,
+          opacity: color ? 0.8 : 0.5,
+          lineHeight: 1,
+          transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+          fontWeight: 'bold'
         }}>
           ▼
         </span>

@@ -334,8 +334,8 @@ const TemplateDetailPage = () => {
                   </>
                 ) : (
                   <>
-                    <FileEarmarkPdf className="me-1" size={16} />
-                    Export PDF
+                <FileEarmarkPdf className="me-1" size={16} />
+                Export PDF
                   </>
                 )}
               </Button>

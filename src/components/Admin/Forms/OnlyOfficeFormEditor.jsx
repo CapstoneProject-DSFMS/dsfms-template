@@ -278,7 +278,7 @@ console.log('✅ OnlyOffice API loaded successfully')
                 })
 
         // OnlyOffice configuration with hardcoded JWT
-                // Generate random documentKey for callback flow
+        // Generate random documentKey for callback flow
                 const documentKey = `doc-${Date.now()}-${Math.random()
                     .toString(36)
                     .substr(2, 9)}`
@@ -314,23 +314,23 @@ console.log('✅ OnlyOffice API loaded successfully')
                         },
                         callbackUrl: CALLBACK_URL,
                     },
-                }
-
+            }
+        
                 const jwtToken = await generateJWTToken(jwtPayload)
-
-                // Add callbackUrl conditionally (OnlyOffice Cloud Dev may not support it)
-                // Set to false to disable callbackUrl if OnlyOffice Cloud Dev doesn't support it
+        
+        // Add callbackUrl conditionally (OnlyOffice Cloud Dev may not support it)
+        // Set to false to disable callbackUrl if OnlyOffice Cloud Dev doesn't support it
                 const ENABLE_CALLBACK_URL = true // Set to false if editor fails to load
-
-                if (ENABLE_CALLBACK_URL) {
+        
+        if (ENABLE_CALLBACK_URL) {
                     console.log('📡 Adding callbackUrl:', CALLBACK_URL)
-                } else {
+        } else {
                     console.log(
                         '⚠️ callbackUrl is DISABLED (OnlyOffice Cloud Dev may not support it)'
                     )
-                }
-
-                // Build config with callbackUrl at top-level (not in editorConfig)
+        }
+        
+        // Build config with callbackUrl at top-level (not in editorConfig)
         const config = {
           document: {
             fileType: 'docx',
@@ -358,7 +358,7 @@ console.log('✅ OnlyOffice API loaded successfully')
             },
             customization: {
               autosave: false, // Disable autosave for testing
-                            forcesave: true, // Enable forcesave to trigger callbacks
+              forcesave: true, // Enable forcesave to trigger callbacks
               comments: false,
               help: false,
                             hideRightMenu: false,
@@ -368,9 +368,9 @@ console.log('✅ OnlyOffice API loaded successfully')
                             : undefined,
                         mode: 'edit',
           },
-                    // Callback URL for OnlyOffice to send document save events
-                    // Note: callbackUrl should be at top-level, not in editorConfig
-                    // OnlyOffice Cloud Dev may not support this - set ENABLE_CALLBACK_URL = false if editor fails
+          // Callback URL for OnlyOffice to send document save events
+          // Note: callbackUrl should be at top-level, not in editorConfig
+          // OnlyOffice Cloud Dev may not support this - set ENABLE_CALLBACK_URL = false if editor fails
                     // ...(ENABLE_CALLBACK_URL && { callbackUrl: CALLBACK_URL }),
           // JWT Token for OnlyOffice Cloud - Official format
           token: jwtToken,
@@ -392,10 +392,10 @@ console.log('✅ OnlyOffice API loaded successfully')
             },
             onError: (event) => {
                             console.error('❌ OnlyOffice Error:', event)
-                            console.error('❌ Error details:', {
-                                errorCode: event.data?.errorCode,
-                                errorDescription: event.data?.errorDescription,
-                                error: event.data?.error,
+              console.error('❌ Error details:', {
+                errorCode: event.data?.errorCode,
+                errorDescription: event.data?.errorDescription,
+                error: event.data?.error,
 fullEvent: event,
                             })
                             toast.error(
@@ -597,9 +597,9 @@ fullEvent: event,
                                 console.error('❌ Error in onDownloadAs handler:', err)
                                 toast.error('Error processing draft save')
                             }
-                        },
-                        onRequestSaveAs: async (event) => {
-                            try {
+            },
+            onRequestSaveAs: async (event) => {
+              try {
                                 const data = event?.data || {}
                                 console.log(
                                     '═══════════════════════════════════════════════════════════'
@@ -626,8 +626,8 @@ fullEvent: event,
                                 
                                 // Reset unsaved changes flag when document is saved
                                 setHasUnsavedChanges(false)
-
-                                // Try multiple possible URL fields
+                
+                // Try multiple possible URL fields
                                 const tempUrl =
                                     data.url ||
                                     data.downloadUrl ||
@@ -641,8 +641,8 @@ fullEvent: event,
                                     '🧾 Extracted temporary DOCX URL:',
 tempUrl
                                 )
-
-                                if (!tempUrl) {
+                
+                if (!tempUrl) {
                                     console.warn(
                                         '⚠️ onRequestSaveAs received but no URL found in payload'
                                     )
@@ -650,14 +650,14 @@ tempUrl
                                         '📋 Full event data:',
                                         JSON.stringify(data, null, 2)
                                     )
-                                }
-
-                                if (exportResolverRef.current) {
-                                    if (tempUrl) {
+                }
+                
+                if (exportResolverRef.current) {
+                  if (tempUrl) {
                                         exportResolverRef.current.resolve(
                                             tempUrl
                                         )
-                                    } else {
+                  } else {
                                         exportResolverRef.current.reject(
                                             new Error(
                                                 'onRequestSaveAs event received but no URL found'
@@ -669,20 +669,20 @@ tempUrl
                                 console.log(
                                     '═══════════════════════════════════════════════════════════'
                                 )
-                            } catch (err) {
+              } catch (err) {
                                 console.error(
                                     '❌ Error in onRequestSaveAs handler:',
                                     err
                                 )
-                                if (exportResolverRef.current) {
+                if (exportResolverRef.current) {
                                     exportResolverRef.current.reject(err)
                                     exportResolverRef.current = null
-                                }
-                            }
-                        },
-                        onRequestSave: (event) => {
-                            // Also listen to onRequestSave (different event)
-                            try {
+                }
+              }
+            },
+            onRequestSave: (event) => {
+              // Also listen to onRequestSave (different event)
+              try {
                                 const data = event?.data || {}
                                 console.log(
                                     '═══════════════════════════════════════════════════════════'
@@ -708,7 +708,7 @@ JSON.stringify(data, null, 2)
                                 )
                                 const tempUrl =
                                     data.url || data.downloadUrl || data.fileUrl
-                                if (tempUrl && exportResolverRef.current) {
+                if (tempUrl && exportResolverRef.current) {
                                     console.log(
                                         '✅ Using URL from onRequestSave:',
                                         tempUrl
@@ -719,15 +719,15 @@ JSON.stringify(data, null, 2)
                                 console.log(
                                     '═══════════════════════════════════════════════════════════'
                                 )
-                            } catch (err) {
+              } catch (err) {
                                 console.error(
                                     '❌ Error in onRequestSave handler:',
                                     err
                                 )
-                            }
+              }
                         },
                     },
-                }
+            }
 
         // Config and token logging removed to reduce console noise
 
@@ -935,11 +935,11 @@ JSON.stringify(data, null, 2)
             toast.warning('Editor not initialized yet')
     } else if (!isEditorReady) {
             toast.warning('Editor is still loading, please wait...')
-        }
+    }
     }
 
-    // Get documentKey for callback flow
-    const getDocumentKey = useCallback(() => {
+  // Get documentKey for callback flow
+  const getDocumentKey = useCallback(() => {
         return documentKeyRef.current
     }, [])
 
@@ -994,15 +994,15 @@ JSON.stringify(data, null, 2)
 
     // Note: pollForResult removed - we now get URL directly from onDownloadAs event in Submit flow
 
-    // Force save and poll for edited URL from backend
-    const forceSaveAndPoll = useCallback(async () => {
-        try {
-            if (!editorRef.current || !isEditorReady) {
+  // Force save and poll for edited URL from backend
+  const forceSaveAndPoll = useCallback(async () => {
+    try {
+      if (!editorRef.current || !isEditorReady) {
                 throw new Error('Editor not ready')
-            }
+      }
 
             const documentKey = documentKeyRef.current
-            if (!documentKey) {
+      if (!documentKey) {
                 throw new Error('Document key not found')
             }
 
@@ -1036,7 +1036,7 @@ JSON.stringify(data, null, 2)
                     // Wait longer for save to complete (2 seconds to ensure it's done)
                     await new Promise(resolve => setTimeout(resolve, 2000))
                     console.log('✅ All changes saved successfully')
-              } catch (e) {
+        } catch (e) {
                     console.warn('⚠️ save() failed:', e)
                     // Continue anyway - might still work
                 }
@@ -1067,7 +1067,7 @@ JSON.stringify(data, null, 2)
                 try {
                     editorRef.current.downloadAs('docx')
                     console.log('✅ downloadAs() triggered - waiting for URL from onDownloadAs event...')
-          } catch (e) {
+        } catch (e) {
                     console.warn('⚠️ downloadAs() failed:', e)
                     if (submitUrlResolverRef.current) {
                         submitUrlResolverRef.current.reject(new Error('Failed to trigger downloadAs()'))
@@ -1079,7 +1079,7 @@ JSON.stringify(data, null, 2)
                     try {
                         sessionStorage.removeItem('onlyoffice_submitting')
                         sessionStorage.removeItem('onlyoffice_submit_docKey')
-                    } catch (e) {
+        } catch (e) {
                         console.warn('⚠️ Failed to clear sessionStorage:', e)
                     }
                     
@@ -1177,58 +1177,58 @@ JSON.stringify(data, null, 2)
         }
     }, [isEditorReady])
 
-    // Expose export method to child panels - returns temp URL
-    // Try both downloadAs() and forceSave() methods
-    const exportEditedDoc = useCallback(() => {
-        return new Promise((resolve, reject) => {
-            try {
-                if (!editorRef.current) {
+  // Expose export method to child panels - returns temp URL
+  // Try both downloadAs() and forceSave() methods
+  const exportEditedDoc = useCallback(() => {
+    return new Promise((resolve, reject) => {
+      try {
+        if (!editorRef.current) {
                     reject(new Error('Editor not initialized'))
                     return
-                }
+        }
 
                 exportResolverRef.current = { resolve, reject }
-
-                // Method 1: Try forceSave() first (more reliable with forcesave enabled)
-                if (typeof editorRef.current.downloadDocument === 'function') {
+        
+        // Method 1: Try forceSave() first (more reliable with forcesave enabled)
+        if (typeof editorRef.current.downloadDocument === 'function') {
                     console.log(
                         '🔄 Attempting export via downloadDocument()...'
                     )
-                    try {
+          try {
                         editorRef.current.downloadDocument()
-                    } catch (e) {
+          } catch (e) {
                         console.warn(
                             'downloadDocument() failed, trying downloadAs()...',
                             e
                         )
-                    }
-                }
-
-                // Method 2: Try downloadAs()
-                if (typeof editorRef.current.downloadAs === 'function') {
+          }
+        }
+        
+        // Method 2: Try downloadAs() 
+        if (typeof editorRef.current.downloadAs === 'function') {
                     console.log(
                         '🔄 Attempting export via downloadAs("docx")...'
                     )
-                    try {
+          try {
                         editorRef.current.downloadAs('docx')
-                    } catch (e) {
+          } catch (e) {
                         console.warn('downloadAs() failed:', e)
-                    }
-                }
+          }
+        }
 
-                // Method 3: Try direct forceSave via API
-                if (typeof editorRef.current.save === 'function') {
+        // Method 3: Try direct forceSave via API
+        if (typeof editorRef.current.save === 'function') {
                     console.log('🔄 Attempting export via save()...')
-                    try {
+          try {
                         editorRef.current.save()
-                    } catch (e) {
+          } catch (e) {
                         console.warn('save() failed:', e)
-                    }
-                }
+          }
+        }
 
-                // Timeout after 20 seconds (increased from 15)
-                setTimeout(() => {
-                    if (exportResolverRef.current) {
+        // Timeout after 20 seconds (increased from 15)
+        setTimeout(() => {
+          if (exportResolverRef.current) {
                         const error = new Error(
                             'Export timeout: onRequestSaveAs not received after 20s. OnlyOffice Cloud may not support this method without callbackUrl.'
                         )
@@ -1236,79 +1236,79 @@ JSON.stringify(data, null, 2)
                         exportResolverRef.current = null
                     }
                 }, 20000)
-            } catch (err) {
-                if (exportResolverRef.current) {
+      } catch (err) {
+        if (exportResolverRef.current) {
                     exportResolverRef.current.reject(err)
                     exportResolverRef.current = null
-                } else {
+        } else {
                     reject(err)
-                }
-            }
+        }
+      }
         })
     }, [])
-// Complete flow: Export → Fetch → Upload → Return S3 URL
-    const exportAndUploadEditedDoc = useCallback(async () => {
-        try {
-            if (!editorRef.current || !isEditorReady) {
+  // Complete flow: Export → Fetch → Upload → Return S3 URL
+  const exportAndUploadEditedDoc = useCallback(async () => {
+    try {
+      if (!editorRef.current || !isEditorReady) {
                 throw new Error('Editor not ready')
-            }
+      }
 
-
-            // Step 1: Export and get temp URL
+      
+      // Step 1: Export and get temp URL
             const tempUrl = await exportEditedDoc()
-            if (!tempUrl) {
+      if (!tempUrl) {
                 throw new Error('No temporary URL received from OnlyOffice')
-            }
+      }
 
             console.log('📥 Got temp URL:', tempUrl)
 
-            // Step 2: Fetch file from temp URL
+      // Step 2: Fetch file from temp URL
             const response = await fetch(tempUrl)
-            if (!response.ok) {
+      if (!response.ok) {
                 throw new Error(`Failed to fetch file: ${response.statusText}`)
-            }
+      }
 
             const blob = await response.blob()
             console.log('📦 Downloaded blob:', blob.size, 'bytes')
 
-            // Step 3: Create File from Blob
+      // Step 3: Create File from Blob
             const fileNameWithExt = fileName.endsWith('.docx')
                 ? fileName
                 : `${fileName}.docx`
-            const file = new File([blob], fileNameWithExt, {
+      const file = new File([blob], fileNameWithExt, {
                 type: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
             })
 
 
-            // Step 4: Upload to S3 using existing API
+      // Step 4: Upload to S3 using existing API
             const docsType = uploadAPI.getDocsType(fileNameWithExt) || 'tem'
             const uploadResult = await uploadAPI.uploadDocument(file, docsType)
 
-            // Step 5: Extract S3 URL from response
+      // Step 5: Extract S3 URL from response
             console.log('📦 Upload API response:', uploadResult)
-
+      
             let s3Url = null
-            if (uploadResult?.data?.[0]?.url) {
+      if (uploadResult?.data?.[0]?.url) {
                 s3Url = uploadResult.data[0].url
                 console.log(
                     '✅ Found S3 URL in uploadResult.data[0].url:',
                     s3Url
                 )
-            } else if (uploadResult?.data?.url) {
+      } else if (uploadResult?.data?.url) {
                 s3Url = uploadResult.data.url
                 console.log('✅ Found S3 URL in uploadResult.data.url:', s3Url)
-            } else if (uploadResult?.url) {
+      } else if (uploadResult?.url) {
                 s3Url = uploadResult.url
                 console.log('✅ Found S3 URL in uploadResult.url:', s3Url)
-            } else if (uploadResult?.fileUrl) {
+      } else if (uploadResult?.fileUrl) {
                 s3Url = uploadResult.fileUrl
                 console.log('✅ Found S3 URL in uploadResult.fileUrl:', s3Url)
-            } else if (uploadResult?.path) {
+      } else if (uploadResult?.path) {
                 s3Url = uploadResult.path
                 console.log('✅ Found S3 URL in uploadResult.path:', s3Url)
-            }
+      }
 
-            if (!s3Url) {
+      if (!s3Url) {
                 console.error(
                     '❌ Upload response structure:',
                     JSON.stringify(uploadResult, null, 2)
@@ -1320,7 +1320,7 @@ JSON.stringify(data, null, 2)
 console.log('🌐 Full S3 URL:', s3Url)
 
             return s3Url
-        } catch (error) {
+    } catch (error) {
             console.error('❌ Export and upload failed:', error)
             toast.error(`Failed: ${error.message}`)
             throw error
@@ -1456,12 +1456,12 @@ console.log('🌐 Full S3 URL:', s3Url)
                 onRemoveField={handleRemoveCustomField}
                 onInsertField={handleInsertField}
                 initialSections={initialSections}
-                                        exportEditedDoc={exportEditedDoc}
+                exportEditedDoc={exportEditedDoc}
                                         exportAndUploadEditedDoc={
                                             exportAndUploadEditedDoc
                                         }
-                                        forceSaveAndPoll={forceSaveAndPoll}
-                                        getDocumentKey={getDocumentKey}
+                forceSaveAndPoll={forceSaveAndPoll}
+                getDocumentKey={getDocumentKey}
                                         addSystemFieldToSectionRef={addSystemFieldToSectionRef}
                 readOnly={readOnly}
                 className="h-100"
