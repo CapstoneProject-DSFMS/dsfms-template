@@ -219,29 +219,22 @@ const ProfileAvatar = ({
               Reset Password
             </Button>
             
-            {(() => {
-              const role = getRole();
-              // Hide Configure Signature for ACADEMIC_DEPT or ACADEMIC_DEPARTMENT
-              if (role === 'ACADEMIC_DEPT' || role === 'ACADEMIC_DEPARTMENT') {
-                return null;
-              }
-              return (
-                <Button
-                  variant="outline-secondary"
-                  size="sm"
-                  onClick={onConfigureSignature}
-                  className="d-flex align-items-center justify-content-center"
-                  style={{ 
-                    minWidth: '140px',
-                    borderRadius: '20px',
-                    fontWeight: '500'
-                  }}
-                >
-                  <Pen size={14} className="me-2" />
-                  Configure Signature
-                </Button>
-              );
-            })()}
+            {getRole() === 'TRAINER' && (
+              <Button
+                variant="outline-secondary"
+                size="sm"
+                onClick={onConfigureSignature}
+                className="d-flex align-items-center justify-content-center"
+                style={{ 
+                  minWidth: '140px',
+                  borderRadius: '20px',
+                  fontWeight: '500'
+                }}
+              >
+                <Pen size={14} className="me-2" />
+                Configure Signature
+              </Button>
+            )}
           </div>
         </div>
       </Card.Body>

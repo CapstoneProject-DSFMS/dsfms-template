@@ -18,7 +18,7 @@ function mapFieldTypeToBackend(fieldType) {
     'PART',
     'SECTION_CONTROL_TOGGLE',
     'SIGNATURE_DRAW',
-    'SIGNATURE_IMG', // Backend uses SIGNATURE_IMG (not SIGNATURE_IMAGE)
+    'SIGNATURE_IMG', 
     'FINAL_SCORE_TEXT',
     'FINAL_SCORE_NUM',
     'VALUE_LIST'
@@ -366,6 +366,115 @@ export function convertBackendToFrontendSections(backendSections) {
       fields: fields
     };
   });
+}
+
+// Convert extract-fields API response → frontend sections format
+// Used when importing "File with Fields" to load extracted fields into editor
+export function convertExtractFieldsToFrontendSections(extractResponse) {
+  // Handle different response structures
+  let fields = [];
+  let sections = [];
+  
+  // Case 1: Response has sections array
+  if (extractResponse?.sections && Array.isArray(extractResponse.sections)) {
+    sections = extractResponse.sections;
+  }
+  // Case 2: Response has fields array (flat)
+  else if (extractResponse?.fields && Array.isArray(extractResponse.fields)) {
+    fields = extractResponse.fields;
+  }
+  // Case 3: Response is directly an array
+  else if (Array.isArray(extractResponse)) {
+    fields = extractResponse;
+  }
+  // Case 4: Response.data contains fields
+  else if (extractResponse?.data?.fields && Array.isArray(extractResponse.data.fields)) {
+    fields = extractResponse.data.fields;
+  }
+  // Case 5: Response.data contains sections
+  else if (extractResponse?.data?.sections && Array.isArray(extractResponse.data.sections)) {
+    sections = extractResponse.data.sections;
+  }
+  
+  // If we have sections, convert them directly
+  if (sections.length > 0) {
+    return convertBackendToFrontendSections(sections);
+  }
+  
+  // If we have flat fields array, group them into a default section
+  if (fields.length > 0) {
+    // Map backend field format to frontend format
+    const frontendFields = fields.map((field) => {
+      // Map backend fieldType to frontend fieldType
+      let frontendFieldType = field.fieldType || 'TEXT';
+      if (frontendFieldType === 'SIGNATURE_IMG') {
+        frontendFieldType = 'SIGNATURE_IMAGE';
+      }
+      
+      const frontendField = {
+        label: field.label || field.fieldName || '',
+        fieldName: field.fieldName || field.name || '',
+        fieldType: frontendFieldType,
+        roleRequired: field.roleRequired || null,
+        parentTempId: field.parentTempId || null,
+        tempId: field.tempId || null,
+        option: null
+      };
+      
+      // Handle PART fields - ensure tempId exists
+      if (frontendFieldType === 'PART') {
+        frontendField.tempId = field.tempId || (frontendField.fieldName ? `${frontendField.fieldName}-parent` : null);
+      }
+      
+      // Handle VALUE_LIST options
+      if (frontendFieldType === 'VALUE_LIST' && field.options) {
+        try {
+          frontendField.option = JSON.stringify(field.options);
+        } catch (e) {
+          console.warn('Failed to stringify VALUE_LIST options:', e);
+        }
+      }
+      
+      return frontendField;
+    });
+    
+    // Group fields by parentTempId to maintain hierarchy
+    // PART fields first, then their children
+    const partFields = frontendFields.filter(f => f.fieldType === 'PART');
+    const childFields = frontendFields.filter(f => f.parentTempId);
+    const topLevelFields = frontendFields.filter(f => !f.parentTempId && f.fieldType !== 'PART');
+    
+    // Build ordered fields: PART fields with their children, then top-level fields
+    const orderedFields = [];
+    
+    // Add PART fields with their children
+    partFields.forEach(partField => {
+      orderedFields.push(partField);
+      const children = childFields.filter(c => c.parentTempId === partField.tempId);
+      orderedFields.push(...children);
+    });
+    
+    // Add remaining top-level fields
+    orderedFields.push(...topLevelFields);
+    
+    // If no fields were ordered, use original order
+    const finalFields = orderedFields.length > 0 ? orderedFields : frontendFields;
+    
+    // Return a single default section with all fields
+    return [{
+      name: 'Default',
+      label: 'Default',
+      displayOrder: 1,
+      editBy: 'TRAINER',
+      roleInSubject: '',
+      isSubmittable: true,
+      isToggleDependent: false,
+      fields: finalFields
+    }];
+  }
+  
+  // No fields found
+  return [];
 }
 
 

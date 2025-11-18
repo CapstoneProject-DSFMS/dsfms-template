@@ -10,6 +10,7 @@ import { useUserManagementAPI } from '../../../hooks/useUserManagementAPI';
 import { usePermissions } from '../../../hooks/usePermissions';
 import { API_PERMISSIONS } from '../../../constants/apiPermissions';
 import '../../../styles/scrollable-table.css';
+import '../../../styles/user-management-responsive.css';
 
 const UserManagementPage = () => {
   const [searchParams, setSearchParams] = useSearchParams();
@@ -167,7 +168,7 @@ const UserManagementPage = () => {
           </Row>
 
           {/* User Table with Scrollable Container */}
-          <div className="position-relative">
+          <div className="position-relative user-management-table-wrapper">
             <UserTable
               users={filteredUsers}
               loading={loading}
