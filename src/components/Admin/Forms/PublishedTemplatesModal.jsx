@@ -6,6 +6,7 @@ import { toast } from 'react-toastify';
 import { templateAPI } from '../../../api';
 import { LoadingSkeleton } from '../../Common';
 import { convertBackendToFrontendSections } from '../../../utils/templateBuilder';
+import TemplateDetailModal from './TemplateDetailModal';
 import '../../../styles/published-templates-modal.css';
 
 const PublishedTemplatesModal = ({ show, onHide }) => {
@@ -309,48 +310,18 @@ const PublishedTemplatesModal = ({ show, onHide }) => {
       </Modal>
 
       {/* Template Detail Modal */}
-      {selectedTemplate && (
-        <Modal
-          show={showDetailModal}
-          onHide={() => {
-            setShowDetailModal(false);
-            setSelectedTemplate(null);
-          }}
-          size="lg"
-          centered
-        >
-          <Modal.Header closeButton>
-            <Modal.Title>{selectedTemplate.name}</Modal.Title>
-          </Modal.Header>
-          <Modal.Body>
-            <div>
-              <p><strong>Description:</strong> {selectedTemplate.description || 'No description'}</p>
-              <p><strong>Version:</strong> v{selectedTemplate.version}</p>
-              <p><strong>Department:</strong> {selectedTemplate.department?.name || 'N/A'}</p>
-              <p><strong>Status:</strong> {selectedTemplate.status}</p>
-              <p><strong>Created:</strong> {formatDate(selectedTemplate.createdAt)}</p>
-              <p><strong>Sections:</strong> {selectedTemplate._count?.sections || 0}</p>
-            </div>
-          </Modal.Body>
-          <Modal.Footer>
-            <Button
-              variant="primary-custom"
-              onClick={() => {
-                setShowDetailModal(false);
-                handleCreateVersion(selectedTemplate);
-              }}
-            >
-              Create New Version
-            </Button>
-            <Button variant="outline-secondary" onClick={() => {
-              setShowDetailModal(false);
-              setSelectedTemplate(null);
-            }}>
-              Close
-            </Button>
-          </Modal.Footer>
-        </Modal>
-      )}
+      <TemplateDetailModal
+        show={showDetailModal}
+        onHide={() => {
+          setShowDetailModal(false);
+          setSelectedTemplate(null);
+        }}
+        template={selectedTemplate}
+        onCreateVersion={(template) => {
+          setShowDetailModal(false);
+          handleCreateVersion(template);
+        }}
+      />
     </>
   );
 };
