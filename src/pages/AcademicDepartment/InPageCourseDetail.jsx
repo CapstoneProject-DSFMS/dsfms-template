@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Card, Button, Row, Col, Container, Badge, Nav, Tab } from 'react-bootstrap';
-import { Plus, Upload, Pencil, ArrowLeft, People, Calendar, GeoAlt, FileText, Award, PersonCheck, Book, CalendarEvent } from 'react-bootstrap-icons';
+import { Plus, Upload, Pencil, ArrowLeft, People, Calendar, GeoAlt, FileText, Award, PersonCheck, Book, CalendarEvent, Trash } from 'react-bootstrap-icons';
 import { useNavigate, useParams, useLocation } from 'react-router-dom';
 import { toast } from 'react-toastify';
 import courseAPI from '../../api/course';
@@ -13,6 +13,7 @@ import EditCourseModal from '../../components/AcademicDepartment/EditCourseModal
 import DisableSubjectModal from '../../components/AcademicDepartment/DisableSubjectModal';
 import AssessmentEventsList from '../../components/AcademicDepartment/AssessmentEventsList';
 import AssessmentEventDetailModal from '../../components/AcademicDepartment/AssessmentEventDetailModal';
+import DeleteBatchEnrollmentsModal from '../../components/AcademicDepartment/DeleteBatchEnrollmentsModal';
 
 const InPageCourseDetail = ({ course, department }) => {
   const navigate = useNavigate();
@@ -28,6 +29,7 @@ const InPageCourseDetail = ({ course, department }) => {
   const [isDisabling, setIsDisabling] = useState(false);
   const [showAssessmentEventDetail, setShowAssessmentEventDetail] = useState(false);
   const [selectedAssessmentEvent, setSelectedAssessmentEvent] = useState(null);
+  const [showDeleteBatchEnrollments, setShowDeleteBatchEnrollments] = useState(false);
   
   // Course details state
   const [courseDetails, setCourseDetails] = useState(null);
@@ -362,6 +364,13 @@ const InPageCourseDetail = ({ course, department }) => {
           <Button size="sm" variant="outline-primary" onClick={() => setShowBulkImport(true)}>
             <Upload size={14} className="me-1" /> Import Bulk Subjects
           </Button>
+          <Button 
+            size="sm" 
+            variant="outline-danger" 
+            onClick={() => setShowDeleteBatchEnrollments(true)}
+          >
+            <Trash size={14} className="me-1" /> Delete All Subject Enrollments In Course by BatchCode
+          </Button>
         </div>
       </div>
 
@@ -666,6 +675,16 @@ const InPageCourseDetail = ({ course, department }) => {
           setSelectedAssessmentEvent(null);
         }}
         event={selectedAssessmentEvent}
+      />
+
+      <DeleteBatchEnrollmentsModal
+        show={showDeleteBatchEnrollments}
+        onClose={() => setShowDeleteBatchEnrollments(false)}
+        courseId={courseId}
+        onSuccess={() => {
+          // Optionally refresh course data after deletion
+          // You can reload course details here if needed
+        }}
       />
     </Container>
   );
