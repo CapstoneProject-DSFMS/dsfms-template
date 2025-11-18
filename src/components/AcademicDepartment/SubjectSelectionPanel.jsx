@@ -9,6 +9,16 @@ const SubjectSelectionPanel = ({ selectedSubjects, onSelectionChange }) => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
+  // Helper function to filter out archived subjects
+  const filterArchivedSubjects = (subjectsList) => {
+    if (!Array.isArray(subjectsList)) return [];
+    return subjectsList.filter(subject => {
+      // Filter out subjects with status 'ARCHIVED' or deletedAt field
+      const status = subject?.status?.toUpperCase();
+      return status !== 'ARCHIVED' && !subject?.deletedAt;
+    });
+  };
+
   // Load subjects from API
   useEffect(() => {
     const loadSubjects = async () => {
@@ -19,8 +29,11 @@ const SubjectSelectionPanel = ({ selectedSubjects, onSelectionChange }) => {
         const response = await subjectAPI.getSubjects();
         
         if (response && response.subjects) {
+          // Filter out archived subjects first
+          const activeSubjects = filterArchivedSubjects(response.subjects);
+          
           // Only extract name field from each subject
-          const subjectsWithNameOnly = response.subjects.map(subject => ({
+          const subjectsWithNameOnly = activeSubjects.map(subject => ({
             id: subject.id,
             name: subject.name,
             code: subject.code // Keep code for display
@@ -65,7 +78,7 @@ const SubjectSelectionPanel = ({ selectedSubjects, onSelectionChange }) => {
   const isAllSelected = filteredSubjects.length > 0 && selectedSubjects.length === filteredSubjects.length;
 
   return (
-    <Card className="d-flex flex-column h-100 subject-selection-panel-card" style={{ border: '1px solid #e9ecef', boxShadow: '0 4px 8px rgba(0,0,0,0.15)', overflow: 'visible', marginBottom: '1.5rem' }}>
+    <Card className="d-flex flex-column h-100 subject-selection-panel-card" style={{ border: '1px solid #e9ecef', boxShadow: '0 4px 12px rgba(0,0,0,0.15)', overflow: 'visible', marginBottom: '2rem' }}>
       <Card.Header className="bg-gradient-primary-custom text-white border-0">
         <div className="d-flex justify-content-between align-items-center">
           <h6 className="mb-0 text-white">Select Subjects</h6>

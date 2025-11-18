@@ -70,7 +70,7 @@ const DepartmentFilterPanel = ({
         {/* Department Type Filters */}
         <div className="mb-4" style={{ paddingLeft: '1.5rem', paddingTop: '1rem' }}>
           <div className="d-flex justify-content-between align-items-center mb-2">
-            <label className="form-label small fw-semibold mb-0">Department Types</label>
+            <label className="form-label small fw-semibold mb-0">Department Code</label>
             {selectedTypes.length > 0 && (
               <Button
                 variant="link"

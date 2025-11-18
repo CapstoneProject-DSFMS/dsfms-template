@@ -45,16 +45,6 @@ const courseAPI = {
     }
   },
 
-  // Delete/Disable course
-  deleteCourse: async (courseId) => {
-    try {
-      const response = await apiClient.delete(`/courses/${courseId}`);
-      return response.data;
-    } catch (error) {
-      console.error('Error deleting course:', error);
-      throw error;
-    }
-  },
 
   // Archive course
   archiveCourse: async (courseId) => {
@@ -63,17 +53,6 @@ const courseAPI = {
       return response.data;
     } catch (error) {
       console.error('Error archiving course:', error);
-      throw error;
-    }
-  },
-
-  // Restore course
-  restoreCourse: async (courseId) => {
-    try {
-      const response = await apiClient.post(`/courses/${courseId}/restore`);
-      return response.data;
-    } catch (error) {
-      console.error('Error restoring course:', error);
       throw error;
     }
   },
