@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useRef, useState, forwardRef, useImperativeHandle } from 'react'
 import { Alert, Card, Col, Row, Spinner, Dropdown, Modal, Button as BootstrapButton } from 'react-bootstrap'
 import { toast } from 'react-toastify'
-import { uploadAPI } from '../../../api'
+import { uploadAPI, globalFieldAPI } from '../../../api'
 import CustomFieldsPanel from './CustomFieldsPanel'
 // EditorWithMergeFields removed - using CustomFieldsPanel for all import types
 import { API_CONFIG } from '../../../config/api.js'
@@ -127,23 +127,51 @@ const OnlyOfficeFormEditor = forwardRef(({
     const [selectedSystemField, setSelectedSystemField] = useState(null)
     const [availableSections, setAvailableSections] = useState([])
     const addSystemFieldToSectionRef = useRef(null) // Ref to function from CustomFieldsPanel
+    const [globalMappedFields, setGlobalMappedFields] = useState([])
+    const [isLoadingGlobalFields, setIsLoadingGlobalFields] = useState(false)
 
     // System Mapped Fields - Predefined fields that can be inserted into document
     const systemMappedFields = [
-        { label: "Trainee's Full Name", variable: "{trainee_name}" },
-        { label: "Trainee's Eid", variable: "{trainee_eid}" },
-        { label: "Trainee's Nation", variable: "{trainee_nationality}" },
-        { label: "Trainee's Batch Name", variable: "{training_batch}" },
-        { label: "Course's Name", variable: "{course_name}" },
-        { label: "Course's Code", variable: "{course_code}" },
-        { label: "Subject's Name", variable: "{subject_name}" },
-        { label: "Subject's Code", variable: "{subject_code}" },
-        { label: "Assessing date", variable: "{assessment_date}" },
-        { label: "Assessment Location", variable: "{assessment_venue}" },
-        { label: "Instructor's Full Name", variable: "{trainer_name}" },
-        { label: "Trainer's Eid", variable: "{trainer_eid}" },
-        { label: "Template Name", variable: "{template_name}" }
+        { label: "Trainee's Full Name", variable: "{trainee_name}", fieldType: 'TEXT' },
+        { label: "Trainee's Eid", variable: "{trainee_eid}", fieldType: 'TEXT' },
+        { label: "Trainee's Nation", variable: "{trainee_nationality}", fieldType: 'TEXT' },
+        { label: "Trainee's Batch Name", variable: "{training_batch}", fieldType: 'TEXT' },
+        { label: "Course's Name", variable: "{course_name}", fieldType: 'TEXT' },
+        { label: "Course's Code", variable: "{course_code}", fieldType: 'TEXT' },
+        { label: "Subject's Name", variable: "{subject_name}", fieldType: 'TEXT' },
+        { label: "Subject's Code", variable: "{subject_code}", fieldType: 'TEXT' },
+        { label: "Assessing date", variable: "{assessment_date}", fieldType: 'TEXT' },
+        { label: "Assessment Location", variable: "{assessment_venue}", fieldType: 'TEXT' },
+        { label: "Instructor's Full Name", variable: "{trainer_name}", fieldType: 'TEXT' },
+        { label: "Trainer's Eid", variable: "{trainer_eid}", fieldType: 'TEXT' },
+        { label: "Template Name", variable: "{template_name}", fieldType: 'TEXT' }
     ]
+
+    // Load Global Mapped Fields from API
+    useEffect(() => {
+        let isMounted = true
+        const fetchGlobalFields = async () => {
+            try {
+                setIsLoadingGlobalFields(true)
+                const response = await globalFieldAPI.getGlobalFields()
+                const fields = response?.data || response || []
+                if (isMounted) {
+                    setGlobalMappedFields(fields)
+                }
+            } catch (error) {
+                console.error('Error loading global mapped fields:', error)
+                toast.error('Failed to load global mapped fields')
+            } finally {
+                if (isMounted) {
+                    setIsLoadingGlobalFields(false)
+                }
+            }
+        }
+        fetchGlobalFields()
+        return () => {
+            isMounted = false
+        }
+    }, [])
 
   // Memoize cleanup function to avoid dependency issues
   const cleanupEditor = useCallback(() => {
@@ -948,8 +976,15 @@ JSON.stringify(data, null, 2)
     const handleSystemFieldSelect = (field) => {
         if (!field || !field.variable) return
         
+        const normalizedField = {
+            ...field,
+            fieldType: field.fieldType || 'TEXT',
+            roleRequired: field.roleRequired || 'TRAINER',
+            options: field.options || null
+        }
+        
         // Store selected field temporarily
-        setSelectedSystemField(field)
+        setSelectedSystemField(normalizedField)
         
         // Get sections from CustomFieldsPanel via ref
         if (addSystemFieldToSectionRef.current && typeof addSystemFieldToSectionRef.current.getSections === 'function') {
@@ -965,6 +1000,26 @@ JSON.stringify(data, null, 2)
         }
     }
     
+    const handleGlobalFieldSelect = (field) => {
+        if (!field) return
+        const fieldName = field.fieldName || field.name
+        if (!fieldName) {
+            toast.warning('Global field is missing a field name')
+            return
+        }
+        const variable = fieldName.startsWith('{') && fieldName.endsWith('}')
+            ? fieldName
+            : `{${fieldName}}`
+        const mappedField = {
+            label: field.label || fieldName,
+            variable,
+            fieldType: field.fieldType || 'TEXT',
+            roleRequired: field.roleRequired || 'TRAINER',
+            options: field.options || null
+        }
+        handleSystemFieldSelect(mappedField)
+    }
+
     // Handle section selection from modal
     const handleSelectSection = (sectionIndex) => {
         if (!selectedSystemField || sectionIndex === null || sectionIndex < 0) return
@@ -974,9 +1029,10 @@ JSON.stringify(data, null, 2)
             const fieldData = {
                 label: selectedSystemField.label,
                 fieldName: selectedSystemField.variable.replace(/[{}]/g, ''), // Remove { } from variable name
-                fieldType: 'TEXT', // System mapped fields are always TEXT type
-                roleRequired: 'TRAINER', // Default, can be adjusted based on section
-                displayOrder: 1
+                fieldType: selectedSystemField.fieldType || 'TEXT',
+                roleRequired: selectedSystemField.roleRequired || 'TRAINER',
+                displayOrder: 1,
+                ...(selectedSystemField.options ? { options: selectedSystemField.options } : {})
             }
             
             // Call addSystemField and check return value
@@ -1433,7 +1489,7 @@ console.log('🌐 Full S3 URL:', s3Url)
           >
             <div className="p-3 editor-wrapper" style={{ height: '90vh', position: 'relative' }}>
               {/* Header Bar with System Mapped Field Dropdown */}
-              <div className="d-flex justify-content-end align-items-center mb-2">
+              <div className="d-flex justify-content-end align-items-center gap-2 flex-wrap mb-2">
                 <Dropdown>
                   <Dropdown.Toggle 
                     variant="outline-primary" 
@@ -1445,12 +1501,43 @@ console.log('🌐 Full S3 URL:', s3Url)
                   <Dropdown.Menu style={{ maxHeight: '400px', overflowY: 'auto' }}>
                     {systemMappedFields.map((field, index) => (
                       <Dropdown.Item
-                        key={index}
+                        key={`system-field-${index}`}
                         onClick={() => handleSystemFieldSelect(field)}
                       >
                         {field.label}
                       </Dropdown.Item>
                     ))}
+                  </Dropdown.Menu>
+                </Dropdown>
+
+                <Dropdown>
+                  <Dropdown.Toggle 
+                    variant="outline-primary" 
+                    size="sm"
+                    id="global-mapped-field-dropdown"
+                    disabled={isLoadingGlobalFields}
+                  >
+                    {isLoadingGlobalFields ? 'Loading Global Fields...' : 'Global Mapped Field'}
+                  </Dropdown.Toggle>
+                  <Dropdown.Menu style={{ maxHeight: '400px', overflowY: 'auto' }}>
+                    {isLoadingGlobalFields ? (
+                      <Dropdown.ItemText className="text-muted">
+                        Loading...
+                      </Dropdown.ItemText>
+                    ) : globalMappedFields.length === 0 ? (
+                      <Dropdown.ItemText className="text-muted">
+                        No global fields available
+                      </Dropdown.ItemText>
+                    ) : (
+                      globalMappedFields.map((field) => (
+                        <Dropdown.Item
+                          key={field.id || field.fieldName}
+                          onClick={() => handleGlobalFieldSelect(field)}
+                        >
+                          {field.label || field.fieldName}
+                        </Dropdown.Item>
+                      ))
+                    )}
                   </Dropdown.Menu>
                 </Dropdown>
               </div>

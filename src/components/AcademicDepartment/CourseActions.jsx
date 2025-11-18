@@ -1,10 +1,10 @@
 import React from 'react';
-import { Eye, XCircle, ThreeDotsVertical, ArrowCounterclockwise } from 'react-bootstrap-icons';
+import { Eye, XCircle, ThreeDotsVertical } from 'react-bootstrap-icons';
 import PortalUnifiedDropdown from '../Common/PortalUnifiedDropdown';
 import { usePermissions } from '../../hooks/usePermissions';
 import { API_PERMISSIONS } from '../../constants/apiPermissions';
 
-const CourseActions = ({ course, onView, onDisable, onRestore }) => {
+const CourseActions = ({ course, onView, onDisable }) => {
   const { hasPermission, userPermissions, userRole } = usePermissions();
   
   // Check permissions
@@ -12,11 +12,7 @@ const CourseActions = ({ course, onView, onDisable, onRestore }) => {
   const canArchive = hasPermission(API_PERMISSIONS.COURSES.ARCHIVE);
   // Fallback to UPDATE permission if ARCHIVE permission doesn't exist
   const canUpdate = hasPermission(API_PERMISSIONS.COURSES.UPDATE);
-  const canRestore = hasPermission(API_PERMISSIONS.COURSES.RESTORE);
   const canArchiveCourse = canArchive || canUpdate; // Use ARCHIVE if available, otherwise fallback to UPDATE
-  
-  // Check if course is already archived
-  const isArchived = course?.status === 'ARCHIVED';
   
   const handleViewClick = () => {
     if (onView && canViewDetail) {
@@ -25,14 +21,8 @@ const CourseActions = ({ course, onView, onDisable, onRestore }) => {
   };
 
   const handleArchiveClick = () => {
-    if (onDisable && canArchiveCourse && !isArchived) {
+    if (onDisable && canArchiveCourse) {
       onDisable(course.id);
-    }
-  };
-
-  const handleRestoreClick = () => {
-    if (onRestore && canRestore && isArchived) {
-      onRestore(course.id);
     }
   };
 
@@ -48,24 +38,14 @@ const CourseActions = ({ course, onView, onDisable, onRestore }) => {
 
   items.push({ type: 'divider' });
 
-  // Show Archive or Restore based on course status
-  if (isArchived) {
-    items.push({
-      label: 'Restore Course',
-      icon: <ArrowCounterclockwise />,
-      className: 'text-success',
-      onClick: handleRestoreClick,
-      disabled: !canRestore
-    });
-  } else {
-    items.push({
-      label: 'Archive Course',
-      icon: <XCircle />,
-      className: 'text-danger',
-      onClick: handleArchiveClick,
-      disabled: !canArchiveCourse
-    });
-  }
+  // Only show Archive action (courses with ARCHIVED status are filtered out upstream)
+  items.push({
+    label: 'Archive Course',
+    icon: <XCircle />,
+    className: 'text-danger',
+    onClick: handleArchiveClick,
+    disabled: !canArchiveCourse
+  });
 
   return (
     <PortalUnifiedDropdown

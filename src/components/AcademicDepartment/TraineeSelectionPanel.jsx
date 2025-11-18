@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Card, Form, Button, Badge, Dropdown, Spinner } from 'react-bootstrap';
-import { Search, Plus, X, ChevronDown, People } from 'react-bootstrap-icons';
+import { Search, Plus, X, ChevronDown, People, CheckCircle } from 'react-bootstrap-icons';
 import traineeAPI from '../../api/trainee';
 
 const TraineeSelectionPanel = ({ selectedTrainees, onSelectionChange }) => {
@@ -9,6 +9,7 @@ const TraineeSelectionPanel = ({ selectedTrainees, onSelectionChange }) => {
   const [allTrainees, setAllTrainees] = useState([]);
   const [loadingTrainees, setLoadingTrainees] = useState(false);
   const [error, setError] = useState(null);
+  const [justAddedTraineeId, setJustAddedTraineeId] = useState(null);
   const dropdownRef = useRef(null);
 
   // Load trainees from API
@@ -81,8 +82,12 @@ const TraineeSelectionPanel = ({ selectedTrainees, onSelectionChange }) => {
   const handleAddTrainee = (trainee) => {
     if (!selectedTrainees.find(t => t.id === trainee.id)) {
       onSelectionChange([...selectedTrainees, trainee]);
-      // Optionally close dropdown after adding
-      // setShowAvailableDropdown(false);
+      
+      // Animation feedback: highlight the newly added trainee
+      setJustAddedTraineeId(trainee.id);
+      setTimeout(() => {
+        setJustAddedTraineeId(null);
+      }, 2000); // Remove highlight after 2 seconds
     }
   };
 
@@ -93,7 +98,7 @@ const TraineeSelectionPanel = ({ selectedTrainees, onSelectionChange }) => {
   
 
   return (
-    <Card className="d-flex flex-column h-100" style={{ border: '1px solid #e9ecef', boxShadow: '0 4px 8px rgba(0,0,0,0.15)', overflow: 'hidden', marginBottom: '1.5rem' }}>
+    <Card className="d-flex flex-column h-100" style={{ border: '1px solid #e9ecef', boxShadow: '0 4px 12px rgba(0,0,0,0.15)', overflow: 'hidden', marginBottom: '2rem' }}>
       <Card.Header className="bg-gradient-primary-custom text-white border-0">
         <div className="d-flex justify-content-between align-items-center">
           <h6 className="mb-0 text-white">Add Trainees</h6>
@@ -167,20 +172,32 @@ const TraineeSelectionPanel = ({ selectedTrainees, onSelectionChange }) => {
                   <p className="mb-0">No trainees found</p>
                 </div>
               ) : (
-                filteredTrainees.map(trainee => (
-                  <div 
-                    key={trainee.id}
-                    className="p-2 border-bottom d-flex align-items-center justify-content-between hover-bg-light"
-                    style={{ cursor: 'pointer', minWidth: 0 }}
-                    onClick={() => handleAddTrainee(trainee)}
-                  >
-                    <div style={{ minWidth: 0, overflow: 'hidden', flex: 1 }}>
-                      <div className="fw-semibold text-truncate" title={trainee.name}>{trainee.name}</div>
-                      <small className="text-muted text-truncate d-block" title={trainee.eid}>{trainee.eid}</small>
+                filteredTrainees.map(trainee => {
+                  const isSelected = selectedTrainees.find(t => t.id === trainee.id);
+                  return (
+                    <div 
+                      key={trainee.id}
+                      className={`p-2 border-bottom d-flex align-items-center justify-content-between ${isSelected ? 'bg-success bg-opacity-10' : 'hover-bg-light'}`}
+                      style={{ 
+                        cursor: isSelected ? 'not-allowed' : 'pointer', 
+                        minWidth: 0,
+                        transition: 'all 0.3s ease',
+                        opacity: isSelected ? 0.6 : 1
+                      }}
+                      onClick={() => !isSelected && handleAddTrainee(trainee)}
+                    >
+                      <div style={{ minWidth: 0, overflow: 'hidden', flex: 1 }}>
+                        <div className="fw-semibold text-truncate" title={trainee.name}>{trainee.name}</div>
+                        <small className="text-muted text-truncate d-block" title={trainee.eid}>{trainee.eid}</small>
+                      </div>
+                      {isSelected ? (
+                        <CheckCircle size={16} className="text-success flex-shrink-0" />
+                      ) : (
+                        <Plus size={14} className="text-primary flex-shrink-0" />
+                      )}
                     </div>
-                    <Plus size={14} className="text-primary flex-shrink-0" />
-                  </div>
-                ))
+                  );
+                })
               )}
             </div>
           )}
@@ -197,26 +214,34 @@ const TraineeSelectionPanel = ({ selectedTrainees, onSelectionChange }) => {
                 <p className="mb-0">No trainees selected</p>
               </div>
             ) : (
-              selectedTrainees.map(trainee => (
-                <div 
-                  key={trainee.id}
-                  className="p-2 border-bottom d-flex align-items-center justify-content-between"
-                  style={{ minWidth: 0 }}
-                >
-                  <div style={{ minWidth: 0, overflow: 'hidden', flex: 1 }}>
-                    <div className="fw-semibold text-truncate" title={trainee.name}>{trainee.name}</div>
-                    <small className="text-muted text-truncate d-block" title={trainee.eid}>{trainee.eid}</small>
-                  </div>
-                  <Button 
-                    size="sm" 
-                    variant="outline-danger"
-                    className="flex-shrink-0"
-                    onClick={() => handleRemoveTrainee(trainee.id)}
+              selectedTrainees.map(trainee => {
+                const isJustAdded = justAddedTraineeId === trainee.id;
+                return (
+                  <div 
+                    key={trainee.id}
+                    className="p-2 border-bottom d-flex align-items-center justify-content-between"
+                    style={{ 
+                      minWidth: 0,
+                      backgroundColor: isJustAdded ? 'rgba(40, 167, 69, 0.1)' : 'transparent',
+                      animation: isJustAdded ? 'slideInRight 0.5s ease-out, highlightPulse 0.5s ease-out' : 'none',
+                      transition: 'background-color 0.3s ease'
+                    }}
                   >
-                    <X size={14} />
-                  </Button>
-                </div>
-              ))
+                    <div style={{ minWidth: 0, overflow: 'hidden', flex: 1 }}>
+                      <div className="fw-semibold text-truncate" title={trainee.name}>{trainee.name}</div>
+                      <small className="text-muted text-truncate d-block" title={trainee.eid}>{trainee.eid}</small>
+                    </div>
+                    <Button 
+                      size="sm" 
+                      variant="outline-danger"
+                      className="flex-shrink-0"
+                      onClick={() => handleRemoveTrainee(trainee.id)}
+                    >
+                      <X size={14} />
+                    </Button>
+                  </div>
+                );
+              })
             )}
           </div>
         </div>

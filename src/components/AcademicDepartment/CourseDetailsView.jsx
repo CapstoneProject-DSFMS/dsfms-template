@@ -134,7 +134,8 @@ const CourseDetailsView = ({ courseId }) => {
         setCourse(courseData);
         
         // Transform API courses data to match expected format
-        const transformedCourses = departmentData.courses?.map(course => ({
+        const activeCourses = (departmentData.courses || []).filter(course => course.status !== 'ARCHIVED');
+        const transformedCourses = activeCourses.map(course => ({
           id: course.id,
           name: course.name,
           code: course.code,
@@ -166,7 +167,7 @@ const CourseDetailsView = ({ courseId }) => {
         
         if (courseData) {
           setCourse(courseData);
-          setCourses(hardcodedCoursesList);
+          setCourses(hardcodedCoursesList.filter(course => course.status !== 'ARCHIVED'));
         }
       }
     };
@@ -203,20 +204,6 @@ const CourseDetailsView = ({ courseId }) => {
     } catch (error) {
       toast.error('Failed to archive course. Please try again.');
       throw error;
-    }
-  };
-
-  const handleRestoreCourse = async (courseId) => {
-    try {
-      await courseAPI.restoreCourse(courseId);
-      toast.success('Course restored successfully');
-      
-      // Update course status in the list
-      setCourses(prev => prev.map(c => 
-        c.id === courseId ? { ...c, status: 'ACTIVE' } : c
-      ));
-    } catch (error) {
-      toast.error(error.response?.data?.message || 'Failed to restore course. Please try again.');
     }
   };
 
@@ -411,7 +398,6 @@ const CourseDetailsView = ({ courseId }) => {
                 actionsComponent={CourseActions}
                 onView={handleViewCourse}
                 onDisable={handleArchiveCourse}
-                onRestore={handleRestoreCourse}
               />
             </div>
           </Card>

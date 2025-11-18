@@ -12,9 +12,9 @@ const globalFieldAPI = {
   },
 
   // Get global field detail
-  getGlobalFieldDetail: async () => {
+  getGlobalFieldDetail: async (id) => {
     try {
-      const response = await apiClient.get('/global-fields/detail');
+      const response = await apiClient.get(`/global-fields/${id}/detail`);
       return response.data;
     } catch (error) {
       throw error;
@@ -44,7 +44,7 @@ const globalFieldAPI = {
   // Update global field
   updateGlobalField: async (id, fieldData) => {
     try {
-      const response = await apiClient.put(`/global-fields/${id}`, fieldData);
+      const response = await apiClient.patch(`/global-fields/${id}`, fieldData);
       return response.data;
     } catch (error) {
       throw error;

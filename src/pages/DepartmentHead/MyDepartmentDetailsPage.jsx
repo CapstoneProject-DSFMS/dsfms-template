@@ -247,8 +247,9 @@ const MyDepartmentDetailsPage = () => {
         const departmentDetail = await departmentAPI.getDepartmentById(userDepartment.id);
         const coursesList = departmentDetail.courses || [];
 
-        // Step 4: Map courses to match expected format
-        const mappedCourses = coursesList.map(course => ({
+        // Step 4: Filter out archived courses and map to match expected format
+        const activeCourses = coursesList.filter(course => course.status !== 'ARCHIVED');
+        const mappedCourses = activeCourses.map(course => ({
           id: course.id,
           title: course.name,
           code: course.code,
