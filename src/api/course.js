@@ -110,6 +110,28 @@ const courseAPI = {
       console.error('Error fetching course trainees:', error);
       throw error;
     }
+  },
+
+  // Get course enrollment batches
+  getCourseEnrollmentBatches: async (courseId) => {
+    try {
+      const response = await apiClient.get(`/courses/${courseId}/enrollments/batches`);
+      return response.data;
+    } catch (error) {
+      console.error('Error fetching course enrollment batches:', error);
+      throw error;
+    }
+  },
+
+  // Delete all subject enrollments in course by batch code
+  deleteBatchEnrollments: async (courseId, batchCode) => {
+    try {
+      const response = await apiClient.delete(`/courses/${courseId}/enrollments/batches/${batchCode}`);
+      return response.data;
+    } catch (error) {
+      console.error('Error deleting batch enrollments:', error);
+      throw error;
+    }
   }
 };
 
