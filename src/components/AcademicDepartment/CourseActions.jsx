@@ -59,7 +59,7 @@ const CourseActions = ({ course, onView, onDisable, onRestore }) => {
     });
   } else {
     items.push({
-      label: 'Delete Course',
+      label: 'Archive Course',
       icon: <XCircle />,
       className: 'text-danger',
       onClick: handleArchiveClick,

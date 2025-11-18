@@ -1,10 +1,11 @@
 import React, { useState, useEffect } from 'react';
-import { Button, Alert, Modal, Form, Row, Col, Card } from 'react-bootstrap';
+import { Button, Alert, Modal, Form, Row, Col, Card, Spinner } from 'react-bootstrap';
 import { Plus, X, ArrowDown, Pencil, ChevronDown, ChevronRight } from 'react-bootstrap-icons';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'react-toastify';
 import { roleAPI } from '../../../api/role';
 import { readTemplateMetaFromStorage, buildTemplatePayload } from '../../../utils/templateBuilder';
+import { validateFields } from '../../../utils/fieldValidator';
 import apiClient from '../../../api/config.js';
 import { API_CONFIG } from '../../../config/api.js';
 import { uploadAPI } from '../../../api/upload.js';
@@ -24,7 +25,8 @@ const CustomFieldsPanel = ({
   addSystemFieldToSectionRef,
   initialSections = null, // ← NEW prop to restore sections from draft
   readOnly = false,
-  className = ""
+  className = "",
+  onSubmittingChange // Callback to notify parent about submit state
 }) => {
   const navigate = useNavigate();
   const [sections, setSections] = useState([]);
@@ -41,11 +43,12 @@ const CustomFieldsPanel = ({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [initialSections]); // Only run when initialSections changes (sections.length check is intentional)
   const [collapsedSections, setCollapsedSections] = useState({});
-  const [dragState, setDragState] = useState({ sectionIndex: null, fromIndex: null, overIndex: null, position: 'above' });
+  const [dragState, setDragState] = useState({ sectionIndex: null, fromIndex: null, overIndex: null, position: 'above', targetSectionIndex: null });
   const [sectionDragState, setSectionDragState] = useState({ fromIndex: null, overIndex: null, position: 'above' });
 
   // Section modal state
   const [showSectionModal, setShowSectionModal] = useState(false);
+  const [editingSectionIndex, setEditingSectionIndex] = useState(null); // null = add mode, number = edit mode
   const [newSection, setNewSection] = useState({
     name: '',
     label: '',
@@ -61,7 +64,6 @@ const CustomFieldsPanel = ({
   // Field modal state
   const [showFieldModal, setShowFieldModal] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
-  const [editingSectionIndex, setEditingSectionIndex] = useState(null);
   const [editingFieldIndex, setEditingFieldIndex] = useState(null);
   const [newField, setNewField] = useState({
     label: '',
@@ -418,6 +420,7 @@ const CustomFieldsPanel = ({
   }, [sections, addSystemFieldToSectionRef, onAddField]);
 
   const handleAddSection = () => {
+    setEditingSectionIndex(null); // Add mode
     setNewSection({
       name: '',
       label: '',
@@ -427,6 +430,26 @@ const CustomFieldsPanel = ({
       isSubmittable: true,
       isToggleDependent: false,
       fields: []
+    });
+    setShowSectionModal(true);
+  };
+
+  const handleEditSection = (sectionIndex) => {
+    if (readOnly) return;
+    
+    const section = sections[sectionIndex];
+    if (!section) return;
+    
+    setEditingSectionIndex(sectionIndex); // Edit mode
+    setNewSection({
+      name: section.name || section.label || '',
+      label: section.label || '',
+      displayOrder: section.displayOrder || sectionIndex + 1,
+      editBy: section.editBy || 'TRAINER',
+      roleInSubject: section.roleInSubject || '',
+      isSubmittable: section.isSubmittable !== undefined ? section.isSubmittable : true,
+      isToggleDependent: section.isToggleDependent !== undefined ? section.isToggleDependent : false,
+      fields: section.fields || []
     });
     setShowSectionModal(true);
   };
@@ -467,6 +490,69 @@ const CustomFieldsPanel = ({
     });
   };
 
+  // Move field from one section to another
+  const moveFieldBetweenSections = (fromSectionIndex, fromFieldIndex, toSectionIndex, toFieldIndex) => {
+    if (readOnly) return;
+    if (fromSectionIndex === null || fromFieldIndex === null || toSectionIndex === null) return;
+    if (fromSectionIndex === toSectionIndex) {
+      // Same section - use reorderWithinSection instead
+      reorderWithinSection(fromSectionIndex, fromFieldIndex, toFieldIndex);
+      return;
+    }
+
+    setSections((prev) => {
+      const next = [...prev];
+      const fromSection = next[fromSectionIndex];
+      const toSection = next[toSectionIndex];
+      
+      if (!fromSection || !toSection) return prev;
+      
+      const fromFields = [...(fromSection.fields || [])];
+      const toFields = [...(toSection.fields || [])];
+      
+      // Get the field to move
+      const fieldToMove = fromFields[fromFieldIndex];
+      if (!fieldToMove) return prev;
+      
+      // Check if it's a PART field - need to move children too
+      const isPart = String(fieldToMove.fieldType || '').toUpperCase() === 'PART';
+      const partTempId = isPart ? (fieldToMove.tempId || `${fieldToMove.fieldName}-parent`) : null;
+      
+      // Collect all fields to move (PART + children if applicable)
+      const fieldsToMove = [fieldToMove];
+      if (isPart && partTempId) {
+        // Find all children of this PART field
+        const children = fromFields.filter(f => f.parentTempId === partTempId);
+        fieldsToMove.push(...children);
+      }
+      
+      // Remove fields from source section
+      const remainingFields = fromFields.filter((f, idx) => {
+        if (idx === fromFieldIndex) return false; // Remove the field itself
+        if (isPart && partTempId && f.parentTempId === partTempId) return false; // Remove children
+        return true;
+      });
+      
+      // Insert fields into target section at the specified index
+      const insertIndex = toFieldIndex !== null ? Math.max(0, Math.min(toFieldIndex, toFields.length)) : toFields.length;
+      toFields.splice(insertIndex, 0, ...fieldsToMove);
+      
+      // Update sections
+      next[fromSectionIndex] = { ...fromSection, fields: remainingFields };
+      next[toSectionIndex] = { ...toSection, fields: toFields };
+      
+      // Notify parent component
+      if (onAddField) {
+        const flattened = next.flatMap((s) => s.fields || []);
+        setTimeout(() => {
+          onAddField(flattened, { silent: true });
+        }, 0);
+      }
+      
+      return next;
+    });
+  };
+
   const removeSection = (sectionIndex) => {
     if (readOnly) return;
     
@@ -491,29 +577,111 @@ const CustomFieldsPanel = ({
       toast.warning('Please fill in section label');
       return;
     }
+    
+    // Check for duplicate section label
+    const trimmedLabel = newSection.label.trim();
+    const isDuplicate = sections.some((section, index) => {
+      // When editing, exclude the current section from duplicate check
+      if (editingSectionIndex !== null && index === editingSectionIndex) {
+        return false;
+      }
+      // Case-insensitive comparison
+      return section.label && section.label.trim().toLowerCase() === trimmedLabel.toLowerCase();
+    });
+    
+    if (isDuplicate) {
+      toast.warning(`Section with label "${trimmedLabel}" already exists. Please use a different label.`);
+      return;
+    }
+    
     // If editBy is TRAINEE, set roleInSubject to null; if TRAINER, keep the value
-    const sectionToAdd = {
+    const sectionToSave = {
       ...newSection,
-      name: newSection.label, // Use label as name
+      name: trimmedLabel, // Use trimmed label as name
+      label: trimmedLabel, // Use trimmed label
       roleInSubject: newSection.editBy === 'TRAINEE' ? null : (newSection.roleInSubject || null),
       fields: [...(newSection.fields || [])]
     };
     
-    // If isToggleDependent is true, automatically create a SECTION_CONTROL_TOGGLE field
-    if (sectionToAdd.isToggleDependent) {
-      const toggleFieldName = `${sectionToAdd.name.toLowerCase().replace(/\s+/g, '_')}_toggle`;
-      const toggleField = {
-        label: `${sectionToAdd.label} Toggle`,
-        fieldName: toggleFieldName,
-        fieldType: 'SECTION_CONTROL_TOGGLE',
-        roleRequired: sectionToAdd.editBy || 'TRAINER',
-        parentTempId: null
-      };
-      sectionToAdd.fields = [toggleField];
+    if (editingSectionIndex !== null) {
+      // Edit mode: Update existing section (preserve fields)
+      setSections((prev) => {
+        const next = [...prev];
+        const existingSection = next[editingSectionIndex];
+        const existingFields = existingSection.fields || [];
+        
+        // Handle isToggleDependent change
+        let updatedFields = [...existingFields];
+        const hadToggleField = existingFields.some(f => f.fieldType === 'SECTION_CONTROL_TOGGLE');
+        const needsToggleField = sectionToSave.isToggleDependent;
+        
+        if (needsToggleField && !hadToggleField) {
+          // Add toggle field if it doesn't exist
+          const toggleFieldName = `${sectionToSave.name.toLowerCase().replace(/\s+/g, '_')}_toggle`;
+          const toggleField = {
+            label: `${sectionToSave.label} Toggle`,
+            fieldName: toggleFieldName,
+            fieldType: 'SECTION_CONTROL_TOGGLE',
+            roleRequired: sectionToSave.editBy || 'TRAINER',
+            parentTempId: null
+          };
+          updatedFields = [toggleField, ...updatedFields];
+        } else if (!needsToggleField && hadToggleField) {
+          // Remove toggle field if it exists
+          updatedFields = updatedFields.filter(f => f.fieldType !== 'SECTION_CONTROL_TOGGLE');
+        }
+        
+        next[editingSectionIndex] = {
+          ...existingSection,
+          label: sectionToSave.label,
+          name: sectionToSave.name,
+          editBy: sectionToSave.editBy,
+          roleInSubject: sectionToSave.roleInSubject,
+          isSubmittable: sectionToSave.isSubmittable,
+          isToggleDependent: sectionToSave.isToggleDependent,
+          displayOrder: sectionToSave.displayOrder,
+          // Use updated fields (with toggle field handling)
+          fields: updatedFields
+        };
+        return next;
+      });
+      toast.success('Section updated successfully');
+    } else {
+      // Add mode: Add new section
+      // If isToggleDependent is true, automatically create a SECTION_CONTROL_TOGGLE field
+      if (sectionToSave.isToggleDependent) {
+        const toggleFieldName = `${sectionToSave.name.toLowerCase().replace(/\s+/g, '_')}_toggle`;
+        const toggleField = {
+          label: `${sectionToSave.label} Toggle`,
+          fieldName: toggleFieldName,
+          fieldType: 'SECTION_CONTROL_TOGGLE',
+          roleRequired: sectionToSave.editBy || 'TRAINER',
+          parentTempId: null
+        };
+        sectionToSave.fields = [toggleField];
+      }
+      
+      setSections((prev) => [...prev, sectionToSave]);
+      toast.success('Section added successfully');
     }
     
-    setSections((prev) => [...prev, sectionToAdd]);
     setShowSectionModal(false);
+    setEditingSectionIndex(null);
+  };
+
+  const handleRemoveSectionFromModal = () => {
+    if (editingSectionIndex === null) return;
+    
+    const section = sections[editingSectionIndex];
+    if (!section) return;
+    
+    // Confirm before removing
+    if (window.confirm(`Are you sure you want to remove section "${section.label}"? This action cannot be undone.`)) {
+      removeSection(editingSectionIndex);
+      setShowSectionModal(false);
+      setEditingSectionIndex(null);
+      toast.success('Section removed successfully');
+    }
   };
 
   // Load roles and filter to TRAINER/TRAINEE when opening section modal
@@ -717,6 +885,14 @@ const CustomFieldsPanel = ({
   };
 
   const [isSubmitting, setIsSubmitting] = useState(false);
+  
+  // Notify parent about submit state changes
+  useEffect(() => {
+    if (onSubmittingChange) {
+      onSubmittingChange(isSubmitting);
+    }
+  }, [isSubmitting, onSubmittingChange]);
+  
   const handleSubmitTemplate = async () => {
     try {
       setIsSubmitting(true);
@@ -888,6 +1064,62 @@ const CustomFieldsPanel = ({
       console.log('  🔑 documentKey:', documentKey);
       console.log('  🔄 Using existingFields for conversion:', existingFields ? 'Yes' : 'No');
       console.log('🧩 Full payload:\n', JSON.stringify(payload, null, 2));
+      
+      // Step: Validate fields from editor against Available Custom Fields
+      // Only validate if templateConfigUrl exists (document has been saved)
+      if (templateConfigUrl) {
+        try {
+          console.log('🔍 Validating fields from editor against Available Custom Fields...');
+          console.log('  📄 Document URL:', templateConfigUrl);
+          
+          // Call extract-fields API with templateConfigUrl
+          const extractResponse = await templateAPI.extractFields(templateConfigUrl);
+          console.log('✅ Extract fields response:', extractResponse);
+          
+          // Validate extracted fields against payload fields (bidirectional)
+          // Compare: fields in editor (extract-fields) vs fields in Available Custom Fields (payload)
+          const validationResult = validateFields(extractResponse, payload.sections);
+          
+          console.log('🔍 Validation result:', {
+            isValid: validationResult.isValid,
+            missingInSchema: validationResult.missingInSchema,
+            missingInDocument: validationResult.missingInDocument,
+            totalExtractFields: validationResult.totalExtractFields,
+            totalPayloadFields: validationResult.totalPayloadFields
+          });
+          
+          if (!validationResult.isValid) {
+            // Show error for fields in editor but not in Available Custom Fields (block submit)
+            if (validationResult.missingInSchema.length > 0) {
+              console.error('❌ Field validation failed - fields in editor but not in Available Custom Fields:', validationResult.missingInSchema);
+              toast.error(validationResult.errorMessage);
+              setIsSubmitting(false);
+              return;
+            }
+            
+            // Show error for fields in Available Custom Fields but not in editor (block submit)
+            if (validationResult.missingInDocument.length > 0) {
+              console.error('❌ Field validation failed - fields in Available Custom Fields but not in editor:', validationResult.missingInDocument);
+              toast.error(validationResult.warningMessage); // Use warningMessage but show as error
+              setIsSubmitting(false);
+              return;
+            }
+          }
+          
+          if (validationResult.isValid) {
+            console.log('✅ Field validation passed - all fields match between editor and Available Custom Fields');
+          }
+        } catch (extractError) {
+          // If extract-fields API fails, log warning but continue with submit
+          // (Don't block submit if API is unavailable)
+          console.warn('⚠️ Failed to validate fields (extract-fields API error):', extractError);
+          console.warn('⚠️ Continuing with submit without field validation');
+          // Don't show error to user - just log warning
+          // toast.warning('Could not validate fields from document. Proceeding with submit...');
+        }
+      } else {
+        console.warn('⚠️ No templateConfigUrl available - skipping field validation');
+      }
       
       if (originalTemplateId) {
         // CREATE NEW VERSION from published template
@@ -1164,6 +1396,16 @@ const CustomFieldsPanel = ({
           .section-card.section-dragging { cursor: grabbing; box-shadow: 0 8px 18px rgba(0,0,0,.15); transform: scale(.98); opacity: 0.7; }
           .section-card.section-drop-target-above { border-top: 4px solid var(--bs-primary) !important; border-top-left-radius: 0.5rem; border-top-right-radius: 0.5rem; }
           .section-card.section-drop-target-below { border-bottom: 4px solid var(--bs-primary) !important; border-bottom-left-radius: 0.5rem; border-bottom-right-radius: 0.5rem; }
+          .section-body.section-drop-target { 
+            background-color: rgba(0, 123, 255, 0.05) !important; 
+            border: 2px dashed var(--bs-primary) !important; 
+            border-radius: 0.375rem;
+          }
+          .section-header.section-header-drop-target {
+            background-color: rgba(0, 123, 255, 0.1) !important;
+            border: 2px dashed var(--bs-primary) !important;
+            border-radius: 0.375rem;
+          }
         `}
       </style>
       <div className={`p-2 p-md-3 bg-light custom-fields-panel ${className}`} style={{ height: '100%', display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
@@ -1201,7 +1443,11 @@ const CustomFieldsPanel = ({
                     e.dataTransfer.effectAllowed = 'move';
                   }}
                   onDragOver={(e) => {
+                    // Only handle section drag, ignore field drag
                     if (readOnly || sectionDragState.fromIndex === null) return;
+                    // If dragging field, don't handle here (let Card.Header or Card.Body handle it)
+                    if (dragState.sectionIndex !== null) return;
+                    
                     e.preventDefault();
                     const rect = e.currentTarget.getBoundingClientRect();
                     const mid = rect.top + rect.height / 2;
@@ -1221,7 +1467,11 @@ const CustomFieldsPanel = ({
                     }
                   }}
                   onDrop={(e) => {
+                    // Only handle section drag, ignore field drag
                     if (readOnly || sectionDragState.fromIndex === null) return;
+                    // If dragging field, don't handle here (let Card.Header or Card.Body handle it)
+                    if (dragState.sectionIndex !== null) return;
+                    
                     e.preventDefault();
                     const toIndex = Math.max(0, Math.min(sectionDragState.overIndex, sections.length));
                     reorderSections(sectionDragState.fromIndex, toIndex);
@@ -1233,10 +1483,46 @@ const CustomFieldsPanel = ({
                   style={{ cursor: readOnly ? 'default' : 'grab' }}
                 >
                   <Card.Header 
-                    className="d-flex justify-content-between align-items-center section-header"
+                    className={`d-flex justify-content-between align-items-center section-header ${collapsedSections[sIdx] && dragState.sectionIndex !== null && dragState.sectionIndex !== sIdx && dragState.targetSectionIndex === sIdx ? 'section-header-drop-target' : ''}`}
                     onClick={() => toggleSection(sIdx)}
                     aria-expanded={!collapsedSections[sIdx]}
                     onDragStart={(e) => e.stopPropagation()}
+                    onDragOver={(e) => {
+                      // Handle field drag into collapsed section header
+                      if (readOnly || dragState.sectionIndex === null) return;
+                      if (dragState.sectionIndex === sIdx) return; // Same section - no need to handle
+                      if (!collapsedSections[sIdx]) return; // Only handle when collapsed
+                      
+                      e.preventDefault();
+                      e.stopPropagation();
+                      
+                      // Update target section index
+                      if (dragState.targetSectionIndex !== sIdx) {
+                        setDragState((prev) => ({ 
+                          ...prev, 
+                          targetSectionIndex: sIdx,
+                          overIndex: section.fields?.length || 0,
+                          position: 'below'
+                        }));
+                      }
+                    }}
+                    onDrop={(e) => {
+                      // Handle field drop into collapsed section header
+                      if (readOnly || dragState.sectionIndex === null || dragState.fromIndex === null) return;
+                      if (dragState.sectionIndex === sIdx) return; // Same section - handled elsewhere
+                      if (!collapsedSections[sIdx]) return; // Only handle when collapsed
+                      
+                      e.preventDefault();
+                      e.stopPropagation();
+                      
+                      // Auto-expand section
+                      setCollapsedSections((prev) => ({ ...prev, [sIdx]: false }));
+                      
+                      // Move field to end of target section
+                      const toIndex = section.fields?.length || 0;
+                      moveFieldBetweenSections(dragState.sectionIndex, dragState.fromIndex, sIdx, toIndex);
+                      setDragState({ sectionIndex: null, fromIndex: null, overIndex: null, position: 'above', targetSectionIndex: null });
+                    }}
                     style={{ padding: '0.75rem' }}
                   >
                     <div className="d-flex flex-column flex-grow-1" style={{ minWidth: 0, marginRight: '0.5rem' }}>
@@ -1265,20 +1551,57 @@ const CustomFieldsPanel = ({
                         <span className="d-inline d-sm-none">Field</span>
                       </Button>
                       <Button
-                        variant="outline-danger"
+                        variant="outline-primary"
                         size="sm"
-                        onClick={() => removeSection(sIdx)}
+                        onClick={() => handleEditSection(sIdx)}
                         disabled={readOnly}
-                        title="Remove Section"
-                        className="text-danger border-danger"
+                        title="Edit Section"
+                        className="text-primary border-primary"
                         style={{ padding: '0.25rem 0.4rem' }}
                       >
-                        <X size={12} />
+                        <Pencil size={12} />
                       </Button>
                     </div>
                   </Card.Header>
                   {!collapsedSections[sIdx] && (
-                  <Card.Body className="section-body">
+                  <Card.Body 
+                    className={`section-body ${dragState.sectionIndex !== null && dragState.sectionIndex !== sIdx && dragState.targetSectionIndex === sIdx ? 'section-drop-target' : ''}`}
+                    onDragOver={(e) => {
+                      // Allow dropping fields from other sections into empty section body
+                      if (readOnly || dragState.sectionIndex === null) return;
+                      if (dragState.sectionIndex === sIdx) return; // Same section - handled by field onDragOver
+                      
+                      e.preventDefault();
+                      e.stopPropagation();
+                      
+                      // Update target section index
+                      if (dragState.targetSectionIndex !== sIdx) {
+                        setDragState((prev) => ({ 
+                          ...prev, 
+                          targetSectionIndex: sIdx,
+                          overIndex: section.fields?.length || 0,
+                          position: 'below'
+                        }));
+                      }
+                    }}
+                    onDrop={(e) => {
+                      // Handle drop into empty section body or at the end of section
+                      if (readOnly || dragState.sectionIndex === null || dragState.fromIndex === null) return;
+                      if (dragState.sectionIndex === sIdx) return; // Same section - handled by field onDrop
+                      
+                      e.preventDefault();
+                      e.stopPropagation();
+                      
+                      // Move field to end of target section
+                      const toIndex = section.fields?.length || 0;
+                      moveFieldBetweenSections(dragState.sectionIndex, dragState.fromIndex, sIdx, toIndex);
+                      setDragState({ sectionIndex: null, fromIndex: null, overIndex: null, position: 'above', targetSectionIndex: null });
+                    }}
+                    style={{ 
+                      minHeight: dragState.sectionIndex !== null && dragState.sectionIndex !== sIdx && dragState.targetSectionIndex === sIdx ? '60px' : 'auto',
+                      transition: 'all 0.2s ease'
+                    }}
+                  >
                     {section.fields && section.fields.length > 0 ? (
                       (() => {
                         const allSorted = [...section.fields].sort((a, b) => a.displayOrder - b.displayOrder);
@@ -1291,11 +1614,11 @@ const CustomFieldsPanel = ({
                           return (
                           <div
                             key={`${sIdx}-${realIndex}`}
-                            className={`p-2 p-md-2 rounded border mb-2 mb-md-2 draggable-item custom-field-item ${isPart ? 'bg-part part-card' : 'bg-white child-row'} ${dragState.sectionIndex===sIdx && dragState.overIndex===realIndex ? 'border-primary' : ''} ${dragState.sectionIndex===sIdx && dragState.overIndex===realIndex && dragState.position==='above' ? 'drop-target-above' : ''} ${dragState.sectionIndex===sIdx && dragState.overIndex===realIndex && dragState.position==='below' ? 'drop-target-below' : ''} ${dragState.sectionIndex===sIdx && dragState.fromIndex===realIndex ? 'dragging' : ''}`}
+                            className={`p-2 p-md-2 rounded border mb-2 mb-md-2 draggable-item custom-field-item ${isPart ? 'bg-part part-card' : 'bg-white child-row'} ${dragState.sectionIndex !== null && dragState.targetSectionIndex === sIdx && dragState.overIndex === realIndex ? 'border-primary' : ''} ${dragState.sectionIndex !== null && dragState.targetSectionIndex === sIdx && dragState.overIndex === realIndex && dragState.position === 'above' ? 'drop-target-above' : ''} ${dragState.sectionIndex !== null && dragState.targetSectionIndex === sIdx && dragState.overIndex === realIndex && dragState.position === 'below' ? 'drop-target-below' : ''} ${dragState.sectionIndex === sIdx && dragState.fromIndex === realIndex ? 'dragging' : ''}`}
                             draggable
                             style={{ display: 'block', visibility: 'visible', opacity: 1, cursor: 'grab' }}
                             onDragStart={(e) => {
-                              setDragState({ sectionIndex: sIdx, fromIndex: realIndex, overIndex: realIndex, position: 'above' });
+                              setDragState({ sectionIndex: sIdx, fromIndex: realIndex, overIndex: realIndex, position: 'above', targetSectionIndex: sIdx });
                               e.dataTransfer.effectAllowed = 'move';
                             }}
                             onDragOver={(e) => {
@@ -1305,19 +1628,40 @@ const CustomFieldsPanel = ({
                               const position = e.clientY < mid ? 'above' : 'below';
                               let targetIndex = realIndex;
                               if (position === 'below') targetIndex = realIndex + 1;
-                              if (dragState.sectionIndex === sIdx && (dragState.overIndex !== targetIndex || dragState.position !== position)) {
-                                setDragState((prev) => ({ ...prev, overIndex: targetIndex, position }));
+                              
+                              // Handle both same section and cross-section drag
+                              if (dragState.sectionIndex !== null) {
+                                const isSameSection = dragState.sectionIndex === sIdx;
+                                const shouldUpdate = isSameSection 
+                                  ? (dragState.overIndex !== targetIndex || dragState.position !== position)
+                                  : (dragState.targetSectionIndex !== sIdx || dragState.overIndex !== targetIndex || dragState.position !== position);
+                                
+                                if (shouldUpdate) {
+                                  setDragState((prev) => ({ 
+                                    ...prev, 
+                                    overIndex: targetIndex, 
+                                    position,
+                                    targetSectionIndex: sIdx
+                                  }));
+                                }
                               }
                             }}
                             onDrop={(e) => {
                               e.preventDefault();
+                              if (dragState.sectionIndex === null || dragState.fromIndex === null) return;
+                              
                               if (dragState.sectionIndex === sIdx) {
+                                // Same section - reorder within section
                                 const toIndex = Math.max(0, Math.min(dragState.overIndex, sections[sIdx]?.fields?.length || 0));
                                 reorderWithinSection(sIdx, dragState.fromIndex, toIndex);
+                              } else {
+                                // Different section - move field between sections
+                                const toIndex = Math.max(0, Math.min(dragState.overIndex, sections[sIdx]?.fields?.length || 0));
+                                moveFieldBetweenSections(dragState.sectionIndex, dragState.fromIndex, sIdx, toIndex);
                               }
-                              setDragState({ sectionIndex: null, fromIndex: null, overIndex: null, position: 'above' });
+                              setDragState({ sectionIndex: null, fromIndex: null, overIndex: null, position: 'above', targetSectionIndex: null });
                             }}
-                            onDragEnd={() => setDragState({ sectionIndex: null, fromIndex: null, overIndex: null, position: 'above' })}
+                            onDragEnd={() => setDragState({ sectionIndex: null, fromIndex: null, overIndex: null, position: 'above', targetSectionIndex: null })}
                           >
                             <div className="d-flex justify-content-between align-items-start mb-2 gap-2">
                               <div className="flex-grow-1" style={{ minWidth: 0 }}>
@@ -1450,14 +1794,24 @@ const CustomFieldsPanel = ({
           className="custom-fields-submit-btn flex-shrink-0"
           style={{ whiteSpace: 'nowrap', fontSize: '0.8rem', padding: '0.375rem 0.75rem' }}
         >
-          {isSubmitting ? 'Submitting...' : <><span className="d-none d-sm-inline">Submit Template</span><span className="d-inline d-sm-none">Submit</span></>}
+          {isSubmitting ? (
+            <>
+              <Spinner animation="border" size="sm" variant="light" style={{ width: '14px', height: '14px' }} />
+              <span>Submitting...</span>
+            </>
+          ) : (
+            <>
+              <span className="d-none d-sm-inline">Submit Template</span>
+              <span className="d-inline d-sm-none">Submit</span>
+            </>
+          )}
         </Button>
       </div>
 
-      {/* Add Section Modal */}
+      {/* Add/Edit Section Modal */}
       <Modal show={showSectionModal} onHide={handleCloseModals} centered size="lg">
         <Modal.Header closeButton>
-          <Modal.Title>Add New Section</Modal.Title>
+          <Modal.Title>{editingSectionIndex !== null ? 'Edit Section' : 'Add New Section'}</Modal.Title>
         </Modal.Header>
         <Modal.Body>
           <Form>
@@ -1511,6 +1865,7 @@ const CustomFieldsPanel = ({
                 </Form.Group>
               </Col>
               )}
+              {newSection.editBy === 'TRAINER' && (
               <Col md={12}>
                 <Form.Group className="d-flex flex-row align-items-center gap-4">
                   <div className="d-flex align-items-center">
@@ -1533,15 +1888,25 @@ const CustomFieldsPanel = ({
                   </div>
                 </Form.Group>
               </Col>
+              )}
             </Row>
           </Form>
         </Modal.Body>
         <Modal.Footer>
+          {editingSectionIndex !== null && (
+            <Button 
+              variant="outline-danger" 
+              onClick={handleRemoveSectionFromModal}
+              className="me-auto"
+            >
+              Remove Section
+            </Button>
+          )}
           <Button variant="outline-secondary" onClick={handleCloseModals}>
             Cancel
           </Button>
           <Button variant="primary" onClick={handleSaveSection}>
-            Save Section
+            {editingSectionIndex !== null ? 'Update Section' : 'Save Section'}
           </Button>
         </Modal.Footer>
       </Modal>

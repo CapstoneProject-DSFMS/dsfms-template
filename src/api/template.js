@@ -92,21 +92,11 @@ const templateAPI = {
   // Extract fields from template file
   extractFields: async (fileUrl) => {
     try {
-      // Try both endpoints and parameter formats
-      // Endpoint 1: /templates/extract-fields with fileUrl
-      try {
-        const response = await apiClient.post('/templates/extract-fields', {
-          fileUrl: fileUrl
-        });
-        return response.data;
-      } catch (error1) {
-        // If first endpoint fails, try alternative endpoint
-        console.log('⚠️ First endpoint failed, trying alternative...', error1?.response?.data);
-        const response = await apiClient.post('/templates/extract-fields-from-url', {
-          url: fileUrl
-        });
-        return response.data;
-      }
+      // Use extract-fields-from-url endpoint (accepts URL parameter)
+      const response = await apiClient.post('/templates/extract-fields-from-url', {
+        url: fileUrl
+      });
+      return response.data;
     } catch (error) {
       throw error;
     }

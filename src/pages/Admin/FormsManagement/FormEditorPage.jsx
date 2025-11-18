@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Container, Row, Col, Card, Button, Alert, Modal, Form } from 'react-bootstrap';
+import { Container, Row, Col, Card, Button, Alert, Modal, Form, Spinner } from 'react-bootstrap';
 import { ArrowLeft, Pencil, Save } from 'react-bootstrap-icons';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { toast } from 'react-toastify';
@@ -233,7 +233,34 @@ const FormEditorPage = () => {
         </Container>
       }
     >
-      <Container fluid className="py-4 form-editor-page form-component">
+      <Container fluid className="py-4 form-editor-page form-component" style={{ position: 'relative' }}>
+        {/* Loading Overlay for Save Draft - Fixed position to cover entire editor */}
+        {isSavingDraft && (
+          <div 
+            className="loading-overlay"
+            style={{
+              position: 'fixed',
+              top: 0,
+              left: 0,
+              right: 0,
+              bottom: 0,
+              backgroundColor: 'rgba(255, 255, 255, 0.9)',
+              backdropFilter: 'blur(6px)',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              zIndex: 9999,
+              transition: 'opacity 0.3s ease-in-out'
+            }}
+          >
+            <div className="text-center">
+              <Spinner animation="border" variant="primary" style={{ width: '3rem', height: '3rem' }} />
+              <p className="mt-3 mb-0 text-primary fw-semibold" style={{ fontSize: '1.1rem' }}>
+                Saving draft...
+              </p>
+            </div>
+          </div>
+        )}
         <Card className="border-neutral-200 shadow-sm">
           <Card.Header className="border-neutral-200 form-editor-header bg-primary">
             <Row className="align-items-center">
@@ -322,14 +349,23 @@ const FormEditorPage = () => {
                     }
                   }}
                 >
-                  <Save size={16} />
-                  {isSavingDraft ? 'Saving...' : 'Save Draft'}
+                  {isSavingDraft ? (
+                    <>
+                      <Spinner animation="border" size="sm" variant="light" style={{ width: '14px', height: '14px' }} />
+                      <span>Saving...</span>
+                    </>
+                  ) : (
+                    <>
+                      <Save size={16} />
+                      <span>Save Draft</span>
+                    </>
+                  )}
                 </Button>
               </Col>
             </Row>
           </Card.Header>
 
-          <Card.Body className="p-0">
+          <Card.Body className="p-0" style={{ position: 'relative' }}>
             <OnlyOfficeFormEditor
               ref={onlyOfficeEditorRef}
               initialContent={content}

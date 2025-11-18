@@ -25,6 +25,7 @@ const OnlyOfficeFormEditor = forwardRef(({
     const [customFields, setCustomFields] = useState([])
     const [showCustomFieldsPanel] = useState(true)
     const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false)
+    const [isSubmitting, setIsSubmitting] = useState(false) // Track submit state for overlay
     const hasUnsavedChangesRef = useRef(false) // Persist state across re-renders
     const isInitialized = useRef(false)
     const editorRef = useRef(null)
@@ -1374,7 +1375,7 @@ console.log('🌐 Full S3 URL:', s3Url)
         )
   }
 
-    const handleAddCustomField = (field) => {
+  const handleAddCustomField = (field) => {
     // Check if field is an array (for update) or single field (for add)
     if (Array.isArray(field)) {
             setCustomFields(field)
@@ -1388,8 +1389,36 @@ console.log('🌐 Full S3 URL:', s3Url)
   }
 
   return (
-    <div className={`onlyoffice-form-editor ${className}`}>
-      <div className="p-0">
+    <>
+      {/* Loading Overlay for Submit - Fixed position to cover entire screen */}
+      {isSubmitting && (
+        <div 
+          className="loading-overlay"
+          style={{
+            position: 'fixed',
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            backgroundColor: 'rgba(255, 255, 255, 0.9)',
+            backdropFilter: 'blur(6px)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            zIndex: 9999,
+            transition: 'opacity 0.3s ease-in-out'
+          }}
+        >
+          <div className="text-center">
+            <Spinner animation="border" variant="primary" style={{ width: '3rem', height: '3rem' }} />
+            <p className="mt-3 mb-0 text-primary fw-semibold" style={{ fontSize: '1.1rem' }}>
+              Submitting template...
+            </p>
+          </div>
+              </div>
+            )}
+      <div className={`onlyoffice-form-editor ${className}`} style={{ position: 'relative' }}>
+        <div className="p-0">
         <Row className="g-0" style={{ minHeight: '90vh' }}>
           {/* OnlyOffice Editor - LEFT side */}
           <Col
@@ -1402,7 +1431,7 @@ console.log('🌐 Full S3 URL:', s3Url)
             className="editor-col"
             style={{ order: 1 }}
           >
-            <div className="p-3 editor-wrapper" style={{ height: '90vh' }}>
+            <div className="p-3 editor-wrapper" style={{ height: '90vh', position: 'relative' }}>
               {/* Header Bar with System Mapped Field Dropdown */}
               <div className="d-flex justify-content-end align-items-center mb-2">
                 <Dropdown>
@@ -1465,6 +1494,7 @@ console.log('🌐 Full S3 URL:', s3Url)
                                         addSystemFieldToSectionRef={addSystemFieldToSectionRef}
                 readOnly={readOnly}
                 className="h-100"
+                onSubmittingChange={setIsSubmitting}
               />
             </div>
           </Col>
@@ -1666,7 +1696,8 @@ console.log('🌐 Full S3 URL:', s3Url)
           </BootstrapButton>
         </Modal.Footer>
       </Modal>
-    </div>
+      </div>
+    </>
     )
 })
 
