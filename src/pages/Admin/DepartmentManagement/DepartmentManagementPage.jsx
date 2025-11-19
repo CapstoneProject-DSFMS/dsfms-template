@@ -18,28 +18,14 @@ const DepartmentManagementPage = () => {
   const navigate = useNavigate();
   const {
     departments,
-    selectedDepartments,
     loading,
-    error,
     searchTerm,
     setSearchTerm,
-    filters,
-    sortConfig,
     createDepartment,
     updateDepartment,
-    deleteDepartment,
-    toggleDepartmentStatus,
     disableDepartment,
     enableDepartment,
-    bulkDeleteDepartments,
-    bulkToggleStatus,
-    sortDepartments,
-    handleSelectDepartment,
-    handleSelectAll,
-    handleFilterChange,
-    clearFilters,
-    getAvailableUsers,
-    setError
+    getAvailableUsers
   } = useDepartmentManagement();
 
 
@@ -49,8 +35,6 @@ const DepartmentManagementPage = () => {
   const [showDetailsModal, setShowDetailsModal] = useState(false);
   const [modalMode, setModalMode] = useState('add'); // 'add', 'edit', 'view'
   const [selectedDepartment, setSelectedDepartment] = useState(null);
-  const [filterPanelExpanded, setFilterPanelExpanded] = useState(false);
-  
   // Checkbox filter states
   const [selectedTypes, setSelectedTypes] = useState([]);
   const [selectedStatuses, setSelectedStatuses] = useState([]);
@@ -71,7 +55,7 @@ const DepartmentManagementPage = () => {
     };
 
     loadAvailableUsers();
-  }, []);
+  }, [getAvailableUsers]); // getAvailableUsers is now memoized with useCallback
 
   // Modal handlers
   const handleAddDepartment = () => {
@@ -80,22 +64,8 @@ const DepartmentManagementPage = () => {
     setShowModal(true);
   };
 
-  const handleEditDepartment = (department) => {
-    navigate(`/admin/departments/${department.id}`);
-  };
-
   const handleViewDepartment = (department) => {
     navigate(`/admin/departments/${department.id}`);
-  };
-
-  const handleViewCourses = (department) => {
-    // This would navigate to courses page or show courses modal
-    console.log('View courses for department:', department.name);
-  };
-
-  const handleDeleteDepartment = (department) => {
-    setSelectedDepartment(department);
-    setShowDisableModal(true);
   };
 
   const handleToggleStatus = (department) => {
@@ -132,7 +102,28 @@ const DepartmentManagementPage = () => {
       handleCloseModal();
     } catch (error) {
       console.error('Error saving department:', error);
-      toast.error('Failed to save department');
+      const errorData = error?.response?.data;
+      let errorMessage = error?.message || 'Failed to save department';
+
+      if (errorData?.message) {
+        if (Array.isArray(errorData.message)) {
+          errorMessage = errorData.message.map(msg => msg.message || msg).join(', ');
+        } else {
+          errorMessage = errorData.message;
+        }
+      }
+
+      if (errorData?.errors && Array.isArray(errorData.errors)) {
+        const detailedMessages = errorData.errors
+          .map(errItem => errItem.message || JSON.stringify(errItem))
+          .filter(Boolean)
+          .join(', ');
+        if (detailedMessages) {
+          errorMessage = detailedMessages;
+        }
+      }
+
+      toast.error(errorMessage);
     }
   };
 
@@ -154,36 +145,8 @@ const DepartmentManagementPage = () => {
     }
   };
 
-  const handleBulkDelete = async (ids) => {
-    try {
-      await bulkDeleteDepartments(ids);
-      toast.success(`${ids.length} department(s) deleted successfully`);
-    } catch (error) {
-      console.error('Error deleting departments:', error);
-      toast.error('Failed to delete departments');
-    }
-  };
-
-  const handleBulkToggleStatus = async (ids, status) => {
-    try {
-      await bulkToggleStatus(ids, status);
-      toast.success(`${ids.length} department(s) ${status.toLowerCase()}d successfully`);
-    } catch (error) {
-      console.error('Error updating department status:', error);
-      toast.error('Failed to update department status');
-    }
-  };
-
   const handleSearchChange = (value) => {
     setSearchTerm(value);
-  };
-
-  const handleSort = (key) => {
-    sortDepartments(key);
-  };
-
-  const handleFilterToggle = () => {
-    setFilterPanelExpanded(!filterPanelExpanded);
   };
 
   // Checkbox filter handlers

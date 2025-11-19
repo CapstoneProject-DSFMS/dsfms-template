@@ -134,7 +134,8 @@ const CourseDetailsView = ({ courseId }) => {
         setCourse(courseData);
         
         // Transform API courses data to match expected format
-        const transformedCourses = departmentData.courses?.map(course => ({
+        const activeCourses = (departmentData.courses || []).filter(course => course.status !== 'ARCHIVED');
+        const transformedCourses = activeCourses.map(course => ({
           id: course.id,
           name: course.name,
           code: course.code,
@@ -166,7 +167,7 @@ const CourseDetailsView = ({ courseId }) => {
         
         if (courseData) {
           setCourse(courseData);
-          setCourses(hardcodedCoursesList);
+          setCourses(hardcodedCoursesList.filter(course => course.status !== 'ARCHIVED'));
         }
       }
     };
@@ -193,7 +194,7 @@ const CourseDetailsView = ({ courseId }) => {
   const handleConfirmArchiveCourse = async (courseId) => {
     try {
       await courseAPI.archiveCourse(courseId);
-      toast.success('Course deleted successfully');
+      toast.success('Course archived successfully');
       
       // Remove course from the list after deletion
       setCourses(prev => prev.filter(c => c.id !== courseId));
@@ -201,22 +202,8 @@ const CourseDetailsView = ({ courseId }) => {
       setShowArchiveCourse(false);
       setCourseToArchive(null);
     } catch (error) {
-      toast.error('Failed to delete course. Please try again.');
+      toast.error('Failed to archive course. Please try again.');
       throw error;
-    }
-  };
-
-  const handleRestoreCourse = async (courseId) => {
-    try {
-      await courseAPI.restoreCourse(courseId);
-      toast.success('Course restored successfully');
-      
-      // Update course status in the list
-      setCourses(prev => prev.map(c => 
-        c.id === courseId ? { ...c, status: 'ACTIVE' } : c
-      ));
-    } catch (error) {
-      toast.error(error.response?.data?.message || 'Failed to restore course. Please try again.');
     }
   };
 
@@ -411,7 +398,6 @@ const CourseDetailsView = ({ courseId }) => {
                 actionsComponent={CourseActions}
                 onView={handleViewCourse}
                 onDisable={handleArchiveCourse}
-                onRestore={handleRestoreCourse}
               />
             </div>
           </Card>

@@ -19,7 +19,7 @@ import {
 import { userAPI } from '../../../api/user';
 import templateAPI from '../../../api/template';
 
-const TemplateDetailModal = ({ show, onHide, template }) => {
+const TemplateDetailModal = ({ show, onHide, template, onCreateVersion }) => {
   const [activeTab, setActiveTab] = useState('details');
   const [reviewedByUser, setReviewedByUser] = useState(null);
   const [loadingReviewedBy, setLoadingReviewedBy] = useState(false);
@@ -156,15 +156,19 @@ const TemplateDetailModal = ({ show, onHide, template }) => {
   };
 
   const handleCreateNewVersion = () => {
-    // TODO: Implement create new version functionality
-    console.log('Create new version for template:', template.id);
-    onHide();
+    if (onCreateVersion) {
+      onCreateVersion(template);
+    } else {
+      // Default behavior: just close modal
+      console.log('Create new version for template:', template.id);
+      onHide();
+    }
   };
 
 
   const renderDetails = () => (
-    <div className="template-details">
-      <div className="list-group list-group-flush">
+    <div className="template-details" style={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
+      <div className="list-group list-group-flush" style={{ flex: 1 }}>
         <div className="list-group-item border-0 px-0 py-3">
           <div className="d-flex align-items-center">
             <FileText className="text-primary-custom me-3" size={20} />
@@ -398,9 +402,17 @@ const TemplateDetailModal = ({ show, onHide, template }) => {
     
     if (loadingFullData) {
       return (
-        <div className="text-center py-5">
-          <Spinner animation="border" variant="primary" />
-          <p className="mt-3 text-muted">Loading template config...</p>
+        <div className="text-center" style={{ 
+          flex: 1, 
+          display: 'flex', 
+          alignItems: 'center', 
+          justifyContent: 'center',
+          minHeight: 0
+        }}>
+          <div>
+            <Spinner animation="border" variant="primary" />
+            <p className="mt-3 text-muted">Loading template config...</p>
+          </div>
         </div>
       );
     }
@@ -434,19 +446,27 @@ const TemplateDetailModal = ({ show, onHide, template }) => {
 
     if (items.length === 0) {
       return (
-        <Alert variant="info" className="mb-0">
-          <div>
-            <strong>No template config found</strong>
-            <p className="mb-0 text-muted">This template has no sections or fields yet.</p>
-          </div>
-        </Alert>
+        <div style={{ 
+          flex: 1, 
+          display: 'flex', 
+          alignItems: 'center', 
+          justifyContent: 'center',
+          minHeight: 0
+        }}>
+          <Alert variant="info" className="mb-0" style={{ maxWidth: '600px', width: '100%' }}>
+            <div>
+              <strong>No template config found</strong>
+              <p className="mb-0 text-muted">This template has no sections or fields yet.</p>
+            </div>
+          </Alert>
+        </div>
       );
     }
 
     return (
-      <div>
+      <div style={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
         <h6 className="mb-3" style={{ color: '#333', fontWeight: 500 }}>Template fields & sections</h6>
-        <div className="list-group" style={{ border: 'none' }}>
+        <div className="list-group" style={{ border: 'none', flex: 1, overflowY: 'auto' }}>
           {items.map((item, index) => {
             const isSection = item.type === 'section';
             const isField = item.type === 'field';
@@ -522,30 +542,46 @@ const TemplateDetailModal = ({ show, onHide, template }) => {
     
     if (loadingFullData) {
       return (
-        <div className="text-center py-5">
-          <Spinner animation="border" variant="primary" />
-          <p className="mt-3 text-muted">Loading version history...</p>
+        <div className="text-center" style={{ 
+          flex: 1, 
+          display: 'flex', 
+          alignItems: 'center', 
+          justifyContent: 'center',
+          minHeight: 0
+        }}>
+          <div>
+            <Spinner animation="border" variant="primary" />
+            <p className="mt-3 text-muted">Loading version history...</p>
+          </div>
         </div>
       );
     }
 
     if (historyVersions.length === 0) {
       return (
-        <Alert variant="info" className="mb-0">
-          <div>
-            <strong>No version history found</strong>
-            <p className="mb-0 text-muted">This template has no previous versions.</p>
-          </div>
-        </Alert>
+        <div style={{ 
+          flex: 1, 
+          display: 'flex', 
+          alignItems: 'center', 
+          justifyContent: 'center',
+          minHeight: 0
+        }}>
+          <Alert variant="info" className="mb-0" style={{ maxWidth: '600px', width: '100%' }}>
+            <div>
+              <strong>No version history found</strong>
+              <p className="mb-0 text-muted">This template has no previous versions.</p>
+            </div>
+          </Alert>
+        </div>
       );
     }
 
     return (
-      <div>
+      <div style={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
         <div className="mb-3">
           <h6 className="mb-0">Version History</h6>
         </div>
-        <div className="list-group">
+        <div className="list-group" style={{ flex: 1, overflowY: 'auto' }}>
           {historyVersions.map((version, index) => (
             <div key={version.id || index} className="list-group-item">
               <div className="d-flex justify-content-between align-items-center">
@@ -572,12 +608,16 @@ const TemplateDetailModal = ({ show, onHide, template }) => {
   const renderContentPreview = () => {
     if (loadingPDF) {
       return (
-        <div className="content-preview">
-          <div className="border rounded p-4 bg-light text-center" style={{ minHeight: '400px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-            <div>
-              <Spinner animation="border" variant="primary" className="mb-3" />
-              <p className="text-muted mb-0">Loading PDF preview...</p>
-            </div>
+        <div className="content-preview" style={{ 
+          flex: 1, 
+          display: 'flex', 
+          alignItems: 'center', 
+          justifyContent: 'center',
+          minHeight: 0
+        }}>
+          <div className="text-center">
+            <Spinner animation="border" variant="primary" className="mb-3" />
+            <p className="text-muted mb-0">Loading PDF preview...</p>
           </div>
         </div>
       );
@@ -585,7 +625,13 @@ const TemplateDetailModal = ({ show, onHide, template }) => {
 
     if (pdfUrl) {
       return (
-        <div className="content-preview" style={{ height: '60vh', overflow: 'hidden' }}>
+        <div className="content-preview" style={{ 
+          flex: 1, 
+          display: 'flex', 
+          flexDirection: 'column', 
+          overflow: 'hidden',
+          minHeight: 0
+        }}>
           <iframe
             src={pdfUrl}
             style={{
@@ -593,7 +639,9 @@ const TemplateDetailModal = ({ show, onHide, template }) => {
               height: '100%',
               border: '1px solid #dee2e6',
               borderRadius: '0.375rem',
-              display: 'block'
+              display: 'block',
+              flex: 1,
+              minHeight: 0
             }}
             title="Template PDF Preview"
           />
@@ -602,8 +650,14 @@ const TemplateDetailModal = ({ show, onHide, template }) => {
     }
 
     return (
-      <div className="content-preview">
-        <Alert variant="warning" className="mb-0">
+      <div className="content-preview" style={{ 
+        flex: 1, 
+        display: 'flex', 
+        alignItems: 'center', 
+        justifyContent: 'center',
+        minHeight: 0
+      }}>
+        <Alert variant="warning" className="mb-0" style={{ maxWidth: '600px', width: '100%' }}>
           <FileEarmarkPdf className="me-2" />
           PDF preview is not available. Please try again or contact support.
         </Alert>
@@ -655,12 +709,16 @@ const TemplateDetailModal = ({ show, onHide, template }) => {
       <Modal.Body 
         className="p-0 template-detail-body" 
         style={{ 
-          maxHeight: activeTab === 'content' ? '60vh' : '70vh', 
-          overflowY: activeTab === 'content' ? 'hidden' : 'auto'
+          height: '70vh',
+          maxHeight: '70vh',
+          overflowY: 'hidden',
+          display: 'flex',
+          flexDirection: 'column',
+          minHeight: 0
         }}
       >
         {/* Tabs */}
-        <div className="bg-primary-custom text-white template-detail-tabs-container">
+        <div className="bg-primary-custom text-white template-detail-tabs-container" style={{ flexShrink: 0 }}>
           <div className="d-flex border-bottom border-white border-opacity-25 template-detail-tabs" style={{ overflowX: 'auto', overflowY: 'hidden', WebkitOverflowScrolling: 'touch' }}>
             <button
               className={`flex-fill py-3 px-2 px-md-4 border-0 bg-transparent text-white d-flex align-items-center justify-content-center template-detail-tab ${
@@ -728,11 +786,69 @@ const TemplateDetailModal = ({ show, onHide, template }) => {
         </div>
 
         {/* Tab Content */}
-        <div className="p-3 p-md-4 template-detail-content">
-          {activeTab === 'details' && renderDetails()}
-          {activeTab === 'overview' && renderOverview()}
-          {activeTab === 'history' && renderHistory()}
-          {activeTab === 'content' && renderContentPreview()}
+        <div 
+          className="p-3 p-md-4 template-detail-content"
+          style={{
+            flex: 1,
+            display: 'flex',
+            flexDirection: 'column',
+            minHeight: 0,
+            overflow: 'hidden',
+            height: '100%'
+          }}
+        >
+          <div style={{ 
+            flex: 1, 
+            display: 'flex', 
+            flexDirection: 'column', 
+            minHeight: 0,
+            height: '100%'
+          }}>
+            {activeTab === 'details' && (
+              <div style={{ 
+                flex: 1, 
+                display: 'flex', 
+                flexDirection: 'column', 
+                minHeight: 0,
+                height: '100%'
+              }}>
+                {renderDetails()}
+              </div>
+            )}
+            {activeTab === 'overview' && (
+              <div style={{ 
+                flex: 1, 
+                display: 'flex', 
+                flexDirection: 'column', 
+                minHeight: 0,
+                height: '100%'
+              }}>
+                {renderOverview()}
+              </div>
+            )}
+            {activeTab === 'history' && (
+              <div style={{ 
+                flex: 1, 
+                display: 'flex', 
+                flexDirection: 'column', 
+                minHeight: 0,
+                height: '100%'
+              }}>
+                {renderHistory()}
+              </div>
+            )}
+            {activeTab === 'content' && (
+              <div style={{ 
+                flex: 1, 
+                display: 'flex', 
+                flexDirection: 'column', 
+                minHeight: 0,
+                height: '100%'
+              }}>
+                {renderContentPreview()}
+              </div>
+            )}
+          </div>
         </div>
       </Modal.Body>
       
@@ -770,36 +886,38 @@ const TemplateDetailModal = ({ show, onHide, template }) => {
         >
           Close
         </Button>
-        <Button
-          variant="primary"
-          onClick={handleCreateNewVersion}
-          className="d-flex align-items-center justify-content-center"
-          style={{
-            backgroundColor: 'var(--bs-primary)',
-            borderColor: 'var(--bs-primary)',
-            color: 'white',
-            fontWeight: 500,
-            padding: '0.5rem 1.5rem',
-            borderRadius: '0.375rem',
-            transition: 'all 0.3s ease'
-          }}
-          onMouseEnter={(e) => {
-            e.currentTarget.style.backgroundColor = '#153a4a'
-            e.currentTarget.style.borderColor = '#153a4a'
-            e.currentTarget.style.transform = 'translateY(-1px)'
-            e.currentTarget.style.boxShadow = '0 4px 8px rgba(27, 60, 83, 0.3)'
-          }}
-          onMouseLeave={(e) => {
-            e.currentTarget.style.backgroundColor = 'var(--bs-primary)'
-            e.currentTarget.style.borderColor = 'var(--bs-primary)'
-            e.currentTarget.style.transform = 'translateY(0)'
-            e.currentTarget.style.boxShadow = 'none'
-          }}
-        >
-          <FileEarmarkPlus className="me-2" size={16} />
-          <span className="d-none d-sm-inline">Update New Version</span>
-          <span className="d-inline d-sm-none">New Version</span>
-        </Button>
+        {onCreateVersion && (
+          <Button
+            variant="primary"
+            onClick={handleCreateNewVersion}
+            className="d-flex align-items-center justify-content-center"
+            style={{
+              backgroundColor: 'var(--bs-primary)',
+              borderColor: 'var(--bs-primary)',
+              color: 'white',
+              fontWeight: 500,
+              padding: '0.5rem 1.5rem',
+              borderRadius: '0.375rem',
+              transition: 'all 0.3s ease'
+            }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.backgroundColor = '#153a4a'
+              e.currentTarget.style.borderColor = '#153a4a'
+              e.currentTarget.style.transform = 'translateY(-1px)'
+              e.currentTarget.style.boxShadow = '0 4px 8px rgba(27, 60, 83, 0.3)'
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.backgroundColor = 'var(--bs-primary)'
+              e.currentTarget.style.borderColor = 'var(--bs-primary)'
+              e.currentTarget.style.transform = 'translateY(0)'
+              e.currentTarget.style.boxShadow = 'none'
+            }}
+          >
+            <FileEarmarkPlus className="me-2" size={16} />
+            <span className="d-none d-sm-inline">Create New Version</span>
+            <span className="d-inline d-sm-none">New Version</span>
+          </Button>
+        )}
         {template.templateConfig && (
           <Button 
             variant="primary"

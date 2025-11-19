@@ -380,23 +380,25 @@ const BulkImportModal = ({ show, onClose, onImport, loading = false }) => {
     // Create sample data for template
     const templateData = [
       allColumns, // Header row
-      // Note: Gender accepts: M/F or MALE/FEMALE
       [
-        'Nguyễn', // first_name
-        'Văn', // middle_name
-        'An', // last_name
-        '123 Đường Lê Lợi, Quận 1, TP.HCM', // address
-        'nguyen.van.an@example.com', // email
-        '+84 123 456 789', // phone_number
-        'TRAINER', // role
-        'M', // gender (M/F or MALE/FEMALE)
-        '1', // department (department ID)
-        'CERT001', // certification_number
-        'Flight Training', // specialization
-        '5', // years_of_experience
-        '1990-01-15', // date_of_birth
-        'BATCH2023-01', // training_batch
-        'P123456789', // passport_no
+        'Trần', // first_name
+        'Thị', // middle_name
+        'Hoa', // last_name
+        '456 Lê Văn Sỹ, Quận 3, TP.HCM', // address
+        'tran.thi.hoa.trainer@example.com', // email
+        '+84 912 345 678', // phone_number
+        '', // avatar_url (optional)
+        'FEMALE', // gender (M/F or MALE/FEMALE)
+        'TRAINER', // role (must match system role name)
+        '', // department (TRAINER should keep this empty)
+        'CERT555', // certification_number
+        'Cabin Safety', // specialization
+        '7', // years_of_experience
+        'Huấn luyện viên Cabin Safety với 7 năm kinh nghiệm quốc tế', // bio
+        '1988-06-21', // date_of_birth
+        '', // enrollment_date (trainee only)
+        '', // training_batch (trainee only)
+        'B987654321', // passport_no
         'Vietnam' // nation
       ]
     ];

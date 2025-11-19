@@ -293,8 +293,8 @@ const EnrollTraineesPage = () => {
   return (
     <Container fluid className="py-4 px-4 enroll-page" style={{ minHeight: '100%', display: 'flex', flexDirection: 'column' }}>
       {/* Header - Fixed */}
-      <div className="mb-3 flex-shrink-0">
-          <div className="d-flex align-items-center mb-2">
+      <div className="mb-4 flex-shrink-0">
+          <div className="d-flex align-items-center mb-3">
             <Button 
               variant="outline-secondary" 
               size="sm" 
@@ -312,8 +312,8 @@ const EnrollTraineesPage = () => {
           </div>
 
           {/* Course Info */}
-          <Card className="mb-2">
-            <Card.Body className="py-3 px-3">
+          <Card className="mb-4" style={{ boxShadow: '0 2px 8px rgba(0,0,0,0.1)' }}>
+            <Card.Body className="py-4 px-4">
               <Row>
                 <Col md={8}>
                   <p className="mb-0 text-muted">{course.description}</p>
@@ -356,7 +356,7 @@ const EnrollTraineesPage = () => {
         <Row className="g-4">
           {/* Panel 1: Subject Selection */}
           <Col lg={6}>
-            <div style={{ height: '500px', position: 'relative', zIndex: 1, overflow: 'visible' }}>
+            <div style={{ height: '500px', position: 'relative', zIndex: 1, overflow: 'visible', marginBottom: '2rem' }}>
               <SubjectSelectionPanel 
                 selectedSubjects={selectedSubjects}
                 onSelectionChange={setSelectedSubjects}
@@ -366,7 +366,7 @@ const EnrollTraineesPage = () => {
 
           {/* Panel 2: Trainee Selection */}
           <Col lg={6}>
-            <div style={{ height: '500px', position: 'relative', zIndex: 1, overflow: 'visible' }}>
+            <div style={{ height: '500px', position: 'relative', zIndex: 1, overflow: 'visible', marginBottom: '2rem' }}>
               <TraineeSelectionPanel 
                 selectedTrainees={selectedTrainees}
                 onSelectionChange={setSelectedTrainees}

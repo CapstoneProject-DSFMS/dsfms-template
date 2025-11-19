@@ -166,6 +166,8 @@ const Header = ({ onToggleSidebar }) => {
       '/trainer/dashboard': 'Trainer Dashboard',
       '/trainer/upcoming-assessments': 'Upcoming Assessments',
       '/trainer/assessment-results': 'Assessment Results',
+      '/trainer/assess': 'Assessments',
+      '/trainer/assessments': 'Assessment Sections',
       '/trainer/instructed-courses': 'Instructed Courses',
       '/trainer/courses': 'Course Details',
       '/trainer/configure-signature': 'Configure Signature',
@@ -285,6 +287,21 @@ const Header = ({ onToggleSidebar }) => {
     // Check for trainer assessment details (pattern: /trainer/assessment-details/:resultId)
     if (path.startsWith('/trainer/assessment-details/')) {
       return 'Assessment Result Details';
+    }
+
+    // Check for trainer assessment section fields (pattern: /trainer/assessments/sections/:sectionId/fields)
+    if (path.match(/^\/trainer\/assessments\/sections\/[^/]+\/fields$/)) {
+      return 'Field';
+    }
+
+    // Check for trainer assessment sections (pattern: /trainer/assessments/:assessmentId/sections)
+    if (path.startsWith('/trainer/assessments/')) {
+      return 'Assessment Sections';
+    }
+
+    // Check for trainer assess list (pattern: /trainer/assess/:type/:id)
+    if (path.startsWith('/trainer/assess/')) {
+      return 'Assessments';
     }
     
     // Check for trainer approval notes (pattern: /trainer/approval-notes/:resultId)

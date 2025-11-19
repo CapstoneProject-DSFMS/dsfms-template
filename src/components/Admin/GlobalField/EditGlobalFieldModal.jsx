@@ -190,10 +190,10 @@ const EditGlobalFieldModal = ({ show, onHide, field, onSuccess }) => {
               isInvalid={!!errors.fieldType}
             >
               <option value="TEXT">TEXT</option>
-              <option value="NUMBER">NUMBER</option>
-              <option value="DATE">DATE</option>
-              <option value="SELECT">SELECT</option>
-              <option value="CHECKBOX">CHECKBOX</option>
+              <option value="PART">PART</option>
+              <option value="TOGGLE">TOGGLE</option>
+              <option value="SECTION_CONTROL_TOGGLE">SECTION_CONTROL_TOGGLE</option>
+              <option value="VALUE_LIST">VALUE_LIST</option>
             </Form.Select>
             <Form.Control.Feedback type="invalid">
               {errors.fieldType}
@@ -202,13 +202,15 @@ const EditGlobalFieldModal = ({ show, onHide, field, onSuccess }) => {
 
           <Form.Group className="mb-3">
             <Form.Label className="fw-medium">Role Required</Form.Label>
-            <Form.Control
-              type="text"
+            <Form.Select
               name="roleRequired"
-              value={formData.roleRequired}
+              value={formData.roleRequired || ''}
               onChange={handleChange}
-              placeholder="Enter role required (optional)"
-            />
+            >
+              <option value="">None</option>
+              <option value="TRAINER">TRAINER</option>
+              <option value="TRAINEE">TRAINEE</option>
+            </Form.Select>
           </Form.Group>
         </Modal.Body>
         

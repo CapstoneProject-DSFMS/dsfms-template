@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Card, Button, Row, Col, Container, Badge, Nav, Tab } from 'react-bootstrap';
-import { Plus, Upload, Pencil, ArrowLeft, People, Calendar, GeoAlt, FileText, Award, PersonCheck, Book, CalendarEvent } from 'react-bootstrap-icons';
+import { Plus, Upload, Pencil, ArrowLeft, People, Calendar, GeoAlt, FileText, Award, PersonCheck, Book, CalendarEvent, Trash } from 'react-bootstrap-icons';
 import { useNavigate, useParams, useLocation } from 'react-router-dom';
 import { toast } from 'react-toastify';
 import courseAPI from '../../api/course';
@@ -13,6 +13,7 @@ import EditCourseModal from '../../components/AcademicDepartment/EditCourseModal
 import DisableSubjectModal from '../../components/AcademicDepartment/DisableSubjectModal';
 import AssessmentEventsList from '../../components/AcademicDepartment/AssessmentEventsList';
 import AssessmentEventDetailModal from '../../components/AcademicDepartment/AssessmentEventDetailModal';
+import DeleteBatchEnrollmentsModal from '../../components/AcademicDepartment/DeleteBatchEnrollmentsModal';
 
 const InPageCourseDetail = ({ course, department }) => {
   const navigate = useNavigate();
@@ -28,12 +29,23 @@ const InPageCourseDetail = ({ course, department }) => {
   const [isDisabling, setIsDisabling] = useState(false);
   const [showAssessmentEventDetail, setShowAssessmentEventDetail] = useState(false);
   const [selectedAssessmentEvent, setSelectedAssessmentEvent] = useState(null);
+  const [showDeleteBatchEnrollments, setShowDeleteBatchEnrollments] = useState(false);
   
   // Course details state
   const [courseDetails, setCourseDetails] = useState(null);
   const [subjects, setSubjects] = useState([]);
   const [loading, setLoading] = useState(true);
   // const [hasApiData, setHasApiData] = useState(false); // Track if we have API data
+
+  // Helper function to filter out archived subjects
+  const filterArchivedSubjects = (subjectsList) => {
+    if (!Array.isArray(subjectsList)) return [];
+    return subjectsList.filter(subject => {
+      // Filter out subjects with status 'ARCHIVED' or deletedAt field
+      const status = subject?.status?.toUpperCase();
+      return status !== 'ARCHIVED' && !subject?.deletedAt;
+    });
+  };
   
   // Active tab state - check location state for initial tab
   const [activeTab, setActiveTab] = useState(() => {
@@ -92,9 +104,9 @@ const InPageCourseDetail = ({ course, department }) => {
         
         setCourseDetails(transformedCourseDetails);
         
-        // Extract and set subjects from API response
+        // Extract and set subjects from API response (filter out archived)
         if (response.subjects && Array.isArray(response.subjects)) {
-          setSubjects(response.subjects);
+          setSubjects(filterArchivedSubjects(response.subjects));
         } else if (response.subjectCount > 0 && !response.subjects) {
           setSubjects([]);
         } else {
@@ -204,19 +216,20 @@ const InPageCourseDetail = ({ course, department }) => {
     setIsDisabling(true);
     try {
       // Call API to archive subject
-      await subjectAPI.archiveSubject(selectedSubject.id);
+      const response = await subjectAPI.archiveSubject(selectedSubject.id);
       
-      // Show success toast
-      toast.success(`Successfully archived subject "${selectedSubject.name}"`, {
+      // Show success toast with message from backend
+      const successMessage = response?.message || response?.data?.message || `Successfully archived subject "${selectedSubject.name}"`;
+      toast.success(successMessage, {
         autoClose: 3000,
         position: "top-right",
         icon: false
       });
       
       // Reload course details to get updated subjects
-      const response = await courseAPI.getCourseById(courseId);
-      if (response.subjects && Array.isArray(response.subjects)) {
-        setSubjects(response.subjects);
+      const courseResponse = await courseAPI.getCourseById(courseId);
+      if (courseResponse.subjects && Array.isArray(courseResponse.subjects)) {
+        setSubjects(filterArchivedSubjects(courseResponse.subjects));
       }
       
       // Close modal
@@ -240,23 +253,21 @@ const InPageCourseDetail = ({ course, department }) => {
   };
 
   // Modal handlers
-  const handleAddSubject = async (subjectData) => {
+  const handleAddSubject = async () => {
     try {
-      // Call API to create subject
-      await subjectAPI.createSubject({
-        ...subjectData,
-        courseId: courseId
-      });
-      
-      // Reload course details to get updated subjects
+      // Subjects are already created inside AddSubjectModal.
+      // Only refresh the course details to include the newly added subject.
       const response = await courseAPI.getCourseById(courseId);
       if (response.subjects && Array.isArray(response.subjects)) {
-        setSubjects(response.subjects);
+        setSubjects(filterArchivedSubjects(response.subjects));
       }
-      
-      setShowAddSubject(false);
-      } catch {
-      // Handle error - could show toast notification
+    } catch (error) {
+      const errorMessage = error?.response?.data?.message || error?.message || 'Failed to refresh subjects after creation';
+      toast.error(`Error: ${errorMessage}`, {
+        autoClose: 4000,
+        position: "top-right",
+        icon: false
+      });
     }
   };
 
@@ -267,7 +278,7 @@ const InPageCourseDetail = ({ course, department }) => {
     // Reload course details to get updated subjects
     const response = await courseAPI.getCourseById(courseId);
     if (response.subjects && Array.isArray(response.subjects)) {
-      setSubjects(response.subjects);
+      setSubjects(filterArchivedSubjects(response.subjects));
     }
     
     setShowBulkImport(false);
@@ -352,6 +363,13 @@ const InPageCourseDetail = ({ course, department }) => {
           </Button>
           <Button size="sm" variant="outline-primary" onClick={() => setShowBulkImport(true)}>
             <Upload size={14} className="me-1" /> Import Bulk Subjects
+          </Button>
+          <Button 
+            size="sm" 
+            variant="outline-danger" 
+            onClick={() => setShowDeleteBatchEnrollments(true)}
+          >
+            <Trash size={14} className="me-1" /> Delete All Subject Enrollments In Course by BatchCode
           </Button>
         </div>
       </div>
@@ -657,6 +675,16 @@ const InPageCourseDetail = ({ course, department }) => {
           setSelectedAssessmentEvent(null);
         }}
         event={selectedAssessmentEvent}
+      />
+
+      <DeleteBatchEnrollmentsModal
+        show={showDeleteBatchEnrollments}
+        onClose={() => setShowDeleteBatchEnrollments(false)}
+        courseId={courseId}
+        onSuccess={() => {
+          // Optionally refresh course data after deletion
+          // You can reload course details here if needed
+        }}
       />
     </Container>
   );

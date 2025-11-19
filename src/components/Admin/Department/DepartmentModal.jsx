@@ -45,8 +45,6 @@ const DepartmentModal = ({ show, department, mode, onSave, onClose, availableUse
 
     if (!formData.code.trim()) {
       newErrors.code = 'Department code is required';
-    } else if (!/^[A-Z]{2,5}$/.test(formData.code.trim())) {
-      newErrors.code = 'Department code must be 2-5 uppercase letters';
     }
 
 

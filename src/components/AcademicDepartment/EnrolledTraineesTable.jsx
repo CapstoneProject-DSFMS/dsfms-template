@@ -24,22 +24,35 @@ const EnrolledTraineesTable = ({ courseId, loading = false, title = 'Enrolled Tr
   const { sortedData, sortConfig, handleSort } = useTableSort(enrolledTrainees);
 
   const loadEnrolledTrainees = useCallback(async () => {
+    if (!courseId) {
+      setEnrolledTrainees([]);
+      setLoadingEnrolled(false);
+      return;
+    }
+
     setLoadingEnrolled(true);
     try {
-      // Step 1: Get all available trainees
-      const traineesResponse = await traineeAPI.getTraineesForEnrollment();
+      // OPTIMIZED: Use getCourseTrainees to get enrolled trainees directly (1 API call)
+      // Instead of getting all trainees and checking each one (N+1 API calls)
+      const courseTraineesResponse = await courseAPI.getCourseTrainees(courseId);
       
-      // Backend returns: { message: "...", data: { users: [...], totalItems: 7 } }
-      // So we need to access response.data.users, not response.data
-      if (!traineesResponse || !traineesResponse.data || !traineesResponse.data.users || !Array.isArray(traineesResponse.data.users)) {
+      // Backend returns: { trainees: [...] } or { data: { trainees: [...] } }
+      const traineesList = courseTraineesResponse?.trainees || 
+                          courseTraineesResponse?.data?.trainees || 
+                          [];
+      
+      if (!Array.isArray(traineesList) || traineesList.length === 0) {
         setEnrolledTrainees([]);
+        setLoadingEnrolled(false);
         return;
       }
       
-      // Step 2: For each trainee, check if they have enrollments
+      // Step 2: For each enrolled trainee, get their enrollment details to extract subject IDs
+      // This is still needed because getCourseTrainees doesn't return subject information
       const enrolledTrainees = [];
       
-      for (const trainee of traineesResponse.data.users) {
+      // Use Promise.all to fetch all enrollments in parallel (faster than sequential)
+      const enrollmentPromises = traineesList.map(async (trainee) => {
         try {
           // Call API to get trainee's enrollment details
           const enrollmentData = await courseAPI.getTraineeEnrollments(trainee.id);
@@ -55,40 +68,47 @@ const EnrolledTraineesTable = ({ courseId, loading = false, title = 'Enrolled Tr
               // Transform enrollment data to get subject IDs (only ENROLLED ones)
               const subjectIds = enrolledEnrollments.map(enrollment => enrollment.subject.id);
               
-              const enrolledTrainee = {
+              return {
                 id: trainee.id,
                 eid: trainee.eid,
-                name: `${trainee.firstName} ${trainee.lastName}`.trim(),
+                name: `${trainee.firstName || ''} ${trainee.lastName || ''}`.trim() || trainee.name || 'Unknown',
                 subjects: subjectIds,
                 userId: trainee.id,
-                email: trainee.email,
-                department: trainee.department
+                email: trainee.email || '',
+                department: trainee.department || null
               };
-              
-              enrolledTrainees.push(enrolledTrainee);
             }
           }
+          return null;
         } catch {
           // Continue to next trainee
+          return null;
         }
-      }
+      });
       
-      setEnrolledTrainees(enrolledTrainees);
+      // Wait for all enrollment requests to complete
+      const results = await Promise.all(enrollmentPromises);
       
-    } catch {
+      // Filter out null values (failed requests or trainees without enrollments)
+      const validTrainees = results.filter(trainee => trainee !== null);
+      
+      setEnrolledTrainees(validTrainees);
+      
+    } catch (error) {
+      console.error('Error loading enrolled trainees:', error);
       // Fallback to empty array if API fails
       setEnrolledTrainees([]);
     } finally {
       setLoadingEnrolled(false);
     }
-  }, []);
+  }, [courseId]);
 
   // Load enrolled trainees from API
   useEffect(() => {
     if (courseId) {
       loadEnrolledTrainees();
     }
-  }, [courseId, loadEnrolledTrainees]);
+  }, [courseId, loadEnrolledTrainees]); // Include loadEnrolledTrainees since it now depends on courseId
 
   const handleViewSubjects = async (trainee) => {
     try {

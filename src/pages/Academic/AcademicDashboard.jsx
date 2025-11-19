@@ -3,6 +3,7 @@ import { Container, Row, Col, Card, Spinner } from 'react-bootstrap';
 import { 
   ArrowRight,
   Building,
+  CalendarEvent,
   BarChart as BarChartIcon,
   PieChart as PieChartIcon
 } from 'react-bootstrap-icons';
@@ -28,12 +29,20 @@ const AcademicDashboard = () => {
 
   const quickActions = [
     {
-      title: 'Create New Department',
-      description: 'Create a new academic department for course management',
+      title: 'Create New Assessment Event',
+      description: 'Create a new assessment event for trainees',
+      icon: CalendarEvent,
+      action: () => {
+        navigate('/academic/assessment-events');
+      },
+      color: 'primary'
+    },
+    {
+      title: 'View All Departments',
+      description: 'View and manage all academic departments',
       icon: Building,
       action: () => {
-        // TODO: Navigate to create department page or open modal
-        console.log('Create New Department');
+        navigate('/academic/departments');
       },
       color: 'primary'
     }

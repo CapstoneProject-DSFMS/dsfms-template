@@ -47,20 +47,11 @@ const GlobalFieldListPage = () => {
       setSelectedField(field);
       
       // Load detailed field information
-      const response = await globalFieldAPI.getGlobalFieldDetail();
-      const details = response?.data || response || [];
+      const response = await globalFieldAPI.getGlobalFieldDetail(field.id);
+      const fieldDetail = response?.data || response || field;
       
-      // Find the matching field by ID
-      const fieldDetail = details.find(f => f.id === field.id);
-      
-      if (fieldDetail) {
-        setFieldDetails(fieldDetail);
-        setShowDetailModal(true);
-      } else {
-        // If not found in detail, use basic field info
-        setFieldDetails(field);
-        setShowDetailModal(true);
-      }
+      setFieldDetails(fieldDetail);
+      setShowDetailModal(true);
     } catch (error) {
       console.error('Error loading field detail:', error);
       toast.error('Failed to load field details');

@@ -102,3 +102,4 @@ const BasicInfoTab = ({ template }) => {
 
 export default BasicInfoTab;
 
+

@@ -61,6 +61,99 @@ const assessmentAPI = {
       throw error;
     }
   },
+
+  /**
+   * Get user assessment events
+   * @param {Object} params - Query parameters (page, limit, etc.)
+   * @returns {Promise} User assessment events response
+   */
+  getUserEvents: async (params = {}) => {
+    try {
+      const response = await apiClient.get('/assessments/user-events', { params });
+      return response.data;
+    } catch (error) {
+      console.error('Error fetching user assessment events:', error);
+      throw error;
+    }
+  },
+
+  /**
+   * Get assessments by course
+   * @param {string} courseId
+   * @param {Object} params
+   */
+  getCourseAssessments: async (courseId, params = {}) => {
+    try {
+      const response = await apiClient.get('/assessments/course', {
+        params: { courseId, ...params }
+      });
+      return response.data;
+    } catch (error) {
+      console.error('Error fetching course assessments:', error);
+      throw error;
+    }
+  },
+
+  /**
+   * Get assessments by subject
+   * @param {string} subjectId
+   * @param {Object} params
+   */
+  getSubjectAssessments: async (subjectId, params = {}) => {
+    try {
+      const response = await apiClient.get('/assessments/subject', {
+        params: { subjectId, ...params }
+      });
+      return response.data;
+    } catch (error) {
+      console.error('Error fetching subject assessments:', error);
+      throw error;
+    }
+  },
+
+  /**
+   * Get sections of a specific assessment form
+   * @param {string} assessmentId
+   * @returns {Promise} sections response
+   */
+  getAssessmentSections: async (assessmentId) => {
+    try {
+      const response = await apiClient.get(`/assessments/${assessmentId}/sections`);
+      return response.data;
+    } catch (error) {
+      console.error('Error fetching assessment sections:', error);
+      throw error;
+    }
+  },
+
+  /**
+   * Get assessment form preview URL/content
+   * @param {string} assessmentId
+   */
+  getAssessmentFormPreview: async (assessmentId) => {
+    try {
+      const response = await apiClient.get(`/assessments/${assessmentId}/preview`);
+      return response.data;
+    } catch (error) {
+      console.error('Error fetching assessment preview:', error);
+      throw error;
+    }
+  },
+
+  /**
+   * Get fields for a specific assessment section
+   * @param {string} assessmentSectionId
+   * @returns {Promise} Section fields response
+   */
+  getAssessmentSectionFields: async (assessmentSectionId) => {
+    try {
+      const response = await apiClient.get(`/assessments/sections/${assessmentSectionId}/fields`);
+      return response.data;
+    } catch (error) {
+      console.error('Error fetching assessment section fields:', error);
+      throw error;
+    }
+  },
 };
 
 export default assessmentAPI;
