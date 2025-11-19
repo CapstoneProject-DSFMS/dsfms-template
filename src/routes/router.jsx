@@ -47,7 +47,10 @@ import TrainerTraineeDetailsPage from '../pages/Trainer/TraineeDetailsPage'
 import TrainerSubjectDetailsPage from '../pages/Trainer/SubjectDetailsPage'
 import ConfigureSignaturePage from '../pages/Trainer/ConfigureSignaturePage'
 import AssessmentResultDetailsPage from '../pages/Trainer/AssessmentResultDetailsPage'
-import ResultApprovalNotePage from '../pages/Trainer/ResultApprovalNotePage'
+import AssessmentAssignmentsPage from '../pages/Trainer/AssessmentAssignmentsPage'
+import TrainerAssessmentSectionsPage from '../pages/Trainer/AssessmentSectionsPage'
+import AssessmentSectionFieldsPage from '../pages/Trainer/AssessmentSectionFieldsPage'
+  import ResultApprovalNotePage from '../pages/Trainer/ResultApprovalNotePage'
 import DepartmentHeadDashboardPage from '../pages/DepartmentHead/DepartmentHeadDashboardPage'
 import MyDepartmentDetailsPage from '../pages/DepartmentHead/MyDepartmentDetailsPage'
 import AssessmentReviewRequestsPage from '../pages/DepartmentHead/AssessmentReviewRequestsPage'
@@ -579,6 +582,50 @@ export const router = createBrowserRouter([
             fallback={<div className="p-4 text-center text-muted">You don't have permission to view assessment details.</div>}
           >
             <AssessmentResultDetailsPage />
+          </PermissionRoute>
+        )
+      },
+      {
+        path: "assess/:entityType/:entityId",
+        element: (
+          <PermissionRoute 
+            permission={API_PERMISSIONS.ASSESSMENTS.VIEW_ALL}
+            fallback={<div className="p-4 text-center text-muted">You don't have permission to view these assessments.</div>}
+          >
+            <AssessmentAssignmentsPage />
+          </PermissionRoute>
+        )
+      },
+      {
+        path: "assessments/:assessmentId/sections",
+        element: (
+          <PermissionRoute 
+            permission={API_PERMISSIONS.ASSESSMENTS.VIEW_ALL}
+            fallback={<div className="p-4 text-center text-muted">You don't have permission to view assessment sections.</div>}
+          >
+            <TrainerAssessmentSectionsPage />
+          </PermissionRoute>
+        )
+      },
+      {
+        path: "assessments/sections/:sectionId/fields",
+        element: (
+          <PermissionRoute 
+            permission={API_PERMISSIONS.ASSESSMENTS.VIEW_ALL}
+            fallback={<div className="p-4 text-center text-muted">You don't have permission to view section fields.</div>}
+          >
+            <AssessmentSectionFieldsPage />
+          </PermissionRoute>
+        )
+      },
+      {
+        path: "assess/:entityType/:entityId",
+        element: (
+          <PermissionRoute 
+            permission={API_PERMISSIONS.ASSESSMENTS.VIEW_ALL}
+            fallback={<div className="p-4 text-center text-muted">You don't have permission to view these assessments.</div>}
+          >
+            <AssessmentAssignmentsPage />
           </PermissionRoute>
         )
       },

@@ -1,10 +1,12 @@
 import React, { useState, useEffect } from 'react';
-import { Card, Table, Badge, Button, Row, Col, Spinner, Alert } from 'react-bootstrap';
-import { CalendarEvent, Clock, Person, Book, Eye, PencilSquare, ThreeDotsVertical } from 'react-bootstrap-icons';
+import { Table, Badge, Row, Col, Alert } from 'react-bootstrap';
+import { CalendarEvent, Clock, Person, Book, Eye, ThreeDotsVertical, JournalText } from 'react-bootstrap-icons';
 import { useNavigate } from 'react-router-dom';
 import { LoadingSkeleton, SortIcon, PortalUnifiedDropdown, SearchBar } from '../Common';
 import TrainerFilterPanel from './TrainerFilterPanel';
 import useTableSort from '../../hooks/useTableSort';
+import assessmentAPI from '../../api/assessment';
+import { toast } from 'react-toastify';
 import '../../styles/scrollable-table.css';
 
 const UpcomingAssessmentsList = () => {
@@ -14,55 +16,66 @@ const UpcomingAssessmentsList = () => {
   const [error, setError] = useState(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedStatuses, setSelectedStatuses] = useState([]);
+  const [entityFilter, setEntityFilter] = useState('course'); // 'course' or 'subject'
 
-  // Mock data - replace with actual API call
   useEffect(() => {
     const fetchAssessments = async () => {
       try {
         setLoading(true);
-        // Simulate API call
-        await new Promise(resolve => setTimeout(resolve, 1000));
+        setError(null);
         
-        // Mock data
-        const mockAssessments = [
-          {
-            id: 1,
-            title: 'Safety Assessment - Module 1',
-            course: 'Aviation Safety Management',
-            trainee: 'John Doe',
-            scheduledDate: '2024-01-15',
-            scheduledTime: '09:00',
-            status: 'scheduled',
-            duration: '120 minutes',
-            location: 'Training Room A'
-          },
-          {
-            id: 2,
-            title: 'Technical Assessment - Engine Systems',
-            course: 'Aircraft Maintenance',
-            trainee: 'Jane Smith',
-            scheduledDate: '2024-01-16',
-            scheduledTime: '14:00',
-            status: 'scheduled',
-            duration: '90 minutes',
-            location: 'Lab B'
-          },
-          {
-            id: 3,
-            title: 'Practical Assessment - Navigation',
-            course: 'Flight Operations',
-            trainee: 'Mike Johnson',
-            scheduledDate: '2024-01-17',
-            scheduledTime: '10:30',
-            status: 'pending',
-            duration: '150 minutes',
-            location: 'Simulator Room'
-          }
-        ];
+        const response = await assessmentAPI.getUserEvents();
         
-        setAssessments(mockAssessments);
+        if (response?.success && response?.data?.events) {
+          const allowedStatuses = new Set(['NOT_STARTED', 'ON_GOING']);
+
+          // Map API data to component format
+          const mappedAssessments = response.data.events
+            .filter((event) => allowedStatuses.has(event.status))
+            .map((event) => {
+            const occurrenceDate = new Date(event.occuranceDate);
+            const dateStr = occurrenceDate.toLocaleDateString('en-US', { 
+              year: 'numeric', 
+              month: '2-digit', 
+              day: '2-digit' 
+            });
+            const timeStr = occurrenceDate.toLocaleTimeString('en-US', { 
+              hour: '2-digit', 
+              minute: '2-digit',
+              hour12: false 
+            });
+
+            const entityType = event.entityInfo?.type || (event.subjectId ? 'subject' : 'course');
+            
+            return {
+              id: event.id || `${event.courseId}-${event.subjectId}-${event.occuranceDate}`,
+              title: event.name,
+              entityInfo: event.entityInfo,
+              entityType: entityType,
+              entityId: entityType === 'course' ? (event.entityInfo?.id || event.courseId) : (event.entityInfo?.id || event.subjectId),
+              entityName: event.entityInfo?.name || 'N/A',
+              entityCode: event.entityInfo?.code || '',
+              courseName: entityType === 'course' ? event.entityInfo?.name : null,
+              courseCode: entityType === 'course' ? event.entityInfo?.code : null,
+              subjectName: entityType === 'subject' ? event.entityInfo?.name : null,
+              subjectCode: entityType === 'subject' ? event.entityInfo?.code : null,
+              traineeCount: event.totalTrainees || 0,
+              scheduledDate: dateStr,
+              scheduledTime: timeStr,
+              occurrenceDate: event.occuranceDate,
+              status: event.status || 'NOT_STARTED',
+              templateInfo: event.templateInfo
+            };
+          });
+          
+          setAssessments(mappedAssessments);
+        } else {
+          setAssessments([]);
+        }
       } catch (err) {
+        console.error('Error fetching assessments:', err);
         setError('Failed to load upcoming assessments');
+        toast.error('Failed to load upcoming assessments');
       } finally {
         setLoading(false);
       }
@@ -71,24 +84,35 @@ const UpcomingAssessmentsList = () => {
     fetchAssessments();
   }, []);
 
+  const statusDisplayMap = {
+    NOT_STARTED: { variant: 'secondary', text: 'Not Started' },
+    ON_GOING: { variant: 'info', text: 'On Going' },
+    APPROVED: { variant: 'success', text: 'Approved' },
+    COMPLETED: { variant: 'success', text: 'Completed' },
+    PENDING: { variant: 'warning', text: 'Pending' }
+  };
+
   const getStatusBadge = (status) => {
-    const statusConfig = {
-      scheduled: { variant: 'primary', text: 'Scheduled' },
-      pending: { variant: 'warning', text: 'Pending' },
-      inProgress: { variant: 'info', text: 'In Progress' },
-      completed: { variant: 'success', text: 'Completed' }
-    };
-    
-    const config = statusConfig[status] || { variant: 'secondary', text: status };
+    const config = statusDisplayMap[status] || { variant: 'secondary', text: status || 'Unknown' };
     return <Badge bg={config.variant}>{config.text}</Badge>;
   };
 
-  const handleViewAssessment = (assessmentId) => {
-    navigate(`/trainer/assessments/${assessmentId}`);
-  };
+  const handleViewAssignments = (assessment) => {
+    const targetType = entityFilter;
+    const identifier = assessment.entityId;
 
-  const handleEditAssessment = (assessmentId) => {
-    navigate(`/trainer/assessments/${assessmentId}/edit`);
+    if (!identifier) {
+      toast.error(`Missing ${targetType} identifier`);
+      return;
+    }
+
+    navigate(`/trainer/assess/${targetType}/${identifier}`, {
+      state: {
+        name: assessment.entityName,
+        code: assessment.entityCode,
+        template: assessment.templateInfo?.name
+      }
+    });
   };
 
   // Get unique statuses for filter
@@ -96,10 +120,11 @@ const UpcomingAssessmentsList = () => {
 
   const filteredAssessments = assessments.filter(assessment => {
     const matchesStatus = selectedStatuses.length === 0 || selectedStatuses.includes(assessment.status);
+    const matchesEntityFilter = assessment.entityType === entityFilter;
     const matchesSearch = assessment.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         assessment.course.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         assessment.trainee.toLowerCase().includes(searchTerm.toLowerCase());
-    return matchesStatus && matchesSearch;
+                         assessment.entityName.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                         (assessment.entityCode && assessment.entityCode.toLowerCase().includes(searchTerm.toLowerCase()));
+    return matchesStatus && matchesEntityFilter && matchesSearch;
   });
 
   const handleStatusToggle = (status) => {
@@ -117,12 +142,13 @@ const UpcomingAssessmentsList = () => {
   const handleClearFilters = () => {
     setSelectedStatuses([]);
     setSearchTerm('');
+    // Keep entityFilter as is (don't reset)
   };
 
   const { sortedData, sortConfig, handleSort } = useTableSort(filteredAssessments);
 
   if (loading) {
-    return <LoadingSkeleton rows={5} columns={7} />;
+    return <LoadingSkeleton rows={5} columns={6} />;
   }
 
   if (error) {
@@ -134,17 +160,6 @@ const UpcomingAssessmentsList = () => {
           Try Again
         </Button>
       </Alert>
-    );
-  }
-
-  if (filteredAssessments.length === 0) {
-    return (
-      <div className="text-center py-5">
-        <div className="text-muted">
-          <h5>No upcoming assessments found</h5>
-          <p>Try adjusting your search criteria or schedule a new assessment.</p>
-        </div>
-      </div>
     );
   }
 
@@ -221,13 +236,53 @@ const UpcomingAssessmentsList = () => {
 
       {/* Search and Filters */}
       <Row className="mb-3 mt-4 form-mobile-stack search-filter-section">
-        <Col xs={12} lg={6} md={5} className="mb-2 mb-lg-0">
+        <Col xs={12} lg={5} md={4} className="mb-2 mb-lg-0 ps-2 ps-lg-3">
           <SearchBar
             placeholder="Search assessments, courses, or trainees..."
             value={searchTerm}
             onChange={setSearchTerm}
             className="search-bar-mobile"
           />
+        </Col>
+        <Col xs={12} lg={3} md={4} className="mb-2 mb-lg-0">
+          <div className="d-flex gap-2 align-items-center">
+            <label className="text-muted small mb-0 me-2">View:</label>
+            <div className="d-flex align-items-center gap-2 flex-wrap">
+              <input
+                type="radio"
+                className="btn-check"
+                name="entityFilter"
+                id="filter-course"
+                checked={entityFilter === 'course'}
+                onChange={() => setEntityFilter('course')}
+              />
+              <label
+                className={`btn btn-sm ${entityFilter === 'course' ? 'btn-primary-custom text-white' : 'btn-outline-primary'}`}
+                htmlFor="filter-course"
+                style={{ fontSize: '0.875rem', display: 'flex', alignItems: 'center', gap: '0.35rem', padding: '0.35rem 0.9rem' }}
+              >
+                <Book size={14} />
+                Course
+              </label>
+
+              <input
+                type="radio"
+                className="btn-check"
+                name="entityFilter"
+                id="filter-subject"
+                checked={entityFilter === 'subject'}
+                onChange={() => setEntityFilter('subject')}
+              />
+              <label
+                className={`btn btn-sm ${entityFilter === 'subject' ? 'btn-secondary-custom text-white' : 'btn-outline-secondary'}`}
+                htmlFor="filter-subject"
+                style={{ fontSize: '0.875rem', display: 'flex', alignItems: 'center', gap: '0.35rem', padding: '0.35rem 0.9rem' }}
+              >
+                <JournalText size={14} />
+                Subject
+              </label>
+            </div>
+          </div>
         </Col>
         <Col xs={12} lg={3} md={4} className="mb-2 mb-lg-0 position-relative">
           <TrainerFilterPanel
@@ -246,17 +301,14 @@ const UpcomingAssessmentsList = () => {
                 <SortableHeader columnKey="title" className="show-mobile">
                   Assessment
                 </SortableHeader>
-                <SortableHeader columnKey="course" className="show-mobile">
-                  Course
+                <SortableHeader columnKey={entityFilter === 'course' ? 'courseName' : 'subjectName'} className="show-mobile">
+                  {entityFilter === 'course' ? 'Course' : 'Subject'}
                 </SortableHeader>
-                <SortableHeader columnKey="trainee" className="show-mobile">
-                  Trainee
+                <SortableHeader columnKey="traineeCount" className="show-mobile">
+                  Trainees
                 </SortableHeader>
                 <SortableHeader columnKey="scheduledDate" className="show-mobile">
                   Date & Time
-                </SortableHeader>
-                <SortableHeader columnKey="duration" className="hide-mobile">
-                  Duration
                 </SortableHeader>
                 <SortableHeader columnKey="status" className="show-mobile">
                   Status
@@ -267,68 +319,102 @@ const UpcomingAssessmentsList = () => {
               </tr>
             </thead>
             <tbody>
-              {sortedData.map((assessment) => (
-                <tr key={assessment.id}>
-                  <td className="border-neutral-200 align-middle">
+              {sortedData.length === 0 ? (
+                <tr>
+                  <td colSpan={6} className="text-center py-4 text-muted">
                     <div>
-                      <h6 className="mb-1 fw-medium">{assessment.title}</h6>
-                      <small className="text-muted">
-                        <Clock size={12} className="me-1" />
-                        {assessment.location}
-                      </small>
+                      <h6 className="mb-1">No upcoming assessments found</h6>
+                      <small>Try adjusting your search criteria or schedule a new assessment.</small>
                     </div>
-                  </td>
-                  <td className="border-neutral-200 align-middle">
-                    <div className="d-flex align-items-center">
-                      <Book size={16} className="me-2 text-muted" />
-                      <span>{assessment.course}</span>
-                    </div>
-                  </td>
-                  <td className="border-neutral-200 align-middle">
-                    <div className="d-flex align-items-center">
-                      <Person size={16} className="me-2 text-muted" />
-                      <span>{assessment.trainee}</span>
-                    </div>
-                  </td>
-                  <td className="border-neutral-200 align-middle">
-                    <div>
-                      <div className="fw-medium">{assessment.scheduledDate}</div>
-                      <small className="text-muted">{assessment.scheduledTime}</small>
-                    </div>
-                  </td>
-                  <td className="border-neutral-200 align-middle hide-mobile">
-                    <span className="text-muted">{assessment.duration}</span>
-                  </td>
-                  <td className="border-neutral-200 align-middle">
-                    {getStatusBadge(assessment.status)}
-                  </td>
-                  <td className="border-neutral-200 align-middle text-center">
-                    <PortalUnifiedDropdown
-                      align="end"
-                      className="table-dropdown"
-                      placement="bottom-end"
-                      trigger={{
-                        variant: 'link',
-                        className: 'btn btn-link p-0 text-primary-custom',
-                        style: { border: 'none', background: 'transparent' },
-                        children: <ThreeDotsVertical size={16} />
-                      }}
-                      items={[
-                        {
-                          label: 'View Details',
-                          icon: <Eye />,
-                          onClick: () => handleViewAssessment(assessment.id)
-                        },
-                        {
-                          label: 'Edit Assessment',
-                          icon: <PencilSquare />,
-                          onClick: () => handleEditAssessment(assessment.id)
-                        }
-                      ]}
-                    />
                   </td>
                 </tr>
-              ))}
+              ) : (
+                sortedData.map((assessment) => (
+                  <tr key={assessment.id}>
+                    <td className="border-neutral-200 align-middle">
+                      <div>
+                        <h6 className="mb-1 fw-medium">{assessment.title}</h6>
+                        {assessment.templateInfo && (
+                          <small className="text-muted">
+                            <JournalText size={12} className="me-1" />
+                            {assessment.templateInfo.name}
+                          </small>
+                        )}
+                      </div>
+                    </td>
+                    <td className="border-neutral-200 align-middle">
+                      {entityFilter === 'course' ? (
+                        assessment.courseName ? (
+                          <div className="d-flex align-items-center">
+                            <Book size={16} className="me-2 text-primary" />
+                            <div className="d-flex flex-column">
+                              <span className="fw-medium">{assessment.courseName}</span>
+                              {assessment.courseCode && (
+                                <small className="text-muted" style={{ fontSize: '0.75rem' }}>
+                                  {assessment.courseCode}
+                                </small>
+                              )}
+                            </div>
+                          </div>
+                        ) : (
+                          <span className="text-muted">-</span>
+                        )
+                      ) : (
+                        assessment.subjectName ? (
+                          <div className="d-flex align-items-center">
+                            <JournalText size={16} className="me-2 text-success" />
+                            <div className="d-flex flex-column">
+                              <span className="fw-medium">{assessment.subjectName}</span>
+                              {assessment.subjectCode && (
+                                <small className="text-muted" style={{ fontSize: '0.75rem' }}>
+                                  {assessment.subjectCode}
+                                </small>
+                              )}
+                            </div>
+                          </div>
+                        ) : (
+                          <span className="text-muted">-</span>
+                        )
+                      )}
+                    </td>
+                    <td className="border-neutral-200 align-middle">
+                      <div className="d-flex align-items-center">
+                        <Person size={16} className="me-2 text-muted" />
+                        <span>{assessment.traineeCount} {assessment.traineeCount === 1 ? 'trainee' : 'trainees'}</span>
+                      </div>
+                    </td>
+                    <td className="border-neutral-200 align-middle">
+                      <div>
+                        <div className="fw-medium">{assessment.scheduledDate}</div>
+                        <small className="text-muted">{assessment.scheduledTime}</small>
+                      </div>
+                    </td>
+                    <td className="border-neutral-200 align-middle">
+                      {getStatusBadge(assessment.status)}
+                    </td>
+                    <td className="border-neutral-200 align-middle text-center">
+                      <PortalUnifiedDropdown
+                        align="end"
+                        className="table-dropdown"
+                        placement="bottom-end"
+                        trigger={{
+                          variant: 'link',
+                          className: 'btn btn-link p-0 text-primary-custom',
+                          style: { border: 'none', background: 'transparent' },
+                          children: <ThreeDotsVertical size={16} />
+                        }}
+                        items={[
+                          {
+                            label: 'Assess',
+                            icon: <Eye />,
+                            onClick: () => handleViewAssignments(assessment)
+                          }
+                        ]}
+                      />
+                    </td>
+                  </tr>
+                ))
+              )}
             </tbody>
           </Table>
         </div>
