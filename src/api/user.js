@@ -45,7 +45,14 @@ export const userAPI = {
   getUserById: async (id) => {
     try {
       const response = await apiClient.get(`/users/${id}`);
-      return response.data;
+      const responseData = response.data;
+
+      // Normalize wrapped formats: { message, data: {...} } or { data: {...} }
+      if (responseData?.data && typeof responseData.data === 'object') {
+        return responseData.data;
+      }
+
+      return responseData;
     } catch (error) {
       throw error.response?.data || error.message;
     }

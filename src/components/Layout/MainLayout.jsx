@@ -4,7 +4,14 @@ import Sidebar from './Sidebar';
 import Header from './Header';
 
 const MainLayout = ({ children }) => {
-  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(() => {
+    try {
+      const storedValue = localStorage.getItem('sidebarCollapsed');
+      return storedValue ? storedValue === 'true' : false;
+    } catch {
+      return false;
+    }
+  });
   const [isMobile, setIsMobile] = useState(false);
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
@@ -19,6 +26,14 @@ const MainLayout = ({ children }) => {
     window.addEventListener('resize', checkIsMobile);
     return () => window.removeEventListener('resize', checkIsMobile);
   }, []);
+
+  useEffect(() => {
+    try {
+      localStorage.setItem('sidebarCollapsed', sidebarCollapsed);
+    } catch {
+      // Ignore write errors (e.g., private mode)
+    }
+  }, [sidebarCollapsed]);
 
   const toggleSidebar = () => {
     if (isMobile) {

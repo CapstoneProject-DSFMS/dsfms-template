@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useRef, useState, forwardRef, useImperativeHandle } from 'react'
 import { Alert, Card, Col, Row, Spinner, Dropdown, Modal, Button as BootstrapButton } from 'react-bootstrap'
 import { toast } from 'react-toastify'
-import { uploadAPI } from '../../../api'
+import { uploadAPI, globalFieldAPI } from '../../../api'
 import CustomFieldsPanel from './CustomFieldsPanel'
 // EditorWithMergeFields removed - using CustomFieldsPanel for all import types
 import { API_CONFIG } from '../../../config/api.js'
@@ -25,6 +25,7 @@ const OnlyOfficeFormEditor = forwardRef(({
     const [customFields, setCustomFields] = useState([])
     const [showCustomFieldsPanel] = useState(true)
     const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false)
+    const [isSubmitting, setIsSubmitting] = useState(false) // Track submit state for overlay
     const hasUnsavedChangesRef = useRef(false) // Persist state across re-renders
     const isInitialized = useRef(false)
     const editorRef = useRef(null)
@@ -126,23 +127,51 @@ const OnlyOfficeFormEditor = forwardRef(({
     const [selectedSystemField, setSelectedSystemField] = useState(null)
     const [availableSections, setAvailableSections] = useState([])
     const addSystemFieldToSectionRef = useRef(null) // Ref to function from CustomFieldsPanel
+    const [globalMappedFields, setGlobalMappedFields] = useState([])
+    const [isLoadingGlobalFields, setIsLoadingGlobalFields] = useState(false)
 
     // System Mapped Fields - Predefined fields that can be inserted into document
     const systemMappedFields = [
-        { label: "Trainee's Full Name", variable: "{trainee_name}" },
-        { label: "Trainee's Eid", variable: "{trainee_eid}" },
-        { label: "Trainee's Nation", variable: "{trainee_nationality}" },
-        { label: "Trainee's Batch Name", variable: "{training_batch}" },
-        { label: "Course's Name", variable: "{course_name}" },
-        { label: "Course's Code", variable: "{course_code}" },
-        { label: "Subject's Name", variable: "{subject_name}" },
-        { label: "Subject's Code", variable: "{subject_code}" },
-        { label: "Assessing date", variable: "{assessment_date}" },
-        { label: "Assessment Location", variable: "{assessment_venue}" },
-        { label: "Instructor's Full Name", variable: "{trainer_name}" },
-        { label: "Trainer's Eid", variable: "{trainer_eid}" },
-        { label: "Template Name", variable: "{template_name}" }
+        { label: "Trainee's Full Name", variable: "{trainee_name}", fieldType: 'TEXT' },
+        { label: "Trainee's Eid", variable: "{trainee_eid}", fieldType: 'TEXT' },
+        { label: "Trainee's Nation", variable: "{trainee_nationality}", fieldType: 'TEXT' },
+        { label: "Trainee's Batch Name", variable: "{training_batch}", fieldType: 'TEXT' },
+        { label: "Course's Name", variable: "{course_name}", fieldType: 'TEXT' },
+        { label: "Course's Code", variable: "{course_code}", fieldType: 'TEXT' },
+        { label: "Subject's Name", variable: "{subject_name}", fieldType: 'TEXT' },
+        { label: "Subject's Code", variable: "{subject_code}", fieldType: 'TEXT' },
+        { label: "Assessing date", variable: "{assessment_date}", fieldType: 'TEXT' },
+        { label: "Assessment Location", variable: "{assessment_venue}", fieldType: 'TEXT' },
+        { label: "Instructor's Full Name", variable: "{trainer_name}", fieldType: 'TEXT' },
+        { label: "Trainer's Eid", variable: "{trainer_eid}", fieldType: 'TEXT' },
+        { label: "Template Name", variable: "{template_name}", fieldType: 'TEXT' }
     ]
+
+    // Load Global Mapped Fields from API
+    useEffect(() => {
+        let isMounted = true
+        const fetchGlobalFields = async () => {
+            try {
+                setIsLoadingGlobalFields(true)
+                const response = await globalFieldAPI.getGlobalFields()
+                const fields = response?.data || response || []
+                if (isMounted) {
+                    setGlobalMappedFields(fields)
+                }
+            } catch (error) {
+                console.error('Error loading global mapped fields:', error)
+                toast.error('Failed to load global mapped fields')
+            } finally {
+                if (isMounted) {
+                    setIsLoadingGlobalFields(false)
+                }
+            }
+        }
+        fetchGlobalFields()
+        return () => {
+            isMounted = false
+        }
+    }, [])
 
   // Memoize cleanup function to avoid dependency issues
   const cleanupEditor = useCallback(() => {
@@ -278,7 +307,7 @@ console.log('✅ OnlyOffice API loaded successfully')
                 })
 
         // OnlyOffice configuration with hardcoded JWT
-                // Generate random documentKey for callback flow
+        // Generate random documentKey for callback flow
                 const documentKey = `doc-${Date.now()}-${Math.random()
                     .toString(36)
                     .substr(2, 9)}`
@@ -314,23 +343,23 @@ console.log('✅ OnlyOffice API loaded successfully')
                         },
                         callbackUrl: CALLBACK_URL,
                     },
-                }
-
+            }
+        
                 const jwtToken = await generateJWTToken(jwtPayload)
-
-                // Add callbackUrl conditionally (OnlyOffice Cloud Dev may not support it)
-                // Set to false to disable callbackUrl if OnlyOffice Cloud Dev doesn't support it
+        
+        // Add callbackUrl conditionally (OnlyOffice Cloud Dev may not support it)
+        // Set to false to disable callbackUrl if OnlyOffice Cloud Dev doesn't support it
                 const ENABLE_CALLBACK_URL = true // Set to false if editor fails to load
-
-                if (ENABLE_CALLBACK_URL) {
+        
+        if (ENABLE_CALLBACK_URL) {
                     console.log('📡 Adding callbackUrl:', CALLBACK_URL)
-                } else {
+        } else {
                     console.log(
                         '⚠️ callbackUrl is DISABLED (OnlyOffice Cloud Dev may not support it)'
                     )
-                }
-
-                // Build config with callbackUrl at top-level (not in editorConfig)
+        }
+        
+        // Build config with callbackUrl at top-level (not in editorConfig)
         const config = {
           document: {
             fileType: 'docx',
@@ -358,7 +387,7 @@ console.log('✅ OnlyOffice API loaded successfully')
             },
             customization: {
               autosave: false, // Disable autosave for testing
-                            forcesave: true, // Enable forcesave to trigger callbacks
+              forcesave: true, // Enable forcesave to trigger callbacks
               comments: false,
               help: false,
                             hideRightMenu: false,
@@ -368,9 +397,9 @@ console.log('✅ OnlyOffice API loaded successfully')
                             : undefined,
                         mode: 'edit',
           },
-                    // Callback URL for OnlyOffice to send document save events
-                    // Note: callbackUrl should be at top-level, not in editorConfig
-                    // OnlyOffice Cloud Dev may not support this - set ENABLE_CALLBACK_URL = false if editor fails
+          // Callback URL for OnlyOffice to send document save events
+          // Note: callbackUrl should be at top-level, not in editorConfig
+          // OnlyOffice Cloud Dev may not support this - set ENABLE_CALLBACK_URL = false if editor fails
                     // ...(ENABLE_CALLBACK_URL && { callbackUrl: CALLBACK_URL }),
           // JWT Token for OnlyOffice Cloud - Official format
           token: jwtToken,
@@ -392,10 +421,10 @@ console.log('✅ OnlyOffice API loaded successfully')
             },
             onError: (event) => {
                             console.error('❌ OnlyOffice Error:', event)
-                            console.error('❌ Error details:', {
-                                errorCode: event.data?.errorCode,
-                                errorDescription: event.data?.errorDescription,
-                                error: event.data?.error,
+              console.error('❌ Error details:', {
+                errorCode: event.data?.errorCode,
+                errorDescription: event.data?.errorDescription,
+                error: event.data?.error,
 fullEvent: event,
                             })
                             toast.error(
@@ -597,9 +626,9 @@ fullEvent: event,
                                 console.error('❌ Error in onDownloadAs handler:', err)
                                 toast.error('Error processing draft save')
                             }
-                        },
-                        onRequestSaveAs: async (event) => {
-                            try {
+            },
+            onRequestSaveAs: async (event) => {
+              try {
                                 const data = event?.data || {}
                                 console.log(
                                     '═══════════════════════════════════════════════════════════'
@@ -626,8 +655,8 @@ fullEvent: event,
                                 
                                 // Reset unsaved changes flag when document is saved
                                 setHasUnsavedChanges(false)
-
-                                // Try multiple possible URL fields
+                
+                // Try multiple possible URL fields
                                 const tempUrl =
                                     data.url ||
                                     data.downloadUrl ||
@@ -641,8 +670,8 @@ fullEvent: event,
                                     '🧾 Extracted temporary DOCX URL:',
 tempUrl
                                 )
-
-                                if (!tempUrl) {
+                
+                if (!tempUrl) {
                                     console.warn(
                                         '⚠️ onRequestSaveAs received but no URL found in payload'
                                     )
@@ -650,14 +679,14 @@ tempUrl
                                         '📋 Full event data:',
                                         JSON.stringify(data, null, 2)
                                     )
-                                }
-
-                                if (exportResolverRef.current) {
-                                    if (tempUrl) {
+                }
+                
+                if (exportResolverRef.current) {
+                  if (tempUrl) {
                                         exportResolverRef.current.resolve(
                                             tempUrl
                                         )
-                                    } else {
+                  } else {
                                         exportResolverRef.current.reject(
                                             new Error(
                                                 'onRequestSaveAs event received but no URL found'
@@ -669,20 +698,20 @@ tempUrl
                                 console.log(
                                     '═══════════════════════════════════════════════════════════'
                                 )
-                            } catch (err) {
+              } catch (err) {
                                 console.error(
                                     '❌ Error in onRequestSaveAs handler:',
                                     err
                                 )
-                                if (exportResolverRef.current) {
+                if (exportResolverRef.current) {
                                     exportResolverRef.current.reject(err)
                                     exportResolverRef.current = null
-                                }
-                            }
-                        },
-                        onRequestSave: (event) => {
-                            // Also listen to onRequestSave (different event)
-                            try {
+                }
+              }
+            },
+            onRequestSave: (event) => {
+              // Also listen to onRequestSave (different event)
+              try {
                                 const data = event?.data || {}
                                 console.log(
                                     '═══════════════════════════════════════════════════════════'
@@ -708,7 +737,7 @@ JSON.stringify(data, null, 2)
                                 )
                                 const tempUrl =
                                     data.url || data.downloadUrl || data.fileUrl
-                                if (tempUrl && exportResolverRef.current) {
+                if (tempUrl && exportResolverRef.current) {
                                     console.log(
                                         '✅ Using URL from onRequestSave:',
                                         tempUrl
@@ -719,15 +748,15 @@ JSON.stringify(data, null, 2)
                                 console.log(
                                     '═══════════════════════════════════════════════════════════'
                                 )
-                            } catch (err) {
+              } catch (err) {
                                 console.error(
                                     '❌ Error in onRequestSave handler:',
                                     err
                                 )
-                            }
+              }
                         },
                     },
-                }
+            }
 
         // Config and token logging removed to reduce console noise
 
@@ -935,11 +964,11 @@ JSON.stringify(data, null, 2)
             toast.warning('Editor not initialized yet')
     } else if (!isEditorReady) {
             toast.warning('Editor is still loading, please wait...')
-        }
+    }
     }
 
-    // Get documentKey for callback flow
-    const getDocumentKey = useCallback(() => {
+  // Get documentKey for callback flow
+  const getDocumentKey = useCallback(() => {
         return documentKeyRef.current
     }, [])
 
@@ -947,8 +976,15 @@ JSON.stringify(data, null, 2)
     const handleSystemFieldSelect = (field) => {
         if (!field || !field.variable) return
         
+        const normalizedField = {
+            ...field,
+            fieldType: field.fieldType || 'TEXT',
+            roleRequired: field.roleRequired || 'TRAINER',
+            options: field.options || null
+        }
+        
         // Store selected field temporarily
-        setSelectedSystemField(field)
+        setSelectedSystemField(normalizedField)
         
         // Get sections from CustomFieldsPanel via ref
         if (addSystemFieldToSectionRef.current && typeof addSystemFieldToSectionRef.current.getSections === 'function') {
@@ -964,6 +1000,26 @@ JSON.stringify(data, null, 2)
         }
     }
     
+    const handleGlobalFieldSelect = (field) => {
+        if (!field) return
+        const fieldName = field.fieldName || field.name
+        if (!fieldName) {
+            toast.warning('Global field is missing a field name')
+            return
+        }
+        const variable = fieldName.startsWith('{') && fieldName.endsWith('}')
+            ? fieldName
+            : `{${fieldName}}`
+        const mappedField = {
+            label: field.label || fieldName,
+            variable,
+            fieldType: field.fieldType || 'TEXT',
+            roleRequired: field.roleRequired || 'TRAINER',
+            options: field.options || null
+        }
+        handleSystemFieldSelect(mappedField)
+    }
+
     // Handle section selection from modal
     const handleSelectSection = (sectionIndex) => {
         if (!selectedSystemField || sectionIndex === null || sectionIndex < 0) return
@@ -973,9 +1029,10 @@ JSON.stringify(data, null, 2)
             const fieldData = {
                 label: selectedSystemField.label,
                 fieldName: selectedSystemField.variable.replace(/[{}]/g, ''), // Remove { } from variable name
-                fieldType: 'TEXT', // System mapped fields are always TEXT type
-                roleRequired: 'TRAINER', // Default, can be adjusted based on section
-                displayOrder: 1
+                fieldType: selectedSystemField.fieldType || 'TEXT',
+                roleRequired: selectedSystemField.roleRequired || 'TRAINER',
+                displayOrder: 1,
+                ...(selectedSystemField.options ? { options: selectedSystemField.options } : {})
             }
             
             // Call addSystemField and check return value
@@ -994,15 +1051,15 @@ JSON.stringify(data, null, 2)
 
     // Note: pollForResult removed - we now get URL directly from onDownloadAs event in Submit flow
 
-    // Force save and poll for edited URL from backend
-    const forceSaveAndPoll = useCallback(async () => {
-        try {
-            if (!editorRef.current || !isEditorReady) {
+  // Force save and poll for edited URL from backend
+  const forceSaveAndPoll = useCallback(async () => {
+    try {
+      if (!editorRef.current || !isEditorReady) {
                 throw new Error('Editor not ready')
-            }
+      }
 
             const documentKey = documentKeyRef.current
-            if (!documentKey) {
+      if (!documentKey) {
                 throw new Error('Document key not found')
             }
 
@@ -1036,7 +1093,7 @@ JSON.stringify(data, null, 2)
                     // Wait longer for save to complete (2 seconds to ensure it's done)
                     await new Promise(resolve => setTimeout(resolve, 2000))
                     console.log('✅ All changes saved successfully')
-              } catch (e) {
+        } catch (e) {
                     console.warn('⚠️ save() failed:', e)
                     // Continue anyway - might still work
                 }
@@ -1067,7 +1124,7 @@ JSON.stringify(data, null, 2)
                 try {
                     editorRef.current.downloadAs('docx')
                     console.log('✅ downloadAs() triggered - waiting for URL from onDownloadAs event...')
-          } catch (e) {
+        } catch (e) {
                     console.warn('⚠️ downloadAs() failed:', e)
                     if (submitUrlResolverRef.current) {
                         submitUrlResolverRef.current.reject(new Error('Failed to trigger downloadAs()'))
@@ -1079,7 +1136,7 @@ JSON.stringify(data, null, 2)
                     try {
                         sessionStorage.removeItem('onlyoffice_submitting')
                         sessionStorage.removeItem('onlyoffice_submit_docKey')
-                    } catch (e) {
+        } catch (e) {
                         console.warn('⚠️ Failed to clear sessionStorage:', e)
                     }
                     
@@ -1177,58 +1234,58 @@ JSON.stringify(data, null, 2)
         }
     }, [isEditorReady])
 
-    // Expose export method to child panels - returns temp URL
-    // Try both downloadAs() and forceSave() methods
-    const exportEditedDoc = useCallback(() => {
-        return new Promise((resolve, reject) => {
-            try {
-                if (!editorRef.current) {
+  // Expose export method to child panels - returns temp URL
+  // Try both downloadAs() and forceSave() methods
+  const exportEditedDoc = useCallback(() => {
+    return new Promise((resolve, reject) => {
+      try {
+        if (!editorRef.current) {
                     reject(new Error('Editor not initialized'))
                     return
-                }
+        }
 
                 exportResolverRef.current = { resolve, reject }
-
-                // Method 1: Try forceSave() first (more reliable with forcesave enabled)
-                if (typeof editorRef.current.downloadDocument === 'function') {
+        
+        // Method 1: Try forceSave() first (more reliable with forcesave enabled)
+        if (typeof editorRef.current.downloadDocument === 'function') {
                     console.log(
                         '🔄 Attempting export via downloadDocument()...'
                     )
-                    try {
+          try {
                         editorRef.current.downloadDocument()
-                    } catch (e) {
+          } catch (e) {
                         console.warn(
                             'downloadDocument() failed, trying downloadAs()...',
                             e
                         )
-                    }
-                }
-
-                // Method 2: Try downloadAs()
-                if (typeof editorRef.current.downloadAs === 'function') {
+          }
+        }
+        
+        // Method 2: Try downloadAs() 
+        if (typeof editorRef.current.downloadAs === 'function') {
                     console.log(
                         '🔄 Attempting export via downloadAs("docx")...'
                     )
-                    try {
+          try {
                         editorRef.current.downloadAs('docx')
-                    } catch (e) {
+          } catch (e) {
                         console.warn('downloadAs() failed:', e)
-                    }
-                }
+          }
+        }
 
-                // Method 3: Try direct forceSave via API
-                if (typeof editorRef.current.save === 'function') {
+        // Method 3: Try direct forceSave via API
+        if (typeof editorRef.current.save === 'function') {
                     console.log('🔄 Attempting export via save()...')
-                    try {
+          try {
                         editorRef.current.save()
-                    } catch (e) {
+          } catch (e) {
                         console.warn('save() failed:', e)
-                    }
-                }
+          }
+        }
 
-                // Timeout after 20 seconds (increased from 15)
-                setTimeout(() => {
-                    if (exportResolverRef.current) {
+        // Timeout after 20 seconds (increased from 15)
+        setTimeout(() => {
+          if (exportResolverRef.current) {
                         const error = new Error(
                             'Export timeout: onRequestSaveAs not received after 20s. OnlyOffice Cloud may not support this method without callbackUrl.'
                         )
@@ -1236,79 +1293,79 @@ JSON.stringify(data, null, 2)
                         exportResolverRef.current = null
                     }
                 }, 20000)
-            } catch (err) {
-                if (exportResolverRef.current) {
+      } catch (err) {
+        if (exportResolverRef.current) {
                     exportResolverRef.current.reject(err)
                     exportResolverRef.current = null
-                } else {
+        } else {
                     reject(err)
-                }
-            }
+        }
+      }
         })
     }, [])
-// Complete flow: Export → Fetch → Upload → Return S3 URL
-    const exportAndUploadEditedDoc = useCallback(async () => {
-        try {
-            if (!editorRef.current || !isEditorReady) {
+  // Complete flow: Export → Fetch → Upload → Return S3 URL
+  const exportAndUploadEditedDoc = useCallback(async () => {
+    try {
+      if (!editorRef.current || !isEditorReady) {
                 throw new Error('Editor not ready')
-            }
+      }
 
-
-            // Step 1: Export and get temp URL
+      
+      // Step 1: Export and get temp URL
             const tempUrl = await exportEditedDoc()
-            if (!tempUrl) {
+      if (!tempUrl) {
                 throw new Error('No temporary URL received from OnlyOffice')
-            }
+      }
 
             console.log('📥 Got temp URL:', tempUrl)
 
-            // Step 2: Fetch file from temp URL
+      // Step 2: Fetch file from temp URL
             const response = await fetch(tempUrl)
-            if (!response.ok) {
+      if (!response.ok) {
                 throw new Error(`Failed to fetch file: ${response.statusText}`)
-            }
+      }
 
             const blob = await response.blob()
             console.log('📦 Downloaded blob:', blob.size, 'bytes')
 
-            // Step 3: Create File from Blob
+      // Step 3: Create File from Blob
             const fileNameWithExt = fileName.endsWith('.docx')
                 ? fileName
                 : `${fileName}.docx`
-            const file = new File([blob], fileNameWithExt, {
+      const file = new File([blob], fileNameWithExt, {
                 type: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
             })
 
 
-            // Step 4: Upload to S3 using existing API
+      // Step 4: Upload to S3 using existing API
             const docsType = uploadAPI.getDocsType(fileNameWithExt) || 'tem'
             const uploadResult = await uploadAPI.uploadDocument(file, docsType)
 
-            // Step 5: Extract S3 URL from response
+      // Step 5: Extract S3 URL from response
             console.log('📦 Upload API response:', uploadResult)
-
+      
             let s3Url = null
-            if (uploadResult?.data?.[0]?.url) {
+      if (uploadResult?.data?.[0]?.url) {
                 s3Url = uploadResult.data[0].url
                 console.log(
                     '✅ Found S3 URL in uploadResult.data[0].url:',
                     s3Url
                 )
-            } else if (uploadResult?.data?.url) {
+      } else if (uploadResult?.data?.url) {
                 s3Url = uploadResult.data.url
                 console.log('✅ Found S3 URL in uploadResult.data.url:', s3Url)
-            } else if (uploadResult?.url) {
+      } else if (uploadResult?.url) {
                 s3Url = uploadResult.url
                 console.log('✅ Found S3 URL in uploadResult.url:', s3Url)
-            } else if (uploadResult?.fileUrl) {
+      } else if (uploadResult?.fileUrl) {
                 s3Url = uploadResult.fileUrl
                 console.log('✅ Found S3 URL in uploadResult.fileUrl:', s3Url)
-            } else if (uploadResult?.path) {
+      } else if (uploadResult?.path) {
                 s3Url = uploadResult.path
                 console.log('✅ Found S3 URL in uploadResult.path:', s3Url)
-            }
+      }
 
-            if (!s3Url) {
+      if (!s3Url) {
                 console.error(
                     '❌ Upload response structure:',
                     JSON.stringify(uploadResult, null, 2)
@@ -1320,7 +1377,7 @@ JSON.stringify(data, null, 2)
 console.log('🌐 Full S3 URL:', s3Url)
 
             return s3Url
-        } catch (error) {
+    } catch (error) {
             console.error('❌ Export and upload failed:', error)
             toast.error(`Failed: ${error.message}`)
             throw error
@@ -1374,7 +1431,7 @@ console.log('🌐 Full S3 URL:', s3Url)
         )
   }
 
-    const handleAddCustomField = (field) => {
+  const handleAddCustomField = (field) => {
     // Check if field is an array (for update) or single field (for add)
     if (Array.isArray(field)) {
             setCustomFields(field)
@@ -1388,8 +1445,36 @@ console.log('🌐 Full S3 URL:', s3Url)
   }
 
   return (
-    <div className={`onlyoffice-form-editor ${className}`}>
-      <div className="p-0">
+    <>
+      {/* Loading Overlay for Submit - Fixed position to cover entire screen */}
+      {isSubmitting && (
+        <div 
+          className="loading-overlay"
+          style={{
+            position: 'fixed',
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            backgroundColor: 'rgba(255, 255, 255, 0.9)',
+            backdropFilter: 'blur(6px)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            zIndex: 9999,
+            transition: 'opacity 0.3s ease-in-out'
+          }}
+        >
+          <div className="text-center">
+            <Spinner animation="border" variant="primary" style={{ width: '3rem', height: '3rem' }} />
+            <p className="mt-3 mb-0 text-primary fw-semibold" style={{ fontSize: '1.1rem' }}>
+              Submitting template...
+            </p>
+          </div>
+              </div>
+            )}
+      <div className={`onlyoffice-form-editor ${className}`} style={{ position: 'relative' }}>
+        <div className="p-0">
         <Row className="g-0" style={{ minHeight: '90vh' }}>
           {/* OnlyOffice Editor - LEFT side */}
           <Col
@@ -1402,9 +1487,42 @@ console.log('🌐 Full S3 URL:', s3Url)
             className="editor-col"
             style={{ order: 1 }}
           >
-            <div className="p-3 editor-wrapper" style={{ height: '90vh' }}>
-              {/* Header Bar with System Mapped Field Dropdown */}
-              <div className="d-flex justify-content-end align-items-center mb-2">
+            <div className="p-3 editor-wrapper" style={{ height: '90vh', position: 'relative' }}>
+              {/* Header Bar with Global Mapped Field (left) and System Mapped Field (right) */}
+              <div className="d-flex justify-content-between align-items-center gap-2 flex-wrap mb-2">
+                {/* Global Mapped Field - Left side */}
+                <Dropdown>
+                  <Dropdown.Toggle 
+                    variant="outline-primary" 
+                    size="sm"
+                    id="global-mapped-field-dropdown"
+                    disabled={isLoadingGlobalFields}
+                  >
+                    {isLoadingGlobalFields ? 'Loading Global Fields...' : 'Global Mapped Field'}
+                  </Dropdown.Toggle>
+                  <Dropdown.Menu style={{ maxHeight: '400px', overflowY: 'auto' }}>
+                    {isLoadingGlobalFields ? (
+                      <Dropdown.ItemText className="text-muted">
+                        Loading...
+                      </Dropdown.ItemText>
+                    ) : globalMappedFields.length === 0 ? (
+                      <Dropdown.ItemText className="text-muted">
+                        No global fields available
+                      </Dropdown.ItemText>
+                    ) : (
+                      globalMappedFields.map((field) => (
+                        <Dropdown.Item
+                          key={field.id || field.fieldName}
+                          onClick={() => handleGlobalFieldSelect(field)}
+                        >
+                          {field.label || field.fieldName}
+                        </Dropdown.Item>
+                      ))
+                    )}
+                  </Dropdown.Menu>
+                </Dropdown>
+
+                {/* System Mapped Field - Right side */}
                 <Dropdown>
                   <Dropdown.Toggle 
                     variant="outline-primary" 
@@ -1416,7 +1534,7 @@ console.log('🌐 Full S3 URL:', s3Url)
                   <Dropdown.Menu style={{ maxHeight: '400px', overflowY: 'auto' }}>
                     {systemMappedFields.map((field, index) => (
                       <Dropdown.Item
-                        key={index}
+                        key={`system-field-${index}`}
                         onClick={() => handleSystemFieldSelect(field)}
                       >
                         {field.label}
@@ -1456,15 +1574,16 @@ console.log('🌐 Full S3 URL:', s3Url)
                 onRemoveField={handleRemoveCustomField}
                 onInsertField={handleInsertField}
                 initialSections={initialSections}
-                                        exportEditedDoc={exportEditedDoc}
+                exportEditedDoc={exportEditedDoc}
                                         exportAndUploadEditedDoc={
                                             exportAndUploadEditedDoc
                                         }
-                                        forceSaveAndPoll={forceSaveAndPoll}
-                                        getDocumentKey={getDocumentKey}
+                forceSaveAndPoll={forceSaveAndPoll}
+                getDocumentKey={getDocumentKey}
                                         addSystemFieldToSectionRef={addSystemFieldToSectionRef}
                 readOnly={readOnly}
                 className="h-100"
+                onSubmittingChange={setIsSubmitting}
               />
             </div>
           </Col>
@@ -1666,7 +1785,8 @@ console.log('🌐 Full S3 URL:', s3Url)
           </BootstrapButton>
         </Modal.Footer>
       </Modal>
-    </div>
+      </div>
+    </>
     )
 })
 

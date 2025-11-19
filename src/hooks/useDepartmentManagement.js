@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { toast } from 'react-toastify';
 import { departmentAPI } from '../api';
 
@@ -331,7 +331,7 @@ const useDepartmentManagement = (shouldLoad = true) => {
   };
 
   // Get available users for department head selection
-  const getAvailableUsers = async () => {
+  const getAvailableUsers = useCallback(async () => {
     try {
       const response = await departmentAPI.getDepartmentHeads();
       // API returns { users: [...], totalItems: 7 }
@@ -341,7 +341,7 @@ const useDepartmentManagement = (shouldLoad = true) => {
       toast.error('Failed to load department heads');
       return [];
     }
-  };
+  }, []); // No dependencies, function is stable
 
   // Manual refresh function
   const refreshDepartments = async () => {

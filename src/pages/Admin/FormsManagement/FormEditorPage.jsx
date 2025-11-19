@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Container, Row, Col, Card, Button, Alert, Modal, Form } from 'react-bootstrap';
-import { ArrowLeft, Pencil, Save } from 'react-bootstrap-icons';
+import { Container, Row, Col, Card, Button, Alert, Modal, Form, Spinner } from 'react-bootstrap';
+import { ArrowLeft, Pencil, Save, QuestionCircle, X, Question } from 'react-bootstrap-icons';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { toast } from 'react-toastify';
 import OnlyOfficeFormEditor from '../../../components/Admin/Forms/OnlyOfficeFormEditor';
@@ -28,6 +28,7 @@ const FormEditorPage = () => {
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
   const [showDiscardModal, setShowDiscardModal] = useState(false);
   const [isSavingDraft, setIsSavingDraft] = useState(false);
+  const [showHelpModal, setShowHelpModal] = useState(false);
   const onlyOfficeEditorRef = useRef(null);
 
   // Debug: Log when hasUnsavedChanges changes
@@ -233,7 +234,34 @@ const FormEditorPage = () => {
         </Container>
       }
     >
-      <Container fluid className="py-4 form-editor-page form-component">
+      <Container fluid className="py-4 form-editor-page form-component" style={{ position: 'relative' }}>
+        {/* Loading Overlay for Save Draft - Fixed position to cover entire editor */}
+        {isSavingDraft && (
+          <div 
+            className="loading-overlay"
+            style={{
+              position: 'fixed',
+              top: 0,
+              left: 0,
+              right: 0,
+              bottom: 0,
+              backgroundColor: 'rgba(255, 255, 255, 0.9)',
+              backdropFilter: 'blur(6px)',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              zIndex: 9999,
+              transition: 'opacity 0.3s ease-in-out'
+            }}
+          >
+            <div className="text-center">
+              <Spinner animation="border" variant="primary" style={{ width: '3rem', height: '3rem' }} />
+              <p className="mt-3 mb-0 text-primary fw-semibold" style={{ fontSize: '1.1rem' }}>
+                Saving draft...
+              </p>
+            </div>
+          </div>
+        )}
         <Card className="border-neutral-200 shadow-sm">
           <Card.Header className="border-neutral-200 form-editor-header bg-primary">
             <Row className="align-items-center">
@@ -322,14 +350,54 @@ const FormEditorPage = () => {
                     }
                   }}
                 >
-                  <Save size={16} />
-                  {isSavingDraft ? 'Saving...' : 'Save Draft'}
+                  {isSavingDraft ? (
+                    <>
+                      <Spinner animation="border" size="sm" variant="light" style={{ width: '14px', height: '14px' }} />
+                      <span>Saving...</span>
+                    </>
+                  ) : (
+                    <>
+                      <Save size={16} />
+                      <span>Save Draft</span>
+                    </>
+                  )}
+                </Button>
+                <Button
+                  variant="outline-light"
+                  size="sm"
+                  onClick={() => setShowHelpModal(true)}
+                  className="d-flex align-items-center justify-content-center text-white"
+                  style={{
+                    borderWidth: '2px',
+                    fontWeight: '700',
+                    fontSize: '18px',
+                    backgroundColor: 'rgba(255, 255, 255, 0.1)',
+                    backdropFilter: 'blur(4px)',
+                    width: '36px',
+                    height: '36px',
+                    padding: 0,
+                    color: '#ffffff !important',
+                    lineHeight: '1'
+                  }}
+                  onMouseEnter={(e) => {
+                    e.currentTarget.style.backgroundColor = 'rgba(255, 255, 255, 0.2)';
+                    e.currentTarget.style.borderColor = '#fff';
+                    e.currentTarget.style.color = '#ffffff';
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.backgroundColor = 'rgba(255, 255, 255, 0.1)';
+                    e.currentTarget.style.borderColor = '#fff';
+                    e.currentTarget.style.color = '#ffffff';
+                  }}
+                  title="System Syntax Guidance"
+                >
+                  ?
                 </Button>
               </Col>
             </Row>
           </Card.Header>
 
-          <Card.Body className="p-0">
+          <Card.Body className="p-0" style={{ position: 'relative' }}>
             <OnlyOfficeFormEditor
               ref={onlyOfficeEditorRef}
               initialContent={content}
@@ -578,6 +646,120 @@ const FormEditorPage = () => {
               disabled={!editTemplateInfo.name || !editTemplateInfo.description || !editTemplateInfo.departmentId}
             >
               Save Changes
+            </Button>
+          </Modal.Footer>
+        </Modal>
+
+        {/* System Syntax Guidance Modal */}
+        <Modal 
+          show={showHelpModal} 
+          onHide={() => setShowHelpModal(false)} 
+          size="lg" 
+          centered
+          className="syntax-guide-modal"
+        >
+          <Modal.Header className="bg-primary-custom text-white border-0">
+            <Modal.Title className="d-flex align-items-center">
+              <QuestionCircle className="me-2" size={20} />
+              System Syntax Guidance
+            </Modal.Title>
+            <Button
+              variant="link"
+              onClick={() => setShowHelpModal(false)}
+              className="text-white text-decoration-none"
+              style={{ fontSize: '1.5rem', lineHeight: 1 }}
+            >
+              <X size={24} />
+            </Button>
+          </Modal.Header>
+
+          <Modal.Body style={{ padding: '1.5rem', maxHeight: '70vh', overflowY: 'auto' }}>
+            <div className="syntax-guide-content">
+              <div className="syntax-list mb-4">
+                <div className="syntax-item mb-3">
+                  <div className="d-flex align-items-start">
+                    <strong className="me-3" style={{ minWidth: '120px', fontWeight: 600, color: '#172B4D' }}>Field:</strong>
+                    <div className="flex-grow-1">
+                      <code className="syntax-pill">&#123;variable_name&#125;</code>
+                      <div className="data-type-info mt-1">Data Types: TEXT, VALUE_LIST, FINAL_SCORE_TEXT, FINAL_SCORE_NUM, SIGNATURE_DRAW, SIGNATURE_IMG</div>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="syntax-item mb-3">
+                  <div className="d-flex align-items-start">
+                    <strong className="me-3" style={{ minWidth: '120px', fontWeight: 600, color: '#172B4D' }}>Part:</strong>
+                    <div className="flex-grow-1">
+                      <code className="syntax-pill">&#123;#Part_Name&#125; &#123;field1&#125; &#123;field2&#125; &#123;/PartName&#125;</code>
+                      <div className="data-type-info mt-1">Data Types: PART</div>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="syntax-item mb-3">
+                  <div className="d-flex align-items-start">
+                    <strong className="me-3" style={{ minWidth: '120px', fontWeight: 600, color: '#172B4D' }}>Conditions:</strong>
+                    <div className="flex-grow-1">
+                      <code className="syntax-pill">&#123;#isCondition&#125; &#123;true&#125; &#123;/isCondition&#125;</code>
+                      <div className="data-type-info mt-1">Data Types: TOGGLE, SECTION_CONTROL_TOGGLE</div>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="syntax-item mb-3">
+                  <div className="d-flex align-items-start">
+                    <strong className="me-3" style={{ minWidth: '120px', fontWeight: 600, color: '#172B4D' }}>Inverted Conditions:</strong>
+                    <div className="flex-grow-1">
+                      <code className="syntax-pill">&#123;^isCondition&#125; &#123;false&#125; &#123;/isCondition&#125;</code>
+                      <div className="data-type-info mt-1">Data Types: TOGGLE, SECTION_CONTROL_TOGGLE</div>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="syntax-item mb-3">
+                  <div className="d-flex align-items-start">
+                    <strong className="me-3" style={{ minWidth: '120px', fontWeight: 600, color: '#172B4D' }}>Advanced Syntax:</strong>
+                    <div className="flex-grow-1">
+                      <code className="syntax-pill">Operators: + - * % /</code>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <hr className="my-4" style={{ borderColor: '#dfe1e6' }} />
+
+              <h5 className="mb-3" style={{ fontSize: '1.25rem', fontWeight: 600, color: '#172B4D' }}>Sections-Fields Rule</h5>
+              <ul className="rule-list mb-4" style={{ paddingLeft: '1.5rem', lineHeight: 1.8 }}>
+                <li>Create a Section first, then you can create Fields belonging to that Section.</li>
+                <li>You can drag the Section card to change the position of Sections.</li>
+                <li>You can drag the Field card to change the position of Fields within the same or between Sections.</li>
+              </ul>
+
+              <h5 className="mb-3" style={{ fontSize: '1.25rem', fontWeight: 600, color: '#172B4D' }}>Template Rule</h5>
+              <ul className="rule-list" style={{ paddingLeft: '1.5rem', lineHeight: 1.8 }}>
+                <li>Placeholders in the Template must match the Available Fields (e.g., no Field in the Template that is not in Available Fields when submitting, and vice versa).</li>
+                <li>For the "Submittable" field of a Section for a TRAINER, it means only the person Assessing that Section later will be allowed to Submit the Assessment Form.</li>
+                <li>For the "Toggle Dependent" field of a Section for a TRAINER:
+                  <ul style={{ marginTop: '0.5rem', paddingLeft: '1.5rem' }}>
+                    <li>It means the person Assessing this Section is allowed to skip Fields without filling them in.</li>
+                    <li>There must be exactly one Field with the Field Type SECTION_CONTROL_TOGGLE.</li>
+                  </ul>
+                </li>
+                <li>A Field with the type FINAL_SCORE_TEXT or FINAL_SCORE_NUM must exist (serving the purpose of Assessing TRAINEE), and no more than two Fields with this same Field Type can exist.</li>
+              </ul>
+            </div>
+          </Modal.Body>
+
+          <Modal.Footer className="border-0">
+            <Button
+              variant="primary-custom"
+              onClick={() => setShowHelpModal(false)}
+              style={{
+                fontWeight: 500,
+                padding: '0.5rem 1.5rem'
+              }}
+            >
+              Got it
             </Button>
           </Modal.Footer>
         </Modal>

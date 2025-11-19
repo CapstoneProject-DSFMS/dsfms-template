@@ -15,11 +15,11 @@ const MainMenuPage = () => {
       title: 'Add New Template',
       description: 'Create a new form template',
       icon: PlusCircle,
-      path: '/admin/forms',
+      path: '/admin/forms?action=create',
       permission: API_PERMISSIONS.TEMPLATES.CREATE,
       color: 'primary',
       action: () => {
-        navigate('/admin/forms');
+        navigate('/admin/forms?action=create');
       }
     },
     {

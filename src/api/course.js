@@ -45,35 +45,14 @@ const courseAPI = {
     }
   },
 
-  // Delete/Disable course
-  deleteCourse: async (courseId) => {
-    try {
-      const response = await apiClient.delete(`/courses/${courseId}`);
-      return response.data;
-    } catch (error) {
-      console.error('Error deleting course:', error);
-      throw error;
-    }
-  },
 
-  // Delete course (formerly archive)
+  // Archive course
   archiveCourse: async (courseId) => {
     try {
-      const response = await apiClient.delete(`/courses/${courseId}`);
+      const response = await apiClient.delete(`/courses/${courseId}/archive`);
       return response.data;
     } catch (error) {
-      console.error('Error deleting course:', error);
-      throw error;
-    }
-  },
-
-  // Restore course
-  restoreCourse: async (courseId) => {
-    try {
-      const response = await apiClient.post(`/courses/${courseId}/restore`);
-      return response.data;
-    } catch (error) {
-      console.error('Error restoring course:', error);
+      console.error('Error archiving course:', error);
       throw error;
     }
   },
@@ -129,6 +108,28 @@ const courseAPI = {
       return response.data;
     } catch (error) {
       console.error('Error fetching course trainees:', error);
+      throw error;
+    }
+  },
+
+  // Get course enrollment batches
+  getCourseEnrollmentBatches: async (courseId) => {
+    try {
+      const response = await apiClient.get(`/courses/${courseId}/enrollments/batches`);
+      return response.data;
+    } catch (error) {
+      console.error('Error fetching course enrollment batches:', error);
+      throw error;
+    }
+  },
+
+  // Delete all subject enrollments in course by batch code
+  deleteBatchEnrollments: async (courseId, batchCode) => {
+    try {
+      const response = await apiClient.delete(`/courses/${courseId}/enrollments/batches/${batchCode}`);
+      return response.data;
+    } catch (error) {
+      console.error('Error deleting batch enrollments:', error);
       throw error;
     }
   }

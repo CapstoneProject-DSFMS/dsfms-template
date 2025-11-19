@@ -1,0 +1,74 @@
+.user-management-page .search-filter-section .col {
+  width: 100%;
+}
+
+.user-management-page .search-filter-section .search-bar-mobile,
+.user-management-page .search-filter-section .filter-panel-mobile {
+  width: 100%;
+}
+
+.user-management-page .user-management-table-wrapper {
+  overflow: hidden;
+  border-radius: 0.75rem;
+  background-color: #fff;
+}
+
+.user-management-page .user-management-table-wrapper .table {
+  width: 100%;
+  min-width: 0;
+}
+
+.user-management-page .user-management-table-wrapper .table th,
+.user-management-page .user-management-table-wrapper .table td {
+  white-space: nowrap;
+}
+
+.user-management-page .scroll-indicator {
+  right: 1rem;
+  left: auto;
+  transform: none;
+}
+
+@media (max-width: 992px) {
+  .user-management-page .search-filter-section {
+    flex-direction: column;
+  }
+
+  .user-management-page .search-filter-section .col {
+    margin-bottom: 1rem;
+  }
+
+  .user-management-page .scroll-indicator {
+    position: static;
+    margin-top: 0.5rem;
+    text-align: center;
+  }
+}
+
+@media (max-width: 768px) {
+  .user-management-page .user-management-table-wrapper {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    padding-bottom: 0.5rem;
+  }
+
+  .user-management-page .user-management-table-wrapper .table {
+    min-width: 700px;
+  }
+}
+
+@media (max-width: 576px) {
+  .user-management-page .user-management-table-wrapper .table {
+    min-width: 650px;
+  }
+
+  .user-management-page .user-management-table-wrapper .table th,
+  .user-management-page .user-management-table-wrapper .table td {
+    font-size: 0.8rem;
+  }
+
+  .user-management-page .search-filter-section .text-mobile-center {
+    text-align: left !important;
+  }
+}
+

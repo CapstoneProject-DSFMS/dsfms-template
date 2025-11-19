@@ -1,0 +1,145 @@
+/* Assessment Section Fields Styles */
+.assessment-section-fields {
+  padding: 0;
+  margin-top: 0;
+}
+
+.fields-container {
+  padding: 0;
+}
+
+.field-input-wrapper {
+  margin-bottom: 1rem;
+}
+
+.field-label {
+  font-weight: 500;
+  font-size: 0.875rem;
+  color: #495057;
+  margin-bottom: 0.5rem;
+  display: block;
+}
+
+.field-input {
+  border-radius: 12px;
+  border: 1px solid rgba(21, 58, 74, 0.2);
+  padding: 0.65rem 0.9rem;
+  font-size: 0.9rem;
+  background: rgba(255, 255, 255, 0.95);
+}
+
+.field-input:focus {
+  border-color: var(--bs-primary);
+  box-shadow: 0 0 0 0.2rem rgba(21, 58, 74, 0.15);
+}
+
+.field-toggle .form-check-input {
+  width: 3rem;
+  height: 1.4rem;
+  border-radius: 999px;
+  background-color: rgba(21, 58, 74, 0.15);
+  border: 1px solid rgba(21, 58, 74, 0.25);
+}
+
+.field-toggle .form-check-input:checked {
+  background-color: var(--bs-primary);
+  border-color: var(--bs-primary);
+}
+
+.field-group {
+  background: rgba(21, 58, 74, 0.04);
+  border: 1px solid rgba(21, 58, 74, 0.08);
+  border-radius: 14px;
+  padding: 1.5rem;
+  margin-bottom: 1.75rem;
+}
+
+.field-group.nested-group {
+  background: rgba(21, 58, 74, 0.03);
+  border: 1px dashed rgba(21, 58, 74, 0.15);
+  padding: 1.25rem;
+}
+
+.field-group-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1rem;
+  padding-bottom: 0.75rem;
+  border-bottom: 1px solid rgba(21, 58, 74, 0.08);
+}
+
+.field-group-title {
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: #153a4a;
+  margin: 0;
+}
+
+.field-item-count {
+  background: var(--bs-primary);
+  color: #ffffff;
+  padding: 0.25rem 0.75rem;
+  border-radius: 4px;
+  font-size: 0.75rem;
+  font-weight: 600;
+}
+
+.field-group-content {
+  margin-top: 1rem;
+}
+
+.field-group-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.75rem;
+  margin-top: 1.25rem;
+  padding-top: 1rem;
+  border-top: 1px solid #e9ecef;
+}
+
+.delete-group-btn,
+.add-item-btn {
+  border-radius: 30px;
+  padding: 0.45rem 1.2rem;
+  font-size: 0.875rem;
+  font-weight: 500;
+}
+
+.add-item-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0 auto;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .assessment-section-fields {
+    padding: 1.25rem;
+  }
+
+  .fields-container {
+    padding: 1.25rem;
+  }
+
+  .field-group {
+    padding: 1.1rem;
+  }
+
+  .field-group-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.5rem;
+  }
+
+  .field-group-actions {
+    flex-direction: column;
+  }
+
+  .delete-group-btn,
+  .add-item-btn {
+    width: 100%;
+  }
+}
+

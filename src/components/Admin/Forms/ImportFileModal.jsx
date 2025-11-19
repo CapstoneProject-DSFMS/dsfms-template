@@ -6,6 +6,7 @@ import { toast } from 'react-toastify';
 import { uploadAPI } from '../../../api';
 import { departmentAPI } from '../../../api/department';
 import templateAPI from '../../../api/template';
+import { convertExtractFieldsToFrontendSections } from '../../../utils/templateBuilder';
 
 const ImportFileModal = ({ show, onHide, onImportSuccess, onImportError }) => {
   const navigate = useNavigate();
@@ -90,38 +91,85 @@ const ImportFileModal = ({ show, onHide, onImportSuccess, onImportError }) => {
       
       // Xử lý 2 luồng khác nhau
       if (importType === 'with-fields') {
-        // Luồng 1: File with fields - Lưu thông tin và navigate
-        // NOTE: Không cần check fields vì user đã chọn "File with Fields"
-        // NOTE: Không gán file vào templateContent ở đây
-        // User sẽ phải upload file không có field qua nút "Original Template"
-        const templateData = {
-          name: templateInfo.name,
-          description: templateInfo.description,
-          departmentId: templateInfo.departmentId,
-          templateContent: '', // Không gán file import vào templateContent
-          fileName: selectedFile.name.replace('.docx', ''),
-          importType: 'File with fields',
-          createdAt: new Date().toISOString(),
-          // Lưu URL file import để dùng cho OnlyOffice editor (không phải templateContent)
-          editorDocumentUrl: documentUrl
-        };
-
-        // Lưu vào localStorage
-        localStorage.setItem('templateInfo', JSON.stringify(templateData));
-        console.log('💾 Template info saved to localStorage:', templateData);
-
-        // Navigate đến editor
-        navigate('/admin/forms/editor', {
-          state: {
-            documentUrl: documentUrl,
-            fileName: templateData.fileName,
-            importType: 'File with fields',
-            templateInfo: templateData
-          }
-        });
+        // Luồng 1: File with fields - Extract fields và load vào editor
+        console.log('🔍 Extracting fields from file (File with Fields flow)...');
         
-        handleClose();
-        onImportSuccess('File with fields', selectedFile.name);
+        try {
+          // Gọi API extract-fields để lấy fields từ file
+          const extractResponse = await templateAPI.extractFields(documentUrl);
+          console.log('✅ Extract fields response:', extractResponse);
+          
+          // Convert extract-fields response → frontend sections format
+          const frontendSections = convertExtractFieldsToFrontendSections(extractResponse);
+          console.log('🔄 Converted to frontend sections:', frontendSections);
+          
+          const templateData = {
+            name: templateInfo.name,
+            description: templateInfo.description,
+            departmentId: templateInfo.departmentId,
+            templateContent: '', // Không gán file import vào templateContent
+            fileName: selectedFile.name.replace('.docx', ''),
+            importType: 'File with fields',
+            createdAt: new Date().toISOString(),
+            // Lưu URL file import để dùng cho OnlyOffice editor (không phải templateContent)
+            editorDocumentUrl: documentUrl
+          };
+
+          // Lưu vào localStorage
+          localStorage.setItem('templateInfo', JSON.stringify(templateData));
+          console.log('💾 Template info saved to localStorage:', templateData);
+
+          // Navigate đến editor với extracted fields
+          navigate('/admin/forms/editor', {
+            state: {
+              documentUrl: documentUrl,
+              fileName: templateData.fileName,
+              importType: 'File with fields',
+              templateInfo: templateData,
+              initialSections: frontendSections // ← Pass extracted fields to editor
+            }
+          });
+          
+          handleClose();
+          onImportSuccess('File with fields', selectedFile.name);
+        } catch (extractError) {
+          // Nếu API extract-fields fail → báo lỗi nhưng vẫn cho vào editor (user có thể thêm fields thủ công)
+          console.error('❌ Failed to extract fields:', extractError);
+          
+          const errorMessage = extractError?.response?.data?.message || 
+                              extractError?.message || 
+                              'Failed to extract fields from file. You can still add fields manually.';
+          
+          toast.warning(errorMessage);
+          
+          // Vẫn cho vào editor nhưng không có extracted fields
+          const templateData = {
+            name: templateInfo.name,
+            description: templateInfo.description,
+            departmentId: templateInfo.departmentId,
+            templateContent: '',
+            fileName: selectedFile.name.replace('.docx', ''),
+            importType: 'File with fields',
+            createdAt: new Date().toISOString(),
+            editorDocumentUrl: documentUrl
+          };
+
+          localStorage.setItem('templateInfo', JSON.stringify(templateData));
+          console.log('💾 Template info saved to localStorage (without extracted fields):', templateData);
+
+          navigate('/admin/forms/editor', {
+            state: {
+              documentUrl: documentUrl,
+              fileName: templateData.fileName,
+              importType: 'File with fields',
+              templateInfo: templateData,
+              initialSections: [] // Empty sections - user will add manually
+            }
+          });
+          
+          handleClose();
+          onImportSuccess('File with fields', selectedFile.name);
+        }
       } else {
         // Luồng 2: File without fields - BẮT BUỘC phải check xem file có fields không
         // Nếu file có fields → báo lỗi và không cho vào editor
@@ -252,10 +300,7 @@ const ImportFileModal = ({ show, onHide, onImportSuccess, onImportError }) => {
                 <Card.Body className="text-center p-3 p-md-4 d-flex flex-column">
                   <div className="flex-grow-1 d-flex flex-column justify-content-center align-items-center">
                     <FileEarmarkText size={48} className="text-primary mb-3" />
-                    <h6 className="text-primary mb-2">File with Fields</h6>
-                    <p className="text-muted small mb-0">
-                      Import a Word document that already contains predefined form fields and structure. The system will automatically parse and create form templates.
-                    </p>
+                    <h6 className="text-primary mb-2">Upload Pre-configured File</h6>
                   </div>
                 </Card.Body>
               </Card>
@@ -269,10 +314,7 @@ const ImportFileModal = ({ show, onHide, onImportSuccess, onImportError }) => {
                 <Card.Body className="text-center p-3 p-md-4 d-flex flex-column">
                   <div className="flex-grow-1 d-flex flex-column justify-content-center align-items-center">
                     <FileEarmark size={48} className="text-success mb-3" />
-                    <h6 className="text-success mb-2">File without Fields</h6>
-                    <p className="text-muted small mb-0">
-                      Import a raw Word document without predefined structure. You will manually define form fields and mapping after import.
-                    </p>
+                    <h6 className="text-success mb-2">Start From Blank</h6>
                   </div>
                 </Card.Body>
               </Card>
@@ -285,7 +327,7 @@ const ImportFileModal = ({ show, onHide, onImportSuccess, onImportError }) => {
           <Alert variant="info" className="mb-4">
             <h6 className="text-primary-custom mb-2">Please select an import type</h6>
             <p className="mb-0 small">
-              Choose between "File with Fields" or "File without Fields" above to continue with the import process.
+              Choose between "Upload Pre-configured File" or "Start From Blank" above to continue with the import process.
             </p>
           </Alert>
         )}
