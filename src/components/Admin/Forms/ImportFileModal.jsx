@@ -300,10 +300,7 @@ const ImportFileModal = ({ show, onHide, onImportSuccess, onImportError }) => {
                 <Card.Body className="text-center p-3 p-md-4 d-flex flex-column">
                   <div className="flex-grow-1 d-flex flex-column justify-content-center align-items-center">
                     <FileEarmarkText size={48} className="text-primary mb-3" />
-                    <h6 className="text-primary mb-2">File with Fields</h6>
-                    <p className="text-muted small mb-0">
-                      Import a Word document that already contains predefined form fields and structure. The system will automatically parse and create form templates.
-                    </p>
+                    <h6 className="text-primary mb-2">Upload Pre-configured File</h6>
                   </div>
                 </Card.Body>
               </Card>
@@ -317,10 +314,7 @@ const ImportFileModal = ({ show, onHide, onImportSuccess, onImportError }) => {
                 <Card.Body className="text-center p-3 p-md-4 d-flex flex-column">
                   <div className="flex-grow-1 d-flex flex-column justify-content-center align-items-center">
                     <FileEarmark size={48} className="text-success mb-3" />
-                    <h6 className="text-success mb-2">File without Fields</h6>
-                    <p className="text-muted small mb-0">
-                      Import a raw Word document without predefined structure. You will manually define form fields and mapping after import.
-                    </p>
+                    <h6 className="text-success mb-2">Start From Blank</h6>
                   </div>
                 </Card.Body>
               </Card>
@@ -333,7 +327,7 @@ const ImportFileModal = ({ show, onHide, onImportSuccess, onImportError }) => {
           <Alert variant="info" className="mb-4">
             <h6 className="text-primary-custom mb-2">Please select an import type</h6>
             <p className="mb-0 small">
-              Choose between "File with Fields" or "File without Fields" above to continue with the import process.
+              Choose between "Upload Pre-configured File" or "Start From Blank" above to continue with the import process.
             </p>
           </Alert>
         )}

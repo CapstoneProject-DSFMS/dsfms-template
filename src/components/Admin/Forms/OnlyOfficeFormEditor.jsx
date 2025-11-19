@@ -1488,28 +1488,9 @@ console.log('🌐 Full S3 URL:', s3Url)
             style={{ order: 1 }}
           >
             <div className="p-3 editor-wrapper" style={{ height: '90vh', position: 'relative' }}>
-              {/* Header Bar with System Mapped Field Dropdown */}
-              <div className="d-flex justify-content-end align-items-center gap-2 flex-wrap mb-2">
-                <Dropdown>
-                  <Dropdown.Toggle 
-                    variant="outline-primary" 
-                    size="sm"
-                    id="system-mapped-field-dropdown"
-                  >
-                    System Mapped Field
-                  </Dropdown.Toggle>
-                  <Dropdown.Menu style={{ maxHeight: '400px', overflowY: 'auto' }}>
-                    {systemMappedFields.map((field, index) => (
-                      <Dropdown.Item
-                        key={`system-field-${index}`}
-                        onClick={() => handleSystemFieldSelect(field)}
-                      >
-                        {field.label}
-                      </Dropdown.Item>
-                    ))}
-                  </Dropdown.Menu>
-                </Dropdown>
-
+              {/* Header Bar with Global Mapped Field (left) and System Mapped Field (right) */}
+              <div className="d-flex justify-content-between align-items-center gap-2 flex-wrap mb-2">
+                {/* Global Mapped Field - Left side */}
                 <Dropdown>
                   <Dropdown.Toggle 
                     variant="outline-primary" 
@@ -1538,6 +1519,27 @@ console.log('🌐 Full S3 URL:', s3Url)
                         </Dropdown.Item>
                       ))
                     )}
+                  </Dropdown.Menu>
+                </Dropdown>
+
+                {/* System Mapped Field - Right side */}
+                <Dropdown>
+                  <Dropdown.Toggle 
+                    variant="outline-primary" 
+                    size="sm"
+                    id="system-mapped-field-dropdown"
+                  >
+                    System Mapped Field
+                  </Dropdown.Toggle>
+                  <Dropdown.Menu style={{ maxHeight: '400px', overflowY: 'auto' }}>
+                    {systemMappedFields.map((field, index) => (
+                      <Dropdown.Item
+                        key={`system-field-${index}`}
+                        onClick={() => handleSystemFieldSelect(field)}
+                      >
+                        {field.label}
+                      </Dropdown.Item>
+                    ))}
                   </Dropdown.Menu>
                 </Dropdown>
               </div>

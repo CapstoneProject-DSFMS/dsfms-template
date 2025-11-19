@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Button, Alert, Modal, Form, Row, Col, Card, Spinner } from 'react-bootstrap';
 import { Plus, X, ArrowDown, Pencil, ChevronDown, ChevronRight } from 'react-bootstrap-icons';
 import { useNavigate } from 'react-router-dom';
@@ -45,6 +45,7 @@ const CustomFieldsPanel = ({
   const [collapsedSections, setCollapsedSections] = useState({});
   const [dragState, setDragState] = useState({ sectionIndex: null, fromIndex: null, overIndex: null, position: 'above', targetSectionIndex: null });
   const [sectionDragState, setSectionDragState] = useState({ fromIndex: null, overIndex: null, position: 'above' });
+  const processingOperationsRef = useRef(new Set()); // Track processing operations by unique key
 
   // Section modal state
   const [showSectionModal, setShowSectionModal] = useState(false);
@@ -500,38 +501,99 @@ const CustomFieldsPanel = ({
       return;
     }
 
+    // For deduplication, use a key based on indices
+    // This will prevent the same exact operation from running twice
+    const dedupeKey = `${fromSectionIndex}-${fromFieldIndex}-${toSectionIndex}`;
+    
+    // Atomic check-and-add: Try to add the key, and check if it was already there
+    // This ensures that only one of the concurrent calls will proceed
+    const sizeBefore = processingOperationsRef.current.size;
+    processingOperationsRef.current.add(dedupeKey);
+    const sizeAfter = processingOperationsRef.current.size;
+    
+    // If size didn't increase, the key was already in the Set (operation already processing)
+    if (sizeBefore === sizeAfter) {
+      console.warn('⚠️ Move operation already in progress, skipping...', dedupeKey);
+      return;
+    }
+    
+    // Key was successfully added, proceed with the operation
+
     setSections((prev) => {
       const next = [...prev];
       const fromSection = next[fromSectionIndex];
       const toSection = next[toSectionIndex];
       
-      if (!fromSection || !toSection) return prev;
+      if (!fromSection || !toSection) {
+        setTimeout(() => { processingOperationsRef.current.delete(dedupeKey); }, 0);
+        return prev;
+      }
       
       const fromFields = [...(fromSection.fields || [])];
       const toFields = [...(toSection.fields || [])];
       
+      // Validate index
+      if (fromFieldIndex < 0 || fromFieldIndex >= fromFields.length) {
+        console.warn('⚠️ Invalid fromFieldIndex:', fromFieldIndex, 'Fields length:', fromFields.length);
+        setTimeout(() => { processingOperationsRef.current.delete(dedupeKey); }, 0);
+        return prev;
+      }
+      
       // Get the field to move
       const fieldToMove = fromFields[fromFieldIndex];
-      if (!fieldToMove) return prev;
+      if (!fieldToMove) {
+        console.warn('⚠️ Field not found at index:', fromFieldIndex);
+        setTimeout(() => { processingOperationsRef.current.delete(dedupeKey); }, 0);
+        return prev;
+      }
+      
+      // Debug: Log the field being moved
+      console.log('🔍 moveFieldBetweenSections:', {
+        fromFieldIndex,
+        fieldToMove: fieldToMove.label || fieldToMove.fieldName,
+        fieldType: fieldToMove.fieldType,
+        parentTempId: fieldToMove.parentTempId,
+        allFields: fromFields.map((f, i) => ({ idx: i, label: f.label || f.fieldName, type: f.fieldType, parent: f.parentTempId }))
+      });
       
       // Check if it's a PART field - need to move children too
       const isPart = String(fieldToMove.fieldType || '').toUpperCase() === 'PART';
       const partTempId = isPart ? (fieldToMove.tempId || `${fieldToMove.fieldName}-parent`) : null;
       
-      // Collect all fields to move (PART + children if applicable)
+      // Collect all fields to move (PART + children if applicable, or just the field if it's a child)
       const fieldsToMove = [fieldToMove];
-      if (isPart && partTempId) {
-        // Find all children of this PART field
-        const children = fromFields.filter(f => f.parentTempId === partTempId);
-        fieldsToMove.push(...children);
-      }
+      const indicesToRemove = new Set([fromFieldIndex]);
       
-      // Remove fields from source section
+      if (isPart && partTempId) {
+        // Find all children of this PART field and collect their indices
+        // Only include children that come AFTER the PART field in the array
+        fromFields.forEach((f, idx) => {
+          // Only add children that belong to this PART field (by parentTempId)
+          // and make sure we don't add the PART field itself again
+          if (f.parentTempId === partTempId && idx !== fromFieldIndex) {
+            console.log('  ➕ Adding child:', { idx, label: f.label || f.fieldName, parentTempId: f.parentTempId });
+            fieldsToMove.push(f);
+            indicesToRemove.add(idx);
+          }
+        });
+      }
+      // Note: If moving a child field (isChildOfPart), we only move that child
+      // We don't move the parent PART field or other children
+      
+      console.log('  📦 Fields to move:', fieldsToMove.map(f => f.label || f.fieldName));
+      console.log('  🗑️ Indices to remove:', Array.from(indicesToRemove));
+      
+      // Remove fields from source section by index
+      // This ensures we only remove the exact field at fromFieldIndex and its children (if PART)
       const remainingFields = fromFields.filter((f, idx) => {
-        if (idx === fromFieldIndex) return false; // Remove the field itself
-        if (isPart && partTempId && f.parentTempId === partTempId) return false; // Remove children
-        return true;
+        const shouldRemove = indicesToRemove.has(idx);
+        if (shouldRemove) {
+          console.log(`  ❌ Removing field at index ${idx}:`, f.label || f.fieldName);
+        }
+        return !shouldRemove;
       });
+      
+      console.log('  ✅ Remaining fields:', remainingFields.map((f, i) => ({ idx: i, label: f.label || f.fieldName })));
       
       // Insert fields into target section at the specified index
       const insertIndex = toFieldIndex !== null ? Math.max(0, Math.min(toFieldIndex, toFields.length)) : toFields.length;
@@ -548,6 +610,11 @@ const CustomFieldsPanel = ({
           onAddField(flattened, { silent: true });
         }, 0);
       }
+      
+      // Remove operation key after state update completes
+      setTimeout(() => {
+        processingOperationsRef.current.delete(dedupeKey);
+      }, 0);
       
       return next;
     });
@@ -1604,6 +1671,14 @@ const CustomFieldsPanel = ({
                   >
                     {section.fields && section.fields.length > 0 ? (
                       (() => {
+                        // Create a map from field object reference to its actual index in section.fields
+                        // This ensures we always get the correct index even after fields are removed
+                        const fieldToIndexMap = new Map();
+                        section.fields.forEach((f, idx) => {
+                          // Use object reference as key to ensure uniqueness
+                          fieldToIndexMap.set(f, idx);
+                        });
+                        
                         const allSorted = [...section.fields].sort((a, b) => a.displayOrder - b.displayOrder);
                         const parentIdOf = (f) => (f?.tempId || f?.fieldName || null);
                         const isChild = (f) => !!f.parentTempId;
@@ -1745,7 +1820,8 @@ const CustomFieldsPanel = ({
                                 return (
                                   <div className="mt-2 part-children">
                                     {children.map((child) => {
-                                      const realIdx = section.fields.indexOf(child);
+                                      // Get the actual index from the map using object reference, fallback to indexOf if not found
+                                      const realIdx = fieldToIndexMap.get(child) ?? section.fields.indexOf(child);
                                       return renderRow(child, realIdx);
                                     })}
                                   </div>
@@ -1758,7 +1834,8 @@ const CustomFieldsPanel = ({
                         return (
                           <>
                             {topLevel.map((field) => {
-                              const realIndex = section.fields.indexOf(field);
+                              // Get the actual index from the map using object reference, fallback to indexOf if not found
+                              const realIndex = fieldToIndexMap.get(field) ?? section.fields.indexOf(field);
                               return renderRow(field, realIndex);
                             })}
                           </>

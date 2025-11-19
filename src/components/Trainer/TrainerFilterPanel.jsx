@@ -31,14 +31,17 @@ const TrainerFilterPanel = ({
       <Dropdown.Menu 
         className="course-filter-menu" 
         style={{ 
-          width: window.innerWidth <= 768 ? 'calc(100vw - 2rem)' : '320px',
+          width: '100%',
           maxWidth: '90vw',
           maxHeight: window.innerWidth <= 768 ? '50vh' : '70vh',
           overflowY: 'auto',
-          marginTop: '0px',
+          marginTop: '-1px',
           top: '100%',
+          left: 0,
           transform: 'none',
-          position: 'absolute'
+          position: 'absolute',
+          borderTopLeftRadius: 0,
+          borderTopRightRadius: 0
         }}
         align="end"
         flip={true}
