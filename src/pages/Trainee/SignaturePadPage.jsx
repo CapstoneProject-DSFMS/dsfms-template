@@ -1,6 +1,7 @@
 import React from 'react';
 import { Container } from 'react-bootstrap';
 import { useParams, useNavigate } from 'react-router-dom';
+import { ROUTES } from '../../constants/routes';
 import SignaturePad from '../../components/Trainee/SignaturePad';
 import { toast } from 'react-toastify';
 
@@ -16,7 +17,7 @@ const SignaturePadPage = () => {
       
       // Navigate to assessment detail if documentId is an assessment, otherwise go back
       // Try to navigate to assessment detail first, fallback to back navigation
-      navigate(`/trainee/${traineeId}/assessment/${documentId}`, { replace: true });
+      navigate(ROUTES.ASSESSMENTS_DETAIL(documentId), { replace: true });
     } catch (error) {
       console.error('Error saving signature:', error);
       toast.error('Failed to save signature');
@@ -25,7 +26,7 @@ const SignaturePadPage = () => {
 
   const handleClose = () => {
     // Navigate back or to assessment detail
-    navigate(`/trainee/${traineeId}/assessment/${documentId}`, { replace: true });
+    navigate(`/trainee/${traineeId}/assessment/${documentId}`, { replace: true }); // Keep old route for now (trainee-specific with traineeId)
   };
 
   return (

@@ -5,7 +5,7 @@ import PermissionWrapper from '../../Common/PermissionWrapper';
 import PortalUnifiedDropdown from '../../Common/PortalUnifiedDropdown';
 import DisableRoleButton from './DisableRoleButton';
 import { Eye, Pencil, Trash, ShieldX } from 'react-bootstrap-icons';
-import { API_PERMISSIONS } from '../../../constants/apiPermissions';
+import { PERMISSION_IDS } from '../../../constants/permissionIds';
 // import '../../../styles/dropdown-clean.css'; // Moved to dropdown-unified.css in App.jsx
 
 const RoleRow = ({ role, index, onView, onEdit, onDelete, onDisable }) => {
@@ -90,7 +90,7 @@ const RoleRow = ({ role, index, onView, onEdit, onDelete, onDisable }) => {
             {/* Disable Role Button - Hide for ADMIN role */}
             {role.status === 'Active' && role.name.toLowerCase() !== 'administrator' && (
               <PermissionWrapper 
-                permission={API_PERMISSIONS.ROLES.DELETE}
+                permission={PERMISSION_IDS.DISABLE_ROLE}
                 fallback={null}
               >
                 <DisableRoleButton
@@ -104,7 +104,7 @@ const RoleRow = ({ role, index, onView, onEdit, onDelete, onDisable }) => {
             
             {/* Actions Dropdown */}
             <PermissionWrapper 
-              permissions={[API_PERMISSIONS.ROLES.VIEW_DETAIL, API_PERMISSIONS.ROLES.UPDATE]}
+              permissions={[PERMISSION_IDS.VIEW_ROLE_IN_DETAIL, PERMISSION_IDS.UPDATE_ROLE]}
               fallback={null}
             >
               <PortalUnifiedDropdown
@@ -127,13 +127,13 @@ const RoleRow = ({ role, index, onView, onEdit, onDelete, onDisable }) => {
                     label: 'View Details',
                     icon: <Eye />,
                     onClick: () => onView(role),
-                    permission: API_PERMISSIONS.ROLES.VIEW_DETAIL
+                    permission: PERMISSION_IDS.VIEW_ROLE_IN_DETAIL
                   },
                   {
                     label: 'Edit Role',
                     icon: <Pencil />,
                     onClick: () => onEdit(role),
-                    permission: API_PERMISSIONS.ROLES.UPDATE
+                    permission: PERMISSION_IDS.UPDATE_ROLE
                   },
                   // Only show delete option if role is not ADMIN
                   ...(role.name.toLowerCase() !== 'administrator' ? [
@@ -143,7 +143,7 @@ const RoleRow = ({ role, index, onView, onEdit, onDelete, onDisable }) => {
                       icon: <Trash />,
                       className: 'text-danger',
                       onClick: () => onDelete(role),
-                      permission: API_PERMISSIONS.ROLES.DELETE
+                      permission: PERMISSION_IDS.DISABLE_ROLE
                     }
                   ] : [])
                 ]}

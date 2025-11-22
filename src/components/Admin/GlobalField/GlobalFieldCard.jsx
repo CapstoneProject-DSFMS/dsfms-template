@@ -3,7 +3,7 @@ import { Card } from 'react-bootstrap';
 import { FileText, ThreeDotsVertical, Pencil } from 'react-bootstrap-icons';
 import PortalUnifiedDropdown from '../../Common/PortalUnifiedDropdown';
 import { PermissionWrapper } from '../../Common';
-import { API_PERMISSIONS } from '../../../constants/apiPermissions';
+import { PERMISSION_IDS } from '../../../constants/permissionIds';
 import { usePermissions } from '../../../hooks/usePermissions';
 
 const GlobalFieldCard = ({ field, onViewDetail, onEdit }) => {
@@ -14,13 +14,13 @@ const GlobalFieldCard = ({ field, onViewDetail, onEdit }) => {
       label: 'View Detail',
       icon: <FileText size={16} />,
       onClick: () => onViewDetail(field),
-      permission: API_PERMISSIONS.SQA.VIEW_GLOBAL_FIELD_DETAIL
+      permission: PERMISSION_IDS.VIEW_GLOBAL_FIELD_IN_DETAIL
     },
     {
       label: 'Edit Global Field',
       icon: <Pencil size={16} />,
       onClick: () => onEdit(field),
-      permission: API_PERMISSIONS.GLOBAL_FIELDS.UPDATE
+      permission: PERMISSION_IDS.UPDATE_GLOBAL_FIELD
     }
   ].filter(item => !item.permission || hasPermission(item.permission));
 
@@ -43,7 +43,7 @@ const GlobalFieldCard = ({ field, onViewDetail, onEdit }) => {
         {/* Actions Dropdown */}
         <div className="position-absolute" style={{ top: '0.5rem', right: '0.5rem', zIndex: 10 }}>
           <PermissionWrapper 
-            permissions={[API_PERMISSIONS.SQA.VIEW_GLOBAL_FIELD_DETAIL, API_PERMISSIONS.GLOBAL_FIELDS.UPDATE]}
+            permissions={[PERMISSION_IDS.VIEW_GLOBAL_FIELD_IN_DETAIL, PERMISSION_IDS.UPDATE_GLOBAL_FIELD]}
             fallback={null}
           >
             <PortalUnifiedDropdown

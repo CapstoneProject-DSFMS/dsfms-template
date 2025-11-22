@@ -2,7 +2,7 @@ import React from 'react';
 import PortalUnifiedDropdown from '../Common/PortalUnifiedDropdown';
 import { Eye, Archive, ThreeDotsVertical } from 'react-bootstrap-icons';
 import { PermissionWrapper } from '../Common';
-import { API_PERMISSIONS } from '../../constants/apiPermissions';
+import { PERMISSION_IDS } from '../../constants/permissionIds';
 
 const SubjectActions = ({ subject, onView, onEdit, onDelete }) => {
   const handleViewClick = () => {
@@ -15,7 +15,7 @@ const SubjectActions = ({ subject, onView, onEdit, onDelete }) => {
 
   return (
     <PermissionWrapper 
-      permissions={[API_PERMISSIONS.SUBJECTS.VIEW_DETAIL, API_PERMISSIONS.SUBJECTS.DELETE]}
+      permissions={[PERMISSION_IDS.VIEW_SUBJECT_DETAIL, PERMISSION_IDS.ARCHIVE_SUBJECT]}
       fallback={null}
     >
       <PortalUnifiedDropdown
@@ -33,7 +33,7 @@ const SubjectActions = ({ subject, onView, onEdit, onDelete }) => {
             label: 'View Details',
             icon: <Eye />,
             onClick: handleViewClick,
-            permission: API_PERMISSIONS.SUBJECTS.VIEW_DETAIL
+            permission: PERMISSION_IDS.VIEW_SUBJECT_DETAIL
           },
           { type: 'divider' },
           {
@@ -41,7 +41,7 @@ const SubjectActions = ({ subject, onView, onEdit, onDelete }) => {
             icon: <Archive />,
             className: 'text-warning',
             onClick: handleDeleteClick,
-            permission: API_PERMISSIONS.SUBJECTS.ARCHIVE
+            permission: PERMISSION_IDS.ARCHIVE_SUBJECT
           }
         ]}
       />

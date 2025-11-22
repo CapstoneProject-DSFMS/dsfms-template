@@ -11,6 +11,7 @@ import {
   Clock
 } from 'react-bootstrap-icons';
 import { useNavigate } from 'react-router-dom';
+import { ROUTES } from '../../constants/routes';
 
 const TrainerDashboardPage = () => {
   const navigate = useNavigate();
@@ -45,28 +46,28 @@ const TrainerDashboardPage = () => {
       title: 'Configure Signature',
       description: 'Set up your digital signature for assessments',
       icon: PersonCheck,
-      path: '/trainer/configure-signature',
+      path: ROUTES.TRAINER_CONFIGURE_SIGNATURE,
       color: 'warning'
     },
     {
       title: 'Section Required Completion',
       description: 'Review sections that require completion',
       icon: ClipboardCheck,
-      path: '/trainer/section-completion',
+      path: '/trainer/section-completion', // Keep old route for now (trainer-specific)
       color: 'danger'
     },
     {
       title: 'Assessment Result Details',
       description: 'View detailed assessment results',
       icon: FileEarmarkText,
-      path: '/trainer/assessment-details',
+      path: ROUTES.ASSESSMENTS_RESULTS,
       color: 'secondary'
     },
     {
       title: 'Result Approval Note',
       description: 'Manage result approval notes',
       icon: CheckCircle,
-      path: '/trainer/approval-notes',
+      path: '/trainer/approval-notes', // Keep old route for now (trainer-specific)
       color: 'success'
     }
   ];

@@ -3,6 +3,7 @@ import { Container, Row, Col, Card, Button, Badge, Spinner, Alert, ProgressBar }
 import { ArrowLeft, ClipboardCheck, Clock, CheckCircle, ExclamationTriangle, Play } from 'react-bootstrap-icons';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'react-toastify';
+import { ROUTES } from '../../constants/routes';
 
 const AssessmentSectionDetails = ({ traineeId, sectionId }) => {
   const navigate = useNavigate();
@@ -91,7 +92,7 @@ const AssessmentSectionDetails = ({ traineeId, sectionId }) => {
   };
 
   const handleBack = () => {
-    navigate('/trainee/your-assessments');
+    navigate(ROUTES.ASSESSMENTS_MY_ASSESSMENTS);
   };
 
   const getStatusBadge = (status) => {
@@ -128,7 +129,7 @@ const AssessmentSectionDetails = ({ traineeId, sectionId }) => {
     // After completing section, navigate back to assessment detail
     // Extract assessmentId from section data if available
     // For now, navigate back to your assessments
-    navigate('/trainee/your-assessments');
+    navigate(ROUTES.ASSESSMENTS_MY_ASSESSMENTS);
   };
 
   if (loading) {

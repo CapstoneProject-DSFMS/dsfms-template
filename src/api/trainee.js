@@ -1,4 +1,4 @@
-import apiClient from './config.js';
+import apiClient, { publicApiClient } from './config.js';
 
 // Trainee API endpoints
 export const traineeAPI = {
@@ -125,15 +125,15 @@ export const traineeAPI = {
     }
   },
 
-  // Get all trainees with role filter (for enrollment)
+  // Get all trainees with role filter (for enrollment) - OLD: used GET /users
+  // Now using public API to avoid requiring VIEW_ALL_USERS permission
   getTraineesForEnrollment: async (params = {}) => {
     try {
-      const response = await apiClient.get('/users', { 
-        params: {
-          roleName: 'TRAINEE',
-          ...params
-        }
-      });
+      const response = await publicApiClient.get('/public/trainees', { params });
+      // Normalize response format
+      if (response.data && response.data.data && Array.isArray(response.data.data)) {
+        return { data: { users: response.data.data } };
+      }
       return response.data;
     } catch (error) {
       throw error.response?.data || error.message;

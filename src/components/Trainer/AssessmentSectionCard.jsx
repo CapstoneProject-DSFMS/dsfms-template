@@ -8,6 +8,7 @@ import {
   ArrowClockwise
 } from 'react-bootstrap-icons';
 import { useNavigate } from 'react-router-dom';
+import { ROUTES } from '../../constants/routes';
 import { PortalUnifiedDropdown } from '../Common';
 
 const AssessmentSectionCard = ({ section, formatDate }) => {
@@ -45,13 +46,13 @@ const AssessmentSectionCard = ({ section, formatDate }) => {
   
   const handleAssessSection = () => {
     if (section.id) {
-      navigate(`/trainer/assessments/sections/${section.id}/fields`);
+      navigate(ROUTES.ASSESSMENTS_SECTION_FIELDS(section.id));
     }
   };
 
   const handleUpdateSection = () => {
     if (section.id) {
-      navigate(`/trainer/assessments/sections/${section.id}/fields`);
+      navigate(ROUTES.ASSESSMENTS_SECTION_FIELDS(section.id));
     }
   };
   

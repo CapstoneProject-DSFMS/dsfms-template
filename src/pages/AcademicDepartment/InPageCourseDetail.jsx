@@ -3,6 +3,7 @@ import { Card, Button, Row, Col, Container, Badge, Nav, Tab } from 'react-bootst
 import { Plus, Upload, Pencil, ArrowLeft, People, Calendar, GeoAlt, FileText, Award, PersonCheck, Book, CalendarEvent, Trash } from 'react-bootstrap-icons';
 import { useNavigate, useParams, useLocation } from 'react-router-dom';
 import { toast } from 'react-toastify';
+import { ROUTES } from '../../constants/routes';
 import courseAPI from '../../api/course';
 import subjectAPI from '../../api/subject';
 import SubjectTable from '../../components/AcademicDepartment/SubjectTable';
@@ -156,10 +157,10 @@ const InPageCourseDetail = ({ course, department }) => {
   const handleBack = () => {
     // Navigate back to department details using the correct route
     if (department?.id) {
-      navigate(`/academic/course/${department.id}`);
+      navigate(`/academic/course/${department.id}`); // Keep old route for now (academic-specific)
     } else {
       // Fallback to department list if no department info
-      navigate('/academic/departments');
+      navigate('/academic/departments'); // Keep old route for now (academic-specific)
     }
   };
 
@@ -194,7 +195,7 @@ const InPageCourseDetail = ({ course, department }) => {
   }
 
   const handleViewSubject = (subjectId) => {
-    navigate(`/academic/course/${courseId}/subject/${subjectId}`);
+    navigate(`/academic/course/${courseId}/subject/${subjectId}`); // Keep old route for now (academic-specific)
   };
 
   const handleEditSubject = () => {
@@ -249,7 +250,7 @@ const InPageCourseDetail = ({ course, department }) => {
   };
 
   const handleEnrollTrainees = () => {
-    navigate(`/academic/course/${course.id}/enroll-trainees`);
+    navigate(`/academic/course/${course.id}/enroll-trainees`); // Keep old route for now (academic-specific)
   };
 
   // Modal handlers

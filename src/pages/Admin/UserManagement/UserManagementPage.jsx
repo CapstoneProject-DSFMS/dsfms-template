@@ -8,7 +8,7 @@ import RoleChangeConfirmModal from '../../../components/Admin/User/RoleChangeCon
 import { SearchBar, PermissionWrapper } from '../../../components/Common';
 import { useUserManagementAPI } from '../../../hooks/useUserManagementAPI';
 import { usePermissions } from '../../../hooks/usePermissions';
-import { API_PERMISSIONS } from '../../../constants/apiPermissions';
+import { PERMISSION_IDS } from '../../../constants/permissionIds';
 import '../../../styles/scrollable-table.css';
 import '../../../styles/user-management-responsive.css';
 
@@ -102,7 +102,7 @@ const UserManagementPage = () => {
                 <Col xs={12} className="mt-2 mt-md-0 mb-3">
                   <div className="d-flex justify-content-end gap-2">
                 <PermissionWrapper 
-                  permission={API_PERMISSIONS.USERS.BULK_CREATE}
+                  permission={PERMISSION_IDS.BULK_CREATE_USERS}
                   fallback={null}
                 >
                   <Button
@@ -117,7 +117,7 @@ const UserManagementPage = () => {
                   </Button>
                 </PermissionWrapper>
                 <PermissionWrapper 
-                  permission={API_PERMISSIONS.USERS.CREATE}
+                  permission={PERMISSION_IDS.CREATE_USER}
                   fallback={null}
                 >
                   <Button

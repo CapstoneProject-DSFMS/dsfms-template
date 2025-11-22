@@ -14,6 +14,7 @@ import {
   Star
 } from 'react-bootstrap-icons';
 import { useParams, useNavigate } from 'react-router-dom';
+import { ROUTES } from '../../constants/routes';
 import { LoadingSkeleton } from '../../components/Common';
 
 const AssessmentResultDetailsPage = () => {
@@ -138,7 +139,7 @@ const AssessmentResultDetailsPage = () => {
   };
 
   const handleViewApprovalNotes = () => {
-    navigate(`/trainer/approval-notes/${resultId}`);
+    navigate(ROUTES.TRAINER_APPROVAL_NOTES(resultId));
   };
 
   if (loading) {
@@ -287,7 +288,7 @@ const AssessmentResultDetailsPage = () => {
             <Button
               variant="outline-secondary"
               size="sm"
-              onClick={() => navigate('/trainer/assessment-results')}
+              onClick={() => navigate(ROUTES.ASSESSMENTS_RESULTS)}
             >
               <ArrowLeft size={16} className="me-2" />
               Back to Results

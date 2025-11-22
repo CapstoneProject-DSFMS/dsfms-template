@@ -14,7 +14,8 @@ import { useNavigate, useParams } from 'react-router-dom';
 import { LoadingSkeleton, SearchBar, PermissionWrapper, AdminTable, SortIcon } from '../../components/Common';
 import PortalUnifiedDropdown from '../../components/Common/PortalUnifiedDropdown';
 import useTableSort from '../../hooks/useTableSort';
-import { API_PERMISSIONS } from '../../constants/apiPermissions';
+import { PERMISSION_IDS } from '../../constants/permissionIds';
+import { ROUTES } from '../../constants/routes';
 import courseAPI from '../../api/course';
 import '../../styles/scrollable-table.css';
 import '../../styles/department-head.css';
@@ -141,7 +142,7 @@ const SubjectRow = ({ subject, index, onView }) => {
       label: 'View Details',
       icon: <Eye />,
       onClick: () => onView(subject),
-      permission: API_PERMISSIONS.SUBJECTS.VIEW_DETAIL
+      permission: PERMISSION_IDS.VIEW_SUBJECT_DETAIL
     }
   ];
 
@@ -182,7 +183,7 @@ const SubjectRow = ({ subject, index, onView }) => {
       </td>
       <td className="align-middle text-center show-mobile">
         <PermissionWrapper 
-          permissions={[API_PERMISSIONS.SUBJECTS.VIEW_DETAIL]}
+          permissions={[PERMISSION_IDS.VIEW_SUBJECT_DETAIL]}
           fallback={null}
         >
           <PortalUnifiedDropdown
@@ -303,7 +304,7 @@ const TraineeRow = ({ trainee, index, onView }) => {
       label: 'View Details',
       icon: <Eye />,
       onClick: () => onView(trainee),
-      permission: API_PERMISSIONS.TRAINEES.VIEW_DETAIL
+      permission: PERMISSION_IDS.VIEW_USER_IN_DETAIL
     }
   ];
 
@@ -346,7 +347,7 @@ const TraineeRow = ({ trainee, index, onView }) => {
       </td>
       <td className="align-middle text-center show-mobile">
         <PermissionWrapper 
-          permissions={[API_PERMISSIONS.TRAINEES.VIEW_DETAIL]}
+          permissions={[PERMISSION_IDS.VIEW_USER_IN_DETAIL]}
           fallback={null}
         >
           <PortalUnifiedDropdown
@@ -461,11 +462,11 @@ const CourseDetailsPage = () => {
   }, [courseId]);
 
   const handleViewSubject = (subject) => {
-    navigate(`/department-head/courses/${courseId}/subjects/${subject.id}`);
+    navigate(ROUTES.SUBJECTS_IN_COURSE(courseId, subject.id));
   };
 
   const handleViewTrainee = (trainee) => {
-    navigate(`/department-head/trainees/${trainee.id}`);
+    navigate(ROUTES.USERS_DETAIL(trainee.id));
   };
 
   const tabs = [
@@ -526,7 +527,7 @@ const CourseDetailsPage = () => {
           <div className="d-flex align-items-center mb-3">
             <button 
               className="btn btn-link p-0 me-3"
-              onClick={() => navigate('/department-head/my-department-details')}
+              onClick={() => navigate(ROUTES.DEPARTMENT_MY_DETAILS)}
             >
               <ArrowLeft size={20} />
             </button>

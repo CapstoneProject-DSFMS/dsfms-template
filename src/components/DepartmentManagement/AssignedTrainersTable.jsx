@@ -5,7 +5,7 @@ import { toast } from 'react-toastify';
 import { departmentAPI } from '../../api/department';
 import PermissionWrapper from '../Common/PermissionWrapper';
 import PortalUnifiedDropdown from '../Common/PortalUnifiedDropdown';
-import { API_PERMISSIONS } from '../../constants/apiPermissions';
+import { PERMISSION_IDS } from '../../constants/permissionIds';
 import '../../styles/scrollable-table.css';
 
 const AssignedTrainersTable = ({ 
@@ -212,7 +212,7 @@ const AssignedTrainersTable = ({
                 </td>
                 <td className="border-neutral-200 align-middle text-center show-mobile">
                   <PermissionWrapper 
-                    permission={API_PERMISSIONS.DEPARTMENTS.REMOVE_TRAINERS}
+                    permission={PERMISSION_IDS.REMOVE_TRAINER_FROM_COURSE}
                     fallback={null}
                   >
                     <PortalUnifiedDropdown

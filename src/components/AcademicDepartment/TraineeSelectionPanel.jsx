@@ -42,22 +42,47 @@ const TraineeSelectionPanel = ({ selectedTrainees, onSelectionChange }) => {
       const response = await traineeAPI.getTraineesForEnrollment();
       
  
-      if (response && response.data && response.data.users && Array.isArray(response.data.users)) {
-        // Transform API data to match component format
-        const transformedTrainees = response.data.users.map(trainee => ({
+      // Handle public API response format: { data: [...], totalItems: ... }
+      let traineesData = [];
+      if (response && response.data) {
+        if (response.data.users && Array.isArray(response.data.users)) {
+          // Old format: { data: { users: [...] } }
+          traineesData = response.data.users;
+        } else if (response.data.data && Array.isArray(response.data.data)) {
+          // New format: { data: [...] }
+          traineesData = response.data.data;
+        } else if (Array.isArray(response.data)) {
+          // Direct array format
+          traineesData = response.data;
+        }
+      }
+      
+      // Transform API data to match component format
+      // Public API returns: { id, eid, fullName, email, departmentId, departmentName, avatarUrl }
+      const transformedTrainees = traineesData.map(trainee => {
+        // Handle both old format (firstName, lastName) and new format (fullName)
+        let name = trainee.fullName || '';
+        let firstName = trainee.firstName || '';
+        let lastName = trainee.lastName || '';
+        
+        if (!name && (firstName || lastName)) {
+          name = `${firstName} ${lastName}`.trim();
+        }
+        
+        return {
           id: trainee.id,
           eid: trainee.eid,
-          name: `${trainee.firstName} ${trainee.lastName}`.trim(),
-          firstName: trainee.firstName,
-          lastName: trainee.lastName,
+          name: name || trainee.eid, // Fallback to eid if no name
+          firstName: firstName,
+          lastName: lastName,
           email: trainee.email,
-          status: trainee.status
-        }));
-        
-        setAllTrainees(transformedTrainees);
-      } else {
-        setAllTrainees([]);
-      }
+          status: trainee.status || 'ACTIVE', // Default to ACTIVE if not provided
+          departmentId: trainee.departmentId,
+          departmentName: trainee.departmentName
+        };
+      });
+      
+      setAllTrainees(transformedTrainees);
     } catch (error) {
       console.error('Error loading trainees:', error);
       setError('Failed to load trainees');

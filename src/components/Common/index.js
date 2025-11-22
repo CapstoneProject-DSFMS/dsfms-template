@@ -14,3 +14,4 @@ export { default as SearchBar } from './SearchBar';
 export { default as SortIcon } from './SortIcon';
 export { default as UnifiedDropdown } from './UnifiedDropdown';
 export { default as DownwardSelect } from './DownwardSelect';
+export { default as RouteRedirect } from './RouteRedirect';

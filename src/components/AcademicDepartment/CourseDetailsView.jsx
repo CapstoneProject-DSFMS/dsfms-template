@@ -13,7 +13,8 @@ import {
 } from 'react-bootstrap-icons';
 import { toast } from 'react-toastify';
 import { PermissionWrapper } from '../Common';
-import { API_PERMISSIONS } from '../../constants/apiPermissions';
+import { PERMISSION_IDS } from '../../constants/permissionIds';
+import { ROUTES } from '../../constants/routes';
 import courseAPI from '../../api/course';
 import CourseTable from './CourseTable';
 import CourseActions from './CourseActions';
@@ -208,7 +209,7 @@ const CourseDetailsView = ({ courseId }) => {
   };
 
   const handleViewCourse = (courseId) => {
-    navigate(`/academic/course-detail/${courseId}`, {
+    navigate(ROUTES.ACADEMIC_COURSE_DETAIL(courseId), {
       state: {
         departmentId: course.id, // Use the current department ID, not courseId
         departmentName: course?.name || 'Department'
@@ -383,7 +384,7 @@ const CourseDetailsView = ({ courseId }) => {
                   <FileText className="me-2" />
                   Courses ({courses.length})
                 </h5>
-                <PermissionWrapper permission={API_PERMISSIONS.COURSES.CREATE}>
+                <PermissionWrapper permission={PERMISSION_IDS.CREATE_COURSE}>
                   <Button variant="light" size="sm" onClick={handleCreateCourse} className="academic-course-add-btn">
                     <Plus size={16} className="me-1" />
                     Add New Course

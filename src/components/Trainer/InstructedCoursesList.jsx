@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Card, Table, Badge, Button, Row, Col, Spinner, Alert, Form, InputGroup } from 'react-bootstrap';
 import { Book, People, Calendar, Clock, Eye, PencilSquare, Funnel, Search, ThreeDotsVertical } from 'react-bootstrap-icons';
 import { useNavigate } from 'react-router-dom';
+import { ROUTES } from '../../constants/routes';
 import { LoadingSkeleton, SortIcon, PortalUnifiedDropdown, SearchBar } from '../Common';
 import TrainerFilterPanel from './TrainerFilterPanel';
 import useTableSort from '../../hooks/useTableSort';
@@ -170,7 +171,7 @@ const InstructedCoursesList = () => {
   };
 
   const handleViewCourse = (courseId) => {
-    navigate(`/trainer/courses/${courseId}`);
+    navigate(ROUTES.COURSES_DETAIL(courseId));
   };
 
   if (loading) {

@@ -14,7 +14,8 @@ import {
 } from 'react-bootstrap-icons';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { PermissionWrapper } from '../Common';
-import { API_PERMISSIONS } from '../../constants/apiPermissions';
+import { PERMISSION_IDS } from '../../constants/permissionIds';
+import { ROUTES } from '../../constants/routes';
 import { LoadingSkeleton, SortIcon } from '../Common';
 import useTableSort from '../../hooks/useTableSort';
 import TrainerActions from './TrainerActions';
@@ -251,19 +252,19 @@ const SubjectDetailsView = ({ subjectId, courseId }) => {
   const handleBack = () => {
     // Prioritize courseId prop, then location.state, then document.referrer, then subject.courseId
     if (courseId) {
-      navigate(`/academic/course-detail/${courseId}`);
+      navigate(ROUTES.ACADEMIC_COURSE_DETAIL(courseId));
     } else if (location.state?.courseId) {
-      navigate(`/academic/course-detail/${location.state.courseId}`);
+      navigate(ROUTES.ACADEMIC_COURSE_DETAIL(location.state.courseId));
     } else if (document.referrer) {
       // Extract course ID from referrer URL if possible
       const referrerMatch = document.referrer.match(/\/course-detail\/([^/]+)/);
       if (referrerMatch) {
-        navigate(`/academic/course-detail/${referrerMatch[1]}`);
+        navigate(ROUTES.ACADEMIC_COURSE_DETAIL(referrerMatch[1]));
       } else {
         navigate(-1);
       }
     } else if (subject?.courseId) {
-      navigate(`/academic/course-detail/${subject.courseId}`);
+      navigate(ROUTES.ACADEMIC_COURSE_DETAIL(subject.courseId));
     } else {
       navigate(-1);
     }

@@ -2,6 +2,7 @@ import React from 'react';
 import { Container, Row, Col, Card, Button } from 'react-bootstrap';
 import { Person, Book, ClipboardCheck, ExclamationTriangle, ArrowRight } from 'react-bootstrap-icons';
 import { useNavigate } from 'react-router-dom';
+import { ROUTES } from '../../constants/routes';
 
 // Add custom CSS to override Bootstrap card-header styles for dashboard
 const dashboardStyles = `
@@ -46,28 +47,28 @@ const TraineeDashboardPage = () => {
       title: 'Academic Details',
       description: 'Track your learning progress and achievements',
       icon: Person,
-      path: '/trainee/academic-details',
+      path: ROUTES.TRAINEE_ACADEMIC_DETAILS,
       color: 'primary'
     },
     {
       title: 'Your Courses',
       description: 'Check your enrolled courses and progress',
       icon: Book,
-      path: '/trainee/enrolled-courses',
+      path: ROUTES.COURSES_ENROLLED,
       color: 'success'
     },
     {
       title: 'All Assessments',
       description: 'View pending assessments and tasks',
       icon: ClipboardCheck,
-      path: '/trainee/your-assessments',
+      path: ROUTES.ASSESSMENTS_MY_ASSESSMENTS,
       color: 'warning'
     },
     {
       title: 'Create Issue Report',
       description: 'Report issues or provide feedback',
       icon: ExclamationTriangle,
-      path: '/trainee/create-incident-feedback-report',
+      path: ROUTES.REPORTS_CREATE,
       color: 'danger'
     }
   ];
@@ -172,7 +173,7 @@ const TraineeDashboardPage = () => {
                 <Button 
                   variant="outline-primary" 
                   size="sm"
-                  onClick={() => navigate('/trainee/signature-required')}
+                  onClick={() => navigate(ROUTES.ASSESSMENTS_SIGNATURE_REQUIRED)}
                   className="d-flex align-items-center justify-content-center mx-auto"
                 >
                   <ClipboardCheck size={16} className="me-2" />

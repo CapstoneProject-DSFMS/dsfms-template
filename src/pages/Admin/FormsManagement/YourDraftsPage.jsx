@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Container, Row, Col, Card, Button, Badge } from 'react-bootstrap';
 import { FileText, FileEarmark, Pencil, Clock, Building, Person, ArrowLeft } from 'react-bootstrap-icons';
 import { useNavigate } from 'react-router-dom';
+import { ROUTES } from '../../../constants/routes';
 import { toast } from 'react-toastify';
 import { LoadingSkeleton } from '../../../components/Common';
 import { templateAPI } from '../../../api';
@@ -104,7 +105,7 @@ const YourDraftsPage = () => {
       console.log('💾 Restored templateInfo with currentTemplateId:', template.id);
       
       // Step 5: Navigate to editor with restored data
-      navigate('/admin/forms/editor', {
+      navigate(ROUTES.TEMPLATES_EDITOR, {
         state: {
           documentUrl: documentUrl,
           fileName: template.name,
@@ -150,7 +151,7 @@ const YourDraftsPage = () => {
                 <Button
                   variant="link"
                   className="text-white p-0"
-                  onClick={() => navigate('/admin/forms')}
+                  onClick={() => navigate(ROUTES.TEMPLATES)}
                   style={{ textDecoration: 'none', margin: 0, padding: '4px', minWidth: 'auto' }}
                 >
                   <ArrowLeft size={20} />
@@ -176,7 +177,7 @@ const YourDraftsPage = () => {
                   </p>
                   <Button
                     variant="primary-custom"
-                    onClick={() => navigate('/admin/forms')}
+                    onClick={() => navigate(ROUTES.TEMPLATES)}
                   >
                     Go to Templates
                   </Button>

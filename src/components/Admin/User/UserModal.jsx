@@ -34,12 +34,11 @@ const UserModal = ({ show, user, mode, onSave, onClose }) => {
   const [rolesLoading, setRolesLoading] = useState(false);
   const [existingDepartmentHeads, setExistingDepartmentHeads] = useState([]);
 
-  // Fetch departments from API
+  // Fetch departments from public API (no permission required)
   const fetchDepartments = async () => {
     setDepartmentsLoading(true);
     try {
-      const response = await departmentAPI.getDepartments();
-      const departmentsData = response.departments || response.data || [];
+      const departmentsData = await departmentAPI.getPublicDepartments();
       
       // Transform to simple array of department names
       const departmentNames = departmentsData.map(dept => dept.name);
@@ -54,12 +53,11 @@ const UserModal = ({ show, user, mode, onSave, onClose }) => {
     }
   };
 
-  // Fetch roles from API
+  // Fetch roles from public API (no permission required)
   const fetchRoles = async () => {
     setRolesLoading(true);
     try {
-      const response = await roleAPI.getRoles();
-      const rolesData = response.roles || response.data || [];
+      const rolesData = await roleAPI.getPublicRoles();
       
       // Transform to simple array of role names
       const roleNames = rolesData.map(role => role.name);
@@ -85,15 +83,15 @@ const UserModal = ({ show, user, mode, onSave, onClose }) => {
     'Vietnam', 'Yemen'
   ];
 
-  // Fetch existing department heads - use departments API
+  // Fetch existing department heads - use public departments API
   const fetchExistingDepartmentHeads = async () => {
     try {
-      // Use departments API to get all departments with headUser info
-      const response = await departmentAPI.getDepartments({ includeDeleted: true });
+      // Use public departments API to get all departments
+      const departmentsData = await departmentAPI.getPublicDepartments();
       
-      // Extract departments that have headUser
-      const departmentsWithHeads = response?.departments?.filter(dept => dept.headUser) || [];
-      setExistingDepartmentHeads(departmentsWithHeads);
+      // Note: Public API may not include headUser info, so we'll use empty array
+      // If headUser info is needed, it should be added to public API response
+      setExistingDepartmentHeads([]);
     } catch (error) {
       console.error('Error fetching departments with heads:', error);
       setExistingDepartmentHeads([]);

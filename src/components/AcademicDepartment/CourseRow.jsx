@@ -2,7 +2,7 @@ import React from 'react';
 import { Badge, Button } from 'react-bootstrap';
 import { Eye, Pencil, Trash, People } from 'react-bootstrap-icons';
 import { PermissionWrapper } from '../Common';
-import { API_PERMISSIONS } from '../../constants/apiPermissions';
+import { PERMISSION_IDS } from '../../constants/permissionIds';
 
 const CourseRow = ({ course, index, onView, onEdit, onDelete }) => {
   
@@ -55,7 +55,7 @@ const CourseRow = ({ course, index, onView, onEdit, onDelete }) => {
       </td>
       <td className="border-neutral-200 align-middle text-center">
         <div className="d-flex gap-1 justify-content-center">
-          <PermissionWrapper permission={API_PERMISSIONS.COURSES.VIEW_DETAIL}>
+          <PermissionWrapper permission={PERMISSION_IDS.VIEW_COURSE_IN_DETAIL}>
             <Button 
               variant="outline-primary" 
               size="sm"
@@ -65,7 +65,7 @@ const CourseRow = ({ course, index, onView, onEdit, onDelete }) => {
               <Eye size={14} />
             </Button>
           </PermissionWrapper>
-          <PermissionWrapper permission={API_PERMISSIONS.COURSES.UPDATE}>
+          <PermissionWrapper permission={PERMISSION_IDS.UPDATE_COURSE}>
             <Button 
               variant="outline-secondary" 
               size="sm"
@@ -75,7 +75,7 @@ const CourseRow = ({ course, index, onView, onEdit, onDelete }) => {
               <Pencil size={14} />
             </Button>
           </PermissionWrapper>
-          <PermissionWrapper permission={API_PERMISSIONS.COURSES.DELETE}>
+          <PermissionWrapper permission={PERMISSION_IDS.ARCHIVE_COURSE}>
             <Button 
               variant="outline-danger" 
               size="sm"

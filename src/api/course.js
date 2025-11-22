@@ -1,6 +1,17 @@
-import apiClient from './config.js';
+import apiClient, { publicApiClient } from './config.js';
 
 const courseAPI = {
+  // Get all courses from public API (no authentication required)
+  getPublicCourses: async () => {
+    try {
+      const response = await publicApiClient.get('/public/courses');
+      // Handle response format: { data: [...], totalItems: ... }
+      return response.data?.data || response.data || [];
+    } catch (error) {
+      console.error('Error fetching public courses:', error);
+      throw error;
+    }
+  },
   // Get all courses
   getCourses: async (params = {}) => {
     try {

@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { Card, Row, Col, Button, Table, Badge, Dropdown } from 'react-bootstrap';
 import { Eye, Pencil, FileEarmarkPdf, Lock, Unlock, ThreeDots } from 'react-bootstrap-icons';
 import { SearchBar, FilterDropdown, PermissionWrapper } from '../Common';
-import { API_PERMISSIONS } from '../../../constants/apiPermissions';
+import { PERMISSION_IDS } from '../../../constants/permissionIds';
 const AssessmentManagement = () => {
   const [assessments, setAssessments] = useState([
     {
@@ -243,7 +243,7 @@ const AssessmentManagement = () => {
 
                       <Dropdown.Menu className="border-0 shadow">
                         <PermissionWrapper 
-                          permission={API_PERMISSIONS.ASSESSMENTS.VIEW_ALL}
+                          permission={PERMISSION_IDS.LIST_ASSESSMENTS}
                           fallback={null}
                         >
                           <Dropdown.Item className="text-primary-custom d-flex align-items-center">
@@ -253,7 +253,7 @@ const AssessmentManagement = () => {
                         </PermissionWrapper>
                         
                         <PermissionWrapper 
-                          permission={API_PERMISSIONS.ASSESSMENTS.CREATE}
+                          permission={PERMISSION_IDS.CREATE_ASSESSMENT}
                           fallback={null}
                         >
                           <Dropdown.Item className="text-primary-custom d-flex align-items-center">
@@ -263,7 +263,7 @@ const AssessmentManagement = () => {
                         </PermissionWrapper>
                         
                         <PermissionWrapper 
-                          permission={API_PERMISSIONS.ASSESSMENTS.UPDATE}
+                          permission={PERMISSION_IDS.UPDATE_ASSESSMENT_EVENT}
                           fallback={null}
                         >
                           {assessment.status === 'Draft' ? (
@@ -286,7 +286,7 @@ const AssessmentManagement = () => {
                         </PermissionWrapper>
                         
                         <PermissionWrapper 
-                          permission={API_PERMISSIONS.ASSESSMENTS.APPROVE}
+                          permission={PERMISSION_IDS.APPROVE_OR_REJECT_ASSESSMENT}
                           fallback={null}
                         >
                           {assessment.status === 'Submitted' && (
@@ -305,7 +305,7 @@ const AssessmentManagement = () => {
                         </PermissionWrapper>
                         
                         <PermissionWrapper 
-                          permission={API_PERMISSIONS.ASSESSMENTS.EXPORT}
+                          permission={PERMISSION_IDS.DOWNLOAD_ASSESSMENT_RESULT}
                           fallback={null}
                         >
                           {assessment.status === 'Approved' && (

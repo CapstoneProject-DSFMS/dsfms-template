@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Container, Row, Col, Card, Nav, Spinner, Alert } from 'react-bootstrap';
 import { Book, People, ArrowLeft } from 'react-bootstrap-icons';
 import { useParams, useNavigate } from 'react-router-dom';
+import { ROUTES } from '../../constants/routes';
 import SubjectList from '../../components/Trainer/CourseDetail/SubjectList';
 import TraineeList from '../../components/Trainer/CourseDetail/TraineeList';
 
@@ -109,7 +110,7 @@ const CourseDetailPage = () => {
           <div className="d-flex align-items-center mb-3">
             <button 
               className="btn btn-link p-0 me-3"
-              onClick={() => navigate('/trainer/instructed-courses')}
+              onClick={() => navigate(ROUTES.COURSES_INSTRUCTED)}
             >
               <ArrowLeft size={20} />
             </button>

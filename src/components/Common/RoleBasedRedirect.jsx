@@ -1,50 +1,52 @@
-import React, { useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import React, { useEffect, useRef } from 'react';
+import { useNavigate, useLocation } from 'react-router-dom';
+import { Spinner } from 'react-bootstrap';
 import { useAuth } from '../../hooks/useAuth';
+import { useFirstAccessibleRoute } from '../../hooks/useFirstAccessibleRoute';
+import { ROUTES } from '../../constants/routes';
 
 const RoleBasedRedirect = () => {
-  const { user } = useAuth();
+  const { user, isLoading } = useAuth();
   const navigate = useNavigate();
+  const location = useLocation();
+  const { firstRoute, isLoading: isRouteLoading } = useFirstAccessibleRoute(ROUTES.DASHBOARD);
+  const hasRedirected = useRef(false);
 
   useEffect(() => {
-    if (user?.role) {
-      // Normalize role name - handle both string and object, and different variants
-      const rawRoleName = typeof user.role === 'string' 
-        ? user.role 
-        : (user.role?.name || '');
-      
-      // Normalize role name: 'ACADEMIC DEPARTMENT' -> 'ACADEMIC_DEPARTMENT'
-      const normalizedRoleName = rawRoleName
-        .toUpperCase()
-        .replace(/\s+/g, '_')
-        .trim();
-      
-      let redirectPath = '/admin/users'; // default - redirect to user management instead of dashboard
-      
-      // Check normalized role name
-      if (normalizedRoleName === 'ACADEMIC_DEPARTMENT' || normalizedRoleName === 'ACADEMIC_DEPT' || normalizedRoleName.startsWith('ACADEMIC')) {
-        redirectPath = '/academic/dashboard';
-      } else if (normalizedRoleName === 'TRAINEE') {
-        redirectPath = '/trainee';
-      } else if (normalizedRoleName === 'TRAINER') {
-        redirectPath = '/trainer/upcoming-assessments';
-      } else if (normalizedRoleName === 'SQA_AUDITOR') {
-        redirectPath = '/sqa/issues';
-      } else if (normalizedRoleName === 'DEPARTMENT_HEAD') {
-        redirectPath = '/department-head/dashboard';
-      } else if (normalizedRoleName === 'ADMIN' || normalizedRoleName === 'ADMINISTRATOR') {
-        redirectPath = '/admin/users';
-      } else {
-        // Default fallback
-        redirectPath = '/admin/users';
-      }
-      
-      // Force redirect with replace
-      navigate(redirectPath, { replace: true });
+    // Don't redirect if still loading
+    if (isLoading || isRouteLoading || !user) {
+      return;
     }
-  }, [user, navigate]);
 
-  return null; // This component doesn't render anything
+    // Don't redirect if already on the target route (prevent circular redirects)
+    if (location.pathname === firstRoute) {
+      hasRedirected.current = true;
+      return;
+    }
+
+    // Don't redirect if we've already redirected (prevent multiple redirects)
+    if (hasRedirected.current) {
+      return;
+    }
+
+    // Redirect to first accessible route
+    hasRedirected.current = true;
+    navigate(firstRoute, { replace: true });
+  }, [user, isLoading, isRouteLoading, firstRoute, navigate, location.pathname]);
+
+  // Show loading spinner while calculating route
+  if (isLoading || isRouteLoading || !user) {
+    return (
+      <div className="d-flex justify-content-center align-items-center min-vh-100">
+        <div className="text-center">
+          <Spinner animation="border" variant="primary" />
+          <div className="mt-3">Loading...</div>
+        </div>
+      </div>
+    );
+  }
+
+  return null; // This component doesn't render anything after redirect
 };
 
 export default RoleBasedRedirect;
