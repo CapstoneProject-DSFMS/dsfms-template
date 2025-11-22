@@ -72,3 +72,56 @@
   }
 }
 
+/* ⭐ Sidebar Collapsed: Adjust table to prevent horizontal scroll */
+@media (min-width: 769px) {
+  .sidebar-collapsed-active .user-management-page .user-management-table-wrapper .table {
+    font-size: 0.8rem !important;
+  }
+
+  .sidebar-collapsed-active .user-management-page .user-management-table-wrapper .table th,
+  .sidebar-collapsed-active .user-management-page .user-management-table-wrapper .table td {
+    padding: 0.5rem 0.4rem !important;
+    font-size: 0.8rem !important;
+  }
+
+  .sidebar-collapsed-active .user-management-page .user-management-table-wrapper .table th {
+    font-size: 0.75rem !important;
+    font-weight: 600 !important;
+  }
+
+  /* Reduce badge size when sidebar collapsed */
+  .sidebar-collapsed-active .user-management-page .badge {
+    font-size: 0.7rem !important;
+    padding: 0.25rem 0.5rem !important;
+  }
+
+  /* Adjust table container when sidebar collapsed */
+  .sidebar-collapsed-active .user-management-page .user-management-table-wrapper {
+    overflow-x: auto;
+  }
+  
+  .sidebar-collapsed-active .user-management-page .user-management-table-wrapper .table {
+    min-width: 0 !important;
+    width: 100% !important;
+  }
+  
+  /* Allow text wrapping in some columns when sidebar collapsed */
+  .sidebar-collapsed-active .user-management-page .user-management-table-wrapper .table td:nth-child(2), /* Full Name */
+  .sidebar-collapsed-active .user-management-page .user-management-table-wrapper .table td:nth-child(3) { /* Email */
+    white-space: normal !important;
+    word-break: break-word;
+    max-width: 150px;
+  }
+  
+  .sidebar-collapsed-active .user-management-page .user-management-table-wrapper .table th:nth-child(2),
+  .sidebar-collapsed-active .user-management-page .user-management-table-wrapper .table th:nth-child(3) {
+    white-space: normal !important;
+  }
+  
+  /* Reduce icon sizes in table when sidebar collapsed */
+  .sidebar-collapsed-active .user-management-page .user-management-table-wrapper .table svg {
+    width: 16px !important;
+    height: 16px !important;
+  }
+}
+

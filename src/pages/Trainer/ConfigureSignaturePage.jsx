@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { Container, Row, Col, Card, Button, Form, Alert, Modal } from 'react-bootstrap';
 import { PersonCheck, Upload, Trash, Eye, Save, ArrowLeft } from 'react-bootstrap-icons';
 import { useNavigate } from 'react-router-dom';
+import { ROUTES } from '../../constants/routes';
 
 const ConfigureSignaturePage = () => {
   const navigate = useNavigate();
@@ -52,7 +53,7 @@ const ConfigureSignaturePage = () => {
   };
 
   const handleBackToProfile = () => {
-    navigate('/profile');
+    navigate(ROUTES.PROFILE);
   };
 
   return (

@@ -8,6 +8,7 @@ import {
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../hooks/useAuth';
 import useDepartmentManagement from '../../hooks/useDepartmentManagement';
+// Note: /academic/course/:departmentId is an academic-specific route, keeping as is
 import '../../styles/academic-department.css';
 
 const CourseSelectionView = () => {

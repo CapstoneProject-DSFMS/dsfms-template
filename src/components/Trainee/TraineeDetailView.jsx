@@ -2,9 +2,10 @@ import React, { useState, useEffect } from 'react';
 import { Container, Row, Col, Card, Button, Badge, Spinner, Alert } from 'react-bootstrap';
 import { ArrowLeft, Person, Envelope, Phone, Calendar, GeoAlt, Building, Book, ClipboardCheck } from 'react-bootstrap-icons';
 import { useNavigate } from 'react-router-dom';
+import { ROUTES } from '../../constants/routes';
 import { toast } from 'react-toastify';
 import { PermissionWrapper } from '../Common';
-import { API_PERMISSIONS } from '../../constants/apiPermissions';
+import { PERMISSION_IDS } from '../../constants/permissionIds';
 import traineeAPI from '../../api/trainee';
 import TraineeCourseList from './TraineeCourseList';
 
@@ -57,7 +58,7 @@ const TraineeDetailView = ({ traineeId }) => {
   };
 
   const handleBack = () => {
-    navigate('/trainee');
+    navigate(ROUTES.DASHBOARD);
   };
 
 
@@ -112,7 +113,7 @@ const TraineeDetailView = ({ traineeId }) => {
               </div>
             </div>
             <div className="d-flex align-items-center gap-2">
-              <PermissionWrapper permission={API_PERMISSIONS.TRAINEES.UPDATE}>
+              <PermissionWrapper permission={PERMISSION_IDS.UPDATE_USER}>
                 <Button variant="outline-primary" size="sm">
                   Edit Trainee
                 </Button>
@@ -196,7 +197,7 @@ const TraineeDetailView = ({ traineeId }) => {
               </h5>
             </Card.Header>
             <Card.Body className="p-0">
-              <PermissionWrapper permission={API_PERMISSIONS.TRAINEES.VIEW_COURSES}>
+              <PermissionWrapper permission={PERMISSION_IDS.VIEW_TRAINEE_SUBJECT_ENROLLMENTS}>
                 <TraineeCourseList traineeId={traineeId} />
               </PermissionWrapper>
             </Card.Body>

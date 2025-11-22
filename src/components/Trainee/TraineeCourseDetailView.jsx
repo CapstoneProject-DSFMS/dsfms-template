@@ -3,6 +3,7 @@ import { Container, Row, Col, Card, Button, Spinner, Alert, Nav, Tab } from 'rea
 import { ArrowLeft, Book, ClipboardCheck } from 'react-bootstrap-icons';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'react-toastify';
+import { ROUTES } from '../../constants/routes';
 import traineeAPI from '../../api/trainee';
 import TraineeSubjectList from './TraineeSubjectList';
 import TraineeAllAssessmentEvents from './TraineeAllAssessmentEvents';
@@ -68,7 +69,7 @@ const TraineeCourseDetailView = ({ traineeId, courseId }) => {
   };
 
   const handleBack = () => {
-    navigate('/trainee/enrolled-courses');
+    navigate(ROUTES.COURSES_ENROLLED);
   };
 
   if (loading) {

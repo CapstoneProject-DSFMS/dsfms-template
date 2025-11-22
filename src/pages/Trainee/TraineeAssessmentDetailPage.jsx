@@ -14,6 +14,7 @@ import {
 } from 'react-bootstrap-icons';
 import { useParams, useNavigate, useSearchParams } from 'react-router-dom';
 import { toast } from 'react-toastify';
+import { ROUTES } from '../../constants/routes';
 import traineeAPI from '../../api/trainee';
 
 const TraineeAssessmentDetailPage = () => {
@@ -38,7 +39,7 @@ const TraineeAssessmentDetailPage = () => {
       // Auto-start first incomplete section
       const incompleteSection = assessment.sections?.find(s => s.status !== 'COMPLETED');
       if (incompleteSection) {
-        navigate(`/trainee/${traineeId}/assessment-section/${incompleteSection.id}`);
+        navigate(ROUTES.TRAINEE_ASSESSMENT_SECTION(incompleteSection.id));
       }
     }
   }, [assessment, searchParams, navigate, traineeId, setSearchParams]);
@@ -122,7 +123,7 @@ const TraineeAssessmentDetailPage = () => {
     // Navigate to first incomplete section or assessment interface
     const incompleteSection = assessment.sections.find(s => s.status !== 'COMPLETED');
     if (incompleteSection) {
-      navigate(`/trainee/${traineeId}/assessment-section/${incompleteSection.id}`);
+      navigate(`/trainee/${traineeId}/assessment-section/${incompleteSection.id}`); // Keep old route for now (trainee-specific with traineeId)
     } else {
       toast.info('Starting assessment...');
     }
@@ -131,22 +132,22 @@ const TraineeAssessmentDetailPage = () => {
   const handleContinueAssessment = () => {
     const inProgressSection = assessment.sections.find(s => s.status === 'IN_PROGRESS');
     if (inProgressSection) {
-      navigate(`/trainee/${traineeId}/assessment-section/${inProgressSection.id}`);
+      navigate(`/trainee/${traineeId}/assessment-section/${inProgressSection.id}`); // Keep old route for now (trainee-specific with traineeId)
     } else {
       handleStartAssessment();
     }
   };
 
   const handleViewSection = (sectionId) => {
-    navigate(`/trainee/${traineeId}/assessment-section/${sectionId}`);
+    navigate(`/trainee/${traineeId}/assessment-section/${sectionId}`); // Keep old route for now (trainee-specific with traineeId)
   };
 
   const handleSignaturePad = () => {
-    navigate(`/trainee/${traineeId}/signature-pad/${assessmentId}`);
+    navigate(ROUTES.TRAINEE_SIGNATURE_PAD(assessmentId));
   };
 
   const handleCreateIssue = () => {
-    navigate('/trainee/create-incident-feedback-report', {
+    navigate(ROUTES.REPORTS_CREATE, {
       state: { assessmentId, assessmentName: assessment.name }
     });
   };

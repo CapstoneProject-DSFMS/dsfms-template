@@ -1,7 +1,18 @@
-import apiClient from './config.js';
+import apiClient, { publicApiClient } from './config.js';
 
 // Department API service
 export const departmentAPI = {
+  // Get all departments from public API (no authentication required)
+  getPublicDepartments: async () => {
+    try {
+      const response = await publicApiClient.get('/public/departments');
+      // Handle response format: { data: [...], totalItems: ... }
+      return response.data?.data || response.data || [];
+    } catch (error) {
+      console.error('Error fetching public departments:', error);
+      throw error;
+    }
+  },
   // Get all departments with optional filters
   getDepartments: async (params = {}) => {
     try {

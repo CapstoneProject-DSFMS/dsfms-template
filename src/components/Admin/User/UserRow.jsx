@@ -4,7 +4,7 @@ import { useAuth } from '../../../hooks/useAuth';
 import PermissionWrapper from '../../Common/PermissionWrapper';
 import PortalUnifiedDropdown from '../../Common/PortalUnifiedDropdown';
 import { Eye, Pencil, PersonX, ThreeDotsVertical } from 'react-bootstrap-icons';
-import { API_PERMISSIONS } from '../../../constants/apiPermissions';
+import { PERMISSION_IDS } from '../../../constants/permissionIds';
 
 const UserRow = ({ user, index, onView, onEdit, onDisable }) => {
   
@@ -84,7 +84,7 @@ const UserRow = ({ user, index, onView, onEdit, onDisable }) => {
       
       <td className="align-middle text-center show-mobile">
         <PermissionWrapper 
-          permissions={[API_PERMISSIONS.USERS.VIEW_DETAIL, API_PERMISSIONS.USERS.UPDATE]}
+          permissions={[PERMISSION_IDS.VIEW_USER_IN_DETAIL, PERMISSION_IDS.UPDATE_USER]}
           fallback={null}
         >
           <PortalUnifiedDropdown
@@ -102,13 +102,13 @@ const UserRow = ({ user, index, onView, onEdit, onDisable }) => {
                 label: 'View Details',
                 icon: <Eye />,
                 onClick: () => onView(user),
-                permission: API_PERMISSIONS.USERS.VIEW_DETAIL
+                permission: PERMISSION_IDS.VIEW_USER_IN_DETAIL
               },
               {
                 label: 'Edit User',
                 icon: <Pencil />,
                 onClick: () => onEdit(user),
-                permission: API_PERMISSIONS.USERS.UPDATE
+                permission: PERMISSION_IDS.UPDATE_USER
               },
               { type: 'divider' },
               {
@@ -116,7 +116,7 @@ const UserRow = ({ user, index, onView, onEdit, onDisable }) => {
                 icon: <PersonX />,
                 className: 'text-danger',
                 onClick: () => onDisable(user),
-                permission: API_PERMISSIONS.USERS.UPDATE
+                permission: PERMISSION_IDS.UPDATE_USER
               }
             ]}
           />

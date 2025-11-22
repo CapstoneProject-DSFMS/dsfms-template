@@ -2,6 +2,7 @@ import React, { useState, useRef, useEffect } from 'react';
 import { Modal, Button, Form, Row, Col, Card, Alert } from 'react-bootstrap';
 import { X, Upload, FileEarmark, FileEarmarkText } from 'react-bootstrap-icons';
 import { useNavigate } from 'react-router-dom';
+import { ROUTES } from '../../../constants/routes';
 import { toast } from 'react-toastify';
 import { uploadAPI } from '../../../api';
 import { departmentAPI } from '../../../api/department';
@@ -32,8 +33,8 @@ const ImportFileModal = ({ show, onHide, onImportSuccess, onImportError }) => {
   const loadDepartments = async () => {
     try {
       setLoadingDepartments(true);
-      const response = await departmentAPI.getDepartments();
-      const departmentsData = response.departments || response.data || [];
+      // Use public API (no permission required)
+      const departmentsData = await departmentAPI.getPublicDepartments();
       setDepartments(departmentsData);
     } catch (error) {
       console.error('Error loading departments:', error);
@@ -120,7 +121,7 @@ const ImportFileModal = ({ show, onHide, onImportSuccess, onImportError }) => {
           console.log('💾 Template info saved to localStorage:', templateData);
 
           // Navigate đến editor với extracted fields
-          navigate('/admin/forms/editor', {
+          navigate(ROUTES.TEMPLATES_EDITOR, {
             state: {
               documentUrl: documentUrl,
               fileName: templateData.fileName,
@@ -157,7 +158,7 @@ const ImportFileModal = ({ show, onHide, onImportSuccess, onImportError }) => {
           localStorage.setItem('templateInfo', JSON.stringify(templateData));
           console.log('💾 Template info saved to localStorage (without extracted fields):', templateData);
 
-          navigate('/admin/forms/editor', {
+          navigate('/templates/editor', {
             state: {
               documentUrl: documentUrl,
               fileName: templateData.fileName,
@@ -212,7 +213,7 @@ const ImportFileModal = ({ show, onHide, onImportSuccess, onImportError }) => {
           console.log('💾 Template info saved to localStorage:', templateData);
 
           // Navigate đến editor
-          navigate('/admin/forms/editor', {
+          navigate('/templates/editor', {
             state: {
               documentUrl: documentUrl,
               fileName: templateData.fileName,

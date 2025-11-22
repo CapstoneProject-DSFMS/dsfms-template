@@ -1,6 +1,10 @@
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import { useAuth } from './useAuth';
 import { permissionAPI } from '../api/permission';
+import { matchPermissionName, normalizePermissionName } from '../utils/permissionNormalizer';
+import { getPermissionsForUC, getUCsForPermission } from '../constants/ucPermissionsMapping';
+import { mapBEPermissionToNavigation, mapNavigationToBEPermission } from '../utils/permissionNameMapper';
+import { isUUID } from '../constants/permissionIds';
 
 // Helper function to format API endpoint names to be more user-friendly
 const formatPermissionName = (name) => {
@@ -189,13 +193,190 @@ export const usePermissions = () => {
     return new Set(userPermissions.map(p => p.id));
   }, [userPermissions]);
 
-  // Check if user has specific permission - optimized with Set lookup
-  const hasPermission = useCallback((permissionName) => {
+  // Check if user has specific permission by ID (fastest and most accurate)
+  const hasPermissionById = useCallback((permissionId) => {
     if (!userPermissions || userPermissions.length === 0) {
       return false;
     }
     
-    // Parse permissionName if it's in format "METHOD /path"
+    if (!permissionId || typeof permissionId !== 'string') {
+      return false;
+    }
+    
+    // Direct ID lookup: O(1) complexity
+    return userPermissionIds.has(permissionId);
+  }, [userPermissionIds]);
+
+  // Check if user has specific permission - hybrid approach
+  // Supports both ID (UUID) and name (string) for backward compatibility
+  // Priority: ID check (if UUID) > Name check (with mapping)
+  const hasPermission = useCallback((permissionIdOrName) => {
+    if (!userPermissions || userPermissions.length === 0) {
+      if (process.env.NODE_ENV === 'development') {
+        console.log(`🔍 hasPermission("${permissionIdOrName}"): NO USER PERMISSIONS`);
+      }
+      return false;
+    }
+    
+    if (!permissionIdOrName || typeof permissionIdOrName !== 'string') {
+      if (process.env.NODE_ENV === 'development') {
+        console.log(`🔍 hasPermission("${permissionIdOrName}"): INVALID PERMISSION ID/NAME`);
+      }
+      return false;
+    }
+    
+    // PRIORITY 1: Check by ID if input is UUID (fastest and most accurate)
+    if (isUUID(permissionIdOrName)) {
+      const hasAccess = userPermissionIds.has(permissionIdOrName);
+      // Reduced logging: only log in development and for specific debug scenarios
+      // Comment out to reduce console noise in production
+      // if (process.env.NODE_ENV === 'development') {
+      //   console.log(`✅ hasPermission("${permissionIdOrName}"): ID CHECK - ${hasAccess ? 'MATCH' : 'NO MATCH'}`);
+      // }
+      return hasAccess;
+    }
+    
+    // PRIORITY 2: Check by name (backward compatibility)
+    const permissionName = permissionIdOrName;
+    
+    // Get all permission names from user permissions (BE format)
+    // User permissions from role API can have format: { name: "GET /users" } or { name: "View All Users" }
+    // We need to handle both formats and map them to navigation permission names
+    const userPermissionNameList = userPermissions
+      .map(p => {
+        // Priority: viewName > name > (method + path)
+        let permName = null;
+        if (p.viewName) {
+          permName = p.viewName;
+        } else if (p.name) {
+          permName = p.name;
+        } else if (p.method && p.path) {
+          permName = `${p.method} ${p.path}`;
+        }
+        
+        // If permission is in BE format (METHOD /path), map it to navigation format
+        if (permName && /^(GET|POST|PUT|PATCH|DELETE)\s+\//.test(permName)) {
+          const mapped = mapBEPermissionToNavigation(permName);
+          // Return both formats for matching
+          return mapped || permName;
+        }
+        
+        return permName;
+      })
+      .filter(Boolean);
+    
+    // Also create a list with all possible formats for matching
+    // IMPORTANT: Only add the actual permission names from user, NOT mapped versions
+    // Mapping should only happen when checking, not when building the list
+    const allPossibleNames = new Set();
+    userPermissions.forEach(p => {
+      // Add original name (this is the actual permission name from BE)
+      if (p.name) allPossibleNames.add(p.name);
+      if (p.viewName) allPossibleNames.add(p.viewName);
+      if (p.method && p.path) {
+        const methodPath = `${p.method} ${p.path}`;
+        allPossibleNames.add(methodPath);
+      }
+      // DO NOT add mapped versions here - mapping should be done during check, not during list building
+    });
+    
+    if (process.env.NODE_ENV === 'development') {
+      // Log full permission structure for debugging (only first check to avoid spam)
+      if (!window._permissionDebugLogged) {
+        window._permissionDebugLogged = true;
+        console.log(`🔍 hasPermission("${permissionName}"):`, {
+          userPermissionCount: userPermissions.length,
+          userPermissionNames: Array.from(allPossibleNames).slice(0, 15), // Show first 15
+          checking: permissionName,
+          // Show full permission structure for first 3 permissions
+          samplePermissions: userPermissions.slice(0, 3).map(p => ({
+            id: p.id,
+            name: p.name,
+            viewName: p.viewName,
+            method: p.method,
+            path: p.path,
+            module: p.module,
+            description: p.description
+          }))
+        });
+      }
+    }
+    
+    // First, try exact match (case-insensitive) with all possible names
+    // This checks if permissionName exactly matches any user permission
+    const exactMatch = Array.from(allPossibleNames).some(permName => {
+      return permName && normalizePermissionName(permName) === normalizePermissionName(permissionName);
+    });
+    if (exactMatch) {
+      // Reduced logging: only log in development and for specific debug scenarios
+      // Comment out to reduce console noise in production
+      // if (process.env.NODE_ENV === 'development') {
+      //   console.log(`✅ hasPermission("${permissionName}"): EXACT MATCH`);
+      // }
+      return true;
+    }
+    
+    // If permissionName is in navigation format (e.g., "View All Templates"),
+    // check if user has the corresponding BE format permission (e.g., "GET /templates")
+    // BUT: Only if the BE permission actually maps to this navigation permission
+    // This is a reverse mapping: navigation -> BE format
+    const bePermissionNames = mapNavigationToBEPermission(permissionName);
+    if (bePermissionNames.length > 0) {
+      const beMatch = bePermissionNames.some(beName => {
+        // Check if user has this BE permission
+        const hasBEPerm = Array.from(allPossibleNames).some(userPerm => {
+          return normalizePermissionName(userPerm) === normalizePermissionName(beName);
+        });
+        
+        if (hasBEPerm) {
+          // Double-check: verify that this BE permission actually maps to the requested permission
+          const mappedBack = mapBEPermissionToNavigation(beName);
+          if (mappedBack === permissionName) {
+            return true; // Confirmed: user has BE permission that maps to requested permission
+          }
+        }
+        return false;
+      });
+      if (beMatch) {
+        // Reduced logging: only log in development and for specific debug scenarios
+        // Comment out to reduce console noise in production
+        // if (process.env.NODE_ENV === 'development') {
+        //   console.log(`✅ hasPermission("${permissionName}"): MATCHED VIA BE MAPPING`);
+        // }
+        return true;
+      }
+    }
+    
+    // Also check: if user has BE format permission (e.g., "GET /templates"),
+    // and we're checking for navigation format (e.g., "View All Templates"),
+    // map the user's BE permission and check if it matches
+    const userBEPermissions = Array.from(allPossibleNames).filter(name => 
+      name && /^(GET|POST|PUT|PATCH|DELETE)\s+\//.test(name)
+    );
+    for (const bePerm of userBEPermissions) {
+      const mapped = mapBEPermissionToNavigation(bePerm);
+      if (mapped && normalizePermissionName(mapped) === normalizePermissionName(permissionName)) {
+        // Reduced logging: only log in development and for specific debug scenarios
+        // Comment out to reduce console noise in production
+        // if (process.env.NODE_ENV === 'development') {
+        //   console.log(`✅ hasPermission("${permissionName}"): MATCHED VIA BE->NAV MAPPING (${bePerm} -> ${mapped})`);
+        // }
+        return true;
+      }
+    }
+    
+    // Then try to match using permission normalizer (handles BE permission names)
+    const matchedPermission = matchPermissionName(permissionName, Array.from(allPossibleNames));
+    if (matchedPermission) {
+      // Reduced logging: only log in development and for specific debug scenarios
+      // Comment out to reduce console noise in production
+      // if (process.env.NODE_ENV === 'development') {
+      //   console.log(`✅ hasPermission("${permissionName}"): MATCHED WITH "${matchedPermission}"`);
+      // }
+      return true;
+    }
+    
+    // Parse permissionName if it's in format "METHOD /path" (backward compatibility)
     const parsePermission = (perm) => {
       // Handle null/undefined permissions
       if (!perm || typeof perm !== 'string') {
@@ -212,7 +393,7 @@ export const usePermissions = () => {
     
     const parsed = parsePermission(permissionName);
     
-    // Check direct matches first (name, path, id)
+    // Check direct matches first (name, path, id) - for backward compatibility
     const hasName = userPermissionNames.has(permissionName);
     const hasPath = userPermissionPaths.has(permissionName);
     const hasId = userPermissionIds.has(permissionName);
@@ -222,7 +403,7 @@ export const usePermissions = () => {
     }
     
     // If permissionName is in format "METHOD /path", check against user permissions
-    // by matching method + path separately
+    // by matching method + path separately (backward compatibility)
     if (parsed.method && parsed.path) {
       const matched = userPermissions.some(perm => {
         // Check if method matches
@@ -257,60 +438,86 @@ export const usePermissions = () => {
     
     // Fallback: Check if permissionName matches any part of permission name or description
     // This handles cases where backend returns descriptive names like "View Course Detail"
-    const normalizedPermissionName = permissionName.toLowerCase().replace(/\s+/g, ' ');
+    // BUT: Only use this for backward compatibility with old format, not for BE permission names
+    // For BE permission names, we should have matched already above
+    const normalizedPermissionName = normalizePermissionName(permissionName);
     const matchedByName = userPermissions.some(perm => {
       if (!perm.name) return false;
-      const normalizedPermName = perm.name.toLowerCase();
+      const normalizedPermName = normalizePermissionName(perm.name);
       
-      // Check if permission name contains key parts of the requested permission
-      // e.g., "View Course Detail" matches "GET /courses/:id" (contains "view", "course", "detail")
-      const keyWords = normalizedPermissionName
-        .split(/[\s/:]+/)
-        .filter(word => word.length > 2 && !['get', 'post', 'put', 'patch', 'delete'].includes(word));
+      // For BE permission names (like "View All Users"), use exact or close match only
+      // Don't use fuzzy matching that's too broad
+      if (normalizedPermissionName === normalizedPermName) {
+        if (process.env.NODE_ENV === 'development') {
+          console.log(`✅ hasPermission("${permissionName}"): FALLBACK EXACT MATCH`);
+        }
+        return true;
+      }
       
-      if (keyWords.length > 0) {
-        return keyWords.some(keyword => normalizedPermName.includes(keyword));
+      // Only use keyword matching for old format (METHOD /path), not for BE names
+      // Check if permissionName looks like old format (starts with GET/POST/etc)
+      const looksLikeOldFormat = /^(GET|POST|PUT|PATCH|DELETE)\s+\//.test(permissionName);
+      
+      if (looksLikeOldFormat) {
+        // Old format: use keyword matching
+        const keyWords = normalizedPermissionName
+          .split(/[\s/:]+/)
+          .filter(word => word.length > 2 && !['get', 'post', 'put', 'patch', 'delete'].includes(word));
+        
+        if (keyWords.length > 0) {
+          const matched = keyWords.some(keyword => normalizedPermName.includes(keyword));
+          if (matched && process.env.NODE_ENV === 'development') {
+            console.log(`✅ hasPermission("${permissionName}"): FALLBACK KEYWORD MATCH (OLD FORMAT)`);
+          }
+          return matched;
+        }
       }
       
       return false;
     });
     
+    if (process.env.NODE_ENV === 'development' && !matchedByName) {
+      console.log(`❌ hasPermission("${permissionName}"): NO MATCH FOUND`);
+    }
+    
     return matchedByName;
   }, [userPermissions, userPermissionNames, userPermissionPaths, userPermissionIds]);
 
   // Check if user has any of the specified permissions
-  const hasAnyPermission = useCallback((permissionNames) => {
+  const hasAnyPermission = useCallback((permissionIdsOrNames) => {
     if (!userPermissions || userPermissions.length === 0) {
       return false;
     }
     
     // Filter out null/undefined permissions
-    const validPermissions = permissionNames.filter(perm => perm && typeof perm === 'string');
+    const validPermissions = permissionIdsOrNames.filter(perm => perm && typeof perm === 'string');
     
     if (validPermissions.length === 0) {
       return false;
     }
     
-    return validPermissions.some(permissionName => 
-      hasPermission(permissionName)
+    // Check each permission (supports both ID and name)
+    return validPermissions.some(permissionIdOrName => 
+      hasPermission(permissionIdOrName)
     );
   }, [userPermissions, hasPermission]);
 
   // Check if user has all specified permissions
-  const hasAllPermissions = useCallback((permissionNames) => {
+  const hasAllPermissions = useCallback((permissionIdsOrNames) => {
     if (!userPermissions || userPermissions.length === 0) {
       return false;
     }
     
     // Filter out null/undefined permissions
-    const validPermissions = permissionNames.filter(perm => perm && typeof perm === 'string');
+    const validPermissions = permissionIdsOrNames.filter(perm => perm && typeof perm === 'string');
     
     if (validPermissions.length === 0) {
       return false;
     }
     
-    return validPermissions.every(permissionName => 
-      hasPermission(permissionName)
+    // Check all permissions (supports both ID and name)
+    return validPermissions.every(permissionIdOrName => 
+      hasPermission(permissionIdOrName)
     );
   }, [userPermissions, hasPermission]);
 
@@ -385,6 +592,31 @@ export const usePermissions = () => {
     fetchPermissions();
   }, [fetchPermissions]);
 
+  // Check if user has permission for a specific UC
+  const hasUCPermission = useCallback((ucId) => {
+    if (!userPermissions || userPermissions.length === 0) {
+      return false;
+    }
+    
+    const requiredPermissions = getPermissionsForUC(ucId);
+    if (requiredPermissions.length === 0) {
+      return true; // UC doesn't require permissions (e.g., Login, Logout)
+    }
+    
+    // Check if user has any of the required permissions for this UC
+    return hasAnyPermission(requiredPermissions);
+  }, [userPermissions, hasAnyPermission]);
+
+  // Get permissions for a specific UC
+  const getUCPermissions = useCallback((ucId) => {
+    return getPermissionsForUC(ucId);
+  }, []);
+
+  // Get UC IDs for a specific permission
+  const getPermissionUCs = useCallback((permissionName) => {
+    return getUCsForPermission(permissionName);
+  }, []);
+
   return {
     permissions,
     loading,
@@ -395,12 +627,17 @@ export const usePermissions = () => {
     isPermissionActive,
     getApiPermission,
     // User permission checking functions
-    hasPermission,
-    hasAnyPermission,
-    hasAllPermissions,
+    hasPermission,           // Hybrid: supports both ID and name
+    hasPermissionById,        // ID-only check (fastest)
+    hasAnyPermission,         // Hybrid: supports both ID and name
+    hasAllPermissions,        // Hybrid: supports both ID and name
     hasModuleAccess,
     getAccessibleModules,
     getUserPermissionGroups,
+    // UC-based permission checking (NEW)
+    hasUCPermission,
+    getUCPermissions,
+    getPermissionUCs,
     // User data
     userPermissions,
     userRole

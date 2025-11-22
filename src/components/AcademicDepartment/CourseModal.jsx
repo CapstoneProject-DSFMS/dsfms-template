@@ -22,12 +22,11 @@ const CourseModal = ({ show, course, mode, onSave, onClose, departmentId }) => {
   const [departments, setDepartments] = useState([]);
   const [departmentsLoading, setDepartmentsLoading] = useState(false);
 
-  // Fetch departments from API
+  // Fetch departments from public API (no permission required)
   const fetchDepartments = async () => {
     setDepartmentsLoading(true);
     try {
-      const response = await departmentAPI.getDepartments();
-      const departmentsData = response.departments || [];
+      const departmentsData = await departmentAPI.getPublicDepartments();
       setDepartments(departmentsData);
     } catch (error) {
       toast.error('Failed to load departments');

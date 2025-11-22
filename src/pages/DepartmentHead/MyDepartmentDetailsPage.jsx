@@ -10,10 +10,11 @@ import {
   Eye
 } from 'react-bootstrap-icons';
 import { useNavigate, useParams } from 'react-router-dom';
+import { ROUTES } from '../../constants/routes';
 import { LoadingSkeleton, SearchBar, PermissionWrapper, AdminTable, SortIcon } from '../../components/Common';
 import PortalUnifiedDropdown from '../../components/Common/PortalUnifiedDropdown';
 import useTableSort from '../../hooks/useTableSort';
-import { API_PERMISSIONS } from '../../constants/apiPermissions';
+import { PERMISSION_IDS } from '../../constants/permissionIds';
 import { useAuth } from '../../hooks/useAuth';
 import { departmentAPI } from '../../api/department';
 import '../../styles/scrollable-table.css';
@@ -142,7 +143,7 @@ const CourseRow = ({ course, index, onView }) => {
       label: 'View Details',
       icon: <Eye />,
       onClick: () => onView(course),
-      permission: API_PERMISSIONS.COURSES.VIEW_DETAIL
+      permission: PERMISSION_IDS.VIEW_COURSE_IN_DETAIL
     }
   ];
 
@@ -184,7 +185,7 @@ const CourseRow = ({ course, index, onView }) => {
       </td>
       <td className="align-middle text-center show-mobile">
         <PermissionWrapper 
-          permissions={[API_PERMISSIONS.COURSES.VIEW_DETAIL]}
+          permissions={[PERMISSION_IDS.VIEW_COURSE_IN_DETAIL]}
           fallback={null}
         >
           <PortalUnifiedDropdown
@@ -230,12 +231,17 @@ const MyDepartmentDetailsPage = () => {
         setLoading(true);
         setError(null);
 
-        // Step 1: Get all departments
-        const departmentsResponse = await departmentAPI.getDepartments({ includeDeleted: true });
-        const departments = departmentsResponse.departments || [];
+        // Step 1: Get all departments from public API (no permission required)
+        // getPublicDepartments() returns array directly, not { departments: [...] }
+        const departments = await departmentAPI.getPublicDepartments();
+        
+        // Handle both array format and object format
+        const departmentsList = Array.isArray(departments) 
+          ? departments 
+          : (departments.departments || []);
 
         // Step 2: Find department where headUserId matches current user id
-        const userDepartment = departments.find(dept => dept.headUserId === user.id);
+        const userDepartment = departmentsList.find(dept => dept.headUserId === user.id);
 
         if (!userDepartment) {
           setCourses([]);
@@ -244,6 +250,7 @@ const MyDepartmentDetailsPage = () => {
         }
 
         // Step 3: Get department detail to get courses
+        // Note: getDepartmentById might still require permission, but Department Head should have VIEW_DEPARTMENT_IN_DETAIL
         const departmentDetail = await departmentAPI.getDepartmentById(userDepartment.id);
         const coursesList = departmentDetail.courses || [];
 
@@ -289,7 +296,7 @@ const MyDepartmentDetailsPage = () => {
 
   const handleViewCourse = (course) => {
     setSelectedCourse(course);
-    navigate(`/department-head/my-department-details/${course.id}`);
+    navigate(`${ROUTES.DEPARTMENT_MY_DETAILS}/${course.id}`);
   };
 
   const tabs = [

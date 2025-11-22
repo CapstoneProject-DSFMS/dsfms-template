@@ -2,11 +2,12 @@ import React, { useState, useEffect, useRef } from 'react';
 import { Container, Row, Col, Card, Button, Alert, Modal, Form, Spinner } from 'react-bootstrap';
 import { ArrowLeft, Pencil, Save, QuestionCircle, X, Question } from 'react-bootstrap-icons';
 import { useNavigate, useLocation } from 'react-router-dom';
+import { ROUTES } from '../../../constants/routes';
 import { toast } from 'react-toastify';
 import OnlyOfficeFormEditor from '../../../components/Admin/Forms/OnlyOfficeFormEditor';
 import AddTemplateContentButton from '../../../components/Admin/Forms/AddTemplateContentButton';
 import { PermissionWrapper } from '../../../components/Common';
-import { API_PERMISSIONS } from '../../../constants/apiPermissions';
+import { PERMISSION_IDS } from '../../../constants/permissionIds';
 import { departmentAPI } from '../../../api/department';
 import { readTemplateMetaFromStorage } from '../../../utils/templateBuilder';
 
@@ -102,8 +103,8 @@ const FormEditorPage = () => {
   const loadDepartments = async () => {
     try {
       setLoadingDepartments(true);
-      const response = await departmentAPI.getDepartments();
-      const departmentsData = response.departments || response.data || [];
+      // Use public API (no permission required)
+      const departmentsData = await departmentAPI.getPublicDepartments();
       setDepartments(departmentsData);
     } catch (error) {
       console.error('Error loading departments:', error);
@@ -173,14 +174,14 @@ const FormEditorPage = () => {
       setShowDiscardModal(true);
     } else {
       console.log('✅ No unsaved changes, navigating back');
-      navigate('/admin/forms');
+      navigate(ROUTES.TEMPLATES);
     }
   };
 
   const handleConfirmDiscard = () => {
     setShowDiscardModal(false);
     setHasUnsavedChanges(false);
-    navigate('/admin/forms');
+    navigate(ROUTES.TEMPLATES);
   };
 
   const handleCancelDiscard = () => {
@@ -224,7 +225,7 @@ const FormEditorPage = () => {
 
   return (
     <PermissionWrapper 
-      permission={API_PERMISSIONS.TEMPLATES.CREATE}
+      permission={PERMISSION_IDS.CREATE_TEMPLATE}
       fallback={
         <Container fluid className="py-4">
           <div className="text-center text-muted">

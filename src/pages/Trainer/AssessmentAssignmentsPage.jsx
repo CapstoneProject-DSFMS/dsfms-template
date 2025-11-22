@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Container, Card, Table, Spinner, Alert, Button } from 'react-bootstrap';
 import { useParams, useLocation, useNavigate } from 'react-router-dom';
+import { ROUTES } from '../../constants/routes';
 import { ArrowLeft } from 'react-bootstrap-icons';
 import { assessmentAPI } from '../../api';
 import { toast } from 'react-toastify';
@@ -88,7 +89,7 @@ const AssessmentAssignmentsPage = () => {
 
   const handleAssessTrainee = (record) => {
     if (record.status !== 'ON_GOING') return;
-    navigate(`/trainer/assessments/${record.id}/sections`);
+    navigate(ROUTES.ASSESSMENTS_SECTIONS(record.id));
   };
 
   return (

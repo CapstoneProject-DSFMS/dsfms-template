@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Container, Row, Col } from 'react-bootstrap';
 import { useNavigate } from 'react-router-dom';
+import { ROUTES } from '../../constants/routes';
 import { useAuth } from '../../hooks/useAuth';
 import profileAPI from '../../api/profile';
 import ResetPasswordModal from '../../components/Common/ResetPasswordModal';
@@ -71,11 +72,11 @@ const ProfilePage = () => {
   const handleConfigureSignature = () => {
     // Navigate to Configure Signature page based on user role
     if (user?.role === 'TRAINER') {
-      navigate('/trainer/configure-signature');
+      navigate(ROUTES.TRAINER_CONFIGURE_SIGNATURE);
     } else {
       // For other roles, navigate to a general configure signature page
       // You can create a general configure signature page or redirect to trainer page
-      navigate('/trainer/configure-signature');
+      navigate(ROUTES.TRAINER_CONFIGURE_SIGNATURE);
     }
   };
 

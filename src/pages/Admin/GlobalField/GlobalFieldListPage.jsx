@@ -4,7 +4,7 @@ import { Plus } from 'react-bootstrap-icons';
 import { toast } from 'react-toastify';
 import { globalFieldAPI } from '../../../api';
 import { LoadingSkeleton, PermissionWrapper } from '../../../components/Common';
-import { API_PERMISSIONS } from '../../../constants/apiPermissions';
+import { PERMISSION_IDS } from '../../../constants/permissionIds';
 import GlobalFieldCard from '../../../components/Admin/GlobalField/GlobalFieldCard';
 import GlobalFieldDetailModal from '../../../components/Admin/GlobalField/GlobalFieldDetailModal';
 import EditGlobalFieldModal from '../../../components/Admin/GlobalField/EditGlobalFieldModal';
@@ -141,7 +141,7 @@ const GlobalFieldListPage = () => {
             </Col>
             <Col xs="auto" className="ms-auto">
               <PermissionWrapper 
-                permission={API_PERMISSIONS.GLOBAL_FIELDS.CREATE}
+                permission={PERMISSION_IDS.CREATE_GLOBAL_FIELD}
                 fallback={null}
               >
                 <Button

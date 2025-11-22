@@ -2,16 +2,16 @@ import React from 'react';
 import { Eye, XCircle, ThreeDotsVertical } from 'react-bootstrap-icons';
 import PortalUnifiedDropdown from '../Common/PortalUnifiedDropdown';
 import { usePermissions } from '../../hooks/usePermissions';
-import { API_PERMISSIONS } from '../../constants/apiPermissions';
+import { PERMISSION_IDS } from '../../constants/permissionIds';
 
 const CourseActions = ({ course, onView, onDisable }) => {
   const { hasPermission, userPermissions, userRole } = usePermissions();
   
   // Check permissions
-  const canViewDetail = hasPermission(API_PERMISSIONS.COURSES.VIEW_DETAIL);
-  const canArchive = hasPermission(API_PERMISSIONS.COURSES.ARCHIVE);
+  const canViewDetail = hasPermission(PERMISSION_IDS.VIEW_COURSE_IN_DETAIL);
+  const canArchive = hasPermission(PERMISSION_IDS.ARCHIVE_COURSE);
   // Fallback to UPDATE permission if ARCHIVE permission doesn't exist
-  const canUpdate = hasPermission(API_PERMISSIONS.COURSES.UPDATE);
+  const canUpdate = hasPermission(PERMISSION_IDS.UPDATE_COURSE);
   const canArchiveCourse = canArchive || canUpdate; // Use ARCHIVE if available, otherwise fallback to UPDATE
   
   const handleViewClick = () => {

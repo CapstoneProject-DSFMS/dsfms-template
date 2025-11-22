@@ -2,11 +2,11 @@ import React from 'react';
 import PortalUnifiedDropdown from '../Common/PortalUnifiedDropdown';
 import { Eye, Trash, ThreeDotsVertical } from 'react-bootstrap-icons';
 import { PermissionWrapper } from '../Common';
-import { API_PERMISSIONS } from '../../constants/apiPermissions';
+import { PERMISSION_IDS } from '../../constants/permissionIds';
 
 const EnrolledTraineeActions = ({ trainee, onViewSubjects, onRemoveTrainee }) => (
   <PermissionWrapper 
-    permissions={[API_PERMISSIONS.SUBJECTS.VIEW_DETAIL, API_PERMISSIONS.SUBJECTS.DELETE]}
+    permissions={[PERMISSION_IDS.VIEW_SUBJECT_DETAIL, PERMISSION_IDS.REMOVE_TRAINEE_FROM_SUBJECT]}
     fallback={null}
   >
     <PortalUnifiedDropdown
@@ -24,7 +24,7 @@ const EnrolledTraineeActions = ({ trainee, onViewSubjects, onRemoveTrainee }) =>
           label: 'View Subject List',
           icon: <Eye />,
           onClick: () => onViewSubjects(trainee),
-          permission: API_PERMISSIONS.SUBJECTS.VIEW_DETAIL
+            permission: PERMISSION_IDS.VIEW_SUBJECT_DETAIL
         },
         { type: 'divider' },
         {
@@ -32,7 +32,7 @@ const EnrolledTraineeActions = ({ trainee, onViewSubjects, onRemoveTrainee }) =>
           icon: <Trash />,
           className: 'text-danger',
           onClick: () => onRemoveTrainee(trainee.id),
-          permission: API_PERMISSIONS.SUBJECTS.DELETE
+            permission: PERMISSION_IDS.REMOVE_TRAINEE_FROM_SUBJECT
         }
       ]}
     />

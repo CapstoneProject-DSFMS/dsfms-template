@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Table, Badge, Row, Col, Alert } from 'react-bootstrap';
 import { CalendarEvent, Clock, Person, Book, Eye, ThreeDotsVertical, JournalText } from 'react-bootstrap-icons';
 import { useNavigate } from 'react-router-dom';
+import { ROUTES } from '../../constants/routes';
 import { LoadingSkeleton, SortIcon, PortalUnifiedDropdown, SearchBar } from '../Common';
 import TrainerFilterPanel from './TrainerFilterPanel';
 import useTableSort from '../../hooks/useTableSort';
@@ -106,7 +107,7 @@ const UpcomingAssessmentsList = () => {
       return;
     }
 
-    navigate(`/trainer/assess/${targetType}/${identifier}`, {
+    navigate(ROUTES.ASSESSMENTS_ASSIGN(targetType, identifier), {
       state: {
         name: assessment.entityName,
         code: assessment.entityCode,

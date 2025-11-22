@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { userAPI } from '../api';
 import { departmentAPI } from '../api/department';
+import { roleAPI } from '../api/role';
 import { mapError } from '../utils/errorMapping';
 import { toast } from 'react-toastify';
 
@@ -25,11 +26,8 @@ export const useUserManagementAPI = () => {
     const fetchData = async () => {
       setLoading(true);
       try {
-        // Fetch users and departments in parallel
-        const [usersResponse, departmentsResponse] = await Promise.all([
-          userAPI.getUsers(),
-          departmentAPI.getDepartments({ includeDeleted: true })
-        ]);
+        // Fetch users first (required)
+        const usersResponse = await userAPI.getUsers();
         
         // Handle different response formats - ensure data is an array
         let usersArray = [];
@@ -71,12 +69,32 @@ export const useUserManagementAPI = () => {
           lastLogin: user.lastLogin || ''
         }));
         
-        // Transform departments data
-        const transformedDepartments = departmentsResponse.departments || departmentsResponse || [];
-        
         setUsers(transformedUsers);
-        setDepartments(transformedDepartments);
         setError(null);
+        
+        // Fetch departments from public API (optional - don't block users if it fails)
+        try {
+          const departmentsData = await departmentAPI.getPublicDepartments();
+          // Transform to match expected format
+          const transformedDepartments = departmentsData.map(dept => ({
+            id: dept.id,
+            name: dept.name,
+            description: dept.description,
+            isActive: dept.isActive
+          }));
+          setDepartments(transformedDepartments);
+        } catch (deptError) {
+          // If public departments API fails, extract from users as fallback
+          console.warn('⚠️ Failed to fetch public departments, will use departments from users:', deptError?.message || deptError);
+          const departmentsFromUsers = [
+            ...new Set(
+              transformedUsers
+                .map(user => user.department)
+                .filter(dept => dept && dept !== 'N/A')
+            )
+          ].map(name => ({ name, id: null })); // Create simple department objects
+          setDepartments(departmentsFromUsers);
+        }
       } catch (err) {
         const errorMessage = mapError(err, { context: 'fetch_users' });
         setError(errorMessage);
@@ -91,12 +109,17 @@ export const useUserManagementAPI = () => {
   // Get unique roles from current users
   const uniqueRoles = [...new Set(users.map(user => user.role).filter(Boolean))];
   
-  // Get unique departments from API departments data (not just from users)
+  // Get unique departments from users (since we may not have departments API access)
+  // If departments API was successful, merge with user departments
+  // Otherwise, just use departments from users
   const uniqueDepartments = [
-    ...new Set(departments.map(dept => dept.name).filter(Boolean)),
+    ...new Set(departments.map(dept => dept.name || dept).filter(Boolean)),
     // Also include departments from users that might not be in the departments API
     ...new Set(users.map(user => user.department).filter(Boolean))
-  ].filter((dept, index, arr) => arr.indexOf(dept) === index); // Remove duplicates
+  ].filter((dept, index, arr) => {
+    // Remove duplicates and filter out 'N/A'
+    return dept && dept !== 'N/A' && arr.indexOf(dept) === index;
+  });
 
   // Filter users based on search term and selected filters
   const filteredUsers = users.filter(user => {
@@ -248,11 +271,8 @@ export const useUserManagementAPI = () => {
         action = 'enabled';
       }
       
-      // Refresh users and departments list
-      const [usersResponse, departmentsResponse] = await Promise.all([
-        userAPI.getUsers(),
-        departmentAPI.getDepartments({ includeDeleted: true })
-      ]);
+      // Refresh users list (departments will be fetched separately if needed)
+      const usersResponse = await userAPI.getUsers();
       
       // Handle different response formats - ensure data is an array
       let usersArray = [];
@@ -295,10 +315,31 @@ export const useUserManagementAPI = () => {
         lastLogin: user.lastLogin || ''
       }));
       
-      const transformedDepartments = departmentsResponse.departments || departmentsResponse || [];
-      
       setUsers(transformedUsers);
-      setDepartments(transformedDepartments);
+      
+      // Try to fetch departments from public API (optional - don't block if it fails)
+      try {
+        const departmentsData = await departmentAPI.getPublicDepartments();
+        // Transform to match expected format
+        const transformedDepartments = departmentsData.map(dept => ({
+          id: dept.id,
+          name: dept.name,
+          description: dept.description,
+          isActive: dept.isActive
+        }));
+        setDepartments(transformedDepartments);
+      } catch (deptError) {
+        // If public departments API fails, extract from users as fallback
+        console.warn('⚠️ Failed to refresh public departments, will use departments from users:', deptError?.message || deptError);
+        const departmentsFromUsers = [
+          ...new Set(
+            transformedUsers
+              .map(user => user.department)
+              .filter(dept => dept && dept !== 'N/A')
+          )
+        ].map(name => ({ name, id: null }));
+        setDepartments(departmentsFromUsers);
+      }
       
       // Show success message with API response message
       const message = response?.message || `User has been ${action} successfully!`;
@@ -329,7 +370,7 @@ export const useUserManagementAPI = () => {
       
       // Proceed with save
       await performSave(userData);
-    } catch (err) {
+    } catch {
       // Error is already set in performSave, and toast will be shown via useEffect in UserManagementPage
       // when error state changes, so we don't need to show toast here to avoid duplicate toasts
       setLoading(false);
@@ -341,12 +382,13 @@ export const useUserManagementAPI = () => {
       setLoading(true);
       
       
-      // Get roles from API to find correct role ID
+      // Get roles from public API to find correct role ID (supporting data)
       let newRoleId = null;
       try {
-        const rolesResponse = await userAPI.getRoles();
+        // Use public API (no permission required)
+        const rolesData = await roleAPI.getPublicRoles();
         
-        const targetRole = rolesResponse.roles?.find(role => role.name === userData.role);
+        const targetRole = rolesData.find(role => role.name === userData.role);
         if (targetRole) {
           newRoleId = targetRole.id;
         } else {
@@ -424,7 +466,7 @@ export const useUserManagementAPI = () => {
       // Refresh users and departments list
       const [usersResponse, departmentsResponse] = await Promise.all([
         userAPI.getUsers(),
-        departmentAPI.getDepartments({ includeDeleted: true })
+        departmentAPI.getPublicDepartments()
       ]);
       
       // Handle different response formats - ensure data is an array
@@ -476,7 +518,15 @@ export const useUserManagementAPI = () => {
         lastLogin: user.lastLogin || ''
       }));
       
-      const transformedDepartments = departmentsResponse.departments || departmentsResponse || [];
+      // Handle public departments response (already an array from getPublicDepartments)
+      const transformedDepartments = Array.isArray(departmentsResponse) 
+        ? departmentsResponse.map(dept => ({
+            id: dept.id,
+            name: dept.name,
+            description: dept.description,
+            isActive: dept.isActive
+          }))
+        : [];
       
       setUsers(transformedUsers);
       setDepartments(transformedDepartments);
@@ -520,11 +570,8 @@ export const useUserManagementAPI = () => {
         toast.error(failedMessage);
       }
       
-      // Refresh users and departments list
-      const [usersResponse, departmentsResponse] = await Promise.all([
-        userAPI.getUsers(),
-        departmentAPI.getDepartments({ includeDeleted: true })
-      ]);
+      // Refresh users list (departments will be fetched separately if needed)
+      const usersResponse = await userAPI.getUsers();
       
       // Handle different response formats - ensure data is an array
       let usersArray = [];
@@ -567,10 +614,31 @@ export const useUserManagementAPI = () => {
         lastLogin: user.lastLogin || ''
       }));
       
-      const transformedDepartments = departmentsResponse.departments || departmentsResponse || [];
-      
       setUsers(transformedUsers);
-      setDepartments(transformedDepartments);
+      
+      // Try to fetch departments from public API (optional - don't block if it fails)
+      try {
+        const departmentsData = await departmentAPI.getPublicDepartments();
+        // Transform to match expected format
+        const transformedDepartments = departmentsData.map(dept => ({
+          id: dept.id,
+          name: dept.name,
+          description: dept.description,
+          isActive: dept.isActive
+        }));
+        setDepartments(transformedDepartments);
+      } catch (deptError) {
+        // If public departments API fails, extract from users as fallback
+        console.warn('⚠️ Failed to refresh public departments, will use departments from users:', deptError?.message || deptError);
+        const departmentsFromUsers = [
+          ...new Set(
+            transformedUsers
+              .map(user => user.department)
+              .filter(dept => dept && dept !== 'N/A')
+          )
+        ].map(name => ({ name, id: null }));
+        setDepartments(departmentsFromUsers);
+      }
     } catch (err) {
       const errorMessage = mapError(err, { context: 'import_users' });
       setError(errorMessage);

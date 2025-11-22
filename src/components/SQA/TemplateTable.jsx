@@ -11,7 +11,7 @@ import {
 } from 'react-bootstrap-icons';
 import PortalUnifiedDropdown from '../Common/PortalUnifiedDropdown';
 import { SortIcon, PermissionWrapper } from '../Common';
-import { API_PERMISSIONS } from '../../constants/apiPermissions';
+import { PERMISSION_IDS } from '../../constants/permissionIds';
 import '../../styles/scrollable-table.css';
 
 const TemplateTable = ({ 
@@ -233,7 +233,7 @@ const TemplateTable = ({
                     
                     <td className="align-middle text-center">
                       <PermissionWrapper 
-                        permissions={[API_PERMISSIONS.SQA.VIEW_TEMPLATES, API_PERMISSIONS.SQA.VIEW_TEMPLATE_DETAIL]}
+                        permissions={[PERMISSION_IDS.VIEW_ALL_TEMPLATES, PERMISSION_IDS.VIEW_TEMPLATE_DETAILS]}
                         fallback={null}
                       >
                         <PortalUnifiedDropdown
@@ -251,13 +251,13 @@ const TemplateTable = ({
                               label: 'View Detail',
                               icon: <Eye />,
                               onClick: () => onViewDetail(template.id),
-                              permission: API_PERMISSIONS.SQA.VIEW_TEMPLATE_DETAIL
+                              permission: PERMISSION_IDS.VIEW_TEMPLATE_DETAILS
                             },
                             {
                               label: 'Disable Template',
                               icon: <XCircle />,
                               onClick: () => onDisableTemplate(template.id),
-                              permission: API_PERMISSIONS.SQA.VIEW_TEMPLATES
+                              permission: PERMISSION_IDS.VIEW_ALL_TEMPLATES
                             }
                           ]}
                         />

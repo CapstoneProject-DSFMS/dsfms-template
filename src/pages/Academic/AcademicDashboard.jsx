@@ -8,6 +8,7 @@ import {
   PieChart as PieChartIcon
 } from 'react-bootstrap-icons';
 import { useNavigate } from 'react-router-dom';
+import { ROUTES } from '../../constants/routes';
 import { 
   BarChart, 
   Bar, 
@@ -33,7 +34,7 @@ const AcademicDashboard = () => {
       description: 'Create a new assessment event for trainees',
       icon: CalendarEvent,
       action: () => {
-        navigate('/academic/assessment-events');
+        navigate(ROUTES.ASSESSMENT_EVENTS);
       },
       color: 'primary'
     },
@@ -42,7 +43,7 @@ const AcademicDashboard = () => {
       description: 'View and manage all academic departments',
       icon: Building,
       action: () => {
-        navigate('/academic/departments');
+        navigate('/academic/departments'); // Keep old route for now (academic-specific)
       },
       color: 'primary'
     }

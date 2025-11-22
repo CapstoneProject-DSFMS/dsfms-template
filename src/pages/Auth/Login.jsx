@@ -26,10 +26,13 @@ function Login() {
   // Redirect if already authenticated
   useEffect(() => {
     if (isAuthenticated) {
-      const from = location.state?.from?.pathname || "/admin";
-      navigate(from, { replace: true });
+      // Always navigate to /dashboard to trigger RoleBasedRedirect
+      // This ensures the user is redirected to the correct page based on their role
+      // instead of being redirected to a previous user's route
+      // /dashboard is a common route that works for all roles
+      navigate("/dashboard", { replace: true });
     }
-  }, [isAuthenticated, navigate, location.state?.from?.pathname]);
+  }, [isAuthenticated, navigate]);
 
   // Show loading while checking authentication
   if (isLoading) {
@@ -55,15 +58,11 @@ function Login() {
       const result = await login({ email, password });
       
       if (result.success) {
-        // Let RoleBasedRedirect handle the redirect based on user role
-        // Navigate to intended destination if exists, otherwise let RoleBasedRedirect handle it
-        const from = location.state?.from?.pathname;
-        if (from) {
-          navigate(from, { replace: true });
-        } else {
-          // Navigate to root admin route which will trigger RoleBasedRedirect
-          navigate("/admin", { replace: true });
-        }
+        // Always navigate to /dashboard to trigger RoleBasedRedirect
+        // This ensures the user is redirected to the correct page based on their role
+        // instead of being redirected to a previous user's route (from location.state)
+        // /dashboard is a common route that works for all roles, RoleBasedRedirect will handle the redirect
+        navigate("/dashboard", { replace: true });
       } else {
         toast.error(result.error || "Email or password is incorrect. Please try again.");
       }

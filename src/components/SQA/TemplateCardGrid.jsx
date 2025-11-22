@@ -10,7 +10,7 @@ import {
   Person
 } from 'react-bootstrap-icons';
 import { PermissionWrapper } from '../Common';
-import { API_PERMISSIONS } from '../../constants/apiPermissions';
+import { PERMISSION_IDS } from '../../constants/permissionIds';
 
 const TemplateCardGrid = ({ 
   templates, 
@@ -177,7 +177,7 @@ const TemplateCardGrid = ({
                     {template._count?.sections || template.sections || 0} sections
                   </small>
                   <PermissionWrapper 
-                    permissions={[API_PERMISSIONS.SQA.VIEW_TEMPLATE_DETAIL]}
+                    permissions={[PERMISSION_IDS.VIEW_TEMPLATE_DETAILS]}
                     fallback={null}
                   >
                     <Button

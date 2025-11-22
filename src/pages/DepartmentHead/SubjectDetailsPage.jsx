@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Container, Row, Col, Card, Spinner, Alert } from 'react-bootstrap';
 import { Person, ArrowLeft } from 'react-bootstrap-icons';
 import { useParams, useNavigate } from 'react-router-dom';
+import { ROUTES } from '../../constants/routes';
 import TraineeListInSubject from '../../components/DepartmentHead/SubjectDetail/TraineeListInSubject';
 import '../../styles/scrollable-table.css';
 import '../../styles/department-head.css';
@@ -115,7 +116,7 @@ const SubjectDetailsPage = () => {
         <Col>
           <button 
             className="btn btn-link p-0 text-decoration-none"
-            onClick={() => navigate(`/department-head/my-department-details/${courseId}`)}
+            onClick={() => navigate(`${ROUTES.DEPARTMENT_MY_DETAILS}/${courseId}`)}
             style={{ color: 'var(--bs-primary)' }}
           >
             <ArrowLeft size={20} className="me-2" />

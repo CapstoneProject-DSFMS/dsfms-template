@@ -2,6 +2,7 @@ import React, { useEffect, useState, useRef, forwardRef, useImperativeHandle, us
 import { Button, Alert, Card, Modal, Form, Row, Col } from 'react-bootstrap';
 import { Pencil, ChevronDown, ChevronRight, ArrowDown, X, Plus } from 'react-bootstrap-icons';
 import { useNavigate } from 'react-router-dom';
+import { ROUTES } from '../../../constants/routes';
 import apiClient from '../../../api/config.js';
 import { roleAPI } from '../../../api/role';
 import { toast } from 'react-toastify';
@@ -454,8 +455,9 @@ const EditorWithMergeFields = forwardRef(({
   useEffect(() => {
     const loadRoles = async () => {
       try {
-        const data = await roleAPI.getRoles();
-        const roles = Array.isArray(data?.roles) ? data.roles : (Array.isArray(data) ? data : []);
+        // Use public API (no permission required)
+        const data = await roleAPI.getPublicRoles();
+        const roles = Array.isArray(data) ? data : [];
         const filtered = roles
           .map((r) => (typeof r === 'string' ? r : (r.name || r.code || r.roleName || '')))
           .filter((name) => typeof name === 'string')
@@ -1072,7 +1074,7 @@ const EditorWithMergeFields = forwardRef(({
       
       // Navigate back to forms list after successful submit
       setTimeout(() => {
-        navigate('/admin/forms');
+        navigate(ROUTES.TEMPLATES);
       }, 1500);
     } catch (err) {
       console.error('❌ Submit template failed:', err);

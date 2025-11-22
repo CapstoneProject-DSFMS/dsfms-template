@@ -9,10 +9,11 @@ import {
   ThreeDotsVertical
 } from 'react-bootstrap-icons';
 import { useNavigate } from 'react-router-dom';
+import { ROUTES } from '../../constants/routes';
 import { LoadingSkeleton, SearchBar, PermissionWrapper, AdminTable } from '../../components/Common';
 import PortalUnifiedDropdown from '../../components/Common/PortalUnifiedDropdown';
 import useTableSort from '../../hooks/useTableSort';
-import { API_PERMISSIONS } from '../../constants/apiPermissions';
+import { PERMISSION_IDS } from '../../constants/permissionIds';
 import '../../styles/scrollable-table.css';
 
 const FeedbackListPage = () => {
@@ -123,11 +124,11 @@ const FeedbackListPage = () => {
   });
 
   const handleViewFeedback = (feedbackId) => {
-    navigate(`/sqa/feedback/${feedbackId}`);
+    navigate(ROUTES.REPORTS_DETAIL(feedbackId)); // Use function-based route
   };
 
   const handleAcknowledgeFeedback = (feedbackId) => {
-    navigate(`/sqa/feedback/${feedbackId}/acknowledge`);
+    navigate(`/sqa/feedback/${feedbackId}/acknowledge`); // Keep old route for now (sqa-specific)
   };
 
   const getActionItems = (item) => [
@@ -135,14 +136,14 @@ const FeedbackListPage = () => {
       label: 'View Details',
       icon: <Eye />,
       onClick: () => handleViewFeedback(item.id),
-      permission: API_PERMISSIONS.SQA.VIEW_TEMPLATES
+      permission: PERMISSION_IDS.LIST_ALL_REPORTS
     },
     {
       label: 'Acknowledge',
       icon: <CheckCircle />,
       onClick: () => handleAcknowledgeFeedback(item.id),
       disabled: item.status === 'acknowledged' || item.status === 'reviewed',
-      permission: API_PERMISSIONS.SQA.VIEW_TEMPLATES
+      permission: PERMISSION_IDS.LIST_ALL_REPORTS
     }
   ];
 
@@ -254,7 +255,7 @@ const FeedbackListPage = () => {
                 </td>
                 <td className="align-middle text-center show-mobile">
                   <PermissionWrapper 
-                    permissions={[API_PERMISSIONS.SQA.VIEW_TEMPLATES]}
+                    permissions={[PERMISSION_IDS.LIST_ALL_REPORTS]}
                     fallback={null}
                   >
                     <PortalUnifiedDropdown

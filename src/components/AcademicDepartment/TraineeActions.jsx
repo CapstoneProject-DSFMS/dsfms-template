@@ -2,7 +2,7 @@ import React from 'react';
 import PortalUnifiedDropdown from '../Common/PortalUnifiedDropdown';
 import { Eye, PersonX, ThreeDotsVertical } from 'react-bootstrap-icons';
 import { PermissionWrapper } from '../Common';
-import { API_PERMISSIONS } from '../../constants/apiPermissions';
+import { PERMISSION_IDS } from '../../constants/permissionIds';
 
 const TraineeActions = ({ trainee, onView, onRemove }) => {
   const handleViewClick = () => {
@@ -15,7 +15,7 @@ const TraineeActions = ({ trainee, onView, onRemove }) => {
 
   return (
     <PermissionWrapper 
-      permissions={[API_PERMISSIONS.TRAINEES.VIEW_DETAIL, API_PERMISSIONS.TRAINEES.DELETE]}
+      permissions={[PERMISSION_IDS.VIEW_USER_IN_DETAIL, PERMISSION_IDS.REMOVE_TRAINEE_FROM_COURSE]}
       fallback={null}
     >
       <PortalUnifiedDropdown
@@ -33,7 +33,7 @@ const TraineeActions = ({ trainee, onView, onRemove }) => {
             label: 'View Details',
             icon: <Eye />,
             onClick: handleViewClick,
-            permission: API_PERMISSIONS.TRAINEES.VIEW_DETAIL
+            permission: PERMISSION_IDS.VIEW_USER_IN_DETAIL
           },
           { type: 'divider' },
           {
@@ -41,7 +41,7 @@ const TraineeActions = ({ trainee, onView, onRemove }) => {
             icon: <PersonX />,
             className: 'text-danger',
             onClick: handleRemoveClick,
-            permission: API_PERMISSIONS.TRAINEES.DELETE
+            permission: PERMISSION_IDS.REMOVE_TRAINEE_FROM_COURSE
           }
         ]}
       />

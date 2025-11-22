@@ -1334,6 +1334,7 @@ span.spinner-border.spinner-border-sm {
   /* Show desktop sidebar */
   .sidebar-desktop {
     display: block !important;
+    flex-shrink: 0 !important;
   }
   
   /* Hide mobile sidebar */

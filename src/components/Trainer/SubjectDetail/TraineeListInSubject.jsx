@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Table, Badge, Button, Row, Col, Spinner, Alert } from 'react-bootstrap';
 import { Person, Calendar, Clock, Eye, Envelope, ThreeDotsVertical } from 'react-bootstrap-icons';
 import { useNavigate } from 'react-router-dom';
+import { ROUTES } from '../../../constants/routes';
 import { LoadingSkeleton, SortIcon, PortalUnifiedDropdown, SearchBar } from '../../Common';
 import TrainerFilterPanel from '../TrainerFilterPanel';
 import useTableSort from '../../../hooks/useTableSort';
@@ -121,7 +122,7 @@ const TraineeListInSubject = ({ subjectId }) => {
   };
 
   const handleViewTrainee = (traineeId) => {
-    navigate(`/trainer/trainees/${traineeId}`);
+    navigate(ROUTES.USERS_DETAIL(traineeId));
   };
 
   const handleSendMessage = (traineeId) => {

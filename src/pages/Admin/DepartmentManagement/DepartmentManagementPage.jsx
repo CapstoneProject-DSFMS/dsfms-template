@@ -12,7 +12,8 @@ import {
 } from '../../../components/Admin/Department';
 import { SearchBar, PermissionWrapper } from '../../../components/Common';
 import useDepartmentManagement from '../../../hooks/useDepartmentManagement';
-import { API_PERMISSIONS } from '../../../constants/apiPermissions';
+import { PERMISSION_IDS } from '../../../constants/permissionIds';
+import { ROUTES } from '../../../constants/routes';
 
 const DepartmentManagementPage = () => {
   const navigate = useNavigate();
@@ -65,7 +66,7 @@ const DepartmentManagementPage = () => {
   };
 
   const handleViewDepartment = (department) => {
-    navigate(`/admin/departments/${department.id}`);
+    navigate(ROUTES.DEPARTMENTS_DETAIL(department.id)); // Use function-based route
   };
 
   const handleToggleStatus = (department) => {
@@ -204,7 +205,7 @@ const DepartmentManagementPage = () => {
             <Col xs={12} className="mt-2 mt-md-0 mb-3">
               <div className="d-flex justify-content-end">
                 <PermissionWrapper 
-                  permission={API_PERMISSIONS.DEPARTMENTS.CREATE}
+                  permission={PERMISSION_IDS.CREATE_DEPARTMENT}
                   fallback={null}
                 >
                   <Button

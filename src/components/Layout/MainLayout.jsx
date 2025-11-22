@@ -69,7 +69,14 @@ const MainLayout = ({ children }) => {
         <Sidebar collapsed={false} onClose={closeSidebar} />
       </div>
       
-      <div className={`flex-grow-1 d-flex flex-column ${isMobile ? 'main-content-mobile' : ''}`}>
+      <div 
+        className={`flex-grow-1 d-flex flex-column ${isMobile ? 'main-content-mobile' : ''} ${!isMobile && sidebarCollapsed ? 'sidebar-collapsed-active' : ''}`}
+        style={{
+          marginLeft: !isMobile ? (sidebarCollapsed ? '60px' : '260px') : '0',
+          transition: 'margin-left 0.3s ease',
+          width: !isMobile ? `calc(100% - ${sidebarCollapsed ? '60px' : '260px'})` : '100%',
+        }}
+      >
         <Header onToggleSidebar={toggleSidebar} />
         
         <main className="flex-grow-1 bg-light-custom" style={{ overflowY: 'auto' }}>

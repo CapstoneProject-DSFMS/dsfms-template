@@ -3,7 +3,8 @@ import { Container, Row, Col, Button, Card, Alert } from 'react-bootstrap';
 import { ArrowLeft, FileEarmarkPdf } from 'react-bootstrap-icons';
 import { useParams, useNavigate } from 'react-router-dom';
 import { PermissionWrapper } from '../../components/Common';
-import { API_PERMISSIONS } from '../../constants/apiPermissions';
+import { PERMISSION_IDS } from '../../constants/permissionIds';
+import { ROUTES } from '../../constants/routes';
 import templateAPI from '../../api/template';
 import { toast } from 'react-toastify';
 import BasicInfoTab from '../../components/SQA/BasicInfoTab';
@@ -175,7 +176,7 @@ const TemplateDetailPage = () => {
   };
 
   const handleBackToList = () => {
-    navigate('/sqa/templates');
+    navigate(ROUTES.TEMPLATES);
   };
 
   const handleViewTemplateConfig = () => {
@@ -198,7 +199,7 @@ const TemplateDetailPage = () => {
       toast.success('Template approved successfully');
       setShowApproveModal(false);
       // Navigate back to template list
-      navigate('/sqa/templates');
+      navigate(ROUTES.TEMPLATES);
     } catch (error) {
       console.error('Error approving template:', error);
       toast.error(error.response?.data?.message || 'Failed to approve template');
@@ -225,7 +226,7 @@ const TemplateDetailPage = () => {
       setShowRejectModal(false);
       setRejectComment('');
       // Navigate back to template list
-      navigate('/sqa/templates');
+      navigate(ROUTES.TEMPLATES);
     } catch (error) {
       console.error('Error rejecting template:', error);
       toast.error(error.response?.data?.message || 'Failed to reject template');
@@ -317,7 +318,7 @@ const TemplateDetailPage = () => {
               </div>
             </div>
             <PermissionWrapper 
-              permissions={[API_PERMISSIONS.SQA.VIEW_TEMPLATES]}
+              permissions={[PERMISSION_IDS.VIEW_ALL_TEMPLATES]}
               fallback={null}
             >
               <Button

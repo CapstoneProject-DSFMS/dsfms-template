@@ -14,6 +14,15 @@ const apiClient = axios.create({
   },
 });
 
+// Create public API client (no authentication required)
+const publicApiClient = axios.create({
+  baseURL: API_BASE_URL,
+  timeout: 10000,
+  headers: {
+    'Content-Type': 'application/json',
+  },
+});
+
 // Flag to prevent multiple refresh token calls
 let isRefreshing = false;
 let failedQueue = [];
@@ -221,3 +230,4 @@ apiClient.interceptors.response.use(
 );
 
 export default apiClient;
+export { publicApiClient };

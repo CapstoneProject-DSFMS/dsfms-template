@@ -27,37 +27,92 @@ import {
 } from "react-bootstrap-icons";
 import logo from "../../assets/logo-light.png";
 import { usePermissions } from "../../hooks/usePermissions";
-import { API_PERMISSIONS } from "../../constants/apiPermissions";
+import { getNavigationPermission } from "../../constants/navigationPermissions";
 import { useAuth } from "../../hooks/useAuth";
 import useDepartmentManagement from "../../hooks/useDepartmentManagement";
+import { PERMISSION_IDS } from "../../constants/permissionIds";
+import { ROUTES } from "../../constants/routes";
 
 const Sidebar = ({ collapsed, onClose }) => {
-  const { hasModuleAccess, hasPermission } = usePermissions();
+  const { hasPermission, hasAnyPermission } = usePermissions();
   const { user } = useAuth();
   const location = useLocation();
   const navigate = useNavigate();
   
-  // Normalize role name - handle both string and object, and different variants
-  // This is used throughout the component for role checks
-  // Normalize: convert space to underscore, uppercase, and handle both variants
-  const rawRoleName = typeof user?.role === 'string' 
-    ? user.role 
-    : (user?.role?.name || '');
+  // Check if user has Academic Dashboard permission (replaces role check)
+  const hasAcademicDashboard = hasPermission(PERMISSION_IDS.ACADEMIC_OVERVIEW_DASHBOARD);
   
-  // Normalize role name: 'ACADEMIC DEPARTMENT' -> 'ACADEMIC_DEPARTMENT'
-  // Also handle 'ACADEMIC_DEPT' -> 'ACADEMIC_DEPARTMENT'
-  const userRoleName = rawRoleName
-    .toUpperCase()
-    .replace(/\s+/g, '_') // Replace spaces with underscores
-    .trim();
+  // Helper function to check if user is Administrator
+  const isAdministrator = () => {
+    if (!user?.role) return false;
+    const rawRoleName = typeof user.role === 'string' 
+      ? user.role 
+      : (user.role?.name || '');
+    const normalizedRoleName = rawRoleName
+      .toUpperCase()
+      .replace(/\s+/g, '_')
+      .trim();
+    return normalizedRoleName === 'ADMIN' || normalizedRoleName === 'ADMINISTRATOR';
+  };
   
-  // Check if user is Academic Department role (handle variants)
-  const isAcademicRole = userRoleName === 'ACADEMIC_DEPARTMENT' || 
-                        userRoleName === 'ACADEMIC_DEPT' ||
-                        userRoleName.startsWith('ACADEMIC');
+  // Helper function to check if user is Academic Department
+  const isAcademicDepartment = () => {
+    if (!user?.role) return false;
+    const rawRoleName = typeof user.role === 'string' 
+      ? user.role 
+      : (user.role?.name || '');
+    const normalizedRoleName = rawRoleName
+      .toUpperCase()
+      .replace(/\s+/g, '_')
+      .trim();
+    return normalizedRoleName === 'ACADEMIC_DEPARTMENT' || 
+           normalizedRoleName === 'ACADEMIC_DEPT' ||
+           normalizedRoleName.startsWith('ACADEMIC');
+  };
   
-  // Only load departments for ACADEMIC_DEPARTMENT role (handle both variants)
-  const { departments, loading: departmentsLoading } = useDepartmentManagement(isAcademicRole);
+  // Helper function to check if user is Trainer
+  const isTrainer = () => {
+    if (!user?.role) return false;
+    const rawRoleName = typeof user.role === 'string' 
+      ? user.role 
+      : (user.role?.name || '');
+    const normalizedRoleName = rawRoleName
+      .toUpperCase()
+      .replace(/\s+/g, '_')
+      .trim();
+    return normalizedRoleName === 'TRAINER';
+  };
+  
+  // Helper function to check if user is Department Head
+  const isDepartmentHead = () => {
+    if (!user?.role) return false;
+    const rawRoleName = typeof user.role === 'string' 
+      ? user.role 
+      : (user.role?.name || '');
+    const normalizedRoleName = rawRoleName
+      .toUpperCase()
+      .replace(/\s+/g, '_')
+      .trim();
+    return normalizedRoleName === 'DEPARTMENT_HEAD' || 
+           normalizedRoleName === 'DEPT_HEAD' ||
+           normalizedRoleName === 'DEPARTMENT HEAD';
+  };
+  
+  // Helper function to check if user is Trainee
+  const isTrainee = () => {
+    if (!user?.role) return false;
+    const rawRoleName = typeof user.role === 'string' 
+      ? user.role 
+      : (user.role?.name || '');
+    const normalizedRoleName = rawRoleName
+      .toUpperCase()
+      .replace(/\s+/g, '_')
+      .trim();
+    return normalizedRoleName === 'TRAINEE';
+  };
+  
+  // Load departments if user has academic dashboard permission
+  const { departments, loading: departmentsLoading } = useDepartmentManagement(hasAcademicDashboard);
   const [isDepartmentDropdownOpen, setIsDepartmentDropdownOpen] = useState(false);
   const [isAssessmentDropdownOpen, setIsAssessmentDropdownOpen] = useState(false);
   const [isScrollable, setIsScrollable] = useState(false);
@@ -82,118 +137,177 @@ const Sidebar = ({ collapsed, onClose }) => {
     }
   }, [isDepartmentDropdownOpen, departments]);
 
-  // Filter nav items based on user permissions and role
+  // Filter nav items based on user permissions (PERMISSION-BASED, not role-based)
+  // BUT: Administrator and Academic Department roles have role-based filtering to only show items according to UC list
   const navItems = useMemo(() => {
-    // Re-normalize role name inside useMemo to ensure consistency
-    const rawRoleName = typeof user?.role === 'string' 
-      ? user.role 
-      : (user?.role?.name || '');
+    // ⭐ Administrator role: Only show these items (according to UC list)
+    const ADMINISTRATOR_ALLOWED_ITEMS = [
+      "main-menu",
+      "users",
+      "roles",
+      "departments",
+      "forms",
+      "system-config"
+    ];
     
-    const normalizedRoleName = rawRoleName
-      .toUpperCase()
-      .replace(/\s+/g, '_')
-      .trim();
+    // ⭐ Academic Department role: Only show these items (according to UC list)
+    // UC-21: View All Departments → "Department" dropdown (rendered separately, not in navItems)
+    // UC-65: View Analytics Dashboard → "academic-dashboard"
+    // UC-48-51: Assessment Forms Management → "Assessment Events" (rendered separately, not in navItems)
+    const ACADEMIC_DEPT_ALLOWED_ITEMS = [
+      // Note: "departments" is NOT included here because Academic Department has its own "Department" dropdown
+      // (rendered separately below, not in navItems)
+      "academic-dashboard",    // UC-65: View Analytics Dashboard
+      // Note: Assessment Events and Department dropdown are rendered separately below, not in navItems
+    ];
     
+    // ⭐ Trainer role: Only show these items (according to UC list)
+    // UC-26: View All Courses → "List Instructed Course"
+    // UC-53: View All Assessments → "List Upcoming Assessment"
+    // UC-53: View All Assessments → "List Assessment Result" (Trainer can view assessment results)
+    const TRAINER_ALLOWED_ITEMS = [
+      "upcoming-assessments",   // UC-53: View All Assessments
+      "assessment-results",     // UC-53: View All Assessments (assessment results)
+      "instructed-courses",     // UC-26: View All Courses
+    ];
+    
+    // ⭐ Department Head role: Only show these items (according to UC list)
+    // UC-21: View All Departments → "Department Dashboard" and "My Department Details"
+    // UC-57: Approve/Deny Submitted Assessment → "List Assessment Review Requests"
+    // UC-58: View All Assessment Requests → "List Assessment Review Requests"
+    const DEPT_HEAD_ALLOWED_ITEMS = [
+      "department-dashboard",        // UC-21: View All Departments (via View Department In Detail)
+      "my-department-details",       // UC-21: View All Departments (via View Department In Detail)
+      "assessment-review-requests",  // UC-57, UC-58: Approve/Deny Assessment, View Assessment Requests
+    ];
+    
+    // ⭐ Trainee role: Only show these items (according to UC list)
+    // UC-37: View Trainee Subject Enrollments → "Trainee Dashboard" and "Enrolled Course List"
+    // UC-53: View All Assessments → "All Assessments"
+    // UC-62: Submit Incident/Feedback Report → "Create Incident/Feedback Report"
+    // Note: Trainee có LIST_ALL_REPORTS (UC-61) nhưng không nên thấy "Issue List" và "Feedback List" (đây là của SQA)
+    const TRAINEE_ALLOWED_ITEMS = [
+      "trainee-dashboard",        // UC-37: View Trainee Subject Enrollments
+      "enrolled-courses",         // UC-37: View Trainee Subject Enrollments
+      "all-assessments",          // UC-53: View All Assessments
+      "create-issue",             // UC-62: Submit Incident/Feedback Report
+    ];
+
     const allNavItems = [
       {
         id: "main-menu",
         label: "Main Menu",
         icon: List,
-        path: "/admin/main-menu",
-        permission: null, // No specific permission, will check individual actions
-        module: "ADMIN"
+        path: ROUTES.MAIN_MENU,
+        // Main Menu is hardcoded for Administrator role only
+        isAdminOnly: true, // Special flag for role-based check
       },
       {
         id: "users",
         label: "User Management",
         icon: People,
-        path: "/admin/users",
-        permission: API_PERMISSIONS.USERS.VIEW_ALL,
-        module: "USERS"
+        path: ROUTES.USERS,
+        // User Management page requires at least ONE of these permissions (UC-06: Manage User)
+        // Using permission IDs for accurate checking
+        permissions: [
+          PERMISSION_IDS.VIEW_ALL_USERS,
+          PERMISSION_IDS.CREATE_USER,
+          PERMISSION_IDS.UPDATE_USER,
+          PERMISSION_IDS.DISABLE_USER,
+          PERMISSION_IDS.ENABLE_USER
+        ],
+        requireAll: false, // Show if user has ANY of these permissions
       },
       {
         id: "roles",
         label: "Role Management",
         icon: Shield,
-        path: "/admin/roles",
-        permission: API_PERMISSIONS.ROLES.VIEW_ALL,
-        module: "ROLES"
+        path: ROUTES.ROLES,
+        permission: PERMISSION_IDS.VIEW_ALL_ROLES,
       },
       {
         id: "departments",
         label: "Departments",
         icon: Building,
-        path: "/admin/departments",
-        permission: API_PERMISSIONS.DEPARTMENTS.VIEW_ALL,
-        module: "DEPARTMENTS"
+        path: ROUTES.DEPARTMENTS,
+        permission: PERMISSION_IDS.VIEW_ALL_DEPARTMENTS,
       },
       {
         id: "forms",
         label: "Template List",
         icon: FileText,
-        path: "/admin/forms",
-        permission: API_PERMISSIONS.TEMPLATES.VIEW_ALL,
-        module: "TEMPLATES"
+        path: ROUTES.TEMPLATES,
+        permission: PERMISSION_IDS.VIEW_ALL_TEMPLATES,
       },
       {
         id: "system-config",
         label: "System Configuration",
         icon: Gear,
-        path: "/admin/system-config",
-        permission: API_PERMISSIONS.GLOBAL_FIELDS.VIEW_ALL,
-        module: "GLOBAL_FIELDS"
+        path: ROUTES.SYSTEM_CONFIG,
+        permission: PERMISSION_IDS.LIST_GLOBAL_FIELDS,
       },
       {
         id: "academic-dashboard",
         label: "Academic Dashboard",
         icon: House,
         path: "/academic/dashboard",
-        module: "ACADEMIC"
+        permission: PERMISSION_IDS.ACADEMIC_OVERVIEW_DASHBOARD,
       },
       {
         id: "trainee-dashboard",
         label: "Trainee Dashboard",
         icon: PersonCheck,
-        path: "/trainee/dashboard",
-        permission: API_PERMISSIONS.TRAINEES.VIEW_DETAIL,
-        module: "TRAINEES"
+        path: ROUTES.DASHBOARD,
+        permission: PERMISSION_IDS.VIEW_TRAINEE_SUBJECT_ENROLLMENTS, // Trainee dashboard requires enrollment view permission
       },
       {
         id: "enrolled-courses",
         label: "Enrolled Course List",
         icon: PersonCheck,
-        path: "/trainee/enrolled-courses",
-        permission: API_PERMISSIONS.TRAINEES.VIEW_COURSES,
-        module: "TRAINEES"
+        path: ROUTES.COURSES_ENROLLED,
+        permission: PERMISSION_IDS.VIEW_TRAINEE_SUBJECT_ENROLLMENTS,
       },
       {
         id: "all-assessments",
         label: "All Assessments",
         icon: PersonCheck,
-        path: "/trainee/all-assessments",
-        permission: API_PERMISSIONS.TRAINEES.VIEW_ASSESSMENTS,
-        module: "TRAINEES",
+        path: ROUTES.ASSESSMENTS_MY_ASSESSMENTS,
+        // For Trainee: use "GET /assessments/user-events", for other roles: use LIST_ASSESSMENTS UUID
+        permissions: [
+          PERMISSION_IDS.LIST_ASSESSMENTS,  // For Trainer, Department Head, etc.
+          "GET /assessments/user-events"     // For Trainee
+        ],
+        requireAll: false, // Show if user has ANY of these permissions
         children: [
           {
             id: "your-assessments",
             label: "Your Assessments",
-            path: "/trainee/your-assessments",
-            permission: API_PERMISSIONS.TRAINEES.VIEW_ASSESSMENTS,
-            module: "TRAINEES"
+            path: ROUTES.ASSESSMENTS_MY_ASSESSMENTS,
+            permissions: [
+              PERMISSION_IDS.LIST_ASSESSMENTS,
+              "GET /assessments/user-events"
+            ],
+            requireAll: false,
           },
           {
             id: "signature-required",
             label: "Signature Required List",
-            path: "/trainee/signature-required",
-            permission: API_PERMISSIONS.TRAINEES.VIEW_ASSESSMENTS,
-            module: "TRAINEES"
+            path: ROUTES.ASSESSMENTS_SIGNATURE_REQUIRED,
+            permissions: [
+              PERMISSION_IDS.LIST_ASSESSMENTS,
+              "GET /assessments/user-events"
+            ],
+            requireAll: false,
           },
           {
             id: "completion-required",
             label: "Section Completion Required List",
-            path: "/trainee/completion-required",
-            permission: API_PERMISSIONS.TRAINEES.VIEW_ASSESSMENTS,
-            module: "TRAINEES"
+            path: ROUTES.ASSESSMENTS_COMPLETION_REQUIRED,
+            permissions: [
+              PERMISSION_IDS.LIST_ASSESSMENTS,
+              "GET /assessments/user-events"
+            ],
+            requireAll: false,
           }
         ]
       },
@@ -201,190 +315,256 @@ const Sidebar = ({ collapsed, onClose }) => {
         id: "create-issue",
         label: "Create Incident/Feedback Report",
         icon: PersonCheck,
-        path: "/trainee/create-incident-feedback-report",
-        permission: API_PERMISSIONS.TRAINEES.VIEW_ALL,
-        module: "TRAINEES"
+        path: ROUTES.REPORTS_CREATE,
+        permission: PERMISSION_IDS.SUBMIT_REPORT_REQUEST,
       },
       // Trainer Navigation Items
       {
         id: "upcoming-assessments",
         label: "List Upcoming Assessment",
         icon: Clock,
-        path: "/trainer/upcoming-assessments",
-        permission: API_PERMISSIONS.ASSESSMENTS.VIEW_ALL,
-        module: "TRAINER"
+        path: ROUTES.ASSESSMENTS_UPCOMING,
+        permission: PERMISSION_IDS.LIST_ASSESSMENTS,
       },
       {
         id: "assessment-results",
         label: "List Assessment Result",
         icon: CheckCircle,
-        path: "/trainer/assessment-results",
-        permission: API_PERMISSIONS.ASSESSMENTS.VIEW_RESULTS,
-        module: "TRAINER"
+        path: ROUTES.ASSESSMENTS_RESULTS,
+        permission: PERMISSION_IDS.LIST_ASSESSMENTS, // ✅ Match với route permission
       },
       {
         id: "instructed-courses",
         label: "List Instructed Course",
         icon: Book,
-        path: "/trainer/instructed-courses",
-        permission: API_PERMISSIONS.COURSES.VIEW_ALL,
-        module: "TRAINER"
+        path: ROUTES.COURSES_INSTRUCTED,
+        permission: PERMISSION_IDS.VIEW_ALL_COURSES,
       },
       // Department Head Navigation Items
       {
         id: "department-dashboard",
         label: "Department Dashboard",
         icon: Building,
-        path: "/department-head/dashboard",
-        module: "DEPARTMENT_HEAD"
+        path: "/department-head/dashboard", // Department Head specific dashboard route
+        permission: PERMISSION_IDS.VIEW_DEPARTMENT_IN_DETAIL,
       },
       {
         id: "my-department-details",
         label: "My Department Details",
         icon: Book,
-        path: "/department-head/my-department-details",
-        permission: API_PERMISSIONS.DEPARTMENTS.VIEW_DETAIL,
-        module: "DEPARTMENT_HEAD"
+        path: ROUTES.DEPARTMENT_MY_DETAILS,
+        permission: PERMISSION_IDS.VIEW_DEPARTMENT_IN_DETAIL,
       },
       {
         id: "assessment-review-requests",
         label: "List Assessment Review Requests",
         icon: ClipboardCheck,
-        path: "/department-head/assessment-review-requests",
-        permission: API_PERMISSIONS.ASSESSMENTS.VIEW_ALL,
-        module: "DEPARTMENT_HEAD"
+        path: ROUTES.DEPARTMENT_REVIEW_REQUESTS,
+        permission: PERMISSION_IDS.LIST_ASSESSMENTS,
       },
       // SQA Navigation Items
       {
         id: "issue-list",
         label: "Issue List",
         icon: ExclamationTriangle,
-        path: "/sqa/issues",
-        permission: API_PERMISSIONS.SQA.VIEW_TEMPLATES,
-        module: "SQA"
+        path: ROUTES.REPORTS_ISSUES,
+        permission: PERMISSION_IDS.LIST_ALL_REPORTS,
       },
       {
         id: "feedback-list",
         label: "Feedback List",
         icon: ChatDots,
-        path: "/sqa/feedback",
-        permission: API_PERMISSIONS.SQA.VIEW_TEMPLATES,
-        module: "SQA"
+        path: ROUTES.REPORTS_FEEDBACK,
+        permission: PERMISSION_IDS.LIST_ALL_REPORTS,
       },
       {
         id: "template-list",
         label: "Template List",
         icon: FileEarmarkText,
-        path: "/sqa/templates",
-        permission: API_PERMISSIONS.SQA.VIEW_TEMPLATES,
-        module: "SQA",
+        path: ROUTES.TEMPLATES,
+        permission: PERMISSION_IDS.VIEW_ALL_TEMPLATES,
         children: [
           {
             id: "template-history",
             label: "List History Version",
             path: "/sqa/templates/history",
-            permission: API_PERMISSIONS.SQA.VIEW_TEMPLATE_DETAIL,
-            module: "SQA"
+            permission: PERMISSION_IDS.VIEW_TEMPLATE_DETAILS,
           },
           {
             id: "template-sections",
             label: "Section List",
             path: "/sqa/templates/sections",
-            permission: API_PERMISSIONS.SQA.VIEW_TEMPLATE_DETAIL,
-            module: "SQA"
+            permission: PERMISSION_IDS.VIEW_TEMPLATE_DETAILS,
           },
           {
             id: "template-fields",
             label: "Field List",
             path: "/sqa/templates/fields",
-            permission: API_PERMISSIONS.SQA.VIEW_TEMPLATE_DETAIL,
-            module: "SQA"
+            permission: PERMISSION_IDS.VIEW_TEMPLATE_DETAILS,
           },
           {
             id: "template-export",
             label: "PDF Preview for Export",
             path: "/sqa/templates/export",
-            permission: API_PERMISSIONS.SQA.VIEW_TEMPLATE_DETAIL,
-            module: "SQA"
+            permission: PERMISSION_IDS.DOWNLOAD_CONTENT_PDF,
           }
         ]
       },
     ];
 
+    // Filter items based on permissions (with special role-based checks for Admin-only items)
     return allNavItems.filter(item => {
-    // Debug logging - Commented out to reduce console noise
-    // console.log(`🔍 Filtering item: ${item.id}`, {
-    //   userRole: user?.role,
-    //   itemModule: item.module,
-    //   itemPermission: item.permission,
-    //   hasModuleAccess: hasModuleAccess(item.module),
-    //   hasPermission: hasPermission(item.permission)
-    // });
-    
-    // For ADMINISTRATOR role, show only admin-specific items
-    if (normalizedRoleName === 'ADMINISTRATOR') {
-      // Define admin-specific items that should be visible (including main-menu)
-      const adminItems = ['main-menu', 'users', 'roles', 'departments', 'forms', 'system-config'];
-      
-      // Check if this is an admin item
-      const isAdminItem = adminItems.includes(item.id);
-      
-      if (!isAdminItem) {
-        // console.log(`🔍 ADMINISTRATOR role - Non-admin item ${item.id}: BLOCKED (ADMINISTRATOR should only see admin items)`);
-        return false; // Block all non-admin items for ADMINISTRATOR
+      // ⭐ ROLE-BASED FILTERING FOR ADMINISTRATOR
+      // Administrator role: Only show items in ADMINISTRATOR_ALLOWED_ITEMS list
+      // This prevents Administrator from seeing items that belong to other roles
+      // (even if they have the permissions, according to UC list, they shouldn't see them)
+      if (isAdministrator()) {
+        // Special case: Main Menu is hardcoded for Administrator role only
+        if (item.isAdminOnly) {
+          return true;
+        }
+        // Only show items in the allowed list
+        return ADMINISTRATOR_ALLOWED_ITEMS.includes(item.id);
       }
       
-      // For main-menu, always show (permissions checked for individual actions)
-      if (item.id === 'main-menu') {
+      // ⭐ ROLE-BASED FILTERING FOR ACADEMIC DEPARTMENT
+      // Academic Department role: Only show items in ACADEMIC_DEPT_ALLOWED_ITEMS list
+      // This prevents Academic Department from seeing items that belong to other roles
+      // (even if they have the permissions, according to UC list, they shouldn't see them)
+      // Example: Academic Dept has LIST_ASSESSMENTS permission but shouldn't see "List Upcoming Assessment" (UC-53: Trainer, Trainee)
+      if (isAcademicDepartment()) {
+        // Only show items in the allowed list
+        return ACADEMIC_DEPT_ALLOWED_ITEMS.includes(item.id);
+      }
+      
+      // ⭐ ROLE-BASED FILTERING FOR TRAINER
+      // Trainer role: Only show items in TRAINER_ALLOWED_ITEMS list
+      // This prevents Trainer from seeing items that belong to other roles
+      // (even if they have the permissions, according to UC list, they shouldn't see them)
+      // Example: Trainer has SUBMIT_REPORT_REQUEST permission but shouldn't see "Create Incident/Feedback Report" (UC-62: Trainer, Trainee - but not in Trainer sidebar)
+      // Example: Trainer has LIST_ALL_REPORTS permission but shouldn't see "Issue List" and "Feedback List" (UC-60: SQA Auditor)
+      if (isTrainer()) {
+        // Only show items in the allowed list
+        return TRAINER_ALLOWED_ITEMS.includes(item.id);
+      }
+      
+      // ⭐ ROLE-BASED FILTERING FOR DEPARTMENT HEAD
+      // Department Head role: Only show items in DEPT_HEAD_ALLOWED_ITEMS list
+      // This prevents Department Head from seeing items that belong to other roles
+      // (even if they have the permissions, according to UC list, they shouldn't see them)
+      // Example: Department Head has VIEW_ALL_COURSES permission but shouldn't see "List Instructed Course" (UC-26: Academic Dept, Dept Head, Trainer - but not in Dept Head sidebar)
+      if (isDepartmentHead()) {
+        // Only show items in the allowed list
+        return DEPT_HEAD_ALLOWED_ITEMS.includes(item.id);
+      }
+      
+      // ⭐ ROLE-BASED FILTERING FOR TRAINEE
+      // Trainee role: Only show items in TRAINEE_ALLOWED_ITEMS list
+      // This prevents Trainee from seeing items that belong to other roles
+      // (even if they have the permissions, according to UC list, they shouldn't see them)
+      // Example: Trainee has LIST_ALL_REPORTS permission (UC-61) but shouldn't see "Issue List" and "Feedback List" (UC-60: SQA Auditor)
+      if (isTrainee()) {
+        // Only show items in the allowed list
+        return TRAINEE_ALLOWED_ITEMS.includes(item.id);
+      }
+      
+      // ⭐ PERMISSION-BASED FILTERING FOR OTHER ROLES
+      // For non-Administrator, non-Academic Department, non-Trainer, non-Department Head, and non-Trainee roles, check permissions as usual
+      
+      // Special case: Main Menu is hardcoded for Administrator role only
+      if (item.isAdminOnly) {
+        return false; // Non-Administrator cannot see Main Menu
+      }
+      
+      // If no permission required, show item
+      if (!item.permission && (!item.permissions || item.permissions.length === 0)) {
         return true;
       }
       
-      // For admin items, use normal permission check
-      const hasAccess = hasModuleAccess(item.module) || hasPermission(item.permission);
-      // console.log(`🔍 ADMINISTRATOR role - ${item.id}: ${hasAccess}`);
+      // Check if user has the required permission(s)
+      let hasAccess = false;
+      
+      // Support both single permission and multiple permissions
+      if (item.permissions && item.permissions.length > 0) {
+        // Multiple permissions: check if user has ANY (default) or ALL (if requireAll=true)
+        hasAccess = item.requireAll 
+          ? item.permissions.every(perm => hasPermission(perm))
+          : hasAnyPermission(item.permissions);
+      } else if (item.permission) {
+        // Single permission
+        hasAccess = hasPermission(item.permission);
+      }
+      
+      // Debug logging to see what's happening
+      // Reduced logging: only log when needed for debugging
+      // Uncomment if you need to debug sidebar filtering
+      // if (process.env.NODE_ENV === 'development') {
+      //   if (item.permissions) {
+      //     console.log(`🔍 Sidebar Filter - Item: ${item.id}, Permissions: [${item.permissions.join(', ')}], RequireAll: ${item.requireAll}, HasAccess: ${hasAccess}`);
+      //   } else {
+      //     console.log(`🔍 Sidebar Filter - Item: ${item.id}, Permission: "${item.permission}", HasAccess: ${hasAccess}`);
+      //   }
+      // }
+      
+      // Also check children permissions if item has children
+      if (item.children && item.children.length > 0) {
+        const hasChildAccess = item.children.some(child => {
+          // Support both single permission and multiple permissions
+          if (child.permissions && child.permissions.length > 0) {
+            return hasAnyPermission(child.permissions);
+          } else if (child.permission) {
+            return hasPermission(child.permission);
+          }
+          return true; // No permission required
+        });
+        
+        // Show parent if user has access to parent OR any child
+        return hasAccess || hasChildAccess;
+      }
+      
       return hasAccess;
-    }
-    // For ACADEMIC_DEPARTMENT role (handle variants: ACADEMIC_DEPARTMENT, ACADEMIC_DEPT, ACADEMIC DEPARTMENT)
-    // Normalize and check if starts with ACADEMIC
-    const isAcademicRole = normalizedRoleName === 'ACADEMIC_DEPARTMENT' || 
-                          normalizedRoleName === 'ACADEMIC_DEPT' ||
-                          normalizedRoleName.startsWith('ACADEMIC');
-    
-    if (isAcademicRole) {
-      const isAcademicItem = ['academic-dashboard'].includes(item.id);
-      // Block all other items - only show academic-dashboard
-      return isAcademicItem;
-    }
-    // For TRAINEE role, show all trainee-related items
-    if (normalizedRoleName === 'TRAINEE') {
-      const isTraineeItem = ['trainee-dashboard', 'enrolled-courses', 'all-assessments', 'create-issue'].includes(item.id);
-      // console.log(`🔍 TRAINEE role - ${item.id}: ${isTraineeItem}`);
-      return isTraineeItem;
-    }
-    // For TRAINER role, show only trainer-specific items (no trainee dashboard)
-    if (normalizedRoleName === 'TRAINER') {
-      const isTrainerItem = ['upcoming-assessments', 'assessment-results', 'instructed-courses'].includes(item.id);
-      // console.log(`🔍 TRAINER role - ${item.id}: ${isTrainerItem}`);
-      return isTrainerItem;
-    }
-    // For SQA_AUDITOR role, show all SQA-related items
-    if (normalizedRoleName === 'SQA_AUDITOR') {
-      const isSQAItem = ['issue-list', 'feedback-list', 'template-list'].includes(item.id);
-      // console.log(`🔍 SQA_AUDITOR role - ${item.id}: ${isSQAItem}`);
-      return isSQAItem;
-    }
-    // For DEPARTMENT_HEAD role, show department head-specific items
-    if (normalizedRoleName === 'DEPARTMENT_HEAD') {
-      const isDepartmentHeadItem = ['department-dashboard', 'my-department-details', 'assessment-review-requests'].includes(item.id);
-      // console.log(`🔍 DEPARTMENT_HEAD role - ${item.id}: ${isDepartmentHeadItem}`);
-      return isDepartmentHeadItem;
-    }
-    // Default behavior for other roles
-    const hasAccess = hasModuleAccess(item.module) || hasPermission(item.permission);
-    // console.log(`🔍 Default role - ${item.id}: ${hasAccess}`);
-    return hasAccess;
-  });
-  }, [user, hasModuleAccess, hasPermission]);
+    }).map(item => {
+      // Filter children based on permissions
+      // Special case: For "all-assessments", if parent is visible (passed role-based and permission filtering),
+      // keep all children since they all use the same permissions
+      if (item.id === 'all-assessments' && item.children && item.children.length > 0) {
+        // If parent is visible, all children should be visible too (they share the same permissions)
+        // Since parent already passed permission check, keep ALL children (they all have same permissions as parent)
+        // Don't filter children - if parent is visible, children should be visible too
+        const filteredChildren = item.children; // Keep all children since parent passed filter
+        
+        // Debug log for all-assessments children
+        if (process.env.NODE_ENV === 'development') {
+          console.log('🔍 All Assessments - Parent permissions:', item.permissions || [item.permission]);
+          console.log('🔍 All Assessments - Original children count:', item.children.length);
+          console.log('🔍 All Assessments - Keeping all children (parent passed filter)');
+          console.log('🔍 All Assessments - Children:', filteredChildren.map(c => ({ id: c.id, label: c.label, permissions: c.permissions || [c.permission] })));
+        }
+        
+        return {
+          ...item,
+          children: filteredChildren
+        };
+      }
+      
+      // For other items, filter children normally
+      if (item.children && item.children.length > 0) {
+        return {
+          ...item,
+          children: item.children.filter(child => {
+            // Support both single permission and multiple permissions
+            if (child.permissions && child.permissions.length > 0) {
+              return hasAnyPermission(child.permissions);
+            } else if (child.permission) {
+              return hasPermission(child.permission);
+            }
+            return true; // No permission required
+          })
+        };
+      }
+      return item;
+    });
+      }, [hasPermission, hasAnyPermission, user?.role, isAdministrator, isAcademicDepartment, isTrainer, isDepartmentHead, isTrainee]);
 
   // Debug log after navItems is initialized - Commented out to reduce console noise
   // console.log('🔍 Sidebar - Filtered navItems:', navItems);
@@ -427,11 +607,14 @@ const Sidebar = ({ collapsed, onClose }) => {
         width: collapsed ? "60px" : "260px",
         minHeight: "100vh",
         transition: "width 0.3s ease",
-        position: "sticky",
+        position: "fixed",
         top: 0,
+        left: 0,
         height: "100vh",
         overflowY: "hidden",
         overflowX: "hidden",
+        zIndex: 1000,
+        flexShrink: 0,
       }}
     >
       {/* Logo/Brand */}
@@ -477,7 +660,44 @@ const Sidebar = ({ collapsed, onClose }) => {
           // console.log(`🔍 Sidebar - Item: ${item.id}, Path: ${item.path}, Current: ${location.pathname}, Active: ${isActive}`); // Commented out to reduce console noise
           
           // Special handling for All Assessments dropdown
-          if (item.id === 'all-assessments' && user?.role === 'TRAINEE') {
+          // Show assessment dropdown if user has List Assessments permission
+          // For Trainee: check "GET /assessments/user-events", for other roles: check LIST_ASSESSMENTS UUID
+          let hasListAssessmentsPermission = false;
+          if (item.id === 'all-assessments') {
+            if (item.permissions && item.permissions.length > 0) {
+              // Check if user has ANY of the permissions (for Trainee: "GET /assessments/user-events", for others: LIST_ASSESSMENTS UUID)
+              hasListAssessmentsPermission = hasAnyPermission(item.permissions);
+            } else if (item.permission) {
+              // Fallback to single permission check
+              hasListAssessmentsPermission = hasPermission(item.permission);
+            }
+          }
+          
+          // Debug log for permission check
+          if (item.id === 'all-assessments' && process.env.NODE_ENV === 'development') {
+            console.log('🔍 All Assessments Permission Check:', {
+              itemId: item.id,
+              permissions: item.permissions || [item.permission],
+              hasPermission: hasListAssessmentsPermission,
+              hasChildren: !!item.children,
+              childrenCount: item.children?.length || 0,
+              children: item.children?.map(c => ({ id: c.id, label: c.label, permissions: c.permissions || [c.permission] })) || []
+            });
+          }
+          
+          if (item.id === 'all-assessments' && hasListAssessmentsPermission) {
+            // Debug log for dropdown rendering
+            if (process.env.NODE_ENV === 'development') {
+              console.log('🔍 Rendering All Assessments dropdown:', {
+                itemId: item.id,
+                hasChildren: !!item.children,
+                childrenCount: item.children?.length || 0,
+                children: item.children?.map(c => ({ id: c.id, label: c.label, permission: c.permission })) || [],
+                isDropdownOpen: isAssessmentDropdownOpen,
+                collapsed: collapsed
+              });
+            }
+            
             return (
               <Nav.Item key={item.id} className="mb-3">
                 <div className="position-relative">
@@ -491,7 +711,7 @@ const Sidebar = ({ collapsed, onClose }) => {
                     }}
                     onClick={() => {
                       if (collapsed) {
-                        navigate('/trainee/all-assessments');
+                        navigate(ROUTES.ASSESSMENTS_MY_ASSESSMENTS);
                         onClose();
                       } else {
                         setIsAssessmentDropdownOpen(!isAssessmentDropdownOpen);
@@ -522,9 +742,9 @@ const Sidebar = ({ collapsed, onClose }) => {
                   </div>
 
                   {/* All Assessments dropdown menu */}
-                  {!collapsed && isAssessmentDropdownOpen && (
+                  {!collapsed && isAssessmentDropdownOpen && item.children && item.children.length > 0 && (
                     <div className="mt-2 ms-4">
-                      {item.children && item.children.map((child) => (
+                      {item.children.map((child) => (
                         <Link
                           key={child.id}
                           to={child.path}
@@ -539,6 +759,12 @@ const Sidebar = ({ collapsed, onClose }) => {
                           <span className="sidebar-nav-label">{child.label}</span>
                         </Link>
                       ))}
+                    </div>
+                  )}
+                  {/* Debug: Show message if no children */}
+                  {!collapsed && isAssessmentDropdownOpen && (!item.children || item.children.length === 0) && (
+                    <div className="mt-2 ms-4 text-white-50 small">
+                      No children available
                     </div>
                   )}
                 </div>
@@ -581,14 +807,15 @@ const Sidebar = ({ collapsed, onClose }) => {
         })}
 
         {/* Assessment Event - Academic Department */}
-        {isAcademicRole && (
+        {/* ⭐ Administrator role: Do not show Academic Department items */}
+        {!isAdministrator() && hasAcademicDashboard && (
           <Nav.Item className="mb-3">
             <Link
-              to="/academic/assessment-events"
-              className={`sidebar-nav-link text-white d-flex align-items-center py-3 pe-1 rounded nav-link ${collapsed ? "justify-content-center" : ""} ${location.pathname === '/academic/assessment-events' ? "active" : ""}`}
+              to={ROUTES.ASSESSMENT_EVENTS}
+              className={`sidebar-nav-link text-white d-flex align-items-center py-3 pe-1 rounded nav-link ${collapsed ? "justify-content-center" : ""} ${location.pathname === ROUTES.ASSESSMENT_EVENTS ? "active" : ""}`}
               style={{
                 minHeight: collapsed ? "48px" : "auto",
-                backgroundColor: location.pathname === '/academic/assessment-events' ? "rgba(255, 255, 255, 0.1)" : "transparent",
+                backgroundColor: location.pathname === ROUTES.ASSESSMENT_EVENTS ? "rgba(255, 255, 255, 0.1)" : "transparent",
                 whiteSpace: collapsed ? 'nowrap' : 'normal',
                 overflowWrap: collapsed ? 'normal' : 'break-word'
               }}
@@ -611,7 +838,8 @@ const Sidebar = ({ collapsed, onClose }) => {
         )}
 
         {/* Department dropdown */}
-        {isAcademicRole && (
+        {/* ⭐ Administrator role: Do not show Academic Department items */}
+        {!isAdministrator() && hasAcademicDashboard && (
           <Nav.Item className="mb-3">
             <div className="position-relative">
               {/* Department dropdown trigger */}
@@ -638,7 +866,7 @@ const Sidebar = ({ collapsed, onClose }) => {
                       style={{ cursor: "pointer", overflowWrap: 'break-word', lineHeight: '1.2' }}
                       onClick={() => {
                         setIsDepartmentDropdownOpen(!isDepartmentDropdownOpen);
-                        navigate('/academic/departments');
+                        navigate('/academic/departments'); // Keep old route for now (academic-specific)
                       }}
                     >
                       Department

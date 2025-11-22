@@ -2,11 +2,11 @@ import React from 'react';
 import PortalUnifiedDropdown from '../Common/PortalUnifiedDropdown';
 import { Pencil, Trash, ThreeDotsVertical } from 'react-bootstrap-icons';
 import { PermissionWrapper } from '../Common';
-import { API_PERMISSIONS } from '../../constants/apiPermissions';
+import { PERMISSION_IDS } from '../../constants/permissionIds';
 
 const TrainerActions = ({ trainer, onEdit, onDelete }) => (
   <PermissionWrapper 
-    permissions={[API_PERMISSIONS.SUBJECTS.UPDATE, API_PERMISSIONS.SUBJECTS.REMOVE_INSTRUCTOR]}
+    permissions={[PERMISSION_IDS.UPDATE_SUBJECT, PERMISSION_IDS.REMOVE_SUBJECT_TRAINER]}
     fallback={null}
   >
     <PortalUnifiedDropdown
@@ -24,7 +24,7 @@ const TrainerActions = ({ trainer, onEdit, onDelete }) => (
           label: 'Edit Trainer',
           icon: <Pencil />,
           onClick: () => onEdit(trainer.id),
-          permission: API_PERMISSIONS.SUBJECTS.UPDATE
+          permission: PERMISSION_IDS.UPDATE_SUBJECT
         },
         { type: 'divider' },
         {
@@ -32,7 +32,7 @@ const TrainerActions = ({ trainer, onEdit, onDelete }) => (
           icon: <Trash />,
           className: 'text-danger',
           onClick: () => onDelete(trainer.id),
-          permission: API_PERMISSIONS.SUBJECTS.REMOVE_INSTRUCTOR
+          permission: PERMISSION_IDS.REMOVE_SUBJECT_TRAINER
         }
       ]}
     />

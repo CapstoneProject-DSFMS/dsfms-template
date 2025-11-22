@@ -13,6 +13,7 @@ import {
   PencilSquare
 } from 'react-bootstrap-icons';
 import { useParams, useNavigate } from 'react-router-dom';
+import { ROUTES } from '../../constants/routes';
 import { LoadingSkeleton } from '../../components/Common';
 
 const ResultApprovalNotePage = () => {
@@ -202,7 +203,7 @@ const ResultApprovalNotePage = () => {
             <Button
               variant="outline-secondary"
               size="sm"
-              onClick={() => navigate(`/trainer/assessment-details/${resultId}`)}
+              onClick={() => navigate(`/trainer/assessment-details/${resultId}`)} // Keep old route for now (trainer-specific)
               className="me-3"
             >
               <ArrowLeft size={16} className="me-2" />

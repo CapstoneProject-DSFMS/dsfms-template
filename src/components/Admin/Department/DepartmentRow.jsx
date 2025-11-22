@@ -3,7 +3,7 @@ import { Badge } from 'react-bootstrap';
 import PortalUnifiedDropdown from '../../Common/PortalUnifiedDropdown';
 import PermissionWrapper from '../../Common/PermissionWrapper';
 import { Eye, PersonX, ThreeDotsVertical } from 'react-bootstrap-icons';
-import { API_PERMISSIONS } from '../../../constants/apiPermissions';
+import { PERMISSION_IDS } from '../../../constants/permissionIds';
 
 const DepartmentRow = ({ department, index, onView, onToggleStatus }) => {
   const getStatusVariant = (status) => {
@@ -88,7 +88,7 @@ const DepartmentRow = ({ department, index, onView, onToggleStatus }) => {
       
       <td className="border-neutral-200 align-middle text-center show-mobile">
         <PermissionWrapper 
-          permissions={[API_PERMISSIONS.DEPARTMENTS.VIEW_DETAIL, API_PERMISSIONS.DEPARTMENTS.UPDATE]}
+          permissions={[PERMISSION_IDS.VIEW_DEPARTMENT_IN_DETAIL, PERMISSION_IDS.UPDATE_DEPARTMENT]}
           fallback={null}
         >
           <PortalUnifiedDropdown
@@ -107,7 +107,7 @@ const DepartmentRow = ({ department, index, onView, onToggleStatus }) => {
                 label: 'View Details',
                 icon: <Eye />,
                 onClick: () => onView(department),
-                permission: API_PERMISSIONS.DEPARTMENTS.VIEW_DETAIL
+                permission: PERMISSION_IDS.VIEW_DEPARTMENT_IN_DETAIL
               }] : []),
               // Only show divider if View Details is shown
               ...(department.status === 'ACTIVE' ? [{ type: 'divider' }] : []),
@@ -116,7 +116,7 @@ const DepartmentRow = ({ department, index, onView, onToggleStatus }) => {
                 icon: <PersonX />,
                 className: department.status === 'ACTIVE' ? 'text-danger' : 'text-success',
                 onClick: () => onToggleStatus(department),
-                permission: API_PERMISSIONS.DEPARTMENTS.UPDATE
+                permission: PERMISSION_IDS.UPDATE_DEPARTMENT
               }
             ]}
           />

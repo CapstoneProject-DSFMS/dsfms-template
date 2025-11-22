@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Modal, Button, Row, Col, Card, Badge, Spinner } from 'react-bootstrap';
 import { X, FileText, Eye, Building, Person, CheckCircle, ArrowRight } from 'react-bootstrap-icons';
 import { useNavigate } from 'react-router-dom';
+import { ROUTES } from '../../../constants/routes';
 import { toast } from 'react-toastify';
 import { templateAPI } from '../../../api';
 import { LoadingSkeleton } from '../../Common';
@@ -86,7 +87,7 @@ const PublishedTemplatesModal = ({ show, onHide }) => {
       console.log('📋 Frontend sections:', frontendSections);
 
       // Navigate to editor with initial sections
-      navigate('/admin/forms/editor', {
+      navigate(ROUTES.TEMPLATES_EDITOR, {
         state: {
           documentUrl: templateForm.templateConfig || templateForm.templateContent || '',
           fileName: templateForm.name || 'Untitled Document',

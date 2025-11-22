@@ -8,6 +8,7 @@ import {
   CalendarEvent
 } from 'react-bootstrap-icons';
 import { useNavigate } from 'react-router-dom';
+import { ROUTES } from '../../constants/routes';
 import '../../styles/department-head.css';
 import '../../styles/academic-department.css';
 
@@ -19,28 +20,28 @@ const DepartmentHeadDashboardPage = () => {
       title: 'View Course Details',
       description: 'Access detailed course information and management',
       icon: Book,
-      path: '/department-head/my-department-details',
+      path: ROUTES.DEPARTMENT_MY_DETAILS,
       color: 'primary'
     },
     {
       title: 'Review Assessment Requests',
       description: 'Process pending assessment review requests',
       icon: ClipboardCheck,
-      path: '/department-head/assessment-review-requests',
+      path: ROUTES.DEPARTMENT_REVIEW_REQUESTS,
       color: 'warning'
     },
     {
       title: 'Department Statistics',
       description: 'View department performance metrics',
       icon: People,
-      path: '/department-head/statistics',
+      path: '/department-head/statistics', // Keep old route for now (department-head-specific)
       color: 'info'
     },
     {
       title: 'Trainee Management',
       description: 'Manage trainee enrollments and progress',
       icon: People,
-      path: '/department-head/trainee-management',
+      path: '/department-head/trainee-management', // Keep old route for now (department-head-specific)
       color: 'success'
     }
   ];

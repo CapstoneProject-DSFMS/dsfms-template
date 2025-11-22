@@ -3,7 +3,8 @@ import { Container, Row, Col, Card } from 'react-bootstrap';
 import { useNavigate } from 'react-router-dom';
 import { PlusCircle, Building, Upload, ArrowRight } from 'react-bootstrap-icons';
 import { PermissionWrapper } from '../../components/Common';
-import { API_PERMISSIONS } from '../../constants/apiPermissions';
+import { PERMISSION_IDS } from '../../constants/permissionIds';
+import { ROUTES } from '../../constants/routes';
 import '../../styles/academic-department.css';
 
 const MainMenuPage = () => {
@@ -15,11 +16,11 @@ const MainMenuPage = () => {
       title: 'Add New Template',
       description: 'Create a new form template',
       icon: PlusCircle,
-      path: '/admin/forms?action=create',
-      permission: API_PERMISSIONS.TEMPLATES.CREATE,
+      path: `${ROUTES.TEMPLATES}?action=create`,
+      permission: PERMISSION_IDS.CREATE_TEMPLATE,
       color: 'primary',
       action: () => {
-        navigate('/admin/forms?action=create');
+        navigate(`${ROUTES.TEMPLATES}?action=create`);
       }
     },
     {
@@ -27,11 +28,11 @@ const MainMenuPage = () => {
       title: 'Add New Department',
       description: 'Create a new department',
       icon: Building,
-      path: '/admin/departments',
-      permission: API_PERMISSIONS.DEPARTMENTS.CREATE,
+      path: ROUTES.DEPARTMENTS,
+      permission: PERMISSION_IDS.CREATE_DEPARTMENT,
       color: 'primary',
       action: () => {
-        navigate('/admin/departments');
+        navigate(ROUTES.DEPARTMENTS);
       }
     },
     {
@@ -39,11 +40,11 @@ const MainMenuPage = () => {
       title: 'Bulk Import User',
       description: 'Import multiple users from Excel file',
       icon: Upload,
-      path: '/admin/users?action=bulk-import',
-      permission: API_PERMISSIONS.USERS.BULK_CREATE,
+      path: `${ROUTES.USERS}?action=bulk-import`,
+      permission: PERMISSION_IDS.BULK_CREATE_USERS,
       color: 'primary',
       action: () => {
-        navigate('/admin/users?action=bulk-import');
+        navigate(`${ROUTES.USERS}?action=bulk-import`);
       }
     }
   ];

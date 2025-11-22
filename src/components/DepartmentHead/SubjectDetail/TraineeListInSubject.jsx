@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Table, Badge, Button, Row, Col, Spinner, Alert } from 'react-bootstrap';
 import { Person, Calendar, Clock, Eye, ThreeDotsVertical, ArrowLeft } from 'react-bootstrap-icons';
 import { useNavigate, useParams } from 'react-router-dom';
+import { ROUTES } from '../../../constants/routes';
 import { LoadingSkeleton, SortIcon, PortalUnifiedDropdown, SearchBar } from '../../Common';
 import TrainerFilterPanel from '../../Trainer/TrainerFilterPanel';
 import useTableSort from '../../../hooks/useTableSort';
@@ -123,7 +124,7 @@ const TraineeListInSubject = ({ subjectId, courseId }) => {
   };
 
   const handleViewTrainee = (traineeId) => {
-    navigate(`/department-head/trainees/${traineeId}`);
+    navigate(ROUTES.USERS_DETAIL(traineeId));
   };
 
   // Get unique statuses for filter
@@ -215,7 +216,7 @@ const TraineeListInSubject = ({ subjectId, courseId }) => {
         <Col>
           <button 
             className="btn btn-link p-0 text-decoration-none"
-            onClick={() => navigate(`/department-head/my-department-details/${actualCourseId}`)}
+            onClick={() => navigate(`${ROUTES.DEPARTMENT_MY_DETAILS}/${actualCourseId}`)}
             style={{ color: 'var(--bs-primary)' }}
           >
             <ArrowLeft size={20} className="me-2" />

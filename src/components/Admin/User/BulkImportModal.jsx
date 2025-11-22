@@ -56,27 +56,10 @@ const BulkImportModal = ({ show, onClose, onImport, loading = false }) => {
   const fetchRoles = async () => {
     try {
       setRolesLoading(true);
-      const response = await userAPI.getRoles();
+      // Use public API (no permission required)
+      const rolesArray = await roleAPI.getPublicRoles();
       
-      // Handle different response formats
-      // Format 1: { roles: [...] }
-      // Format 2: { message: "...", data: { roles: [...] } }
-      // Format 3: [...] (direct array)
-      
-      let rolesArray = [];
-      if (Array.isArray(response)) {
-        rolesArray = response;
-      } else if (response?.data?.roles) {
-        rolesArray = response.data.roles;
-      } else if (response?.roles) {
-        rolesArray = response.roles;
-      } else if (response?.data && Array.isArray(response.data)) {
-        rolesArray = response.data;
-      }
-      
-      console.log('📦 Roles fetched:', {
-        responseType: typeof response,
-        responseKeys: response ? Object.keys(response) : 'null',
+      console.log('📦 Roles fetched from public API:', {
         rolesCount: rolesArray.length,
         roles: rolesArray.map(r => ({ id: r.id, name: r.name }))
       });
