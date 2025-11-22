@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Card, Table, Badge, Button, Row, Col, Spinner, Alert, Form, InputGroup } from 'react-bootstrap';
 import { CheckCircle, XCircle, Clock, Person, Book, Eye, Download, Funnel, ThreeDotsVertical } from 'react-bootstrap-icons';
 import { useNavigate } from 'react-router-dom';
+import { ROUTES } from '../../constants/routes';
 import { LoadingSkeleton, SortIcon, PortalUnifiedDropdown, SearchBar } from '../Common';
 import TrainerFilterPanel from './TrainerFilterPanel';
 import useTableSort from '../../hooks/useTableSort';
@@ -169,7 +170,7 @@ const AssessmentResultsList = () => {
   };
 
   const handleViewResult = (resultId) => {
-    navigate(`/trainer/assessment-details/${resultId}`);
+    navigate(`/trainer/assessment-details/${resultId}`); // Keep old route for now (trainer-specific)
   };
 
   const handleDownloadResult = (resultId) => {

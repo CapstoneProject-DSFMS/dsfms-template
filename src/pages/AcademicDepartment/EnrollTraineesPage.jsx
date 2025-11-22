@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Container, Row, Col, Card, Button, Form } from 'react-bootstrap';
 import { ArrowLeft, Upload, Search, Plus } from 'react-bootstrap-icons';
 import { useNavigate, useParams } from 'react-router-dom';
+import { ROUTES } from '../../constants/routes';
 import { toast } from 'react-toastify';
 import SubjectSelectionPanel from '../../components/AcademicDepartment/SubjectSelectionPanel';
 import TraineeSelectionPanel from '../../components/AcademicDepartment/TraineeSelectionPanel';
@@ -53,7 +54,7 @@ const EnrollTraineesPage = () => {
 
   const handleBack = () => {
     // Navigate back to course detail page
-    navigate(`/academic/course-detail/${courseId}`);
+    navigate(ROUTES.ACADEMIC_COURSE_DETAIL(courseId));
   };
 
   const handleBulkImport = () => {
@@ -268,7 +269,7 @@ const EnrollTraineesPage = () => {
         
         // Redirect to course detail page with trainees tab active when at least one enrollment succeeded
         setTimeout(() => {
-          navigate(`/academic/course-detail/${courseId}`, {
+          navigate(ROUTES.ACADEMIC_COURSE_DETAIL(courseId), {
             state: { activeTab: 'trainees' }
           });
         }, 1000); // Delay to show toast before redirect

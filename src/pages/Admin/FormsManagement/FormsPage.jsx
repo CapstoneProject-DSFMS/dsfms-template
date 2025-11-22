@@ -2,9 +2,10 @@ import React, { useState, useEffect } from 'react';
 import { Container, Row, Col, Card, Button, Badge } from 'react-bootstrap';
 import { Upload, FileText, FileEarmark, Eye, CheckCircle, Clock, Building, Person } from 'react-bootstrap-icons';
 import { useNavigate, useSearchParams } from 'react-router-dom';
+import { ROUTES } from '../../../constants/routes';
 import { toast } from 'react-toastify';
 import { PermissionWrapper, LoadingSkeleton } from '../../../components/Common';
-import { API_PERMISSIONS } from '../../../constants/apiPermissions';
+import { PERMISSION_IDS } from '../../../constants/permissionIds';
 import { templateAPI } from '../../../api';
 import ImportFileModal from '../../../components/Admin/Forms/ImportFileModal';
 import TemplateDetailModal from '../../../components/Admin/Forms/TemplateDetailModal';
@@ -131,7 +132,7 @@ const FormsPage = () => {
               <div className="d-flex gap-2">
                 <Button
                   variant="outline-light"
-                  onClick={() => navigate('/admin/forms/drafts')}
+                  onClick={() => navigate(ROUTES.TEMPLATES_DRAFTS)}
                   className="d-flex align-items-center"
                   size="sm"
                 >
@@ -139,7 +140,7 @@ const FormsPage = () => {
                   Your Drafts
                 </Button>
                 <PermissionWrapper 
-                  permission={API_PERMISSIONS.TEMPLATES.CREATE}
+                  permission={PERMISSION_IDS.CREATE_TEMPLATE}
                   fallback={null}
                 >
                   <Button

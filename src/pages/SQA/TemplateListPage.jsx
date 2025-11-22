@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { Container, Card } from 'react-bootstrap';
 import { useNavigate } from 'react-router-dom';
+import { ROUTES } from '../../constants/routes';
 import { toast } from 'react-toastify';
 import { LoadingSkeleton } from '../../components/Common';
 import { templateAPI } from '../../api';
@@ -97,7 +98,7 @@ const TemplateListPage = () => {
 
   const handleViewDetail = (templateId) => {
     console.log('View detail for template:', templateId);
-    navigate(`/sqa/templates/${templateId}`);
+    navigate(ROUTES.TEMPLATES_DETAIL(templateId)); // Use function-based route
   };
 
   if (loading) {

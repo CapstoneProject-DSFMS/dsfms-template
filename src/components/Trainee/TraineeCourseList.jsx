@@ -6,7 +6,7 @@ import { toast } from 'react-toastify';
 import traineeAPI from '../../api/trainee';
 import { LoadingSkeleton, SortIcon, SearchBar, PermissionWrapper } from '../Common';
 import PortalUnifiedDropdown from '../Common/PortalUnifiedDropdown';
-import { API_PERMISSIONS } from '../../constants/apiPermissions';
+import { PERMISSION_IDS } from '../../constants/permissionIds';
 import CourseFilterPanel from './CourseFilterPanel';
 import useTableSort from '../../hooks/useTableSort';
 import '../../styles/scrollable-table.css';
@@ -689,7 +689,7 @@ const TraineeCourseList = ({ traineeId }) => {
               </td>
               <td className="border-neutral-200 align-middle text-center show-mobile">
                 <PermissionWrapper 
-                  permissions={[API_PERMISSIONS.COURSES.VIEW_DETAIL]}
+                  permissions={[PERMISSION_IDS.VIEW_COURSE_IN_DETAIL]}
                   fallback={null}
                 >
                   <PortalUnifiedDropdown
@@ -707,7 +707,7 @@ const TraineeCourseList = ({ traineeId }) => {
                         label: 'View Course Details',
                         icon: <Eye />,
                         onClick: () => handleViewCourse(course),
-                        permission: API_PERMISSIONS.COURSES.VIEW_DETAIL
+                        permission: PERMISSION_IDS.VIEW_COURSE_IN_DETAIL
                       }
                     ]}
                   />

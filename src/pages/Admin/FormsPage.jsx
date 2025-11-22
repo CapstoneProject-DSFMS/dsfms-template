@@ -3,7 +3,7 @@ import { Container, Row, Col, Card, Button } from 'react-bootstrap';
 import { Upload, FileText, FileEarmark } from 'react-bootstrap-icons';
 import { toast } from 'react-toastify';
 import { PermissionWrapper } from '../../components/Common';
-import { API_PERMISSIONS } from '../../constants/apiPermissions';
+import { PERMISSION_IDS } from '../../constants/permissionIds';
 import ImportFileModal from '../../components/Admin/Forms/ImportFileModal';
 
 const FormsPage = () => {
@@ -46,7 +46,7 @@ const FormsPage = () => {
                 </p>
                 <div className="d-flex justify-content-center">
                   <PermissionWrapper 
-                    permission={API_PERMISSIONS.TEMPLATES.CREATE}
+                    permission={PERMISSION_IDS.CREATE_TEMPLATE}
                     fallback={null}
                   >
                     <Button

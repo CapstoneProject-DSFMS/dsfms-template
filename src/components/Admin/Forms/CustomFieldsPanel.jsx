@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { Button, Alert, Modal, Form, Row, Col, Card, Spinner } from 'react-bootstrap';
 import { Plus, X, ArrowDown, Pencil, ChevronDown, ChevronRight } from 'react-bootstrap-icons';
 import { useNavigate } from 'react-router-dom';
+import { ROUTES } from '../../../constants/routes';
 import { toast } from 'react-toastify';
 import { roleAPI } from '../../../api/role';
 import { readTemplateMetaFromStorage, buildTemplatePayload } from '../../../utils/templateBuilder';
@@ -755,8 +756,9 @@ const CustomFieldsPanel = ({
   useEffect(() => {
     const loadRoles = async () => {
       try {
-        const data = await roleAPI.getRoles();
-        const roles = Array.isArray(data?.roles) ? data.roles : (Array.isArray(data) ? data : []);
+        // Use public API (no permission required)
+        const data = await roleAPI.getPublicRoles();
+        const roles = Array.isArray(data) ? data : [];
         const filtered = roles
           .map((r) => (typeof r === 'string' ? r : (r.name || r.code || r.roleName || '')))
           .filter((name) => typeof name === 'string')
@@ -1211,7 +1213,7 @@ const CustomFieldsPanel = ({
           
           // Navigate back to forms list after successful submit
           setTimeout(() => {
-            navigate('/admin/forms');
+            navigate(ROUTES.TEMPLATES);
           }, 1500);
         } catch (versionError) {
           // Check if error is "Template name already exists"
@@ -1255,7 +1257,7 @@ const CustomFieldsPanel = ({
               
               // Navigate back to forms list after successful submit
               setTimeout(() => {
-                navigate('/admin/forms');
+                navigate('/templates');
               }, 1500);
             } catch (retryError) {
               // If retry also fails, throw error to outer catch block
@@ -1291,7 +1293,7 @@ const CustomFieldsPanel = ({
           
           // Navigate back to forms list after successful submit
           setTimeout(() => {
-            navigate('/admin/forms');
+            navigate(ROUTES.TEMPLATES);
           }, 1500);
         } else {
           // CREATE new template
@@ -1302,7 +1304,7 @@ const CustomFieldsPanel = ({
           
           // Navigate back to forms list after successful submit
           setTimeout(() => {
-            navigate('/admin/forms');
+            navigate(ROUTES.TEMPLATES);
           }, 1500);
         }
       }

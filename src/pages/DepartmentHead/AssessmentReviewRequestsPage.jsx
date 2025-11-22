@@ -15,7 +15,8 @@ import { useNavigate } from 'react-router-dom';
 import { LoadingSkeleton, SearchBar, PermissionWrapper, AdminTable, SortIcon } from '../../components/Common';
 import PortalUnifiedDropdown from '../../components/Common/PortalUnifiedDropdown';
 import useTableSort from '../../hooks/useTableSort';
-import { API_PERMISSIONS } from '../../constants/apiPermissions';
+import { PERMISSION_IDS } from '../../constants/permissionIds';
+import { ROUTES } from '../../constants/routes';
 import '../../styles/scrollable-table.css';
 import '../../styles/department-head.css';
 
@@ -143,7 +144,7 @@ const AssessmentRequestRow = ({ request, index, onView, onApprove, onDeny }) => 
         label: 'View Details',
         icon: <Eye />,
         onClick: () => onView(request),
-        permission: API_PERMISSIONS.ASSESSMENTS.VIEW_ALL
+        permission: PERMISSION_IDS.LIST_ASSESSMENTS
       }
     ];
 
@@ -155,14 +156,14 @@ const AssessmentRequestRow = ({ request, index, onView, onApprove, onDeny }) => 
           icon: <Check />,
           className: 'text-success',
           onClick: () => onApprove(request),
-          permission: API_PERMISSIONS.ASSESSMENTS.APPROVE
+          permission: PERMISSION_IDS.APPROVE_OR_REJECT_ASSESSMENT
         },
         {
           label: 'Deny Results',
           icon: <X />,
           className: 'text-danger',
           onClick: () => onDeny(request),
-          permission: API_PERMISSIONS.ASSESSMENTS.APPROVE
+          permission: PERMISSION_IDS.APPROVE_OR_REJECT_ASSESSMENT
         }
       );
     }
@@ -216,7 +217,7 @@ const AssessmentRequestRow = ({ request, index, onView, onApprove, onDeny }) => 
       </td>
       <td className="align-middle text-center show-mobile">
         <PermissionWrapper 
-          permissions={[API_PERMISSIONS.ASSESSMENTS.VIEW_ALL, API_PERMISSIONS.ASSESSMENTS.APPROVE]}
+          permissions={[PERMISSION_IDS.LIST_ASSESSMENTS, PERMISSION_IDS.APPROVE_OR_REJECT_ASSESSMENT]}
           fallback={null}
         >
           <PortalUnifiedDropdown
@@ -319,7 +320,7 @@ const AssessmentReviewRequestsPage = () => {
   });
 
   const handleViewRequest = (request) => {
-    navigate(`/department-head/assessment-review-requests/${request.id}`);
+    navigate(ROUTES.DEPARTMENT_REVIEW_REQUEST_DETAIL(request.id));
   };
 
   const handleApproveRequest = (request) => {
@@ -376,7 +377,7 @@ const AssessmentReviewRequestsPage = () => {
               <div className="d-flex align-items-center mb-3">
                 <button 
                   className="btn btn-link p-0 me-3"
-                  onClick={() => navigate('/department-head/dashboard')}
+                  onClick={() => navigate(ROUTES.DASHBOARD)}
                 >
                   <ArrowLeft size={20} />
                 </button>

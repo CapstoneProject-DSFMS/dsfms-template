@@ -3,6 +3,7 @@ import { Container, Row, Col, Card, Button, Badge, Spinner, Alert, Tabs, Tab } f
 import { ArrowLeft, ClipboardCheck, Clock, CheckCircle, ExclamationTriangle, Pen } from 'react-bootstrap-icons';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'react-toastify';
+import { ROUTES } from '../../constants/routes';
 import traineeAPI from '../../api/trainee';
 
 const TraineeAssessmentView = ({ traineeId }) => {
@@ -88,7 +89,7 @@ const TraineeAssessmentView = ({ traineeId }) => {
   };
 
   const handleBack = () => {
-    navigate('/trainee/your-assessments');
+    navigate(ROUTES.ASSESSMENTS_MY_ASSESSMENTS);
   };
 
   const getStatusBadge = (status) => {

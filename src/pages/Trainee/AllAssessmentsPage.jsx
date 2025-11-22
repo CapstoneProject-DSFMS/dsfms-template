@@ -2,6 +2,7 @@ import React from 'react';
 import { Container, Row, Col, Card, Button } from 'react-bootstrap';
 import { Pen, CheckCircle, ClipboardCheck } from 'react-bootstrap-icons';
 import { useNavigate } from 'react-router-dom';
+import { ROUTES } from '../../constants/routes';
 
 const AllAssessmentsPage = () => {
   const navigate = useNavigate();
@@ -29,7 +30,7 @@ const AllAssessmentsPage = () => {
                     <Button 
                       variant="outline-primary" 
                       size="sm"
-                      onClick={() => navigate('/trainee/signature-required')}
+                      onClick={() => navigate(ROUTES.ASSESSMENTS_SIGNATURE_REQUIRED)}
                     >
                       View Documents
                     </Button>
@@ -47,7 +48,7 @@ const AllAssessmentsPage = () => {
                     <Button 
                       variant="outline-success" 
                       size="sm"
-                      onClick={() => navigate('/trainee/completion-required')}
+                      onClick={() => navigate(ROUTES.ASSESSMENTS_COMPLETION_REQUIRED)}
                     >
                       View Sections
                     </Button>
@@ -65,7 +66,7 @@ const AllAssessmentsPage = () => {
                     <Button 
                       variant="outline-info" 
                       size="sm"
-                      onClick={() => navigate('/trainee/your-assessments')}
+                      onClick={() => navigate(ROUTES.ASSESSMENTS_MY_ASSESSMENTS)}
                     >
                       View Assessments
                     </Button>

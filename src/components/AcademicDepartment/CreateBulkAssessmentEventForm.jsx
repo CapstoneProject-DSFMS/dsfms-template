@@ -35,37 +35,15 @@ const CreateBulkAssessmentEventForm = ({ onSuccess }) => {
   const [loadingSubjects, setLoadingSubjects] = useState(true);
   const [loadingTrainees, setLoadingTrainees] = useState(false);
 
-  // Load departments
+  // Load departments from public API (no permission required)
   useEffect(() => {
     const loadDepartments = async () => {
       try {
         setLoadingDepartments(true);
-        const response = await departmentAPI.getDepartments();
-        console.log('Departments API response:', response); // Debug log
-        // Handle different response structures
-        let departmentsData = [];
-        if (response?.data?.departments) {
-          departmentsData = response.data.departments;
-        } else if (response?.departments) {
-          departmentsData = response.departments;
-        } else if (response?.data && Array.isArray(response.data)) {
-          departmentsData = response.data;
-        } else if (Array.isArray(response)) {
-          departmentsData = response;
-        }
-        console.log('All departments data:', departmentsData); // Debug log
-        console.log('First department sample:', departmentsData[0]); // Debug log to see structure
+        const departmentsData = await departmentAPI.getPublicDepartments();
         
-        // Filter only ACTIVE departments (if status field exists)
-        // If no status field, show all departments
-        const activeDepartments = departmentsData.filter(dept => {
-          if (!('status' in dept)) {
-            // If no status field, include all
-            return true;
-          }
-          return dept.status === 'ACTIVE';
-        });
-        console.log('Active departments:', activeDepartments); // Debug log
+        // Filter only ACTIVE departments
+        const activeDepartments = departmentsData.filter(dept => dept.isActive === true);
         setDepartments(activeDepartments);
       } catch (error) {
         console.error('Error loading departments:', error);

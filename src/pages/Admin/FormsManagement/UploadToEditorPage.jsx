@@ -2,7 +2,7 @@ import React from 'react';
 import { Container } from 'react-bootstrap';
 import UploadToEditorFlow from '../../../components/Admin/Forms/UploadToEditorFlow';
 import { PermissionWrapper } from '../../../components/Common';
-import { API_PERMISSIONS } from '../../../constants/apiPermissions';
+import { PERMISSION_IDS } from '../../../constants/permissionIds';
 
 const UploadToEditorPage = () => {
   const handleBack = () => {
@@ -12,7 +12,7 @@ const UploadToEditorPage = () => {
 
   return (
     <PermissionWrapper 
-      permission={API_PERMISSIONS.TEMPLATES.CREATE}
+      permission={PERMISSION_IDS.CREATE_TEMPLATE}
       fallback={
         <Container fluid className="py-4">
           <div className="text-center text-muted">

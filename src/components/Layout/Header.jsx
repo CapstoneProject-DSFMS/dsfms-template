@@ -9,6 +9,7 @@ import {
 } from 'react-bootstrap-icons';
 import { useAuth } from '../../hooks/useAuth';
 import useProfile from '../../hooks/useProfile';
+import { getCanonicalRoute } from '../../constants/routes';
 // import '../../styles/dropdown-clean.css'; // Moved to dropdown-unified.css in App.jsx
 
 // Force remove box shadow from dropdown
@@ -129,11 +130,40 @@ const Header = ({ onToggleSidebar }) => {
   
   // Map routes to titles
   const getTitleFromPath = (path) => {
+    // Get canonical route first (handles old → new route mapping)
+    const canonicalPath = getCanonicalRoute(path);
+    
     const routes = {
       // Profile route (shared across all roles)
       '/profile': 'Profile',
       
-      // Admin routes
+      // New function-based routes
+      '/dashboard': 'Dashboard',
+      '/users': 'User Management',
+      '/roles': 'Role Management',
+      '/departments': 'Department Management',
+      '/templates': 'Template List',
+      '/templates/editor': 'Template Editor',
+      '/templates/drafts': 'Your Drafts',
+      '/main-menu': 'Main Menu',
+      '/system-config': 'Global Field List',
+      '/courses/instructed': 'Instructed Courses',
+      '/courses/enrolled': 'Enrolled Course List',
+      '/assessments/upcoming': 'Upcoming Assessments',
+      '/assessments/my-assessments': 'Your Assessments',
+      '/assessments/results': 'Assessment Results',
+      '/assessments/signature-required': 'Signature Required List',
+      '/assessments/completion-required': 'Section Completion Required List',
+      '/assessment-events': 'Assessment Event',
+      '/reports/create': 'Create Incident/Feedback Report',
+      '/reports/issues': 'Issue List',
+      '/reports/feedback': 'Feedback List',
+      '/configure-signature': 'Configure Signature',
+      '/my-department-details': 'My Department Details',
+      '/assessment-review-requests': 'Assessment Review Requests',
+      '/academic-details': 'Academic Details',
+      
+      // Old routes (for backward compatibility - will be resolved to canonical routes)
       '/admin': 'Dashboard',
       '/admin/dashboard': 'Dashboard',
       '/admin/users': 'User Management',
@@ -143,14 +173,10 @@ const Header = ({ onToggleSidebar }) => {
       '/admin/forms/drafts': 'Your Drafts',
       '/admin/main-menu': 'Main Menu',
       '/admin/system-config': 'Global Field List',
-      
-      // Academic routes
       '/academic': 'Academic Dashboard',
       '/academic/dashboard': 'Academic Dashboard',
       '/academic/departments': 'Department Management',
       '/academic/assessment-events': 'Assessment Event',
-      
-      // Trainee routes
       '/trainee': 'Trainee Dashboard',
       '/trainee/dashboard': 'Trainee Dashboard',
       '/trainee/academic-details': 'Academic Details',
@@ -160,8 +186,6 @@ const Header = ({ onToggleSidebar }) => {
       '/trainee/your-assessments': 'Your Assessments',
       '/trainee/create-incident-feedback-report': 'Create Incident/Feedback Report',
       '/trainee/assessment-pending/section-completion': 'Section Completion Required List',
-      
-      // Trainer routes
       '/trainer': 'Trainer Dashboard',
       '/trainer/dashboard': 'Trainer Dashboard',
       '/trainer/upcoming-assessments': 'Upcoming Assessments',
@@ -174,8 +198,6 @@ const Header = ({ onToggleSidebar }) => {
       '/trainer/section-completion': 'Section Completion',
       '/trainer/assessment-details': 'Assessment Result Details',
       '/trainer/approval-notes': 'Result Approval Note',
-      
-      // SQA routes
       '/sqa': 'Issue List',
       '/sqa/issues': 'Issue List',
       '/sqa/feedback': 'Feedback List',
@@ -184,8 +206,6 @@ const Header = ({ onToggleSidebar }) => {
       '/sqa/templates/sections': 'Template Sections',
       '/sqa/templates/fields': 'Template Fields',
       '/sqa/templates/pdf-preview': 'PDF Preview',
-      
-      // Department Head routes
       '/department-head': 'Department Dashboard',
       '/department-head/dashboard': 'Department Dashboard',
       '/department-head/my-department-details': 'My Department Details',
@@ -244,6 +264,17 @@ const Header = ({ onToggleSidebar }) => {
       return 'Enrolled Subject Details';
     }
     
+    // Check for template editor (pattern: /templates/editor or /admin/forms/editor)
+    // ⚠️ Must check BEFORE other template routes to avoid conflicts
+    if (path.startsWith('/templates/editor') || path.startsWith('/admin/forms/editor')) {
+      return 'Template Editor';
+    }
+    
+    // Check for trainee assessment detail (pattern: /trainee/:traineeId/assessment/:assessmentId)
+    if (path.match(/^\/trainee\/[^/]+\/assessment\/[^/]+$/)) {
+      return 'Assessment Details';
+    }
+    
     // Check for trainee assessments (pattern: /trainee/:traineeId/assessments)
     if (path.match(/^\/trainee\/[^/]+\/assessments$/)) {
       return 'Assessment Details';
@@ -259,9 +290,47 @@ const Header = ({ onToggleSidebar }) => {
       return 'Assessment Section';
     }
     
-    // Check for admin form editor (pattern: /admin/forms/editor)
-    if (path.startsWith('/admin/forms/editor')) {
-      return 'Template List';
+    // Check for new function-based course routes (pattern: /courses/:courseId)
+    if (path.match(/^\/courses\/[^/]+$/) && !path.includes('/enroll-trainees') && !path.includes('/subjects/')) {
+      return 'Course Details';
+    }
+    
+    // Check for new function-based assessment routes
+    if (path.match(/^\/assessments\/assign\/[^/]+\/[^/]+$/)) {
+      return 'Assessments';
+    }
+    
+    if (path.match(/^\/assessments\/[^/]+\/sections$/)) {
+      return 'Assessment Sections';
+    }
+    
+    if (path.match(/^\/assessments\/sections\/[^/]+\/fields$/)) {
+      return 'Field';
+    }
+    
+    // Check for new function-based course enroll trainees (pattern: /courses/:courseId/enroll-trainees)
+    if (path.match(/^\/courses\/[^/]+\/enroll-trainees$/)) {
+      return 'Trainee Enrollments';
+    }
+    
+    // Check for new function-based course subjects (pattern: /courses/:courseId/subjects/:subjectId)
+    if (path.match(/^\/courses\/[^/]+\/subjects\/[^/]+$/)) {
+      return 'Subject Details';
+    }
+    
+    // Check for new function-based department details (pattern: /departments/:id)
+    if (path.match(/^\/departments\/[^/]+$/)) {
+      return 'Department Details';
+    }
+    
+    // Check for new function-based my-department-details with courseId (pattern: /my-department-details/:courseId)
+    if (path.match(/^\/my-department-details\/[^/]+$/) && !path.includes('/subjects/')) {
+      return 'Course Details';
+    }
+    
+    // Check for new function-based assessment review requests detail (pattern: /assessment-review-requests/:requestId)
+    if (path.match(/^\/assessment-review-requests\/[^/]+$/)) {
+      return 'Assessment Review Request Details';
     }
     
     // Check for SQA template detail pages (pattern: /sqa/templates/:templateId)
@@ -332,7 +401,8 @@ const Header = ({ onToggleSidebar }) => {
       return 'Trainee Details';
     }
     
-    return routes[path] || 'Dashboard';
+    // Use canonical path for title lookup
+    return routes[canonicalPath] || routes[path] || 'Dashboard';
   };
 
   const handleLogout = () => {

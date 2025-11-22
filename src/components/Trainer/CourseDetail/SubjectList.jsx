@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Table, Badge, Button, Row, Col, Spinner, Alert } from 'react-bootstrap';
 import { Book, Clock, CheckCircle, Eye, ThreeDotsVertical } from 'react-bootstrap-icons';
 import { useNavigate } from 'react-router-dom';
+import { ROUTES } from '../../../constants/routes';
 import { LoadingSkeleton, SortIcon, PortalUnifiedDropdown, SearchBar } from '../../Common';
 import TrainerFilterPanel from '../TrainerFilterPanel';
 import useTableSort from '../../../hooks/useTableSort';
@@ -105,7 +106,7 @@ const SubjectList = ({ courseId }) => {
   };
 
   const handleViewSubject = (subjectId) => {
-    navigate(`/trainer/subjects/${subjectId}`);
+    navigate(ROUTES.SUBJECTS_DETAIL(subjectId));
   };
 
   // Get unique statuses for filter

@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { Container, Row, Col, Button, Card, Spinner } from 'react-bootstrap';
 import { useParams, useNavigate } from 'react-router-dom';
+import { ROUTES } from '../../../constants/routes';
 import { ArrowLeft } from 'react-bootstrap-icons';
 import { toast } from 'react-toastify';
 import { departmentAPI } from '../../../api';
@@ -66,7 +67,7 @@ const DepartmentDetailPage = () => {
   }, [loadDepartment]);
 
   const handleBack = () => {
-    navigate('/admin/departments');
+    navigate(ROUTES.DEPARTMENTS);
   };
 
   const handleTabChange = (tabId) => {

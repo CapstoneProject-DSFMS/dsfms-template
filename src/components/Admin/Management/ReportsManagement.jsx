@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { Card, Row, Col, Button, Table, Badge, Dropdown } from 'react-bootstrap';
 import { Eye, Pencil, FileEarmarkText, Plus, ThreeDots, CheckCircle } from 'react-bootstrap-icons';
 import { SearchBar, FilterDropdown, PermissionWrapper } from '../Common';
-import { API_PERMISSIONS } from '../../../constants/apiPermissions';
+import { PERMISSION_IDS } from '../../../constants/permissionIds';
 const ReportsManagement = () => {
   const [reports, setReports] = useState([
     {
@@ -108,7 +108,7 @@ const ReportsManagement = () => {
           </Col>
           <Col xs="auto">
             <PermissionWrapper 
-              permission={API_PERMISSIONS.REPORTS.CREATE}
+              permission={PERMISSION_IDS.SUBMIT_REPORT_REQUEST}
               fallback={null}
             >
               <Button
@@ -280,7 +280,7 @@ const ReportsManagement = () => {
 
                       <Dropdown.Menu className="border-0 shadow">
                         <PermissionWrapper 
-                          permission={API_PERMISSIONS.REPORTS.VIEW_ALL}
+                          permission={PERMISSION_IDS.LIST_ALL_REPORTS}
                           fallback={null}
                         >
                           <Dropdown.Item className="text-primary-custom d-flex align-items-center">
@@ -290,7 +290,7 @@ const ReportsManagement = () => {
                         </PermissionWrapper>
                         
                         <PermissionWrapper 
-                          permission={API_PERMISSIONS.REPORTS.VIEW_ALL}
+                          permission={PERMISSION_IDS.LIST_ALL_REPORTS}
                           fallback={null}
                         >
                           <Dropdown.Item className="text-primary-custom d-flex align-items-center">
@@ -300,7 +300,7 @@ const ReportsManagement = () => {
                         </PermissionWrapper>
                         
                         <PermissionWrapper 
-                          permission={API_PERMISSIONS.REPORTS.VIEW_ALL}
+                          permission={PERMISSION_IDS.LIST_ALL_REPORTS}
                           fallback={null}
                         >
                           {report.status !== 'Resolved' && report.status !== 'Closed' && (
@@ -315,7 +315,7 @@ const ReportsManagement = () => {
                         </PermissionWrapper>
                         
                         <PermissionWrapper 
-                          permission={API_PERMISSIONS.REPORTS.VIEW_ALL}
+                          permission={PERMISSION_IDS.LIST_ALL_REPORTS}
                           fallback={null}
                         >
                           <Dropdown.Divider />
