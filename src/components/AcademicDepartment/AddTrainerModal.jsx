@@ -1,9 +1,9 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { Modal, Button, Form, Alert, Row, Col, Spinner, Dropdown } from 'react-bootstrap';
 import { X, Plus } from 'react-bootstrap-icons';
-import { userAPI } from '../../api/user';
+import courseAPI from '../../api/course';
 
-const AddTrainerModal = ({ show, onClose, onSave, loading = false }) => {
+const AddTrainerModal = ({ show, onClose, onSave, loading = false, courseId = null }) => {
   const [formData, setFormData] = useState({
     trainer_user_id: '',
     role_in_subject: 'EXAMINER'
@@ -13,31 +13,43 @@ const AddTrainerModal = ({ show, onClose, onSave, loading = false }) => {
   const [loadingTrainers, setLoadingTrainers] = useState(false);
 
   // Load trainers from API
-  const loadTrainers = async () => {
+  const loadTrainers = useCallback(async () => {
     setLoadingTrainers(true);
     try {
-      const response = await userAPI.getTrainers();
-      
-      // Handle different response formats
       let trainersList = [];
       
-      if (response) {
-        // Format 1: { data: [...] }
-        if (response.data && Array.isArray(response.data)) {
-          trainersList = response.data;
+      // Only load trainers if courseId is provided
+      if (courseId) {
+        try {
+          const response = await courseAPI.getAvailableTrainersForCourse(courseId);
+          
+          // Handle different response formats from available trainers API
+          if (response) {
+            // Format 1: { data: [...] }
+            if (response.data && Array.isArray(response.data)) {
+              trainersList = response.data;
+            }
+            // Format 2: { trainers: [...] }
+            else if (response.trainers && Array.isArray(response.trainers)) {
+              trainersList = response.trainers;
+            }
+            // Format 3: { data: { trainers: [...] } }
+            else if (response.data && response.data.trainers && Array.isArray(response.data.trainers)) {
+              trainersList = response.data.trainers;
+            }
+            // Format 4: Direct array
+            else if (Array.isArray(response)) {
+              trainersList = response;
+            }
+          }
+        } catch (apiError) {
+          console.error('Error loading available trainers for course:', apiError);
+          trainersList = [];
         }
-        // Format 2: { users: [...] }
-        else if (response.users && Array.isArray(response.users)) {
-          trainersList = response.users;
-        }
-        // Format 3: { data: { users: [...] } }
-        else if (response.data && response.data.users && Array.isArray(response.data.users)) {
-          trainersList = response.data.users;
-        }
-        // Format 4: Direct array
-        else if (Array.isArray(response)) {
-          trainersList = response;
-        }
+      } else {
+        // If no courseId, show empty list
+        console.warn('No courseId provided. Cannot load available trainers.');
+        trainersList = [];
       }
       
       setTrainers(Array.isArray(trainersList) ? trainersList : []);
@@ -47,7 +59,7 @@ const AddTrainerModal = ({ show, onClose, onSave, loading = false }) => {
     } finally {
       setLoadingTrainers(false);
     }
-  };
+  }, [courseId]);
 
   useEffect(() => {
     if (show) {
@@ -60,15 +72,7 @@ const AddTrainerModal = ({ show, onClose, onSave, loading = false }) => {
       // Load trainers when modal opens
       loadTrainers();
     }
-  }, [show]);
-
-  const handleInputChange = (e) => {
-    const { name, value } = e.target;
-    setFormData(prev => ({
-      ...prev,
-      [name]: value
-    }));
-  };
+  }, [show, courseId, loadTrainers]);
 
   const validateForm = () => {
     const newErrors = [];
@@ -96,6 +100,8 @@ const AddTrainerModal = ({ show, onClose, onSave, loading = false }) => {
       await onSave(formData);
       handleClose();
     } catch (error) {
+      // Error is handled by parent component via onSave callback
+      console.error('Error saving trainer:', error);
     }
   };
 

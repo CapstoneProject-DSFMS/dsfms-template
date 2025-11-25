@@ -6,7 +6,7 @@ import { PERMISSION_IDS } from '../../constants/permissionIds';
 
 const TrainerActions = ({ trainer, onEdit, onDelete }) => (
   <PermissionWrapper 
-    permissions={[PERMISSION_IDS.UPDATE_SUBJECT, PERMISSION_IDS.REMOVE_SUBJECT_TRAINER]}
+    permissions={[PERMISSION_IDS.UPDATE_SUBJECT, PERMISSION_IDS.REMOVE_TRAINERS]}
     fallback={null}
   >
     <PortalUnifiedDropdown
@@ -32,7 +32,7 @@ const TrainerActions = ({ trainer, onEdit, onDelete }) => (
           icon: <Trash />,
           className: 'text-danger',
           onClick: () => onDelete(trainer.id),
-          permission: PERMISSION_IDS.REMOVE_SUBJECT_TRAINER
+          permission: PERMISSION_IDS.REMOVE_TRAINERS
         }
       ]}
     />

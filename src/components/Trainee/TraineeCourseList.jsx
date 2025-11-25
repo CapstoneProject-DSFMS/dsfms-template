@@ -4,6 +4,7 @@ import { Eye, Book, ThreeDotsVertical, Clock, PlayCircle, CheckCircle } from 're
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'react-toastify';
 import traineeAPI from '../../api/trainee';
+import courseAPI from '../../api/course';
 import { LoadingSkeleton, SortIcon, SearchBar, PermissionWrapper } from '../Common';
 import PortalUnifiedDropdown from '../Common/PortalUnifiedDropdown';
 import { PERMISSION_IDS } from '../../constants/permissionIds';
@@ -58,11 +59,11 @@ const TraineeCourseList = ({ traineeId }) => {
     return courses.filter(course => {
       switch (tab) {
         case 'upcoming':
-          return course.status === 'PLANNED';
+          return course.status === 'PLANNED' || course.status === 'PLAN';
         case 'ongoing':
-          return course.status === 'ON-GOING';
+          return course.status === 'ON-GOING' || course.status === 'ONGOING' || course.status === 'ON_GOING';
         case 'completed':
-          return course.status === 'COMPLETED';
+          return course.status === 'COMPLETED' || course.status === 'COMPLETE';
         default:
           return true;
       }
@@ -98,144 +99,117 @@ const TraineeCourseList = ({ traineeId }) => {
     try {
       setLoading(true);
       
-      // Hardcoded courses data
-      const mockCourses = [
-        {
-          id: '1',
-          code: 'SAF001',
-          name: 'Safety Procedures Training',
-          description: 'Basic safety procedures and emergency protocols',
-          level: 'BEGINNER',
-          status: 'ON-GOING',
-          startDate: '2024-01-15T09:00:00.000Z',
-          endDate: '2024-03-15T17:00:00.000Z',
-          progress: 75,
-          department: {
-            id: 1,
-            name: 'Safety Department',
-            code: 'SAF'
-          }
-        },
-        {
-          id: '2',
-          code: 'FLT002',
-          name: 'Flight Operations',
-          description: 'Advanced flight operations and navigation',
-          level: 'INTERMEDIATE',
-          status: 'ON-GOING',
-          startDate: '2024-02-01T08:00:00.000Z',
-          endDate: '2024-04-01T16:00:00.000Z',
-          progress: 45,
-          department: {
-            id: 2,
-            name: 'Flight Operations',
-            code: 'FO'
-          }
-        },
-        {
-          id: '3',
-          code: 'EMG003',
-          name: 'Emergency Response',
-          description: 'Emergency response and crisis management',
-          level: 'ADVANCED',
-          status: 'COMPLETED',
-          startDate: '2023-11-01T09:00:00.000Z',
-          endDate: '2023-12-15T17:00:00.000Z',
-          progress: 100,
-          department: {
-            id: 3,
-            name: 'Emergency Services',
-            code: 'EMG'
-          }
-        },
-        {
-          id: '4',
-          code: 'TECH004',
-          name: 'Technical Systems',
-          description: 'Aircraft technical systems and maintenance',
-          level: 'INTERMEDIATE',
-          status: 'PLANNED',
-          startDate: '2024-03-01T09:00:00.000Z',
-          endDate: '2024-05-01T17:00:00.000Z',
-          progress: 0,
-          department: {
-            id: 4,
-            name: 'Technical Department',
-            code: 'TECH'
-          }
-        },
-        {
-          id: '5',
-          code: 'NAV005',
-          name: 'Navigation Systems',
-          description: 'Advanced navigation and GPS systems',
-          level: 'ADVANCED',
-          status: 'COMPLETED',
-          startDate: '2023-09-01T09:00:00.000Z',
-          endDate: '2023-10-15T17:00:00.000Z',
-          progress: 100,
-          department: {
-            id: 5,
-            name: 'Navigation Department',
-            code: 'NAV'
-          }
-        },
-        {
-          id: '6',
-          code: 'COMM006',
-          name: 'Communication Protocols',
-          description: 'Radio communication and protocols',
-          level: 'BEGINNER',
-          status: 'PLANNED',
-          startDate: '2024-04-01T09:00:00.000Z',
-          endDate: '2024-06-01T17:00:00.000Z',
-          progress: 0,
-          department: {
-            id: 6,
-            name: 'Communication Department',
-            code: 'COMM'
-          }
-        },
-        {
-          id: '7',
-          code: 'MAINT007',
-          name: 'Aircraft Maintenance',
-          description: 'Routine maintenance procedures',
-          level: 'INTERMEDIATE',
-          status: 'ON-GOING',
-          startDate: '2024-01-20T08:00:00.000Z',
-          endDate: '2024-03-20T16:00:00.000Z',
-          progress: 60,
-          department: {
-            id: 7,
-            name: 'Maintenance Department',
-            code: 'MAINT'
-          }
-        },
-        {
-          id: '8',
-          code: 'ARCH008',
-          name: 'Archived Course',
-          description: 'This course has been archived',
-          level: 'BEGINNER',
-          status: 'ARCHIVED',
-          startDate: '2023-06-01T09:00:00.000Z',
-          endDate: '2023-08-01T17:00:00.000Z',
-          progress: 100,
-          department: {
-            id: 8,
-            name: 'Archived Department',
-            code: 'ARCH'
+      // Call API to get trainee enrollments with status=ENROLLED
+      const response = await courseAPI.getTraineeEnrollmentsByStatus(traineeId, 'ENROLLED');
+      
+      // API response structure: { enrollments: [...], totalCount: number }
+      const enrollments = response?.enrollments || response?.data?.enrollments || response?.data || [];
+      
+      if (!Array.isArray(enrollments) || enrollments.length === 0) {
+        setCourses([]);
+        setLoading(false);
+        return;
+      }
+      
+      // Group enrollments by course (since multiple subjects can belong to same course)
+      const coursesMap = new Map();
+      
+      enrollments.forEach((item) => {
+        const course = item.subject?.course;
+        const subject = item.subject;
+        
+        if (!course || !course.id || !subject) return;
+        
+        const courseId = course.id;
+        
+        if (!coursesMap.has(courseId)) {
+          // Initialize course with first subject's data
+          coursesMap.set(courseId, {
+            id: courseId,
+            code: course.code || `COURSE-${courseId.substring(0, 8).toUpperCase()}`,
+            name: course.name || 'Unnamed Course',
+            description: '', // Course description not in API
+            level: 'BEGINNER', // Default level, not in API
+            status: 'PLANNED', // Will be calculated
+            startDate: null,
+            endDate: null,
+            subjects: []
+          });
+        }
+        
+        const courseData = coursesMap.get(courseId);
+        
+        // Add subject to course
+        courseData.subjects.push({
+          id: subject.id,
+          code: subject.code,
+          name: subject.name,
+          status: subject.status,
+          startDate: subject.startDate,
+          endDate: subject.endDate
+        });
+        
+        // Update course dates (earliest start, latest end)
+        if (subject.startDate) {
+          const subjectStart = new Date(subject.startDate);
+          if (!courseData.startDate || subjectStart < new Date(courseData.startDate)) {
+            courseData.startDate = subject.startDate;
           }
         }
-      ];
+        
+        if (subject.endDate) {
+          const subjectEnd = new Date(subject.endDate);
+          if (!courseData.endDate || subjectEnd > new Date(courseData.endDate)) {
+            courseData.endDate = subject.endDate;
+          }
+        }
+      });
       
-      // Simulate API delay
-      await new Promise(resolve => setTimeout(resolve, 300));
-      setCourses(mockCourses);
+      // Convert map to array and calculate progress
+      const mappedCourses = Array.from(coursesMap.values()).map((course) => {
+        // Calculate progress based on completed subjects
+        const totalSubjects = course.subjects.length;
+        const completedSubjects = course.subjects.filter(s => 
+          s.status === 'COMPLETED' || s.status === 'COMPLETE'
+        ).length;
+        const progress = totalSubjects > 0 ? Math.round((completedSubjects / totalSubjects) * 100) : 0;
+        
+        // Determine course status based on subjects
+        let courseStatus = 'PLANNED';
+        const hasOngoing = course.subjects.some(s => 
+          s.status === 'ON-GOING' || s.status === 'ONGOING' || s.status === 'ON_GOING'
+        );
+        const allCompleted = course.subjects.every(s => 
+          s.status === 'COMPLETED' || s.status === 'COMPLETE'
+        );
+        
+        if (allCompleted && totalSubjects > 0) {
+          courseStatus = 'COMPLETED';
+        } else if (hasOngoing) {
+          courseStatus = 'ON-GOING';
+        } else {
+          courseStatus = 'PLANNED';
+        }
+        
+        return {
+          id: course.id,
+          code: course.code,
+          name: course.name,
+          description: course.description || '',
+          level: course.level || 'BEGINNER',
+          status: courseStatus,
+          startDate: course.startDate,
+          endDate: course.endDate,
+          progress: progress,
+          department: null // Not available in API response
+        };
+      });
+      
+      setCourses(mappedCourses);
     } catch (error) {
       console.error('Error loading trainee courses:', error);
-      toast.error('Failed to load enrolled courses');
+      toast.error(error.response?.data?.message || 'Failed to load enrolled courses');
+      setCourses([]);
     } finally {
       setLoading(false);
     }
@@ -598,7 +572,7 @@ const TraineeCourseList = ({ traineeId }) => {
               </Col>
             </Row>
 
-      <div className="scrollable-table-container admin-table course-list-table-no-borders">
+      <div className="scrollable-table-container admin-table course-list-table-no-borders" style={{ maxHeight: '70vh', overflowY: 'auto' }}>
         <Table hover className="mb-0 table-mobile-responsive" style={{ fontSize: '0.875rem' }}>
         <thead className="sticky-header">
           <tr>
@@ -629,92 +603,126 @@ const TraineeCourseList = ({ traineeId }) => {
           </tr>
         </thead>
         <tbody>
-          {sortedData.map((course, index) => (
-            <tr 
-              key={course.id}
-              className={`${index % 2 === 0 ? 'bg-white' : 'bg-neutral-50'} transition-all`}
-              style={{
-                transition: 'background-color 0.2s ease'
-              }}
-              onMouseEnter={(e) => {
-                e.currentTarget.style.backgroundColor = 'var(--bs-neutral-100)';
-              }}
-              onMouseLeave={(e) => {
-                e.currentTarget.style.backgroundColor = index % 2 === 0 ? 'white' : 'var(--bs-neutral-50)';
-              }}
-            >
-              <td className="border-neutral-200 align-middle show-mobile">
-                <Badge 
-                  bg="primary" 
-                  className="px-2 py-1"
-                  style={{ 
-                    fontSize: '0.75rem'
-                  }}
-                >
-                  {course.code}
-                </Badge>
-              </td>
-              <td className="border-neutral-200 align-middle show-mobile">
-                <div className="fw-medium text-dark">
-                  {course.name}
+          {sortedData.length === 0 ? (
+            <tr>
+              <td colSpan="8" className="text-center py-5" style={{ border: 'none' }}>
+                <div className="text-muted">
+                  <Book size={48} className="mb-3" style={{ opacity: 0.5 }} />
+                  <h5 className="mb-2">No courses found</h5>
+                  <p className="mb-0">
+                    {searchTerm || selectedLevels.length > 0 || selectedStatuses.length > 0
+                      ? 'Try adjusting your search criteria or filters.'
+                      : activeTab === 'upcoming'
+                      ? 'You have no upcoming courses.'
+                      : activeTab === 'ongoing'
+                      ? 'You have no on-going courses.'
+                      : 'You have no completed courses.'}
+                  </p>
+                  {(searchTerm || selectedLevels.length > 0 || selectedStatuses.length > 0) && (
+                    <button 
+                      className="btn btn-outline-primary btn-sm mt-3"
+                      onClick={handleClearFilters}
+                    >
+                      Clear Filters
+                    </button>
+                  )}
                 </div>
-                <small className="text-muted">{course.description}</small>
-              </td>
-              <td className="border-neutral-200 align-middle show-mobile">
-                {getLevelBadge(course.level)}
-              </td>
-              <td className="border-neutral-200 align-middle show-mobile">
-                {getStatusBadge(course.status)}
-              </td>
-              <td className="border-neutral-200 align-middle hide-mobile">
-                <span className="text-dark">
-                  {course.startDate ? new Date(course.startDate).toLocaleDateString() : 'N/A'}
-                </span>
-              </td>
-              <td className="border-neutral-200 align-middle hide-mobile">
-                <span className="text-dark">
-                  {course.endDate ? new Date(course.endDate).toLocaleDateString() : 'N/A'}
-                </span>
-              </td>
-              <td className="border-neutral-200 align-middle show-mobile">
-                <div className="d-flex align-items-center">
-                  <div className="progress flex-grow-1 me-2" style={{ height: '6px' }}>
-                    <div 
-                      className="progress-bar bg-primary" 
-                      style={{ width: `${course.progress || 0}%` }}
-                    ></div>
-                  </div>
-                  <small className="text-muted">{course.progress || 0}%</small>
-                </div>
-              </td>
-              <td className="border-neutral-200 align-middle text-center show-mobile">
-                <PermissionWrapper 
-                  permissions={[PERMISSION_IDS.VIEW_COURSE_IN_DETAIL]}
-                  fallback={null}
-                >
-                  <PortalUnifiedDropdown
-                    align="end"
-                    className="table-dropdown"
-                    placement="bottom-end"
-                    trigger={{
-                      variant: 'link',
-                      className: 'btn btn-link p-0 text-primary-custom',
-                      style: { border: 'none', background: 'transparent' },
-                      children: <ThreeDotsVertical size={16} />
-                    }}
-                    items={[
-                      {
-                        label: 'View Course Details',
-                        icon: <Eye />,
-                        onClick: () => handleViewCourse(course),
-                        permission: PERMISSION_IDS.VIEW_COURSE_IN_DETAIL
-                      }
-                    ]}
-                  />
-                </PermissionWrapper>
               </td>
             </tr>
-          ))}
+          ) : (
+            sortedData.map((course, index) => (
+              <tr 
+                key={course.id}
+                className={`${index % 2 === 0 ? 'bg-white' : 'bg-neutral-50'} transition-all`}
+                style={{
+                  transition: 'background-color 0.2s ease'
+                }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.backgroundColor = 'var(--bs-neutral-100)';
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.backgroundColor = index % 2 === 0 ? 'white' : 'var(--bs-neutral-50)';
+                }}
+              >
+                <td className="border-neutral-200 align-middle show-mobile">
+                  <Badge 
+                    bg="primary" 
+                    className="px-2 py-1"
+                    style={{ 
+                      fontSize: '0.75rem'
+                    }}
+                  >
+                    {course.code}
+                  </Badge>
+                </td>
+                <td className="border-neutral-200 align-middle show-mobile">
+                  <div className="fw-medium text-dark">
+                    {course.name}
+                  </div>
+                  <small className="text-muted">{course.description}</small>
+                </td>
+                <td className="border-neutral-200 align-middle show-mobile">
+                  {getLevelBadge(course.level)}
+                </td>
+                <td className="border-neutral-200 align-middle show-mobile">
+                  {getStatusBadge(course.status)}
+                </td>
+                <td className="border-neutral-200 align-middle hide-mobile">
+                  <span className="text-dark">
+                    {course.startDate ? new Date(course.startDate).toLocaleDateString() : 'N/A'}
+                  </span>
+                </td>
+                <td className="border-neutral-200 align-middle hide-mobile">
+                  <span className="text-dark">
+                    {course.endDate ? new Date(course.endDate).toLocaleDateString() : 'N/A'}
+                  </span>
+                </td>
+                <td className="border-neutral-200 align-middle show-mobile">
+                  <div className="d-flex align-items-center" style={{ position: 'relative' }}>
+                    <small className="text-muted" style={{ 
+                      position: 'absolute',
+                      left: 0,
+                      width: '50px',
+                      textAlign: 'left',
+                      zIndex: 1
+                    }}>{course.progress || 0}%</small>
+                    <div className="progress" style={{ height: '6px', flex: '1 1 auto', marginLeft: '55px' }}>
+                      <div 
+                        className="progress-bar bg-primary" 
+                        style={{ width: `${course.progress || 0}%` }}
+                      ></div>
+                    </div>
+                  </div>
+                </td>
+                <td className="border-neutral-200 align-middle text-center show-mobile">
+                  <PermissionWrapper 
+                    permission={PERMISSION_IDS.VIEW_COURSE_DETAILS}
+                    fallback={null}
+                  >
+                    <PortalUnifiedDropdown
+                      align="end"
+                      className="table-dropdown"
+                      placement="bottom-end"
+                      trigger={{
+                        variant: 'link',
+                        className: 'btn btn-link p-0 text-primary-custom',
+                        style: { border: 'none', background: 'transparent' },
+                        children: <ThreeDotsVertical size={16} />
+                      }}
+                      items={[
+                        {
+                          label: 'View Course Details',
+                          icon: <Eye />,
+                          onClick: () => handleViewCourse(course),
+                          permission: PERMISSION_IDS.VIEW_COURSE_DETAILS
+                        }
+                      ]}
+                    />
+                  </PermissionWrapper>
+                </td>
+              </tr>
+            ))
+          )}
         </tbody>
         </Table>
       </div>

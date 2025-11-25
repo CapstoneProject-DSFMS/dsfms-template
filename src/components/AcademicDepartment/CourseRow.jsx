@@ -55,7 +55,7 @@ const CourseRow = ({ course, index, onView, onEdit, onDelete }) => {
       </td>
       <td className="border-neutral-200 align-middle text-center">
         <div className="d-flex gap-1 justify-content-center">
-          <PermissionWrapper permission={PERMISSION_IDS.VIEW_COURSE_IN_DETAIL}>
+          <PermissionWrapper permission={PERMISSION_IDS.VIEW_COURSE_DETAILS}>
             <Button 
               variant="outline-primary" 
               size="sm"

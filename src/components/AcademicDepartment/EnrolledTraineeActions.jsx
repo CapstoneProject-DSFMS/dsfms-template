@@ -6,7 +6,7 @@ import { PERMISSION_IDS } from '../../constants/permissionIds';
 
 const EnrolledTraineeActions = ({ trainee, onViewSubjects, onRemoveTrainee }) => (
   <PermissionWrapper 
-    permissions={[PERMISSION_IDS.VIEW_SUBJECT_DETAIL, PERMISSION_IDS.REMOVE_TRAINEE_FROM_SUBJECT]}
+    permissions={[PERMISSION_IDS.VIEW_SUBJECT_DETAIL, PERMISSION_IDS.REMOVE_TRAINEE_FROM_ENROLLMENT]}
     fallback={null}
   >
     <PortalUnifiedDropdown
@@ -32,7 +32,7 @@ const EnrolledTraineeActions = ({ trainee, onViewSubjects, onRemoveTrainee }) =>
           icon: <Trash />,
           className: 'text-danger',
           onClick: () => onRemoveTrainee(trainee.id),
-            permission: PERMISSION_IDS.REMOVE_TRAINEE_FROM_SUBJECT
+            permission: PERMISSION_IDS.REMOVE_TRAINEE_FROM_ENROLLMENT
         }
       ]}
     />

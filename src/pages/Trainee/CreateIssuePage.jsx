@@ -1,7 +1,11 @@
 import React, { useState } from 'react';
 import { Container, Row, Col, Card, Form, Button, Alert } from 'react-bootstrap';
-import { Send, FileText, ExclamationTriangle } from 'react-bootstrap-icons';
+import { Send, FileText, ExclamationTriangle, Eye } from 'react-bootstrap-icons';
+import { useNavigate } from 'react-router-dom';
 import { toast } from 'react-toastify';
+import { ROUTES } from '../../constants/routes';
+import { PERMISSION_IDS } from '../../constants/permissionIds';
+import { PermissionWrapper } from '../../components/Common';
 
 // Add custom CSS to override Bootstrap card-header styles
 const customStyles = `
@@ -35,6 +39,7 @@ if (typeof document !== 'undefined') {
 }
 
 const CreateIssuePage = () => {
+  const navigate = useNavigate();
   const [formData, setFormData] = useState({
     request_type: '',
     severity: 'MEDIUM',
@@ -44,6 +49,7 @@ const CreateIssuePage = () => {
     is_anonymous: false
   });
   const [loading, setLoading] = useState(false);
+  const [submittedReportId, setSubmittedReportId] = useState(null);
 
   // Custom styles for headers
   const headerStyle = {
@@ -77,6 +83,10 @@ const CreateIssuePage = () => {
       // Simulate API call
       await new Promise(resolve => setTimeout(resolve, 1000));
       
+      // Mock report ID - in real implementation, this would come from API response
+      const mockReportId = `RPT-${Date.now()}`;
+      setSubmittedReportId(mockReportId);
+      
       toast.success('Incident/Feedback report submitted successfully!');
       
       // Reset form
@@ -103,8 +113,7 @@ const CreateIssuePage = () => {
         <Col>
           <div className="d-flex align-items-center">
             <div>
-              <h2 className="mb-1">Create Incident/Feedback Report</h2>
-              <p className="text-muted mb-0">Report incidents or provide feedback about your training experience</p>
+              <h2 className="mb-1">Issue Reporting</h2>
             </div>
           </div>
         </Col>
@@ -231,6 +240,39 @@ const CreateIssuePage = () => {
               </Form>
             </Card.Body>
           </Card>
+
+          {/* View Report Details Section */}
+          {submittedReportId && (
+            <Card className="border-0 shadow-sm mt-4">
+              <Card.Header className="bg-light">
+                <h5 className="mb-0 d-flex align-items-center">
+                  <Eye className="me-2" size={20} />
+                  View Submitted Report
+                </h5>
+              </Card.Header>
+              <Card.Body>
+                <p className="text-muted mb-3">
+                  Your report has been submitted successfully. You can view the details of your submitted report.
+                </p>
+                <PermissionWrapper 
+                  permission={PERMISSION_IDS.VIEW_INCIDENT_FEEDBACK_REPORT_DETAILS}
+                  fallback={
+                    <Alert variant="info" className="mb-0">
+                      You don't have permission to view report details.
+                    </Alert>
+                  }
+                >
+                  <Button
+                    variant="primary"
+                    onClick={() => navigate(ROUTES.REPORTS_DETAIL(submittedReportId))}
+                  >
+                    <Eye className="me-2" size={16} />
+                    View Report Details
+                  </Button>
+                </PermissionWrapper>
+              </Card.Body>
+            </Card>
+          )}
         </Col>
 
         <Col lg={4}>

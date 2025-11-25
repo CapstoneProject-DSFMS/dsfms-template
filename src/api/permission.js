@@ -59,5 +59,15 @@ export const permissionAPI = {
     } catch (error) {
       throw error.response?.data || error.message;
     }
+  },
+
+  // Get permission groups
+  getPermissionGroups: async () => {
+    try {
+      const response = await apiClient.get('/permission-groups');
+      return response.data;
+    } catch (error) {
+      throw error.response?.data || error.message;
+    }
   }
 };

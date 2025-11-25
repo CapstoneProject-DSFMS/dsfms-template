@@ -3,6 +3,8 @@ import { Modal, Button, Table, Card, Alert, Form, Badge } from 'react-bootstrap'
 import { X, Upload, FileEarmarkExcel, CheckCircle, XCircle, Download, Search } from 'react-bootstrap-icons';
 import * as XLSX from 'xlsx';
 import traineeAPI from '../../api/trainee';
+import { PermissionWrapper } from '../../components/Common'; // Assuming this path, common for components
+import { PERMISSION_IDS } from '../../constants/permissionIds'; // Add this
 
 const BulkImportTraineesModal = ({ show, onClose, onImport, loading = false }) => {
   const [dragActive, setDragActive] = useState(false);
@@ -586,23 +588,28 @@ const BulkImportTraineesModal = ({ show, onClose, onImport, loading = false }) =
         </Button>
         
         {lookupResults && lookupResults.foundUsers?.length > 0 && selectedTrainees.length > 0 && (
-          <Button
-            variant="primary"
-            onClick={handleImportSelected}
-            disabled={loading}
+          <PermissionWrapper
+            permission={PERMISSION_IDS.BULK_ENROLL_TRAINEES}
+            fallback={null}
           >
-            {loading ? (
-              <>
-                <span className="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
-                Importing...
-              </>
-            ) : (
-              <>
-                <Upload className="me-2" size={16} />
-                Import Selected ({selectedTrainees.length} matched trainees)
-              </>
-            )}
-          </Button>
+            <Button
+              variant="primary"
+              onClick={handleImportSelected}
+              disabled={loading}
+            >
+              {loading ? (
+                <>
+                  <span className="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
+                  Importing...
+                </>
+              ) : (
+                <>
+                  <Upload className="me-2" size={16} />
+                  Import Selected ({selectedTrainees.length} matched trainees)
+                </>
+              )}
+            </Button>
+          </PermissionWrapper>
         )}
       </Modal.Footer>
     </Modal>

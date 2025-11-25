@@ -202,6 +202,97 @@ export const AuthProvider = ({ children }) => {
     return () => clearTimeout(validationTimer);
   }, [isAuthenticated, isLoading]);
 
+  /**
+   * Normalize permissions from BE response (NEW FORMAT)
+   * BE trả về permissions trong permissionGroups array với format:
+   * {
+   *   "permissionGroups": [
+   *     {
+   *       "featureGroup": "Course Management",
+   *       "permissionCount": 7,
+   *       "permissions": [
+   *         { "code": "PERM-023", "name": "Create Course" }
+   *       ]
+   *     }
+   *   ]
+   * }
+   * 
+   * @param {Object} roleData - Role data from API (có thể có data wrapper hoặc không)
+   * @returns {Array} Normalized permissions array: [{ code: "PERM-023", name: "...", featureGroup: "..." }]
+   */
+  const normalizePermissionsFromResponse = (roleData) => {
+    // Handle response wrapper: { data: { ... } } or direct { ... }
+    const actualData = roleData?.data || roleData;
+    
+    if (!actualData) {
+      console.warn('⚠️ No role data provided to normalizePermissionsFromResponse');
+      return [];
+    }
+    
+    // Check for NEW FORMAT: permissionGroups
+    if (actualData.permissionGroups && Array.isArray(actualData.permissionGroups)) {
+      console.log('✅ ========== NORMALIZING PERMISSIONS FROM NEW FORMAT (permissionGroups) ==========');
+      
+      const permissions = [];
+      
+      actualData.permissionGroups.forEach((group) => {
+        if (group.permissions && Array.isArray(group.permissions)) {
+          group.permissions.forEach((perm) => {
+            if (perm.code && perm.name) {
+              permissions.push({
+                code: perm.code,           // PERM-XX
+                name: perm.name,           // Permission name
+                featureGroup: group.featureGroup || 'Unknown'
+              });
+            } else {
+              console.warn('⚠️ Invalid permission format (missing code or name):', perm);
+            }
+          });
+        }
+      });
+      
+      console.log('📋 Normalized Permissions Count:', permissions.length);
+      console.log('📋 Sample Permissions (first 5):', permissions.slice(0, 5).map(p => ({
+        code: p.code,
+        name: p.name,
+        featureGroup: p.featureGroup
+      })));
+      
+      return permissions;
+    }
+    
+    // OLD FORMAT: permissions array (backward compatibility)
+    if (actualData.permissions && Array.isArray(actualData.permissions)) {
+      console.log('⚠️ ========== USING OLD FORMAT (permissions array) ==========');
+      console.log('⚠️ This format is deprecated. BE should return permissionGroups.');
+      
+      // Try to extract code from old format if available
+      const permissions = actualData.permissions.map((perm) => {
+        // If old format has code field, use it
+        if (perm.code) {
+          return {
+            code: perm.code,
+            name: perm.name || perm.viewName || perm.description || 'Unknown',
+            featureGroup: perm.module || perm.viewModule || 'Unknown'
+          };
+        }
+        
+        // Fallback: log warning and return minimal structure
+        console.warn('⚠️ Old format permission without code field:', perm);
+        return {
+          code: perm.id || `LEGACY-${perm.name || 'UNKNOWN'}`,
+          name: perm.name || perm.viewName || perm.description || 'Unknown',
+          featureGroup: perm.module || perm.viewModule || 'Unknown'
+        };
+      });
+      
+      return permissions;
+    }
+    
+    console.warn('⚠️ No permissions found in role data (neither permissionGroups nor permissions array)');
+    return [];
+  };
+
   // Fetch user role and permissions using roleId from JWT
   const fetchUserRoleAndPermissions = async (roleName, roleId) => {
     try {
@@ -212,138 +303,47 @@ export const AuthProvider = ({ children }) => {
         try {
           const fullRoleData = await roleAPI.getRoleById(roleId);
           
-          // Also get raw response to compare
-          try {
-            const { default: apiClient } = await import('../api/config.js');
-            const rawResponse = await apiClient.get(`/roles/${roleId}`);
-          console.log('🔍 ========== RAW API RESPONSE (BEFORE NORMALIZE) ==========');
-          console.log('📋 Raw Response Structure:', {
-            hasMessage: !!rawResponse.data?.message,
-            hasData: !!rawResponse.data?.data,
-            dataType: typeof rawResponse.data?.data,
-            permissionsInData: rawResponse.data?.data?.permissions?.length,
-            permissionsInRoot: rawResponse.data?.permissions?.length,
-            permissionCount: rawResponse.data?.data?.permissionCount,
-            permissionCountInRoot: rawResponse.data?.permissionCount,
-            roleName: rawResponse.data?.data?.name,
-            roleId: rawResponse.data?.data?.id
-          });
-          if (rawResponse.data?.data?.permissions) {
-            console.log('📋 Raw Permissions Count:', rawResponse.data.data.permissions.length);
-            console.log('📋 API permissionCount field:', rawResponse.data.data.permissionCount);
-            console.log('📋 Comparison:', {
-              permissionsArrayLength: rawResponse.data.data.permissions.length,
-              permissionCountField: rawResponse.data.data.permissionCount,
-              match: rawResponse.data.data.permissions.length === rawResponse.data.data.permissionCount
-            });
-            
-            // Log all permission IDs to check for duplicates
-            const permissionIds = rawResponse.data.data.permissions.map(p => p.id);
-            const uniqueIds = new Set(permissionIds);
-            if (permissionIds.length !== uniqueIds.size) {
-              console.warn('⚠️ DUPLICATE PERMISSIONS DETECTED!', {
-                total: permissionIds.length,
-                unique: uniqueIds.size,
-                duplicates: permissionIds.length - uniqueIds.size
-              });
-            }
-          }
-          } catch (rawError) {
-            console.warn('⚠️ Could not fetch raw response:', rawError);
-          }
-          
           // Detailed logging for debugging
-          console.log('🔍 ========== ROLE DETAIL API RESPONSE (AFTER NORMALIZE) ==========');
+          console.log('🔍 ========== ROLE DETAIL API RESPONSE ==========');
           console.log('📋 Role ID:', roleId);
           console.log('📋 Role Name:', roleName);
-          console.log('📋 Full Role Data:', {
-            id: fullRoleData?.id,
-            name: fullRoleData?.name,
-            description: fullRoleData?.description,
-            isActive: fullRoleData?.isActive,
-            permissionsCount: fullRoleData?.permissions?.length || 0,
-            permissionCount: fullRoleData?.permissionCount // Check if API returns this field
+          console.log('📋 Full Role Data Structure:', {
+            hasData: !!fullRoleData?.data,
+            hasPermissionGroups: !!fullRoleData?.data?.permissionGroups,
+            hasPermissions: !!fullRoleData?.permissions,
+            permissionGroupsCount: fullRoleData?.data?.permissionGroups?.length || 0,
+            permissionsCount: fullRoleData?.permissions?.length || 0
           });
           
-          // Ensure permissions is an array
-          const rawPermissions = Array.isArray(fullRoleData?.permissions) 
-            ? fullRoleData.permissions 
-            : [];
+          // Normalize permissions from response (handles both new and old format)
+          const permissions = normalizePermissionsFromResponse(fullRoleData);
           
-          // Check for filtering - log all permissions with their properties
-          console.log('🔍 ========== PERMISSIONS BEFORE FILTERING ==========');
-          console.log('📋 Raw Permissions Count:', rawPermissions.length);
-          console.log('📋 Permissions with isActive=false:', rawPermissions.filter(p => p.isActive === false).length);
-          console.log('📋 Permissions without name:', rawPermissions.filter(p => !p.name).length);
-          console.log('📋 Permissions without viewName:', rawPermissions.filter(p => !p.viewName).length);
-          
-          // Filter out inactive permissions if needed (but log them)
-          const inactivePermissions = rawPermissions.filter(p => p.isActive === false);
-          if (inactivePermissions.length > 0) {
-            console.log('⚠️ Found inactive permissions:', inactivePermissions.map(p => ({
-              id: p.id,
-              name: p.name,
-              viewName: p.viewName,
-              isActive: p.isActive
-            })));
-          }
-          
-          // Use all permissions (including inactive) for now - we'll filter later if needed
-          const permissions = rawPermissions;
-          
-          // Log permissions details
-          console.log('🔍 ========== PERMISSIONS DETAIL ==========');
+          // Log normalized permissions
+          console.log('✅ ========== PERMISSIONS NORMALIZED ==========');
           console.log('📋 Total Permissions:', permissions.length);
-          console.log('📋 Expected Permission Count (from API):', fullRoleData?.permissionCount || 'N/A');
-          console.log('📋 Difference:', (fullRoleData?.permissionCount || permissions.length) - permissions.length);
+          console.log('📋 Permission Codes:', permissions.map(p => p.code).slice(0, 10));
           
-          // Log ALL permissions with full details
-          console.log('📋 All Permissions (Full List):', permissions.map((p, index) => ({
-            index: index + 1,
-            id: p.id,
-            name: p.name,
-            viewName: p.viewName,
-            method: p.method,
-            path: p.path,
-            module: p.module,
-            isActive: p.isActive,
-            viewModule: p.viewModule
-          })));
-          
-          // Log first 10 permissions as sample
-          if (permissions.length > 0) {
-            console.log('📋 Sample Permissions (first 10):', permissions.slice(0, 10).map(p => ({
-              id: p.id,
-              name: p.name,
-              viewName: p.viewName,
-              method: p.method,
-              path: p.path,
-              isActive: p.isActive
-            })));
-          }
-          
-          // Check for missing permissions by comparing with expected count
-          if (fullRoleData?.permissionCount && fullRoleData.permissionCount !== permissions.length) {
-            console.warn('⚠️ ========== PERMISSION COUNT MISMATCH ==========');
-            console.warn(`📋 Expected: ${fullRoleData.permissionCount}, Got: ${permissions.length}`);
-            console.warn('📋 Missing:', fullRoleData.permissionCount - permissions.length, 'permissions');
-          }
-          
-          // Check for common permission formats
-          const permissionNames = permissions.map(p => p.name || p.viewName).filter(Boolean);
-          const beFormatCount = permissionNames.filter(name => /^(GET|POST|PUT|PATCH|DELETE)\s+\//.test(name)).length;
-          const navFormatCount = permissionNames.length - beFormatCount;
-          
-          console.log('🔍 ========== PERMISSION FORMAT ANALYSIS ==========');
-          console.log('📋 BE Format (METHOD /path):', beFormatCount);
-          console.log('📋 Navigation Format (View All Users):', navFormatCount);
-          console.log('📋 All Permission Names:', permissionNames.slice(0, 10));
+          // Create role object (keep structure compatible)
+          const role = {
+            id: fullRoleData?.data?.id || fullRoleData?.id,
+            name: fullRoleData?.data?.name || fullRoleData?.name || roleName,
+            description: fullRoleData?.data?.description || fullRoleData?.description || `${roleName} role`,
+            isActive: fullRoleData?.data?.isActive !== undefined ? fullRoleData.data.isActive : (fullRoleData?.isActive !== undefined ? fullRoleData.isActive : true),
+            permissionCount: permissions.length
+          };
           
           console.log('✅ ========== ROLE DETAIL FETCHED SUCCESSFULLY ==========');
+          console.log('📋 Role:', {
+            id: role.id,
+            name: role.name,
+            description: role.description,
+            isActive: role.isActive,
+            permissionCount: role.permissionCount
+          });
           
-          setUserRole(fullRoleData);
+          setUserRole(role);
           setUserPermissions(permissions);
-          return { role: fullRoleData, permissions };
+          return { role, permissions };
         } catch (error) {
           console.error('Error fetching role by ID:', error);
           
@@ -362,26 +362,27 @@ export const AuthProvider = ({ children }) => {
                 permissionsCount: userProfile.data?.role?.permissions?.length || 0
               });
               
-              if (userProfile.data && userProfile.data.role && userProfile.data.role.permissions) {
+              if (userProfile.data && userProfile.data.role) {
+                // Normalize permissions from user profile (may have old or new format)
+                const permissions = normalizePermissionsFromResponse(userProfile.data.role);
+                
                 const roleWithPermissions = {
                   id: roleId,
                   name: roleName,
                   description: `${roleName} role`,
                   isActive: 'ACTIVE',
-                  permissions: userProfile.data.role.permissions
+                  permissionCount: permissions.length
                 };
                 
-                console.log('📋 Permissions from /users/me:', roleWithPermissions.permissions.map(p => ({
-                  id: p.id,
+                console.log('📋 Permissions from /users/me (normalized):', permissions.slice(0, 5).map(p => ({
+                  code: p.code,
                   name: p.name,
-                  viewName: p.viewName,
-                  method: p.method,
-                  path: p.path
+                  featureGroup: p.featureGroup
                 })));
                 
                 setUserRole(roleWithPermissions);
-                setUserPermissions(roleWithPermissions.permissions);
-                return { role: roleWithPermissions, permissions: roleWithPermissions.permissions };
+                setUserPermissions(permissions);
+                return { role: roleWithPermissions, permissions };
               }
             } catch (profileError) {
               console.error('Failed to get user profile:', profileError);
@@ -424,9 +425,21 @@ export const AuthProvider = ({ children }) => {
         const userRoleData = rolesArray.find(role => role.name === roleName);
         if (userRoleData) {
           const fullRoleData = await roleAPI.getRoleById(userRoleData.id);
-          setUserRole(fullRoleData);
-          setUserPermissions(fullRoleData.permissions || []);
-          return { role: fullRoleData, permissions: fullRoleData.permissions || [] };
+          
+          // Normalize permissions from response
+          const permissions = normalizePermissionsFromResponse(fullRoleData);
+          
+          const role = {
+            id: fullRoleData?.data?.id || fullRoleData?.id || userRoleData.id,
+            name: fullRoleData?.data?.name || fullRoleData?.name || roleName,
+            description: fullRoleData?.data?.description || fullRoleData?.description || `${roleName} role`,
+            isActive: fullRoleData?.data?.isActive !== undefined ? fullRoleData.data.isActive : (fullRoleData?.isActive !== undefined ? fullRoleData.isActive : true),
+            permissionCount: permissions.length
+          };
+          
+          setUserRole(role);
+          setUserPermissions(permissions);
+          return { role, permissions };
         }
         
         throw new Error(`Role '${roleName}' not found`);
@@ -514,11 +527,10 @@ export const AuthProvider = ({ children }) => {
       console.log('📋 Final Permissions Count:', permissions.length);
       console.log('📋 Final Permissions Summary:', {
         total: permissions.length,
+        withCode: permissions.filter(p => p.code).length,
         withName: permissions.filter(p => p.name).length,
-        withViewName: permissions.filter(p => p.viewName).length,
-        withMethodPath: permissions.filter(p => p.method && p.path).length,
-        beFormat: permissions.filter(p => p.name && /^(GET|POST|PUT|PATCH|DELETE)\s+\//.test(p.name)).length,
-        navFormat: permissions.filter(p => p.name && !/^(GET|POST|PUT|PATCH|DELETE)\s+\//.test(p.name)).length
+        withFeatureGroup: permissions.filter(p => p.featureGroup).length,
+        sampleCodes: permissions.slice(0, 5).map(p => p.code)
       });
       
       setUser(userInfo);

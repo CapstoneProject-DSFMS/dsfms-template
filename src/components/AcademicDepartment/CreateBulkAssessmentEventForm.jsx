@@ -384,7 +384,7 @@ const CreateBulkAssessmentEventForm = ({ onSuccess }) => {
       });
       setErrors({});
       setTrainees([]);
-      setSelectedTemplate(null);
+
       
       if (onSuccess) {
         onSuccess();

@@ -309,6 +309,26 @@ const SubjectDetailsView = ({ subjectId, courseId }) => {
             <p className="text-muted mb-0">Subject Code: {subject.code}</p>
           </div>
         </div>
+        <div className="d-flex gap-2"> {/* Added div for buttons */}
+          <PermissionWrapper
+            permission={PERMISSION_IDS.UPDATE_SUBJECT}
+            fallback={null}
+          >
+            <Button variant="primary" onClick={() => setShowEditSubject(true)} className="d-flex align-items-center" size="sm">
+              <Pencil size={16} className="me-1" />
+              Edit Subject
+            </Button>
+          </PermissionWrapper>
+          <PermissionWrapper
+            permission={PERMISSION_IDS.ARCHIVE_SUBJECT}
+            fallback={null}
+          >
+            <Button variant="outline-danger" onClick={() => setShowDisableSubject(true)} className="d-flex align-items-center" size="sm">
+              <Trash size={16} className="me-1" />
+              Archive Subject
+            </Button>
+          </PermissionWrapper>
+        </div>
       </div>
 
       {/* Tab Interface */}
@@ -369,29 +389,34 @@ const SubjectDetailsView = ({ subjectId, courseId }) => {
               </Nav.Item>
             </Nav>
             {activeTab === 'trainers' && (
-              <Button 
-                variant="light"
-                size="sm"
-                onClick={() => setShowAddTrainer(true)}
-                className="d-flex align-items-center"
-                style={{
-                  backgroundColor: '#ffffff',
-                  borderColor: '#dee2e6',
-                  color: '#000000',
-                  fontWeight: 500
-                }}
-                onMouseEnter={(e) => {
-                  e.currentTarget.style.backgroundColor = '#f8f9fa';
-                  e.currentTarget.style.borderColor = '#dee2e6';
-                }}
-                onMouseLeave={(e) => {
-                  e.currentTarget.style.backgroundColor = '#ffffff';
-                  e.currentTarget.style.borderColor = '#dee2e6';
-                }}
+              <PermissionWrapper 
+                permission={PERMISSION_IDS.ASSIGN_TRAINERS}
+                fallback={null}
               >
-                <Plus size={14} className="me-1" />
-                Add Trainer
-              </Button>
+                <Button 
+                  variant="light"
+                  size="sm"
+                  onClick={() => setShowAddTrainer(true)}
+                  className="d-flex align-items-center"
+                  style={{
+                    backgroundColor: '#ffffff',
+                    borderColor: '#dee2e6',
+                    color: '#000000',
+                    fontWeight: 500
+                  }}
+                  onMouseEnter={(e) => {
+                    e.currentTarget.style.backgroundColor = '#f8f9fa';
+                    e.currentTarget.style.borderColor = '#dee2e6';
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.backgroundColor = '#ffffff';
+                    e.currentTarget.style.borderColor = '#dee2e6';
+                  }}
+                >
+                  <Plus size={14} className="me-1" />
+                  Add Trainer
+                </Button>
+              </PermissionWrapper>
             )}
           </Card.Header>
           
@@ -516,6 +541,7 @@ const SubjectDetailsView = ({ subjectId, courseId }) => {
         onClose={() => setShowAddTrainer(false)}
         onSave={handleAddTrainer}
         loading={isAddingTrainer}
+        courseId={courseId}
       />
 
       <EditTrainerModal

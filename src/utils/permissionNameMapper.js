@@ -68,6 +68,7 @@ export const mapBEPermissionToNavigation = (bePermissionName) => {
     "GET /templates/:id/schema": "View Template Schema",
     "GET /templates/:id/pdf": "Download Content PDF",
     "GET /templates/:id/config-pdf": "Download Configuration PDF",
+    "PATCH /templates/:id/review": "Approve or Reject Template",
     
     // Assessment Execution
     "GET /assessments": "List Assessments",
@@ -169,6 +170,7 @@ export const mapNavigationToBEPermission = (navigationPermissionName) => {
     "GET /roles": "View All Roles",
     "GET /departments": "View All Departments",
     "GET /templates": "View All Templates",
+    "PATCH /templates/:id/review": "Approve or Reject Template",
     "GET /global-fields": "List Global Fields",
     "GET /dashboard": "Academic Overview Dashboard",
     "GET /profile": "View My Profile",

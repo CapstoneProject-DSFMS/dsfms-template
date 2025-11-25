@@ -15,7 +15,7 @@ const TraineeActions = ({ trainee, onView, onRemove }) => {
 
   return (
     <PermissionWrapper 
-      permissions={[PERMISSION_IDS.VIEW_USER_IN_DETAIL, PERMISSION_IDS.REMOVE_TRAINEE_FROM_COURSE]}
+      permission={PERMISSION_IDS.REMOVE_TRAINEE_FROM_ENROLLMENT}
       fallback={null}
     >
       <PortalUnifiedDropdown
@@ -32,8 +32,7 @@ const TraineeActions = ({ trainee, onView, onRemove }) => {
           {
             label: 'View Details',
             icon: <Eye />,
-            onClick: handleViewClick,
-            permission: PERMISSION_IDS.VIEW_USER_IN_DETAIL
+            onClick: handleViewClick
           },
           { type: 'divider' },
           {
@@ -41,7 +40,7 @@ const TraineeActions = ({ trainee, onView, onRemove }) => {
             icon: <PersonX />,
             className: 'text-danger',
             onClick: handleRemoveClick,
-            permission: PERMISSION_IDS.REMOVE_TRAINEE_FROM_COURSE
+            permission: PERMISSION_IDS.REMOVE_TRAINEE_FROM_ENROLLMENT
           }
         ]}
       />

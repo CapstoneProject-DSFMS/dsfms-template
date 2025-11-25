@@ -1,6 +1,8 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Card, Form, Button, Badge, Dropdown, Spinner } from 'react-bootstrap';
 import { Search, Plus, X, ChevronDown, People, CheckCircle } from 'react-bootstrap-icons';
+import { PermissionWrapper } from '../Common';
+import { PERMISSION_IDS } from '../../constants/permissionIds';
 import traineeAPI from '../../api/trainee';
 
 const TraineeSelectionPanel = ({ selectedTrainees, onSelectionChange }) => {
@@ -209,7 +211,12 @@ const TraineeSelectionPanel = ({ selectedTrainees, onSelectionChange }) => {
                         transition: 'all 0.3s ease',
                         opacity: isSelected ? 0.6 : 1
                       }}
-                      onClick={() => !isSelected && handleAddTrainee(trainee)}
+                      onClick={() => {
+                        if (!isSelected) {
+                          // Permission check is handled at parent level
+                          handleAddTrainee(trainee);
+                        }
+                      }}
                     >
                       <div style={{ minWidth: 0, overflow: 'hidden', flex: 1 }}>
                         <div className="fw-semibold text-truncate" title={trainee.name}>{trainee.name}</div>

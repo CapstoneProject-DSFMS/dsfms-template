@@ -39,8 +39,7 @@ export const NAVIGATION_PERMISSIONS = {
   "assessment-review-requests": PERMISSION_IDS.LIST_ASSESSMENTS, // Assessment Results Approval
   
   // SQA Navigation
-  "issue-list": PERMISSION_IDS.LIST_ALL_REPORTS, // Reports Management
-  "feedback-list": PERMISSION_IDS.LIST_ALL_REPORTS, // Reports Management
+  "incidents-feedback": PERMISSION_IDS.LIST_ALL_REPORTS, // Reports Management
   "template-list": PERMISSION_IDS.VIEW_ALL_TEMPLATES, // Template Management
   "template-history": PERMISSION_IDS.VIEW_TEMPLATE_DETAILS, // Template Management
   "template-sections": PERMISSION_IDS.VIEW_TEMPLATE_DETAILS, // Template Management

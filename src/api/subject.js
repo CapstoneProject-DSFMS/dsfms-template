@@ -230,7 +230,7 @@ const subjectAPI = {
       };
 
       // Debug: Log request data before sending
-      if (process.env.NODE_ENV === 'development') {
+      if (import.meta.env.MODE === 'development') {
         console.log('📤 Add Trainer Request:', {
           url: `/subjects/${subjectId}/trainers`,
           method: 'POST',
@@ -254,7 +254,7 @@ const subjectAPI = {
       return response.data;
     } catch (error) {
       // Log detailed error for debugging
-      if (process.env.NODE_ENV === 'development') {
+      if (import.meta.env.MODE === 'development') {
         console.error('❌ Add Trainer Error:', {
           status: error.response?.status,
           statusText: error.response?.statusText,

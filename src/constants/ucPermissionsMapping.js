@@ -118,18 +118,18 @@ export const UC_PERMISSIONS_MAPPING = {
   "UC-64": ["View Report Detail", "Respond to Report", "Acknowledge Report Receipt"], // Review Incident/Feedback Report
   
   // Analytics Dashboard (UC-65)
-  "UC-65": ["Academic Overview Dashboard"], // View Analytics Dashboard
+  "UC-65": ["Academic Overview Dashboard"], 
   
   // ============================================
   // System Management
   // ============================================
   
   // System Configuration (UC-66 to UC-70)
-  "UC-66": ["Create Global Field"], // Configure Global Fields
+  "UC-66": ["Create Global Field"], 
   "UC-67": ["List Global Fields", "View Global Field In Detail", "Update Global Field", "Delete Global Field"], // Manage Global Fields
   "UC-68": ["List Global Fields"],
   "UC-69": ["Update Global Field"],
-  "UC-70": ["Delete Global Field"], // Disable/Enable Field - Note: BE might use delete
+  "UC-70": ["Delete Global Field"], 
 };
 
 /**

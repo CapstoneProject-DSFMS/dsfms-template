@@ -1,20 +1,23 @@
 import React, { useState, useEffect } from 'react';
 import { Container, Card, Row, Col, Nav, Tab } from 'react-bootstrap';
 import { ListUl, Plus, Collection } from 'react-bootstrap-icons';
+import { useSearchParams } from 'react-router-dom';
 import AssessmentEventTable from '../../components/AcademicDepartment/AssessmentEventTable';
 import AssessmentEventDetailModal from '../../components/AcademicDepartment/AssessmentEventDetailModal';
 import EditAssessmentEventModal from '../../components/AcademicDepartment/EditAssessmentEventModal';
 import CreateAssessmentEventForm from '../../components/AcademicDepartment/CreateAssessmentEventForm';
 import CreateBulkAssessmentEventForm from '../../components/AcademicDepartment/CreateBulkAssessmentEventForm';
-import { assessmentAPI, courseAPI } from '../../api';
+import { assessmentAPI } from '../../api';
 
 const AssessmentEventPage = () => {
+  const [searchParams, setSearchParams] = useSearchParams();
+  const tabFromUrl = searchParams.get('tab');
   const [assessmentEvents, setAssessmentEvents] = useState([]);
   const [loading, setLoading] = useState(true);
   const [showDetailModal, setShowDetailModal] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
   const [selectedEvent, setSelectedEvent] = useState(null);
-  const [activeTab, setActiveTab] = useState('list');
+  const [activeTab, setActiveTab] = useState(tabFromUrl || 'list');
 
   const loadAssessmentEvents = async () => {
     try {
@@ -62,6 +65,24 @@ const AssessmentEventPage = () => {
     loadAssessmentEvents();
   }, []);
 
+  useEffect(() => {
+    // Update activeTab when URL query param changes
+    const tabFromUrl = searchParams.get('tab');
+    if (tabFromUrl && ['list', 'create', 'create-bulk'].includes(tabFromUrl)) {
+      setActiveTab(tabFromUrl);
+    }
+  }, [searchParams]);
+
+  const handleTabSelect = (tab) => {
+    setActiveTab(tab);
+    // Update URL query param
+    if (tab === 'list') {
+      setSearchParams({});
+    } else {
+      setSearchParams({ tab });
+    }
+  };
+
   const handleView = (event) => {
     // Use originalEvent if available, otherwise use the event itself
     const eventData = event.originalEvent || event;
@@ -93,6 +114,7 @@ const AssessmentEventPage = () => {
   const handleCreateSuccess = () => {
     loadAssessmentEvents();
     setActiveTab('list'); // Switch to list tab after successful creation
+    setSearchParams({}); // Clear query params
   };
 
   return (
@@ -100,7 +122,7 @@ const AssessmentEventPage = () => {
       <Row>
         <Col>
           <Card className="shadow-sm">
-            <Tab.Container activeKey={activeTab} onSelect={setActiveTab}>
+            <Tab.Container activeKey={activeTab} onSelect={handleTabSelect}>
               <Card.Body className="p-0" style={{ overflow: 'visible', minHeight: '800px' }}>
                 <Card.Header className="border-bottom py-2 bg-primary">
                   <Nav variant="tabs" className="border-0">

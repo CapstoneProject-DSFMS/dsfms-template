@@ -26,7 +26,7 @@ import AssessmentSectionDetailsPage from '../pages/Trainee/AssessmentSectionDeta
 import TraineeDashboardPage from '../pages/Trainee/TraineeDashboardPage'
 import AcademicDetailsPage from '../pages/Trainee/AcademicDetailsPage'
 import EnrolledCoursesPage from '../pages/Trainee/EnrolledCoursesPage'
-import FormsPage from '../pages/Admin/FormsManagement/FormsPage';
+import UnifiedTemplateListPage from '../pages/Admin/FormsManagement/UnifiedTemplateListPage';
 import FormEditorPage from '../pages/Admin/FormsManagement/FormEditorPage';
 import YourDraftsPage from '../pages/Admin/FormsManagement/YourDraftsPage';
 import MainMenuPage from '../pages/Admin/MainMenuPage';
@@ -35,9 +35,8 @@ import SignatureRequiredPage from '../pages/Trainee/SignatureRequiredPage';
 import SectionCompletionPage from '../pages/Trainee/SectionCompletionPage';
 import YourAssessmentsPage from '../pages/Trainee/YourAssessmentsPage';
 import CreateIssuePage from '../pages/Trainee/CreateIssuePage'
-import IssueListPage from '../pages/SQA/IssueListPage'
-import FeedbackListPage from '../pages/SQA/FeedbackListPage'
-import TemplateListPage from '../pages/SQA/TemplateListPage'
+import UnifiedReportsPage from '../pages/SQA/UnifiedReportsPage'
+import ReportDetailPage from '../pages/SQA/ReportDetailPage'
 import TemplateDetailPage from '../pages/SQA/TemplateDetailPage'
 import TrainerDashboardPage from '../pages/Trainer/TrainerDashboardPage'
 import UpcomingAssessmentsPage from '../pages/Trainer/UpcomingAssessmentsPage'
@@ -58,7 +57,6 @@ import AssessmentReviewRequestsPage from '../pages/DepartmentHead/AssessmentRevi
 import CourseDetailsPage from '../pages/DepartmentHead/CourseDetailsPage'
 import DepartmentHeadSubjectDetailsPage from '../pages/DepartmentHead/SubjectDetailsPage'
 import DepartmentHeadTraineeDetailsPage from '../pages/DepartmentHead/TraineeDetailsPage'
-import { PERMISSION_IDS } from '../constants/permissionIds'
 import { getCurrentBasename } from '../utils/navigation'
 import { ROUTES } from '../constants/routes'
 import { RouteRedirect } from '../components/Common'
@@ -93,7 +91,7 @@ export const router = createBrowserRouter([
         path: "",
         element: (
           <PermissionRoute 
-            permission={PERMISSION_IDS.VIEW_MY_PROFILE}
+            permission="PERM-004"
             fallback={<div className="p-4 text-center text-muted">You don't have permission to access your profile.</div>}
           >
             <ProfilePage />
@@ -133,14 +131,7 @@ export const router = createBrowserRouter([
         path: "",
         element: (
           <PermissionRoute 
-            permissions={[
-              PERMISSION_IDS.VIEW_ALL_USERS,
-              PERMISSION_IDS.CREATE_USER,
-              PERMISSION_IDS.UPDATE_USER,
-              PERMISSION_IDS.DISABLE_USER,
-              PERMISSION_IDS.ENABLE_USER
-            ]}
-            requireAll={false}
+            permission="PERM-003"
             fallback={<div className="p-4 text-center text-muted">You don't have permission to access user management.</div>}
           >
             <UserManagementPage />
@@ -162,7 +153,7 @@ export const router = createBrowserRouter([
         path: "",
         element: (
           <PermissionRoute 
-            permission={PERMISSION_IDS.VIEW_ALL_ROLES}
+            permission="PERM-008"
             fallback={<div className="p-4 text-center text-muted">You don't have permission to access role management.</div>}
           >
             <RoleManagementPage />
@@ -184,7 +175,8 @@ export const router = createBrowserRouter([
         path: "",
         element: (
           <PermissionRoute 
-            permission={PERMISSION_IDS.VIEW_ALL_DEPARTMENTS}
+            permissions={["PERM-013", "PERM-015"]}
+            requireAll
             fallback={<div className="p-4 text-center text-muted">You don't have permission to access department management.</div>}
           >
             <DepartmentManagementPage />
@@ -195,7 +187,7 @@ export const router = createBrowserRouter([
         path: ":id",
         element: (
           <PermissionRoute 
-            permission={PERMISSION_IDS.VIEW_DEPARTMENT_IN_DETAIL}
+            permission="PERM-014"
             fallback={<div className="p-4 text-center text-muted">You don't have permission to view department details.</div>}
           >
             <DepartmentDetailPage />
@@ -217,10 +209,10 @@ export const router = createBrowserRouter([
         path: "",
         element: (
           <PermissionRoute 
-            permission={PERMISSION_IDS.VIEW_ALL_TEMPLATES}
+            permission="PERM-041"
             fallback={<div className="p-4 text-center text-muted">You don't have permission to access form templates.</div>}
           >
-            <FormsPage />
+            <UnifiedTemplateListPage />
           </PermissionRoute>
         )
       },
@@ -228,7 +220,7 @@ export const router = createBrowserRouter([
         path: "editor",
         element: (
           <PermissionRoute 
-            permission={PERMISSION_IDS.CREATE_TEMPLATE}
+            permission="PERM-034"
             fallback={<div className="p-4 text-center text-muted">You don't have permission to edit form templates.</div>}
           >
             <FormEditorPage />
@@ -239,7 +231,7 @@ export const router = createBrowserRouter([
         path: "drafts",
         element: (
           <PermissionRoute 
-            permission={PERMISSION_IDS.CREATE_TEMPLATE}
+            permission="PERM-034"
             fallback={<div className="p-4 text-center text-muted">You don't have permission to view drafts.</div>}
           >
             <YourDraftsPage />
@@ -261,7 +253,7 @@ export const router = createBrowserRouter([
         path: "",
         element: (
           <PermissionRoute 
-            permission={PERMISSION_IDS.LIST_GLOBAL_FIELDS}
+            permission="PERM-052"
             fallback={<div className="p-4 text-center text-muted">You don't have permission to access system configuration.</div>}
           >
             <GlobalFieldListPage />
@@ -298,7 +290,7 @@ export const router = createBrowserRouter([
         path: "",
         element: (
           <PermissionRoute 
-            permission={PERMISSION_IDS.VIEW_ALL_COURSES}
+            permission="PERM-018"
             fallback={<div className="p-4 text-center text-muted">You don't have permission to view instructed courses.</div>}
           >
             <InstructedCoursesPage />
@@ -320,7 +312,7 @@ export const router = createBrowserRouter([
         path: "",
         element: (
           <PermissionRoute 
-            permission={PERMISSION_IDS.VIEW_TRAINEE_SUBJECT_ENROLLMENTS}
+            permission="PERM-032"
             fallback={<div className="p-4 text-center text-muted">You don't have permission to view enrolled courses.</div>}
           >
             <EnrolledCoursesPage />
@@ -342,7 +334,7 @@ export const router = createBrowserRouter([
         path: "",
         element: (
           <PermissionRoute 
-            permission={PERMISSION_IDS.VIEW_ALL_COURSES}
+            permission="PERM-018"
             fallback={<div className="p-4 text-center text-muted">You don't have permission to view course details.</div>}
           >
             <TrainerCourseDetailPage />
@@ -379,7 +371,7 @@ export const router = createBrowserRouter([
         path: "",
         element: (
           <PermissionRoute 
-            permission={PERMISSION_IDS.VIEW_SUBJECT_DETAIL}
+            permission="PERM-027"
             fallback={<div className="p-4 text-center text-muted">You don't have permission to view subject details.</div>}
           >
             <DepartmentHeadSubjectDetailsPage />
@@ -399,14 +391,7 @@ export const router = createBrowserRouter([
     children: [
       {
         path: "",
-        element: (
-          <PermissionRoute 
-            permission={PERMISSION_IDS.LIST_ASSESSMENTS}
-            fallback={<div className="p-4 text-center text-muted">You don't have permission to view upcoming assessments.</div>}
-          >
-            <UpcomingAssessmentsPage />
-          </PermissionRoute>
-        )
+        element: <UpcomingAssessmentsPage />
       }
     ]
   },
@@ -421,14 +406,7 @@ export const router = createBrowserRouter([
     children: [
       {
         path: "",
-        element: (
-          <PermissionRoute 
-            permission={PERMISSION_IDS.LIST_ASSESSMENTS}
-            fallback={<div className="p-4 text-center text-muted">You don't have permission to view your assessments.</div>}
-          >
-            <YourAssessmentsPage />
-          </PermissionRoute>
-        )
+        element: <YourAssessmentsPage />
       }
     ]
   },
@@ -443,14 +421,7 @@ export const router = createBrowserRouter([
     children: [
       {
         path: "",
-        element: (
-          <PermissionRoute 
-            permission={PERMISSION_IDS.LIST_ASSESSMENTS}
-            fallback={<div className="p-4 text-center text-muted">You don't have permission to view assessment results.</div>}
-          >
-            <AssessmentResultsPage />
-          </PermissionRoute>
-        )
+        element: <AssessmentResultsPage />
       }
     ]
   },
@@ -465,14 +436,7 @@ export const router = createBrowserRouter([
     children: [
       {
         path: "",
-        element: (
-          <PermissionRoute 
-            permission={PERMISSION_IDS.LIST_ASSESSMENTS}
-            fallback={<div className="p-4 text-center text-muted">You don't have permission to view signature required list.</div>}
-          >
-            <SignatureRequiredPage />
-          </PermissionRoute>
-        )
+        element: <SignatureRequiredPage />
       }
     ]
   },
@@ -487,14 +451,7 @@ export const router = createBrowserRouter([
     children: [
       {
         path: "",
-        element: (
-          <PermissionRoute 
-            permission={PERMISSION_IDS.LIST_ASSESSMENTS}
-            fallback={<div className="p-4 text-center text-muted">You don't have permission to view section completion list.</div>}
-          >
-            <SectionCompletionPage />
-          </PermissionRoute>
-        )
+        element: <SectionCompletionPage />
       }
     ]
   },
@@ -509,14 +466,7 @@ export const router = createBrowserRouter([
     children: [
       {
         path: "",
-        element: (
-          <PermissionRoute 
-            permission={PERMISSION_IDS.LIST_ASSESSMENTS}
-            fallback={<div className="p-4 text-center text-muted">You don't have permission to view these assessments.</div>}
-          >
-            <AssessmentAssignmentsPage />
-          </PermissionRoute>
-        )
+        element: <AssessmentAssignmentsPage />
       }
     ]
   },
@@ -531,14 +481,7 @@ export const router = createBrowserRouter([
     children: [
       {
         path: "",
-        element: (
-          <PermissionRoute 
-            permission={PERMISSION_IDS.LIST_ASSESSMENTS}
-            fallback={<div className="p-4 text-center text-muted">You don't have permission to view assessment sections.</div>}
-          >
-            <TrainerAssessmentSectionsPage />
-          </PermissionRoute>
-        )
+        element: <TrainerAssessmentSectionsPage />
       }
     ]
   },
@@ -553,14 +496,7 @@ export const router = createBrowserRouter([
     children: [
       {
         path: "",
-        element: (
-          <PermissionRoute 
-            permission={PERMISSION_IDS.LIST_ASSESSMENTS}
-            fallback={<div className="p-4 text-center text-muted">You don't have permission to view section fields.</div>}
-          >
-            <AssessmentSectionFieldsPage />
-          </PermissionRoute>
-        )
+        element: <AssessmentSectionFieldsPage />
       }
     ]
   },
@@ -575,14 +511,7 @@ export const router = createBrowserRouter([
     children: [
       {
         path: "",
-        element: (
-          <PermissionRoute 
-            permission={PERMISSION_IDS.LIST_ASSESSMENT_EVENTS}
-            fallback={<div className="p-4 text-center text-muted">You don't have permission to access assessment events.</div>}
-          >
-            <AssessmentEventPage />
-          </PermissionRoute>
-        )
+        element: <AssessmentEventPage />
       }
     ]
   },
@@ -599,10 +528,32 @@ export const router = createBrowserRouter([
         path: "",
         element: (
           <PermissionRoute 
-            permission={PERMISSION_IDS.SUBMIT_REPORT_REQUEST}
+            permission="PERM-047"
             fallback={<div className="p-4 text-center text-muted">You don't have permission to create incident/feedback reports.</div>}
           >
             <CreateIssuePage />
+          </PermissionRoute>
+        )
+      }
+    ]
+  },
+  {
+    path: ROUTES.REPORTS,
+    element: (
+      <ProtectedRoute>
+        <LayoutWrapper />
+      </ProtectedRoute>
+    ),
+    errorElement: <ErrorBoundary />,
+    children: [
+      {
+        path: "",
+        element: (
+          <PermissionRoute 
+            permission="PERM-044"
+            fallback={<div className="p-4 text-center text-muted">You don't have permission to access incident/feedback reports.</div>}
+          >
+            <UnifiedReportsPage />
           </PermissionRoute>
         )
       }
@@ -621,10 +572,10 @@ export const router = createBrowserRouter([
         path: "",
         element: (
           <PermissionRoute 
-            permission={PERMISSION_IDS.LIST_ALL_REPORTS}
+            permission="PERM-044"
             fallback={<div className="p-4 text-center text-muted">You don't have permission to access issue list.</div>}
           >
-            <IssueListPage />
+            <UnifiedReportsPage defaultTab="incidents" />
           </PermissionRoute>
         )
       }
@@ -643,10 +594,32 @@ export const router = createBrowserRouter([
         path: "",
         element: (
           <PermissionRoute 
-            permission={PERMISSION_IDS.LIST_ALL_REPORTS}
+            permission="PERM-044"
             fallback={<div className="p-4 text-center text-muted">You don't have permission to access feedback list.</div>}
           >
-            <FeedbackListPage />
+            <UnifiedReportsPage defaultTab="feedback" />
+          </PermissionRoute>
+        )
+      }
+    ]
+  },
+  {
+    path: "/reports/:reportId",
+    element: (
+      <ProtectedRoute>
+        <LayoutWrapper />
+      </ProtectedRoute>
+    ),
+    errorElement: <ErrorBoundary />,
+    children: [
+      {
+        path: "",
+        element: (
+          <PermissionRoute 
+            permission="PERM-045"
+            fallback={<div className="p-4 text-center text-muted">You don't have permission to view incident/feedback report details.</div>}
+          >
+            <ReportDetailPage />
           </PermissionRoute>
         )
       }
@@ -663,14 +636,7 @@ export const router = createBrowserRouter([
     children: [
       {
         path: "",
-        element: (
-          <PermissionRoute 
-            permission={PERMISSION_IDS.UPDATE_MY_PROFILE}
-            fallback={<div className="p-4 text-center text-muted">You don't have permission to configure signature.</div>}
-          >
-            <ConfigureSignaturePage />
-          </PermissionRoute>
-        )
+        element: <ConfigureSignaturePage />
       }
     ]
   },
@@ -687,7 +653,7 @@ export const router = createBrowserRouter([
         path: "",
         element: (
           <PermissionRoute 
-            permission={PERMISSION_IDS.VIEW_DEPARTMENT_IN_DETAIL}
+            permission="PERM-014"
             fallback={<div className="p-4 text-center text-muted">You don't have permission to access department details.</div>}
           >
             <MyDepartmentDetailsPage />
@@ -698,7 +664,7 @@ export const router = createBrowserRouter([
         path: ":courseId",
         element: (
           <PermissionRoute 
-            permission={PERMISSION_IDS.VIEW_COURSE_IN_DETAIL}
+            permission="PERM-018"
             fallback={<div className="p-4 text-center text-muted">You don't have permission to view course details.</div>}
           >
             <CourseDetailsPage />
@@ -718,25 +684,11 @@ export const router = createBrowserRouter([
     children: [
       {
         path: "",
-        element: (
-          <PermissionRoute 
-            permission={PERMISSION_IDS.LIST_ASSESSMENTS}
-            fallback={<div className="p-4 text-center text-muted">You don't have permission to access assessment review requests.</div>}
-          >
-            <AssessmentReviewRequestsPage />
-          </PermissionRoute>
-        )
+        element: <AssessmentReviewRequestsPage />
       },
       {
         path: ":requestId",
-        element: (
-          <PermissionRoute 
-            permission={PERMISSION_IDS.LIST_ASSESSMENTS}
-            fallback={<div className="p-4 text-center text-muted">You don't have permission to view assessment request details.</div>}
-          >
-            <AssessmentReviewRequestsPage />
-          </PermissionRoute>
-        )
+        element: <AssessmentReviewRequestsPage />
       }
     ]
   },
@@ -753,7 +705,7 @@ export const router = createBrowserRouter([
         path: "",
         element: (
           <PermissionRoute 
-            permission={PERMISSION_IDS.VIEW_TRAINEE_SUBJECT_ENROLLMENTS}
+            permission="PERM-032"
             fallback={<div className="p-4 text-center text-muted">You don't have permission to view academic details.</div>}
           >
             <AcademicDetailsPage />
@@ -877,7 +829,7 @@ export const router = createBrowserRouter([
         path: "",
         element: (
           <PermissionRoute 
-            permission={PERMISSION_IDS.VIEW_TRAINEE_SUBJECT_ENROLLMENTS}
+            permission="PERM-032"
             fallback={<div className="p-4 text-center text-muted">You don't have permission to access trainee portal.</div>}
           >
             <TraineeDashboardPage />
@@ -888,7 +840,7 @@ export const router = createBrowserRouter([
         path: "dashboard",
         element: (
           <PermissionRoute 
-            permission={PERMISSION_IDS.VIEW_TRAINEE_SUBJECT_ENROLLMENTS}
+            permission="PERM-032"
             fallback={<div className="p-4 text-center text-muted">You don't have permission to access trainee dashboard.</div>}
           >
             <TraineeDashboardPage />
@@ -899,7 +851,7 @@ export const router = createBrowserRouter([
         path: ":traineeId/course/:courseId",
         element: (
           <PermissionRoute 
-            permission={PERMISSION_IDS.VIEW_TRAINEE_SUBJECT_ENROLLMENTS}
+            permission="PERM-032"
             fallback={<div className="p-4 text-center text-muted">You don't have permission to view trainee courses.</div>}
           >
             <TraineeCourseDetailPage />
@@ -910,7 +862,7 @@ export const router = createBrowserRouter([
         path: ":traineeId/course/:courseId/subject/:subjectId",
         element: (
           <PermissionRoute 
-            permission={PERMISSION_IDS.VIEW_TRAINEE_SUBJECT_ENROLLMENTS}
+            permission="PERM-032"
             fallback={<div className="p-4 text-center text-muted">You don't have permission to view trainee subjects.</div>}
           >
             <TraineeSubjectDetailPage />
@@ -919,47 +871,19 @@ export const router = createBrowserRouter([
       },
       {
         path: ":traineeId/assessments",
-        element: (
-          <PermissionRoute 
-            permission={PERMISSION_IDS.LIST_ASSESSMENTS}
-            fallback={<div className="p-4 text-center text-muted">You don't have permission to view trainee assessments.</div>}
-          >
-            <TraineeAssessmentPage />
-          </PermissionRoute>
-        )
+        element: <TraineeAssessmentPage />
       },
       {
         path: ":traineeId/assessment/:assessmentId",
-        element: (
-          <PermissionRoute 
-            permission={PERMISSION_IDS.VIEW_ASSESSMENT_DETAILS}
-            fallback={<div className="p-4 text-center text-muted">You don't have permission to view assessment details.</div>}
-          >
-            <TraineeAssessmentDetailPage />
-          </PermissionRoute>
-        )
+        element: <TraineeAssessmentDetailPage />
       },
       {
         path: ":traineeId/signature-pad/:documentId",
-        element: (
-          <PermissionRoute 
-            permission={PERMISSION_IDS.CONFIRM_TRAINEE_PARTICIPATION}
-            fallback={<div className="p-4 text-center text-muted">You don't have permission to access signature pad.</div>}
-          >
-            <SignaturePadPage />
-          </PermissionRoute>
-        )
+        element: <SignaturePadPage />
       },
       {
         path: ":traineeId/assessment-section/:sectionId",
-        element: (
-          <PermissionRoute 
-            permission={PERMISSION_IDS.VIEW_ASSESSMENT_SECTIONS}
-            fallback={<div className="p-4 text-center text-muted">You don't have permission to view assessment sections.</div>}
-          >
-            <AssessmentSectionDetailsPage />
-          </PermissionRoute>
-        )
+        element: <AssessmentSectionDetailsPage />
       },
       {
         path: "academic-details",
@@ -987,25 +911,11 @@ export const router = createBrowserRouter([
       },
       {
         path: "assessment-pending",
-        element: (
-          <PermissionRoute 
-            permission={PERMISSION_IDS.LIST_ASSESSMENTS}
-            fallback={<div className="p-4 text-center text-muted">You don't have permission to view assessment pending list.</div>}
-          >
-            <YourAssessmentsPage />
-          </PermissionRoute>
-        )
+        element: <YourAssessmentsPage />
       },
       {
         path: "assessment-pending/section-completion",
-        element: (
-          <PermissionRoute 
-            permission={PERMISSION_IDS.LIST_ASSESSMENTS}
-            fallback={<div className="p-4 text-center text-muted">You don't have permission to view section completion list.</div>}
-          >
-            <SectionCompletionPage />
-          </PermissionRoute>
-        )
+        element: <SectionCompletionPage />
       }
     ]
   },
@@ -1031,21 +941,10 @@ export const router = createBrowserRouter([
         element: <RouteRedirect />
       },
       {
-        path: "templates",
-        element: (
-          <PermissionRoute 
-            permission={PERMISSION_IDS.LIST_ALL_REPORTS}
-            fallback={<div className="p-4 text-center text-muted">You don't have permission to access template list.</div>}
-          >
-            <TemplateListPage />
-          </PermissionRoute>
-        )
-      },
-      {
         path: "templates/:templateId",
         element: (
           <PermissionRoute 
-            permission={PERMISSION_IDS.VIEW_TEMPLATE_DETAILS}
+            permission="PERM-042"
             fallback={<div className="p-4 text-center text-muted">You don't have permission to access template details.</div>}
           >
             <TemplateDetailPage />
@@ -1069,14 +968,7 @@ export const router = createBrowserRouter([
       },
       {
         path: "dashboard",
-        element: (
-          <PermissionRoute 
-            permission={PERMISSION_IDS.LIST_ASSESSMENTS}
-            fallback={<div className="p-4 text-center text-muted">You don't have permission to access trainer portal.</div>}
-          >
-            <TrainerDashboardPage />
-          </PermissionRoute>
-        )
+        element: <TrainerDashboardPage />
       },
       {
         path: "upcoming-assessments",
@@ -1096,75 +988,33 @@ export const router = createBrowserRouter([
       },
       {
         path: "assessment-details/:resultId",
-        element: (
-          <PermissionRoute 
-            permission={PERMISSION_IDS.LIST_ASSESSMENTS}
-            fallback={<div className="p-4 text-center text-muted">You don't have permission to view assessment details.</div>}
-          >
-            <AssessmentResultDetailsPage />
-          </PermissionRoute>
-        )
+        element: <AssessmentResultDetailsPage />
       },
       {
         path: "assess/:entityType/:entityId",
-        element: (
-          <PermissionRoute 
-            permission={PERMISSION_IDS.LIST_ASSESSMENTS}
-            fallback={<div className="p-4 text-center text-muted">You don't have permission to view these assessments.</div>}
-          >
-            <AssessmentAssignmentsPage />
-          </PermissionRoute>
-        )
+        element: <AssessmentAssignmentsPage />
       },
       {
         path: "assessments/:assessmentId/sections",
-        element: (
-          <PermissionRoute 
-            permission={PERMISSION_IDS.LIST_ASSESSMENTS}
-            fallback={<div className="p-4 text-center text-muted">You don't have permission to view assessment sections.</div>}
-          >
-            <TrainerAssessmentSectionsPage />
-          </PermissionRoute>
-        )
+        element: <TrainerAssessmentSectionsPage />
       },
       {
         path: "assessments/sections/:sectionId/fields",
-        element: (
-          <PermissionRoute 
-            permission={PERMISSION_IDS.LIST_ASSESSMENTS}
-            fallback={<div className="p-4 text-center text-muted">You don't have permission to view section fields.</div>}
-          >
-            <AssessmentSectionFieldsPage />
-          </PermissionRoute>
-        )
+        element: <AssessmentSectionFieldsPage />
       },
       {
         path: "assess/:entityType/:entityId",
-        element: (
-          <PermissionRoute 
-            permission={PERMISSION_IDS.LIST_ASSESSMENTS}
-            fallback={<div className="p-4 text-center text-muted">You don't have permission to view these assessments.</div>}
-          >
-            <AssessmentAssignmentsPage />
-          </PermissionRoute>
-        )
+        element: <AssessmentAssignmentsPage />
       },
       {
         path: "approval-notes/:resultId",
-        element: (
-          <PermissionRoute 
-            permission={PERMISSION_IDS.LIST_ASSESSMENTS}
-            fallback={<div className="p-4 text-center text-muted">You don't have permission to view approval notes.</div>}
-          >
-            <ResultApprovalNotePage />
-          </PermissionRoute>
-        )
+        element: <ResultApprovalNotePage />
       },
       {
         path: "courses/:courseId",
         element: (
           <PermissionRoute 
-            permission={PERMISSION_IDS.VIEW_ALL_COURSES}
+            permission="PERM-018"
             fallback={<div className="p-4 text-center text-muted">You don't have permission to view course details.</div>}
           >
             <TrainerCourseDetailPage />
@@ -1175,7 +1025,7 @@ export const router = createBrowserRouter([
         path: "trainees/:traineeId",
         element: (
           <PermissionRoute 
-            permission={PERMISSION_IDS.VIEW_USER_IN_DETAIL}
+            permission="PERM-004"
             fallback={<div className="p-4 text-center text-muted">You don't have permission to view trainee details.</div>}
           >
             <TrainerTraineeDetailsPage />
@@ -1186,7 +1036,7 @@ export const router = createBrowserRouter([
         path: "subjects/:subjectId",
         element: (
           <PermissionRoute 
-            permission={PERMISSION_IDS.VIEW_SUBJECT_DETAIL}
+            permission="PERM-027"
             fallback={<div className="p-4 text-center text-muted">You don't have permission to view subject details.</div>}
           >
             <TrainerSubjectDetailsPage />
@@ -1212,7 +1062,7 @@ export const router = createBrowserRouter([
         path: "dashboard",
         element: (
           <PermissionRoute 
-            permission={PERMISSION_IDS.VIEW_DEPARTMENT_IN_DETAIL}
+            permission="PERM-014"
             fallback={<div className="p-4 text-center text-muted">You don't have permission to access department dashboard.</div>}
           >
             <DepartmentHeadDashboardPage />
@@ -1227,7 +1077,7 @@ export const router = createBrowserRouter([
         path: "my-department-details/:courseId",
         element: (
           <PermissionRoute 
-            permission={PERMISSION_IDS.VIEW_COURSE_IN_DETAIL}
+            permission="PERM-018"
             fallback={<div className="p-4 text-center text-muted">You don't have permission to view course details.</div>}
           >
             <CourseDetailsPage />
@@ -1240,20 +1090,13 @@ export const router = createBrowserRouter([
       },
       {
         path: "assessment-review-requests/:requestId",
-        element: (
-          <PermissionRoute 
-            permission={PERMISSION_IDS.LIST_ASSESSMENTS}
-            fallback={<div className="p-4 text-center text-muted">You don't have permission to view assessment request details.</div>}
-          >
-            <AssessmentReviewRequestsPage />
-          </PermissionRoute>
-        )
+        element: <AssessmentReviewRequestsPage />
       },
       {
         path: "courses/:courseId/subjects/:subjectId",
         element: (
           <PermissionRoute 
-            permission={PERMISSION_IDS.VIEW_SUBJECT_DETAIL}
+            permission="PERM-027"
             fallback={<div className="p-4 text-center text-muted">You don't have permission to view subject details.</div>}
           >
             <DepartmentHeadSubjectDetailsPage />
@@ -1264,7 +1107,7 @@ export const router = createBrowserRouter([
         path: "trainees/:traineeId",
         element: (
           <PermissionRoute 
-            permission={PERMISSION_IDS.VIEW_USER_IN_DETAIL}
+            permission="PERM-004"
             fallback={<div className="p-4 text-center text-muted">You don't have permission to view trainee details.</div>}
           >
             <DepartmentHeadTraineeDetailsPage />

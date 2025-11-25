@@ -86,14 +86,19 @@ const AssignedTrainersTable = ({
           Assigned Trainers ({trainers.length})
         </h5>
         {showAddButton && (
-          <Button 
-            variant="primary"
-            onClick={onAddClick}
-            className="d-flex align-items-center"
+          <PermissionWrapper 
+            permission={PERMISSION_IDS.ASSIGN_COURSE_TRAINER}
+            fallback={null}
           >
-            <PersonPlus className="me-2" size={16} />
-            Add Trainers to Department
-          </Button>
+            <Button 
+              variant="primary"
+              onClick={onAddClick}
+              className="d-flex align-items-center"
+            >
+              <PersonPlus className="me-2" size={16} />
+              Add Trainers to Department
+            </Button>
+          </PermissionWrapper>
         )}
       </div>
 

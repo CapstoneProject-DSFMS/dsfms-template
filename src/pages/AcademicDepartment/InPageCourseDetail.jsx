@@ -4,6 +4,8 @@ import { Plus, Upload, Pencil, ArrowLeft, People, Calendar, GeoAlt, FileText, Aw
 import { useNavigate, useParams, useLocation } from 'react-router-dom';
 import { toast } from 'react-toastify';
 import { ROUTES } from '../../constants/routes';
+import { PermissionWrapper } from '../../components/Common';
+import { PERMISSION_IDS } from '../../constants/permissionIds';
 import courseAPI from '../../api/course';
 import subjectAPI from '../../api/subject';
 import SubjectTable from '../../components/AcademicDepartment/SubjectTable';
@@ -348,30 +350,55 @@ const InPageCourseDetail = ({ course, department }) => {
       <div className="d-flex justify-content-between align-items-center mb-2">
         {/* Left Group - Enroll Trainees */}
         <div className="d-flex">
-          <Button size="sm" variant="primary" onClick={handleEnrollTrainees}>
-            <People size={14} className="me-1" /> Enroll Trainees
-          </Button>
+          <PermissionWrapper 
+            permission={PERMISSION_IDS.ENROLL_SINGLE_TRAINEE}
+            fallback={null}
+          >
+            <Button size="sm" variant="primary" onClick={handleEnrollTrainees}>
+              <People size={14} className="me-1" /> Enroll Trainees
+            </Button>
+          </PermissionWrapper>
         </div>
 
         {/* Right Group - Subject Management & Edit Course */}
         <div className="d-flex gap-2">
-          <Button size="sm" variant="outline-secondary" onClick={() => setShowEditCourse(true)}>
-            <Pencil size={14} className="me-1" /> Edit Course
-          </Button>
-          <div className="vr" style={{ height: '24px', margin: '0 8px' }}></div>
-          <Button size="sm" variant="primary" onClick={() => setShowAddSubject(true)}>
-            <Plus size={14} className="me-1" /> Add Subject
-          </Button>
-          <Button size="sm" variant="outline-primary" onClick={() => setShowBulkImport(true)}>
-            <Upload size={14} className="me-1" /> Import Bulk Subjects
-          </Button>
-          <Button 
-            size="sm" 
-            variant="outline-danger" 
-            onClick={() => setShowDeleteBatchEnrollments(true)}
+          <PermissionWrapper 
+            permission={PERMISSION_IDS.UPDATE_COURSE}
+            fallback={null}
           >
-            <Trash size={14} className="me-1" /> Delete All Subject Enrollments In Course by BatchCode
-          </Button>
+            <Button size="sm" variant="outline-secondary" onClick={() => setShowEditCourse(true)}>
+              <Pencil size={14} className="me-1" /> Edit Course
+            </Button>
+          </PermissionWrapper>
+          <div className="vr" style={{ height: '24px', margin: '0 8px' }}></div>
+          <PermissionWrapper 
+            permission={PERMISSION_IDS.CREATE_SUBJECT}
+            fallback={null}
+          >
+            <Button size="sm" variant="primary" onClick={() => setShowAddSubject(true)}>
+              <Plus size={14} className="me-1" /> Add Subject
+            </Button>
+          </PermissionWrapper>
+          <PermissionWrapper 
+            permission={PERMISSION_IDS.CREATE_BULK_SUBJECTS}
+            fallback={null}
+          >
+            <Button size="sm" variant="outline-primary" onClick={() => setShowBulkImport(true)}>
+              <Upload size={14} className="me-1" /> Import Bulk Subjects
+            </Button>
+          </PermissionWrapper>
+          <PermissionWrapper 
+            permission={PERMISSION_IDS.REMOVE_TRAINEE_FROM_ENROLLMENT}
+            fallback={null}
+          >
+            <Button 
+              size="sm" 
+              variant="outline-danger" 
+              onClick={() => setShowDeleteBatchEnrollments(true)}
+            >
+              <Trash size={14} className="me-1" /> Delete All Subject Enrollments In Course by BatchCode
+            </Button>
+          </PermissionWrapper>
         </div>
       </div>
 
