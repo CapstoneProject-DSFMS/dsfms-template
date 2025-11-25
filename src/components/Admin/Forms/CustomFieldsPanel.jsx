@@ -11,6 +11,8 @@ import apiClient from '../../../api/config.js';
 import { API_CONFIG } from '../../../config/api.js';
 import { uploadAPI } from '../../../api/upload.js';
 import templateAPI from '../../../api/template';
+import { PermissionWrapper } from '../../Common';
+import { PERMISSION_IDS } from '../../../constants/permissionIds';
 
 const CustomFieldsPanel = ({ 
   customFields = [], 
@@ -1480,18 +1482,23 @@ const CustomFieldsPanel = ({
       <div className={`p-2 p-md-3 bg-light custom-fields-panel ${className}`} style={{ height: '100%', display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
       <div className="d-flex justify-content-between align-items-center mb-2 mb-md-3 flex-wrap gap-2 flex-shrink-0">
         <h6 className="mb-0 text-muted custom-fields-title" style={{ fontSize: '0.95rem' }}>Available Custom Fields</h6>
-        <Button
-          variant="outline-primary"
-          size="sm"
-          onClick={handleAddSection}
-          disabled={readOnly}
-          className="custom-fields-add-section-btn"
-          style={{ whiteSpace: 'nowrap', flexShrink: 0 }}
+        <PermissionWrapper 
+          permission={PERMISSION_IDS.CREATE_TEMPLATE}
+          fallback={null}
         >
-          <Plus className="me-1" size={14} />
-          <span className="d-none d-sm-inline">Add Section</span>
-          <span className="d-inline d-sm-none">Section</span>
-        </Button>
+          <Button
+            variant="outline-primary"
+            size="sm"
+            onClick={handleAddSection}
+            disabled={readOnly}
+            className="custom-fields-add-section-btn"
+            style={{ whiteSpace: 'nowrap', flexShrink: 0 }}
+          >
+            <Plus className="me-1" size={14} />
+            <span className="d-none d-sm-inline">Add Section</span>
+            <span className="d-inline d-sm-none">Section</span>
+          </Button>
+        </PermissionWrapper>
       </div>
       
       <div className="flex-grow-1 custom-fields-content" style={{ overflowY: 'auto', overflowX: 'hidden', minHeight: '0', flex: '1 1 auto' }}>
@@ -1865,26 +1872,31 @@ const CustomFieldsPanel = ({
           <strong>Tip:</strong> <span className="d-none d-sm-inline">Create sections first, then add fields inside each section.</span>
           <span className="d-inline d-sm-none">Create sections, then add fields.</span>
         </Alert>
-        <Button 
-          variant="primary" 
-          size="sm" 
-          onClick={handleSubmitTemplate} 
-          disabled={isSubmitting}
-          className="custom-fields-submit-btn flex-shrink-0"
-          style={{ whiteSpace: 'nowrap', fontSize: '0.8rem', padding: '0.375rem 0.75rem' }}
+        <PermissionWrapper 
+          permission={PERMISSION_IDS.CREATE_TEMPLATE_VERSION}
+          fallback={null}
         >
-          {isSubmitting ? (
-            <>
-              <Spinner animation="border" size="sm" variant="light" style={{ width: '14px', height: '14px' }} />
-              <span>Submitting...</span>
-            </>
-          ) : (
-            <>
-              <span className="d-none d-sm-inline">Submit Template</span>
-              <span className="d-inline d-sm-none">Submit</span>
-            </>
-          )}
-        </Button>
+          <Button 
+            variant="primary" 
+            size="sm" 
+            onClick={handleSubmitTemplate} 
+            disabled={isSubmitting}
+            className="custom-fields-submit-btn flex-shrink-0"
+            style={{ whiteSpace: 'nowrap', fontSize: '0.8rem', padding: '0.375rem 0.75rem' }}
+          >
+            {isSubmitting ? (
+              <>
+                <Spinner animation="border" size="sm" variant="light" style={{ width: '14px', height: '14px' }} />
+                <span>Submitting...</span>
+              </>
+            ) : (
+              <>
+                <span className="d-none d-sm-inline">Submit Template</span>
+                <span className="d-inline d-sm-none">Submit</span>
+              </>
+            )}
+          </Button>
+        </PermissionWrapper>
       </div>
 
       {/* Add/Edit Section Modal */}

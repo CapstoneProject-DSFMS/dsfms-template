@@ -143,6 +143,17 @@ const courseAPI = {
       console.error('Error deleting batch enrollments:', error);
       throw error;
     }
+  },
+
+  // Get available trainers for a course
+  getAvailableTrainersForCourse: async (courseId) => {
+    try {
+      const response = await apiClient.get(`/subjects/courses/${courseId}/available-trainers`);
+      return response.data;
+    } catch (error) {
+      console.error('Error fetching available trainers for course:', error);
+      throw error.response?.data || error.message;
+    }
   }
 };
 

@@ -369,29 +369,34 @@ const SubjectDetailsView = ({ subjectId, courseId }) => {
               </Nav.Item>
             </Nav>
             {activeTab === 'trainers' && (
-              <Button 
-                variant="light"
-                size="sm"
-                onClick={() => setShowAddTrainer(true)}
-                className="d-flex align-items-center"
-                style={{
-                  backgroundColor: '#ffffff',
-                  borderColor: '#dee2e6',
-                  color: '#000000',
-                  fontWeight: 500
-                }}
-                onMouseEnter={(e) => {
-                  e.currentTarget.style.backgroundColor = '#f8f9fa';
-                  e.currentTarget.style.borderColor = '#dee2e6';
-                }}
-                onMouseLeave={(e) => {
-                  e.currentTarget.style.backgroundColor = '#ffffff';
-                  e.currentTarget.style.borderColor = '#dee2e6';
-                }}
+              <PermissionWrapper 
+                permission={PERMISSION_IDS.ADD_TRAINERS_TO_SUBJECT}
+                fallback={null}
               >
-                <Plus size={14} className="me-1" />
-                Add Trainer
-              </Button>
+                <Button 
+                  variant="light"
+                  size="sm"
+                  onClick={() => setShowAddTrainer(true)}
+                  className="d-flex align-items-center"
+                  style={{
+                    backgroundColor: '#ffffff',
+                    borderColor: '#dee2e6',
+                    color: '#000000',
+                    fontWeight: 500
+                  }}
+                  onMouseEnter={(e) => {
+                    e.currentTarget.style.backgroundColor = '#f8f9fa';
+                    e.currentTarget.style.borderColor = '#dee2e6';
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.backgroundColor = '#ffffff';
+                    e.currentTarget.style.borderColor = '#dee2e6';
+                  }}
+                >
+                  <Plus size={14} className="me-1" />
+                  Add Trainer
+                </Button>
+              </PermissionWrapper>
             )}
           </Card.Header>
           
@@ -516,6 +521,7 @@ const SubjectDetailsView = ({ subjectId, courseId }) => {
         onClose={() => setShowAddTrainer(false)}
         onSave={handleAddTrainer}
         loading={isAddingTrainer}
+        courseId={courseId}
       />
 
       <EditTrainerModal
