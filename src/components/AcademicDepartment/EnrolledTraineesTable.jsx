@@ -2,7 +2,8 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { Card, Table, Badge, Modal, Button } from 'react-bootstrap';
 import { People, X } from 'react-bootstrap-icons';
 import { toast } from 'react-toastify';
-import { LoadingSkeleton, SortIcon } from '../Common';
+import { LoadingSkeleton, SortIcon, PermissionWrapper } from '../Common'; // Add PermissionWrapper
+import { PERMISSION_IDS } from '../../constants/permissionIds'; // Add this
 import useTableSort from '../../hooks/useTableSort';
 import EnrolledTraineeActions from './EnrolledTraineeActions';
 import RemoveTraineeModal from './RemoveTraineeModal';
@@ -528,17 +529,21 @@ const EnrolledTraineesTable = ({ courseId, loading = false, title = 'Enrolled Tr
                                   </Badge>
                                 </div>
                               </div>
-                              <Button 
-                                size="sm" 
-                                variant="outline-danger"
-                                className="ms-2"
-                                onClick={() => {
-                                  handleRemoveSubject(selectedTrainee.id, subject.id);
-                                }}
-                              >
-                                <X size={14} />
-                              </Button>
-                            </div>
+                                                            <PermissionWrapper
+                                                              permission={PERMISSION_IDS.REMOVE_TRAINEE_FROM_ENROLLMENT}
+                                                              fallback={null}
+                                                            >
+                                                              <Button
+                                                                size="sm"
+                                                                variant="outline-danger"
+                                                                className="ms-2"
+                                                                onClick={() => {
+                                                                  handleRemoveSubject(selectedTrainee.id, subject.id);
+                                                                }}
+                                                              >
+                                                                <X size={14} />
+                                                              </Button>
+                                                            </PermissionWrapper>                            </div>
                             
                             {/* Subject Details */}
                             <div className="row g-2 mb-3">

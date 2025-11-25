@@ -15,7 +15,7 @@ const CourseActions = ({ course, onView, onDisable }) => {
 
   return (
     <PermissionWrapper 
-      permissions={[PERMISSION_IDS.VIEW_COURSE_IN_DETAIL, PERMISSION_IDS.ARCHIVE_COURSE, PERMISSION_IDS.UPDATE_COURSE]}
+      permissions={[PERMISSION_IDS.VIEW_COURSE_DETAILS, PERMISSION_IDS.ARCHIVE_COURSE, PERMISSION_IDS.UPDATE_COURSE]}
       fallback={null}
     >
       <PortalUnifiedDropdown
@@ -33,7 +33,7 @@ const CourseActions = ({ course, onView, onDisable }) => {
             label: 'View Details',
             icon: <Eye />,
             onClick: handleViewClick,
-            permission: PERMISSION_IDS.VIEW_COURSE_IN_DETAIL
+            permission: PERMISSION_IDS.VIEW_COURSE_DETAILS
           },
           { type: 'divider' },
           {

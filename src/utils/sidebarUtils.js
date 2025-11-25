@@ -1,4 +1,5 @@
 import { ROUTES } from '../constants/routes';
+import { PERMISSION_IDS } from '../constants/permissionIds'; // Add this line
 
 const ROLE_NORMALIZATION_MAP = {
   ADMIN: 'ADMINISTRATOR',
@@ -65,7 +66,13 @@ const NAV_ITEMS = [
     label: 'Template List',
     path: ROUTES.TEMPLATES,
     icon: 'fileText',
-    permissions: ['PERM-041'], // View All Template
+    // Permissions are handled by customPermissionLogic
+    customPermissionLogic: (hasPermission) => {
+      const viewAll = hasPermission(PERMISSION_IDS.VIEW_ALL_TEMPLATE);
+      const canCreate = hasPermission(PERMISSION_IDS.CREATE_TEMPLATE);
+      const canApproveDeny = hasPermission(PERMISSION_IDS.APPROVE_DENY_TEMPLATE);
+      return (viewAll && canCreate) || (viewAll && canApproveDeny);
+    },
   },
   {
     id: 'system-config',
@@ -124,25 +131,31 @@ const NAV_ITEMS = [
   },
   {
     id: 'create-issue',
-    label: 'Create Incident/Feedback Report',
+    label: 'Issue Reporting',
     path: ROUTES.REPORTS_CREATE,
     icon: 'personCheck',
     permissions: ['PERM-047'], // Submit Incident/Feedback Report
   },
   {
-    id: 'assigned-assessment',
-    label: 'Assigned Assessment',
+    id: 'assigned-assessments',
+    label: 'Assigned Assessments',
     path: ROUTES.ASSESSMENTS_UPCOMING,
     icon: 'clock',
     roleOnly: ['TRAINER'],
-    children: [
-      {
-        id: 'assessment-results',
-        label: 'Assessment Results',
-        path: ROUTES.ASSESSMENTS_RESULTS,
-        roleOnly: ['TRAINER'],
-      },
-    ],
+  },
+  {
+    id: 'assessment-event',
+    label: 'Assessment Events',
+    path: ROUTES.ASSESSMENT_EVENTS,
+    icon: 'calendarEvent',
+    roleOnly: ['TRAINER'],
+  },
+  {
+    id: 'all-assessments',
+    label: 'All Assessments',
+    path: ROUTES.ASSESSMENTS_RESULTS,
+    icon: 'clipboardCheck',
+    roleOnly: ['TRAINER'],
   },
   {
     id: 'instructed-courses',
@@ -214,7 +227,12 @@ const filterNavItems = (items, user, hasPermission) => {
     }
 
     // Permission check
-    const hasAccess = userHasRequiredPermissions(item, hasPermission);
+    let hasAccess;
+    if (item.customPermissionLogic) {
+      hasAccess = item.customPermissionLogic(hasPermission);
+    } else {
+      hasAccess = userHasRequiredPermissions(item, hasPermission);
+    }
 
     // Children
     let children = [];
@@ -226,7 +244,7 @@ const filterNavItems = (items, user, hasPermission) => {
     const shouldInclude =
       hasAccess ||
       children.length > 0 ||
-      (!item.permissions && (!item.children || item.children.length === 0));
+      (!item.permissions && !item.customPermissionLogic && (!item.children || item.children.length === 0));
 
     if (!shouldInclude) {
       return acc;

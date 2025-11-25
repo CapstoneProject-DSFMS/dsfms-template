@@ -12,6 +12,7 @@ import TemplateDetailModal from '../../../components/Admin/Forms/TemplateDetailM
 import PublishedTemplatesModal from '../../../components/Admin/Forms/PublishedTemplatesModal';
 import TemplateTabs from '../../../components/SQA/TemplateTabs';
 import TemplateListContent from '../../../components/SQA/TemplateListContent';
+import { PERMISSION_IDS } from '../../../constants/permissionIds';
 
 /**
  * Unified Template List Page
@@ -324,39 +325,48 @@ const UnifiedTemplateListPage = () => {
               </Col>
               <Col xs="auto">
                 <div className="d-flex gap-2">
-                  <Button
-                    variant="outline-light"
-                    onClick={() => navigate(ROUTES.TEMPLATES_DRAFTS)}
-                    className="d-flex align-items-center"
-                    size="sm"
-                  >
-                    <FileText className="me-2" size={16} />
-                    Your Drafts
-                  </Button>
-                  <PermissionWrapper 
-                    permission="PERM-034"
+                  <PermissionWrapper
+                    permission={PERMISSION_IDS.EDIT_DRAFT_TEMPLATE}
                     fallback={null}
                   >
                     <Button
                       variant="outline-light"
-                      onClick={() => setShowCreateVersionModal(true)}
+                      onClick={() => navigate(ROUTES.TEMPLATES_DRAFTS)}
                       className="d-flex align-items-center"
                       size="sm"
                     >
                       <FileText className="me-2" size={16} />
-                      Create New Template's Version
-                    </Button>
-                    <Button
-                      variant="primary-custom"
-                      onClick={handleImportFile}
-                      className="d-flex align-items-center"
-                      size="sm"
-                    >
-                      <Upload className="me-2" size={16} />
-                      Create New Template
+                      Your Drafts
                     </Button>
                   </PermissionWrapper>
-                </div>
+                                    <PermissionWrapper
+                                      permission={PERMISSION_IDS.UPDATE_TEMPLATE_VERSION}
+                                      fallback={null}
+                                    >
+                                      <Button
+                                        variant="outline-light"
+                                        onClick={() => setShowCreateVersionModal(true)}
+                                        className="d-flex align-items-center"
+                                        size="sm"
+                                      >
+                                        <FileText className="me-2" size={16} />
+                                        Create New Template's Version
+                                      </Button>
+                                    </PermissionWrapper>
+                                    <PermissionWrapper
+                                      permission={PERMISSION_IDS.CREATE_TEMPLATE}
+                                      fallback={null}
+                                    >
+                                      <Button
+                                        variant="primary-custom"
+                                        onClick={handleImportFile}
+                                        className="d-flex align-items-center"
+                                        size="sm"
+                                      >
+                                        <Upload className="me-2" size={16} />
+                                        Create New Template
+                                      </Button>
+                                    </PermissionWrapper>                </div>
               </Col>
             </Row>
           </Card.Header>
@@ -537,19 +547,24 @@ const UnifiedTemplateListPage = () => {
                               <FileText size={12} className="me-1" />
                               {template._count?.sections || 0} sections
                             </small>
-                            <Button
-                              variant="link"
-                              size="sm"
-                              className="p-0 text-primary-custom flex-shrink-0 ms-2"
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                handlePreviewTemplate(template);
-                              }}
-                              style={{ whiteSpace: 'nowrap' }}
+                            <PermissionWrapper
+                              permission={PERMISSION_IDS.VIEW_TEMPLATE_DETAILS}
+                              fallback={null}
                             >
-                              <Eye size={14} className="me-1" />
-                              Preview
-                            </Button>
+                              <Button
+                                variant="link"
+                                size="sm"
+                                className="p-0 text-primary-custom flex-shrink-0 ms-2"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  handlePreviewTemplate(template);
+                                }}
+                                style={{ whiteSpace: 'nowrap' }}
+                              >
+                                <Eye size={14} className="me-1" />
+                                Preview
+                              </Button>
+                            </PermissionWrapper>
                           </div>
                         </div>
                       </Card.Body>

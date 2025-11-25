@@ -112,6 +112,19 @@ const courseAPI = {
     return response.data;
   },
 
+  // Get trainee enrollments with status filter
+  getTraineeEnrollmentsByStatus: async (traineeId, status = 'ENROLLED') => {
+    try {
+      const response = await apiClient.get(`/courses/trainees/${traineeId}/enrollments`, {
+        params: { status }
+      });
+      return response.data;
+    } catch (error) {
+      console.error('Error fetching trainee enrollments:', error);
+      throw error;
+    }
+  },
+
   // Get enrolled trainees for a course
   getCourseTrainees: async (courseId) => {
     try {

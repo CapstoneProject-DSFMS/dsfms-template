@@ -1,16 +1,17 @@
 import React from 'react';
 import { Container, Row, Col, Card, Button, Badge, Spinner } from 'react-bootstrap';
-import { 
-  Book, 
+import {
+  Book,
   Building,
   ArrowRight
 } from 'react-bootstrap-icons';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../hooks/useAuth';
 import useDepartmentManagement from '../../hooks/useDepartmentManagement';
+import { PermissionWrapper } from '../../components/Common'; // Add this
+import { PERMISSION_IDS } from '../../constants/permissionIds'; // Add this
 // Note: /academic/course/:departmentId is an academic-specific route, keeping as is
 import '../../styles/academic-department.css';
-
 const CourseSelectionView = () => {
   const { user } = useAuth();
   const navigate = useNavigate();
@@ -73,15 +74,19 @@ const CourseSelectionView = () => {
                       {department.description || <span className="text-muted fst-italic">No description available</span>}
                     </div>
                     
-                    <Button 
-                      variant="outline-primary" 
-                      className="w-100"
-                      onClick={() => handleDepartmentSelect(department.id)}
-                    >
-                      View Details
-                      <ArrowRight size={16} className="ms-2" />
-                    </Button>
-                  </Card.Body>
+                                        <PermissionWrapper
+                                          permission={PERMISSION_IDS.VIEW_COURSE_DETAILS}
+                                          fallback={null}
+                                        >
+                                          <Button
+                                            variant="outline-primary"
+                                            className="w-100"
+                                            onClick={() => handleDepartmentSelect(department.id)}
+                                          >
+                                            View Details
+                                            <ArrowRight size={16} className="ms-2" />
+                                          </Button>
+                                        </PermissionWrapper>                  </Card.Body>
                 </Card>
               </Col>
             ))

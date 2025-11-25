@@ -2,6 +2,7 @@ import React from 'react';
 import { Row, Col, Button, Alert, Spinner } from 'react-bootstrap';
 import { Download, FileEarmarkPdf, CheckCircle, XCircle } from 'react-bootstrap-icons';
 import TemplateConfigSchema from './TemplateConfigSchema';
+import { PERMISSION_IDS } from '../../constants/permissionIds'; // Add this line
 
 const PreviewTab = ({
   template,
@@ -17,41 +18,56 @@ const PreviewTab = ({
       <Row>
         <Col xs={12} className="mb-3">
           <div className="d-flex justify-content-end gap-2 mb-3">
-            <Button
-              variant="outline-primary"
-              size="sm"
-              onClick={onViewTemplateConfig}
-              className="d-flex align-items-center"
-              disabled={!template?.templateConfig}
+            <PermissionWrapper
+              permission={PERMISSION_IDS.VIEW_TEMPLATE_DETAILS}
+              fallback={null}
             >
-              <Download className="me-2" size={16} />
-              View Template Config
-            </Button>
-            <Button
-              variant="primary"
-              size="sm"
-              onClick={onOpenApproveModal}
-              className="d-flex align-items-center"
-              disabled={template?.status !== 'PENDING' || reviewing}
+              <Button
+                variant="outline-primary"
+                size="sm"
+                onClick={onViewTemplateConfig}
+                className="d-flex align-items-center"
+                disabled={!template?.templateConfig}
+              >
+                <Download className="me-2" size={16} />
+                View Template Config
+              </Button>
+            </PermissionWrapper>
+            <PermissionWrapper
+              permission={PERMISSION_IDS.APPROVE_DENY_TEMPLATE}
+              fallback={null}
             >
-              <CheckCircle className="me-2" size={16} />
-              Approve
-            </Button>
-            <Button
-              variant="outline-secondary"
-              size="sm"
-              onClick={onOpenRejectModal}
-              className="d-flex align-items-center"
-              disabled={template?.status !== 'PENDING' || reviewing}
-              style={{
-                backgroundColor: 'white',
-                borderColor: '#dee2e6',
-                color: '#333'
-              }}
+              <Button
+                variant="primary"
+                size="sm"
+                onClick={onOpenApproveModal}
+                className="d-flex align-items-center"
+                disabled={template?.status !== 'PENDING' || reviewing}
+              >
+                <CheckCircle className="me-2" size={16} />
+                Approve
+              </Button>
+            </PermissionWrapper>
+            <PermissionWrapper
+              permission={PERMISSION_IDS.APPROVE_DENY_TEMPLATE}
+              fallback={null}
             >
-              <XCircle className="me-2" size={16} />
-              Reject
-            </Button>
+              <Button
+                variant="outline-secondary"
+                size="sm"
+                onClick={onOpenRejectModal}
+                className="d-flex align-items-center"
+                disabled={template?.status !== 'PENDING' || reviewing}
+                style={{
+                  backgroundColor: 'white',
+                  borderColor: '#dee2e6',
+                  color: '#333'
+                }}
+              >
+                <XCircle className="me-2" size={16} />
+                Reject
+              </Button>
+            </PermissionWrapper>
           </div>
         </Col>
       </Row>

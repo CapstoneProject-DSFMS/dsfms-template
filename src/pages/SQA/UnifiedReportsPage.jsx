@@ -8,7 +8,6 @@ import {
   Clock,
   XCircle,
   ExclamationCircle,
-  PlusLg,
 } from 'react-bootstrap-icons';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { ROUTES } from '../../constants/routes';
@@ -300,19 +299,6 @@ const UnifiedReportsPage = ({ defaultTab }) => {
                   </small>
                 </div>
               </div>
-            </Col>
-            <Col xs="auto">
-              <PermissionWrapper permission={PERMISSION_IDS.SUBMIT_REPORT_REQUEST} fallback={null}>
-                <Button
-                  variant="primary-custom"
-                  size="sm"
-                  className="d-flex align-items-center"
-                  onClick={() => navigate(ROUTES.REPORTS_CREATE)}
-                >
-                  <PlusLg className="me-2" size={16} />
-                  Create Report
-                </Button>
-              </PermissionWrapper>
             </Col>
           </Row>
           <Nav

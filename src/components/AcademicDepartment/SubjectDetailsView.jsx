@@ -309,6 +309,26 @@ const SubjectDetailsView = ({ subjectId, courseId }) => {
             <p className="text-muted mb-0">Subject Code: {subject.code}</p>
           </div>
         </div>
+        <div className="d-flex gap-2"> {/* Added div for buttons */}
+          <PermissionWrapper
+            permission={PERMISSION_IDS.UPDATE_SUBJECT}
+            fallback={null}
+          >
+            <Button variant="primary" onClick={() => setShowEditSubject(true)} className="d-flex align-items-center" size="sm">
+              <Pencil size={16} className="me-1" />
+              Edit Subject
+            </Button>
+          </PermissionWrapper>
+          <PermissionWrapper
+            permission={PERMISSION_IDS.ARCHIVE_SUBJECT}
+            fallback={null}
+          >
+            <Button variant="outline-danger" onClick={() => setShowDisableSubject(true)} className="d-flex align-items-center" size="sm">
+              <Trash size={16} className="me-1" />
+              Archive Subject
+            </Button>
+          </PermissionWrapper>
+        </div>
       </div>
 
       {/* Tab Interface */}
@@ -370,7 +390,7 @@ const SubjectDetailsView = ({ subjectId, courseId }) => {
             </Nav>
             {activeTab === 'trainers' && (
               <PermissionWrapper 
-                permission={PERMISSION_IDS.ADD_TRAINERS_TO_SUBJECT}
+                permission={PERMISSION_IDS.ASSIGN_TRAINERS}
                 fallback={null}
               >
                 <Button 

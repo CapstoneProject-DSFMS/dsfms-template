@@ -28,10 +28,10 @@ const RoleModal = ({ show, role, mode, onSave, onClose }) => {
     
     const featureGroups = {};
     
-    // Group permissions by module
+    // Group permissions by featureGroup (module)
     allPermissions.forEach(permission => {
-      const moduleId = permission.module;
-      const moduleName = permission.viewModule || `${permission.module} Management`;
+      const moduleId = permission.module || permission.viewModule;
+      const moduleName = permission.viewModule || permission.module || 'Other';
       
       if (!featureGroups[moduleId]) {
         featureGroups[moduleId] = {
@@ -42,9 +42,8 @@ const RoleModal = ({ show, role, mode, onSave, onClose }) => {
         };
       }
       
-      // Extract permission ID - support multiple formats
-      // From useAllPermissions, permissions are created with id: permission.permissionId
-      const permissionId = permission.id || permission.permissionId;
+      // Extract permission ID - use code as ID
+      const permissionId = permission.code || permission.id;
       
       if (!permissionId) {
         return; // Skip permissions without ID
@@ -52,11 +51,10 @@ const RoleModal = ({ show, role, mode, onSave, onClose }) => {
       
       featureGroups[moduleId].permissions.push({
         id: permissionId,
-        title: permission.viewName || permission.name,
+        code: permission.code,
+        title: permission.viewName || permission.name, // Only show name, not code
         description: permission.description || '',
-        isActive: permission.isActive,
-        method: permission.method,
-        path: permission.path
+        isActive: permission.isActive !== false
       });
     });
 
@@ -354,7 +352,7 @@ const RoleModal = ({ show, role, mode, onSave, onClose }) => {
                 )}
                 
                 <div className="border rounded p-4 bg-light" style={{ 
-                  maxHeight: '300px', 
+                  maxHeight: '450px', 
                   overflowY: 'auto',
                   borderColor: 'var(--bs-primary)',
                   borderWidth: '2px'

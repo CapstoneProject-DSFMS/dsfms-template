@@ -100,14 +100,12 @@ const CourseTable = ({ courses, loading, onView }) => {
         </thead>
         <tbody>
           {sortedData.map((course, index) => (
-            <CourseRow
-              key={course.id}
-              course={course}
-              index={index}
-              onView={onView}
-              onEdit={onEdit}
-            />
-          ))}
+                          <CourseRow
+                            key={course.id}
+                            course={course}
+                            index={index}
+                            onView={onView}
+                          />          ))}
         </tbody>
       </table>
     </div>
