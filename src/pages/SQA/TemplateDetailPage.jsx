@@ -317,31 +317,30 @@ const TemplateDetailPage = () => {
                 <p className="text-muted mb-0">{template.description}</p>
               </div>
             </div>
-            <PermissionWrapper 
-              permissions={[PERMISSION_IDS.VIEW_ALL_TEMPLATES]}
-              fallback={null}
-            >
-              <Button
-                variant="primary"
-                size="sm"
-                onClick={handleExportPDF}
-                className="d-flex align-items-center"
-                disabled={exportingPDF}
-              >
-                {exportingPDF ? (
-                  <>
-                    <span className="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
-                    Exporting...
-                  </>
-                ) : (
-                  <>
-                <FileEarmarkPdf className="me-1" size={16} />
-                Export PDF
-                  </>
-                )}
-              </Button>
-            </PermissionWrapper>
-          </div>
+                        <PermissionWrapper
+                          permission={PERMISSION_IDS.DOWNLOAD_TEMPLATE_AS_PDF}
+                          fallback={null}
+                        >
+                          <Button
+                            variant="primary"
+                            size="sm"
+                            onClick={handleExportPDF}
+                            className="d-flex align-items-center"
+                            disabled={exportingPDF}
+                          >
+                            {exportingPDF ? (
+                              <>
+                                <span className="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
+                                Exporting...
+                              </>
+                            ) : (
+                              <>
+                            <FileEarmarkPdf className="me-1" size={16} />
+                            Export PDF
+                              </>
+                            )}
+                          </Button>
+                        </PermissionWrapper>          </div>
         </Col>
       </Row>
 

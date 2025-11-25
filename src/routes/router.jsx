@@ -36,6 +36,7 @@ import SectionCompletionPage from '../pages/Trainee/SectionCompletionPage';
 import YourAssessmentsPage from '../pages/Trainee/YourAssessmentsPage';
 import CreateIssuePage from '../pages/Trainee/CreateIssuePage'
 import UnifiedReportsPage from '../pages/SQA/UnifiedReportsPage'
+import ReportDetailPage from '../pages/SQA/ReportDetailPage'
 import TemplateDetailPage from '../pages/SQA/TemplateDetailPage'
 import TrainerDashboardPage from '../pages/Trainer/TrainerDashboardPage'
 import UpcomingAssessmentsPage from '../pages/Trainer/UpcomingAssessmentsPage'
@@ -597,6 +598,28 @@ export const router = createBrowserRouter([
             fallback={<div className="p-4 text-center text-muted">You don't have permission to access feedback list.</div>}
           >
             <UnifiedReportsPage defaultTab="feedback" />
+          </PermissionRoute>
+        )
+      }
+    ]
+  },
+  {
+    path: "/reports/:reportId",
+    element: (
+      <ProtectedRoute>
+        <LayoutWrapper />
+      </ProtectedRoute>
+    ),
+    errorElement: <ErrorBoundary />,
+    children: [
+      {
+        path: "",
+        element: (
+          <PermissionRoute 
+            permission="PERM-045"
+            fallback={<div className="p-4 text-center text-muted">You don't have permission to view incident/feedback report details.</div>}
+          >
+            <ReportDetailPage />
           </PermissionRoute>
         )
       }

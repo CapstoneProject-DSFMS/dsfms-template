@@ -12,7 +12,6 @@ import { API_CONFIG } from '../../../config/api.js';
 import { uploadAPI } from '../../../api/upload.js';
 import templateAPI from '../../../api/template';
 import { PermissionWrapper } from '../../Common';
-import { PERMISSION_IDS } from '../../../constants/permissionIds';
 
 const CustomFieldsPanel = ({ 
   customFields = [], 
@@ -1483,7 +1482,7 @@ const CustomFieldsPanel = ({
       <div className="d-flex justify-content-between align-items-center mb-2 mb-md-3 flex-wrap gap-2 flex-shrink-0">
         <h6 className="mb-0 text-muted custom-fields-title" style={{ fontSize: '0.95rem' }}>Available Custom Fields</h6>
         <PermissionWrapper 
-          permission={PERMISSION_IDS.CREATE_TEMPLATE}
+          permission={"PERM-034"}
           fallback={null}
         >
           <Button
@@ -1873,7 +1872,7 @@ const CustomFieldsPanel = ({
           <span className="d-inline d-sm-none">Create sections, then add fields.</span>
         </Alert>
         <PermissionWrapper 
-          permission={PERMISSION_IDS.CREATE_TEMPLATE_VERSION}
+          permission={"PERM-038"}
           fallback={null}
         >
           <Button 

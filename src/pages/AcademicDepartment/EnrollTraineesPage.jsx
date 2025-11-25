@@ -9,6 +9,8 @@ import TraineeSelectionPanel from '../../components/AcademicDepartment/TraineeSe
 import BulkImportTraineesModal from '../../components/AcademicDepartment/BulkImportTraineesModal';
 import BatchCodeModal from '../../components/AcademicDepartment/BatchCodeModal';
 import subjectAPI from '../../api/subject';
+import { PermissionWrapper } from '../../components/Common'; // Add this
+import { PERMISSION_IDS } from '../../constants/permissionIds'; // Add this
 
 const EnrollTraineesPage = () => {
   const navigate = useNavigate();
@@ -320,33 +322,42 @@ const EnrollTraineesPage = () => {
                   <p className="mb-0 text-muted">{course.description}</p>
                 </Col>
                 <Col md={4} className="text-end d-flex justify-content-end align-items-center gap-2">
-                  <Button 
-                    size="sm" 
-                    variant="primary"
-                    onClick={handleEnroll}
-                    disabled={selectedSubjects.length === 0 || selectedTrainees.length === 0 || enrollLoading}
-                    style={{ fontSize: '0.75rem', padding: '0.25rem 0.5rem' }}
-                  >
-                    {enrollLoading ? (
-                      <>
-                        <span className="spinner-border spinner-border-sm me-1" role="status" aria-hidden="true" style={{ width: '0.5rem', height: '0.5rem' }}></span>
-                        Enrolling...
-                      </>
-                    ) : (
-                      <>
-                        <Plus size={12} className="me-1" /> Enroll
-                      </>
-                    )}
-                  </Button>
-                  <Button 
-                    size="sm" 
-                    variant="outline-primary" 
-                    onClick={handleBulkImport}
-                    style={{ fontSize: '0.75rem', padding: '0.25rem 0.5rem' }}
-                  >
-                    <Upload size={12} className="me-1" /> Bulk Import Trainees
-                  </Button>
-                </Col>
+                                    <PermissionWrapper
+                                      permission={PERMISSION_IDS.BULK_ENROLL_TRAINEES}
+                                      fallback={null}
+                                    >
+                                      <Button
+                                        size="sm"
+                                        variant="primary"
+                                        onClick={handleEnroll}
+                                        disabled={selectedSubjects.length === 0 || selectedTrainees.length === 0 || enrollLoading}
+                                        style={{ fontSize: '0.75rem', padding: '0.25rem 0.5rem' }}
+                                      >
+                                        {enrollLoading ? (
+                                          <>
+                                            <span className="spinner-border spinner-border-sm me-1" role="status" aria-hidden="true" style={{ width: '0.5rem', height: '0.5rem' }}></span>
+                                            Enrolling...
+                                          </>
+                                        ) : (
+                                          <>
+                                            <Plus size={12} className="me-1" /> Enroll
+                                          </>
+                                        )}
+                                      </Button>
+                                    </PermissionWrapper>
+                                    <PermissionWrapper
+                                      permission={PERMISSION_IDS.BULK_ENROLL_TRAINEES}
+                                      fallback={null}
+                                    >
+                                      <Button
+                                        size="sm"
+                                        variant="outline-primary"
+                                        onClick={handleBulkImport}
+                                        style={{ fontSize: '0.75rem', padding: '0.25rem 0.5rem' }}
+                                      >
+                                        <Upload size={12} className="me-1" /> Bulk Import Trainees
+                                      </Button>
+                                    </PermissionWrapper>                </Col>
               </Row>
             </Card.Body>
           </Card>

@@ -357,70 +357,57 @@ export const useAllPermissions = () => {
     setError(null);
     
     try {
-      // Call API to get all permissions in the system
-      const response = await permissionAPI.getPermissions({ includeDeleted: true });
+      // Call new API to get permission groups
+      const response = await permissionAPI.getPermissionGroups();
       
-      // permissionAPI.getPermissions() already returns response.data
       // API response structure:
       // {
-      //   message: "Permissions fetched successfully",
-      //   data: {
-      //     modules: [{module: {...}}],  // ← Array nằm trong data.modules
-      //     totalItems: 89
-      //   }
+      //   message: "Permission groups retrieved successfully.",
+      //   data: [
+      //     {
+      //       "featureGroup": "User Management",
+      //       "permissions": [
+      //         {
+      //           "code": "PERM-001",
+      //           "name": "Create Single User"
+      //         },
+      //         ...
+      //       ]
+      //     },
+      //     ...
+      //   ]
       // }
       
-      let dataToProcess = null;
+      let permissionGroups = [];
       
-      // Check if response.data.modules exists (most common case from API)
-      if (response && response.data && response.data.modules && Array.isArray(response.data.modules)) {
-        dataToProcess = response.data.modules;
-      }
-      // Check if response is an array directly
-      else if (Array.isArray(response)) {
-        dataToProcess = response;
-      } 
-      // Check if response.data is an array
-      else if (response && response.data && Array.isArray(response.data)) {
-        dataToProcess = response.data;
-      }
-      // Check if response is an object with array-like structure
-      else if (response && typeof response === 'object') {
-        // Try to find array property (modules, data, etc.)
-        const possibleKeys = Object.keys(response);
-        const arrayKey = possibleKeys.find(key => Array.isArray(response[key]));
-        if (arrayKey) {
-          dataToProcess = response[arrayKey];
-        }
+      // Extract data array from response
+      if (response && response.data && Array.isArray(response.data)) {
+        permissionGroups = response.data;
+      } else if (Array.isArray(response)) {
+        permissionGroups = response;
       }
       
-      if (dataToProcess && Array.isArray(dataToProcess)) {
-        // Extract permissions from nested structure
-        const permissions = [];
-        dataToProcess.forEach(module => {
-          if (module.module && module.module.listPermissions) {
-            module.module.listPermissions.forEach((permission) => {
-              // Extract permission ID - API returns 'id' field (see Postman response)
-              const permissionId = permission.id || permission.permissionId;
-              
-              permissions.push({
-                id: permissionId, // Use permissionId from API
-                name: permission.name,
-                module: module.module.name,
-                viewName: permission.name,
-                viewModule: module.module.name,
-                isActive: true // Assume active if not specified
-              });
+      // Transform permission groups to flat permissions list with code as ID
+      const permissions = [];
+      permissionGroups.forEach(group => {
+        if (group.permissions && Array.isArray(group.permissions)) {
+          group.permissions.forEach(permission => {
+            permissions.push({
+              id: permission.code, // Use code as ID (PERM-001, PERM-002, etc.)
+              code: permission.code,
+              name: permission.name,
+              module: group.featureGroup,
+              viewName: permission.name,
+              viewModule: group.featureGroup,
+              isActive: true
             });
-          }
-        });
-        
-        setAllPermissions(permissions);
-      } else {
-        setAllPermissions([]);
-      }
+          });
+        }
+      });
+      
+      setAllPermissions(permissions);
     } catch (err) {
-      console.error('Error fetching all permissions from API:', err);
+      console.error('Error fetching permission groups from API:', err);
       setError(err);
       setAllPermissions([]);
     } finally {
