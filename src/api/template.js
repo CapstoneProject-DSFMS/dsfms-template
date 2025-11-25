@@ -37,6 +37,16 @@ const templateAPI = {
     }
   },
 
+  // Get my templates (templates created by current user)
+  getMyTemplates: async () => {
+    try {
+      const response = await apiClient.get('/templates/my-templates');
+      return response.data;
+    } catch (error) {
+      throw error;
+    }
+  },
+
   // Create new template
   createTemplate: async (templateData) => {
     try {
