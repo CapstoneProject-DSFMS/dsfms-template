@@ -126,14 +126,11 @@ export const traineeAPI = {
   },
 
   // Get all trainees with role filter (for enrollment) - OLD: used GET /users
-  // Now using public API to avoid requiring VIEW_ALL_USERS permission
+  // Now using /subjects/active-trainees endpoint
   getTraineesForEnrollment: async (params = {}) => {
     try {
-      const response = await publicApiClient.get('/public/trainees', { params });
-      // Normalize response format
-      if (response.data && response.data.data && Array.isArray(response.data.data)) {
-        return { data: { users: response.data.data } };
-      }
+      const response = await apiClient.get('/subjects/active-trainees', { params });
+      // API returns: { trainees: [...], totalItems: ... }
       return response.data;
     } catch (error) {
       throw error.response?.data || error.message;

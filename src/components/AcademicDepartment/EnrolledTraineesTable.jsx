@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { Card, Table, Badge, Modal, Button } from 'react-bootstrap';
 import { People, X } from 'react-bootstrap-icons';
 import { toast } from 'react-toastify';
@@ -14,6 +14,7 @@ import subjectAPI from '../../api/subject';
 
 const EnrolledTraineesTable = ({ courseId, loading = false, title = 'Enrolled Trainees' }) => {
   const [enrolledTrainees, setEnrolledTrainees] = useState([]);
+  const enrollmentCacheRef = useRef({}); // Use ref instead of state to avoid re-renders and dependency issues
   const [loadingEnrolled, setLoadingEnrolled] = useState(true);
   const [showSubjectModal, setShowSubjectModal] = useState(false);
   const [selectedTrainee, setSelectedTrainee] = useState(null);
@@ -34,7 +35,6 @@ const EnrolledTraineesTable = ({ courseId, loading = false, title = 'Enrolled Tr
     setLoadingEnrolled(true);
     try {
       // OPTIMIZED: Use getCourseTrainees to get enrolled trainees directly (1 API call)
-      // Instead of getting all trainees and checking each one (N+1 API calls)
       const courseTraineesResponse = await courseAPI.getCourseTrainees(courseId);
       
       // Backend returns: { trainees: [...] } or { data: { trainees: [...] } }
@@ -49,14 +49,34 @@ const EnrolledTraineesTable = ({ courseId, loading = false, title = 'Enrolled Tr
       }
       
       // Step 2: For each enrolled trainee, get their enrollment details to extract subject IDs
-      // This is still needed because getCourseTrainees doesn't return subject information
-      const enrolledTrainees = [];
-      
-      // Use Promise.all to fetch all enrollments in parallel (faster than sequential)
+      // Fetch ALL trainee enrollments in ONE call to avoid N API calls
       const enrollmentPromises = traineesList.map(async (trainee) => {
         try {
+          // Check if already cached
+          if (enrollmentCacheRef.current[trainee.id]) {
+            const cachedData = enrollmentCacheRef.current[trainee.id];
+            const enrolledEnrollments = cachedData.filter(e => e.enrollment?.status === 'ENROLLED');
+            if (enrolledEnrollments.length > 0) {
+              return {
+                id: trainee.id,
+                eid: trainee.eid,
+                name: `${trainee.firstName || ''} ${trainee.lastName || ''}`.trim() || trainee.name || 'Unknown',
+                subjects: enrolledEnrollments.map(e => e.subject.id),
+                userId: trainee.id,
+                email: trainee.email || '',
+                department: trainee.department || null
+              };
+            }
+            return null;
+          }
+          
           // Call API to get trainee's enrollment details
           const enrollmentData = await courseAPI.getTraineeEnrollments(trainee.id);
+          
+          // Cache the result
+          if (enrollmentData?.enrollments) {
+            enrollmentCacheRef.current[trainee.id] = enrollmentData.enrollments;
+          }
           
           // Check if trainee has any ENROLLED enrollments
           if (enrollmentData && enrollmentData.enrollments && enrollmentData.enrollments.length > 0) {
@@ -113,8 +133,21 @@ const EnrolledTraineesTable = ({ courseId, loading = false, title = 'Enrolled Tr
 
   const handleViewSubjects = async (trainee) => {
     try {
-      // Call API to get trainee's enrollment details
-      const enrollmentData = await courseAPI.getTraineeEnrollments(trainee.userId);
+      // OPTIMIZED: Use cached enrollment data if available
+      let enrollmentData = null;
+      
+      if (enrollmentCacheRef.current[trainee.userId]) {
+        // Use cached data
+        enrollmentData = { enrollments: enrollmentCacheRef.current[trainee.userId] };
+      } else {
+        // Only call API if not cached
+        enrollmentData = await courseAPI.getTraineeEnrollments(trainee.userId);
+        
+        // Cache the result
+        if (enrollmentData?.enrollments) {
+          enrollmentCacheRef.current[trainee.userId] = enrollmentData.enrollments;
+        }
+      }
       
       // Transform API data to match component format (only ENROLLED enrollments)
       const enrolledEnrollments = enrollmentData.enrollments?.filter(
@@ -161,8 +194,21 @@ const EnrolledTraineesTable = ({ courseId, loading = false, title = 'Enrolled Tr
 
     setRemoveLoading(true);
     try {
-      // Get the trainee's enrollment details to find all subjects
-      const enrollmentData = await courseAPI.getTraineeEnrollments(traineeToRemove.userId);
+      // OPTIMIZED: Use cached enrollment data if available
+      let enrollmentData = null;
+      
+      if (enrollmentCacheRef.current[traineeToRemove.userId]) {
+        // Use cached data
+        enrollmentData = { enrollments: enrollmentCacheRef.current[traineeToRemove.userId] };
+      } else {
+        // Only call API if not cached
+        enrollmentData = await courseAPI.getTraineeEnrollments(traineeToRemove.userId);
+        
+        // Cache the result
+        if (enrollmentData?.enrollments) {
+          enrollmentCacheRef.current[traineeToRemove.userId] = enrollmentData.enrollments;
+        }
+      }
       
       if (enrollmentData && enrollmentData.enrollments && enrollmentData.enrollments.length > 0) {
         
@@ -184,6 +230,9 @@ const EnrolledTraineesTable = ({ courseId, loading = false, title = 'Enrolled Tr
         if (validPromises.length > 0) {
           await Promise.all(validPromises);
         }
+        
+        // Clear cache for this trainee after removal and refresh
+        delete enrollmentCacheRef.current[traineeToRemove.userId];
         
         // Refresh the enrolled trainees data
         await loadEnrolledTrainees();
@@ -266,6 +315,9 @@ const EnrolledTraineesTable = ({ courseId, loading = false, title = 'Enrolled Tr
       
       // Call API to remove trainee from subject
       await subjectAPI.removeTraineeFromSubject(subject.id, traineeToRemove.userId, batchCode);
+      
+      // Clear cache for this trainee after removal and refresh
+      delete enrollmentCacheRef.current[traineeToRemove.userId];
       
       // Refresh the enrolled trainees data
       await loadEnrolledTrainees();
