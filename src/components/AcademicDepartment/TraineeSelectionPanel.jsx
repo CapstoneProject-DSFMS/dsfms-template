@@ -40,47 +40,41 @@ const TraineeSelectionPanel = ({ selectedTrainees, onSelectionChange }) => {
     setLoadingTrainees(true);
     setError(null);
     try {
-      
       const response = await traineeAPI.getTraineesForEnrollment();
       
- 
-      // Handle public API response format: { data: [...], totalItems: ... }
+      // API returns: { trainees: [...], totalItems: ... }
       let traineesData = [];
-      if (response && response.data) {
-        if (response.data.users && Array.isArray(response.data.users)) {
-          // Old format: { data: { users: [...] } }
-          traineesData = response.data.users;
-        } else if (response.data.data && Array.isArray(response.data.data)) {
-          // New format: { data: [...] }
-          traineesData = response.data.data;
-        } else if (Array.isArray(response.data)) {
-          // Direct array format
-          traineesData = response.data;
-        }
+      if (response && response.trainees && Array.isArray(response.trainees)) {
+        traineesData = response.trainees;
+      } else if (Array.isArray(response)) {
+        // Fallback: direct array format
+        traineesData = response;
       }
       
       // Transform API data to match component format
-      // Public API returns: { id, eid, fullName, email, departmentId, departmentName, avatarUrl }
+      // API returns: { id, eid, firstName, middleName, lastName, email, avatarUrl, departmentId, department: { id, name } }
       const transformedTrainees = traineesData.map(trainee => {
-        // Handle both old format (firstName, lastName) and new format (fullName)
-        let name = trainee.fullName || '';
-        let firstName = trainee.firstName || '';
-        let lastName = trainee.lastName || '';
+        // Combine firstName, middleName, lastName into full name
+        const nameParts = [
+          trainee.firstName,
+          trainee.middleName,
+          trainee.lastName
+        ].filter(Boolean); // Remove null/undefined/empty strings
         
-        if (!name && (firstName || lastName)) {
-          name = `${firstName} ${lastName}`.trim();
-        }
+        const name = nameParts.length > 0 
+          ? nameParts.join(' ').trim()
+          : trainee.eid; // Fallback to eid if no name
         
         return {
           id: trainee.id,
           eid: trainee.eid,
-          name: name || trainee.eid, // Fallback to eid if no name
-          firstName: firstName,
-          lastName: lastName,
+          name: name,
+          firstName: trainee.firstName || '',
+          lastName: trainee.lastName || '',
           email: trainee.email,
           status: trainee.status || 'ACTIVE', // Default to ACTIVE if not provided
           departmentId: trainee.departmentId,
-          departmentName: trainee.departmentName
+          departmentName: trainee.department?.name || ''
         };
       });
       

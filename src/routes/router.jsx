@@ -89,14 +89,7 @@ export const router = createBrowserRouter([
     children: [
       {
         path: "",
-        element: (
-          <PermissionRoute 
-            permission="PERM-004"
-            fallback={<div className="p-4 text-center text-muted">You don't have permission to access your profile.</div>}
-          >
-            <ProfilePage />
-          </PermissionRoute>
-        )
+        element: <ProfilePage />
       }
     ]
   },
