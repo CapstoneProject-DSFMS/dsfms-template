@@ -1,7 +1,6 @@
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import { useAuth } from './useAuth';
 import { permissionAPI } from '../api/permission';
-import { getPermissionsForUC, getUCsForPermission } from '../constants/ucPermissionsMapping';
 
 // Helper function to format API endpoint names to be more user-friendly
 const formatPermissionName = (name) => {
@@ -294,31 +293,6 @@ export const usePermissions = () => {
     fetchPermissions();
   }, [fetchPermissions]);
 
-  // Check if user has permission for a specific UC
-  const hasUCPermission = useCallback((ucId) => {
-    if (!userPermissions || userPermissions.length === 0) {
-      return false;
-    }
-    
-    const requiredPermissions = getPermissionsForUC(ucId);
-    if (requiredPermissions.length === 0) {
-      return true; // UC doesn't require permissions (e.g., Login, Logout)
-    }
-    
-    // Check if user has any of the required permissions for this UC
-    return hasAnyPermission(requiredPermissions);
-  }, [userPermissions, hasAnyPermission]);
-
-  // Get permissions for a specific UC
-  const getUCPermissions = useCallback((ucId) => {
-    return getPermissionsForUC(ucId);
-  }, []);
-
-  // Get UC IDs for a specific permission
-  const getPermissionUCs = useCallback((permissionName) => {
-    return getUCsForPermission(permissionName);
-  }, []);
-
   return {
     permissions,
     loading,
@@ -335,10 +309,6 @@ export const usePermissions = () => {
     hasModuleAccess,
     getAccessibleModules,
     getUserPermissionGroups,
-    // UC-based permission checking (NEW)
-    hasUCPermission,
-    getUCPermissions,
-    getPermissionUCs,
     // User data
     userPermissions,
     userRole

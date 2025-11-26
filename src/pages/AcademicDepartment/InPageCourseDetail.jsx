@@ -154,7 +154,7 @@ const InPageCourseDetail = ({ course, department }) => {
     if (courseId) {
       loadCourseDetails();
     }
-  }, [courseId, course, department]);
+  }, [courseId]);
   
   const handleBack = () => {
     // Navigate back to department details using the correct route
@@ -219,21 +219,17 @@ const InPageCourseDetail = ({ course, department }) => {
     setIsDisabling(true);
     try {
       // Call API to archive subject
-      const response = await subjectAPI.archiveSubject(selectedSubject.id);
+      await subjectAPI.archiveSubject(selectedSubject.id);
       
-      // Show success toast with message from backend
-      const successMessage = response?.message || response?.data?.message || `Successfully archived subject "${selectedSubject.name}"`;
-      toast.success(successMessage, {
+      // Show success toast
+      toast.success(`Successfully archived subject "${selectedSubject.name}"`, {
         autoClose: 3000,
         position: "top-right",
         icon: false
       });
       
-      // Reload course details to get updated subjects
-      const courseResponse = await courseAPI.getCourseById(courseId);
-      if (courseResponse.subjects && Array.isArray(courseResponse.subjects)) {
-        setSubjects(filterArchivedSubjects(courseResponse.subjects));
-      }
+      // OPTIMIZED: Remove subject from state directly instead of refetching entire course
+      setSubjects(prev => prev.filter(s => s.id !== selectedSubject.id));
       
       // Close modal
       setShowDisableSubject(false);
@@ -258,8 +254,9 @@ const InPageCourseDetail = ({ course, department }) => {
   // Modal handlers
   const handleAddSubject = async () => {
     try {
-      // Subjects are already created inside AddSubjectModal.
-      // Only refresh the course details to include the newly added subject.
+      // OPTIMIZED: Reload subjects from database after adding new subject
+      // AddSubjectModal will call this callback after successful creation
+      // We need to refetch subjects to get the newly added subject
       const response = await courseAPI.getCourseById(courseId);
       if (response.subjects && Array.isArray(response.subjects)) {
         setSubjects(filterArchivedSubjects(response.subjects));
@@ -278,7 +275,7 @@ const InPageCourseDetail = ({ course, department }) => {
     // Call bulk import API and return response
     const result = await subjectAPI.bulkImportSubjects(subjectsData);
     
-    // Reload course details to get updated subjects
+    // OPTIMIZED: Reload subjects to include newly imported subjects
     const response = await courseAPI.getCourseById(courseId);
     if (response.subjects && Array.isArray(response.subjects)) {
       setSubjects(filterArchivedSubjects(response.subjects));
@@ -295,33 +292,21 @@ const InPageCourseDetail = ({ course, department }) => {
       // Call API to update course
       await courseAPI.updateCourse(courseId, updatedCourseData);
       
-      // Reload course details to get updated data
-      const response = await courseAPI.getCourseById(courseId);
-      const transformedCourseDetails = {
-        id: response.id || courseId,
-        name: response.name,
-        code: response.code,
-        description: response.description,
-        maxTrainees: response.maxNumTrainee,
-        maxNumTrainee: response.maxNumTrainee,
-        venue: response.venue,
-        note: response.note,
-        passScore: response.passScore,
-        startDate: response.startDate ? new Date(response.startDate).toISOString().split('T')[0] : '',
-        endDate: response.endDate ? new Date(response.endDate).toISOString().split('T')[0] : '',
-        level: response.level,
-        status: response.status,
-        department: response.department,
-        subjectCount: response.subjectCount || 0,
-        traineeCount: response.traineeCount || 0,
-        trainerCount: response.trainerCount || 0,
-        subjects: response.subjects || []
-      };
-      setCourseDetails(transformedCourseDetails);
+      // OPTIMIZED: Update course details directly from form data instead of full refetch
+      setCourseDetails(prev => ({
+        ...prev,
+        ...updatedCourseData,
+        id: prev.id,
+        subjectCount: prev.subjectCount,
+        traineeCount: prev.traineeCount,
+        trainerCount: prev.trainerCount,
+        subjects: prev.subjects
+      }));
       
       setShowEditCourse(false);
-      } catch {
+    } catch (error) {
       // Handle error - could show toast notification
+      console.error('Error updating course:', error);
     }
   };
 

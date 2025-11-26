@@ -3,10 +3,10 @@ import { Card, Form, Button, Spinner } from 'react-bootstrap';
 import { CheckSquare, Square } from 'react-bootstrap-icons';
 import { subjectAPI } from '../../api';
 
-const SubjectSelectionPanel = ({ selectedSubjects, onSelectionChange }) => {
+const SubjectSelectionPanel = ({ selectedSubjects, onSelectionChange, subjects = null }) => {
   const [searchTerm, setSearchTerm] = useState('');
-  const [subjects, setSubjects] = useState([]);
-  const [loading, setLoading] = useState(true);
+  const [displaySubjects, setDisplaySubjects] = useState([]);
+  const [loading, setLoading] = useState(!subjects); // Only loading if subjects prop not provided
   const [error, setError] = useState(null);
 
   // Helper function to filter out archived subjects
@@ -19,8 +19,22 @@ const SubjectSelectionPanel = ({ selectedSubjects, onSelectionChange }) => {
     });
   };
 
-  // Load subjects from API
+  // Load subjects from prop or API
   useEffect(() => {
+    // If subjects prop is provided, use it directly
+    if (subjects && Array.isArray(subjects)) {
+      const activeSubjects = filterArchivedSubjects(subjects);
+      const subjectsWithNameOnly = activeSubjects.map(subject => ({
+        id: subject.id,
+        name: subject.name,
+        code: subject.code // Keep code for display
+      }));
+      setDisplaySubjects(subjectsWithNameOnly);
+      setLoading(false);
+      return;
+    }
+
+    // Otherwise, load all subjects from API (fallback)
     const loadSubjects = async () => {
       try {
         setLoading(true);
@@ -39,22 +53,22 @@ const SubjectSelectionPanel = ({ selectedSubjects, onSelectionChange }) => {
             code: subject.code // Keep code for display
           }));
           
-          setSubjects(subjectsWithNameOnly);
+          setDisplaySubjects(subjectsWithNameOnly);
         } else {
-          setSubjects([]);
+          setDisplaySubjects([]);
         }
       } catch {
         setError('Failed to load subjects');
-        setSubjects([]);
+        setDisplaySubjects([]);
       } finally {
         setLoading(false);
       }
     };
 
     loadSubjects();
-  }, []); // Remove courseId dependency since we're getting all subjects
+  }, [subjects]);
 
-  const filteredSubjects = subjects.filter(subject =>
+  const filteredSubjects = displaySubjects.filter(subject =>
     subject.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
     subject.code.toLowerCase().includes(searchTerm.toLowerCase())
   );
