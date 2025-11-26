@@ -144,20 +144,6 @@ const NAV_ITEMS = [
     roleOnly: ['TRAINER'],
   },
   {
-    id: 'assessment-event',
-    label: 'Assessment Events',
-    path: ROUTES.ASSESSMENT_EVENTS,
-    icon: 'calendarEvent',
-    roleOnly: ['TRAINER'],
-  },
-  {
-    id: 'all-assessments',
-    label: 'All Assessments',
-    path: ROUTES.ASSESSMENTS_RESULTS,
-    icon: 'clipboardCheck',
-    roleOnly: ['TRAINER'],
-  },
-  {
     id: 'instructed-courses',
     label: 'Instructed Course',
     path: ROUTES.COURSES_INSTRUCTED,
