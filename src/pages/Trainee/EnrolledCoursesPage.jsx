@@ -18,6 +18,9 @@ const EnrolledCoursesPage = () => {
 
   return (
     <Container className="py-3">
+      <div className="mb-4">
+        <h3 className="text-primary fw-bold">Enrolled Courses</h3>
+      </div>
       <TraineeCourseList traineeId={user.id} />
     </Container>
   );

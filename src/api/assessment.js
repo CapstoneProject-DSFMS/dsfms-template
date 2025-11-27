@@ -154,6 +154,21 @@ const assessmentAPI = {
       throw error;
     }
   },
+
+  /**
+   * Confirm participation in an assessment
+   * @param {string} assessmentId
+   * @returns {Promise} Confirm participation response
+   */
+  confirmParticipation: async (assessmentId) => {
+    try {
+      const response = await apiClient.put(`/assessments/${assessmentId}/confirm-participation`);
+      return response.data;
+    } catch (error) {
+      console.error('Error confirming participation:', error);
+      throw error;
+    }
+  },
 };
 
 export default assessmentAPI;

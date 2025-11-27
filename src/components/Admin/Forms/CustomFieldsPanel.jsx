@@ -1481,10 +1481,6 @@ const CustomFieldsPanel = ({
       <div className={`p-2 p-md-3 bg-light custom-fields-panel ${className}`} style={{ height: '100%', display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
       <div className="d-flex justify-content-between align-items-center mb-2 mb-md-3 flex-wrap gap-2 flex-shrink-0">
         <h6 className="mb-0 text-muted custom-fields-title" style={{ fontSize: '0.95rem' }}>Available Custom Fields</h6>
-        <PermissionWrapper 
-          permission={"PERM-034"}
-          fallback={null}
-        >
           <Button
             variant="outline-primary"
             size="sm"
@@ -1497,7 +1493,6 @@ const CustomFieldsPanel = ({
             <span className="d-none d-sm-inline">Add Section</span>
             <span className="d-inline d-sm-none">Section</span>
           </Button>
-        </PermissionWrapper>
       </div>
       
       <div className="flex-grow-1 custom-fields-content" style={{ overflowY: 'auto', overflowX: 'hidden', minHeight: '0', flex: '1 1 auto' }}>
@@ -1871,10 +1866,6 @@ const CustomFieldsPanel = ({
           <strong>Tip:</strong> <span className="d-none d-sm-inline">Create sections first, then add fields inside each section.</span>
           <span className="d-inline d-sm-none">Create sections, then add fields.</span>
         </Alert>
-        <PermissionWrapper 
-          permission={"PERM-038"}
-          fallback={null}
-        >
           <Button 
             variant="primary" 
             size="sm" 
@@ -1895,7 +1886,6 @@ const CustomFieldsPanel = ({
               </>
             )}
           </Button>
-        </PermissionWrapper>
       </div>
 
       {/* Add/Edit Section Modal */}

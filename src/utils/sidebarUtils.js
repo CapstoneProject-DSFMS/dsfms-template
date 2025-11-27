@@ -44,21 +44,21 @@ const NAV_ITEMS = [
     label: 'User Management',
     path: ROUTES.USERS,
     icon: 'people',
-    permissions: ['PERM-003'], // View All Users
+    permissions: [PERMISSION_IDS.VIEW_ALL_USERS], // View All Users
   },
   {
     id: 'roles',
     label: 'Role Management',
     path: ROUTES.ROLES,
     icon: 'shield',
-    permissions: ['PERM-008'], // View All Roles
+    permissions: [PERMISSION_IDS.VIEW_ALL_ROLES], // View All Roles
   },
   {
     id: 'departments',
     label: 'Departments',
     path: ROUTES.DEPARTMENTS,
     icon: 'building',
-    permissions: ['PERM-013', 'PERM-015'], // View All Departments + Update Department
+    permissions: [PERMISSION_IDS.VIEW_ALL_DEPARTMENTS, PERMISSION_IDS.UPDATE_DEPARTMENT], // View All Departments + Update Department
     requireAll: true,
   },
   {
@@ -68,10 +68,7 @@ const NAV_ITEMS = [
     icon: 'fileText',
     // Permissions are handled by customPermissionLogic
     customPermissionLogic: (hasPermission) => {
-      const viewAll = hasPermission(PERMISSION_IDS.VIEW_ALL_TEMPLATE);
-      const canCreate = hasPermission(PERMISSION_IDS.CREATE_TEMPLATE);
-      const canApproveDeny = hasPermission(PERMISSION_IDS.APPROVE_DENY_TEMPLATE);
-      return (viewAll && canCreate) || (viewAll && canApproveDeny);
+      return hasPermission(PERMISSION_IDS.VIEW_ALL_TEMPLATE);
     },
   },
   {
@@ -79,7 +76,7 @@ const NAV_ITEMS = [
     label: 'System Configuration',
     path: ROUTES.SYSTEM_CONFIG,
     icon: 'gear',
-    permissions: ['PERM-052'], // View All Global Fields
+    permissions: [PERMISSION_IDS.VIEW_ALL_GLOBAL_FIELDS], // View All Global Fields
   },
   {
     id: 'academic-dashboard',
@@ -134,7 +131,7 @@ const NAV_ITEMS = [
     label: 'Issue Reporting',
     path: ROUTES.REPORTS_CREATE,
     icon: 'personCheck',
-    permissions: ['PERM-047'], // Submit Incident/Feedback Report
+    permissions: [PERMISSION_IDS.VIEW_SUBMITTED_REPORTS], // View Submitted Reports
   },
   {
     id: 'assigned-assessments',
@@ -162,8 +159,8 @@ const NAV_ITEMS = [
     label: 'My Department Details',
     path: ROUTES.DEPARTMENT_MY_DETAILS,
     icon: 'book',
-    permissions: ['PERM-014'], // View Department Details
-    excludePermissions: ['PERM-013'], // Hide if user can View All Departments
+    permissions: [PERMISSION_IDS.VIEW_DEPARTMENT_DETAILS], // View Department Details
+    excludePermissions: [PERMISSION_IDS.VIEW_ALL_DEPARTMENTS], // Hide if user can View All Departments
   },
   {
     id: 'assessment-review-requests',
@@ -177,7 +174,11 @@ const NAV_ITEMS = [
     label: 'Incidents / Feedback Report',
     path: ROUTES.REPORTS,
     icon: 'exclamationTriangle',
-    permissions: ['PERM-044'], // View All Incident/Feedback Report
+    permissions: [
+      PERMISSION_IDS.VIEW_ALL_INCIDENT_FEEDBACK_REPORT,
+      PERMISSION_IDS.ACKNOWLEDGE_INCIDENT_REPORTS,
+    ],
+    requireAll: true,
   },
 ];
 
@@ -289,4 +290,3 @@ export const isAcademicDepartment = (user) => hasRole(user, ['ACADEMIC_DEPARTMEN
 export const isTrainer = (user) => hasRole(user, ['TRAINER']);
 export const isDepartmentHead = (user) => hasRole(user, ['DEPARTMENT_HEAD']);
 export const isTrainee = (user) => hasRole(user, ['TRAINEE']);
-
