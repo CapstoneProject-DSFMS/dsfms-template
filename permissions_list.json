@@ -1,12 +1,6 @@
 {
   "PermissionGroup": [
     {
-      "id" : "df605833-705f-4bd3-b328-8eedd17f9fa0",
-      "groupName" : "Template Management",
-      "name" : "Create Template",
-      "permissionGroupCode" : "PERM-034"
-    },
-    {
       "id" : "51e85ab2-cec0-4c81-8332-5cd04c197e39",
       "groupName" : "User Management",
       "name" : "Create Single User",
@@ -55,232 +49,232 @@
       "permissionGroupCode" : "PERM-008"
     },
     {
-      "id" : "696b2fc1-8aa1-4fd3-ae0a-a20940d95390",
-      "groupName" : "Role Management",
-      "name" : "View Role Details",
-      "permissionGroupCode" : "PERM-009"
-    },
-    {
       "id" : "48e98e75-7e0b-424d-9bb1-dbdf36df2b5b",
       "groupName" : "Role Management",
       "name" : "Update Role",
-      "permissionGroupCode" : "PERM-010"
+      "permissionGroupCode" : "PERM-009"
     },
     {
       "id" : "da5908f0-5bfc-4220-83f6-f4b9ba1f7b63",
       "groupName" : "Role Management",
       "name" : "Disable\/Enable Role",
-      "permissionGroupCode" : "PERM-011"
+      "permissionGroupCode" : "PERM-010"
     },
     {
       "id" : "74ca7573-ebc5-4563-89a9-f9f30617dbc8",
       "groupName" : "Department Management",
       "name" : "Create Department",
-      "permissionGroupCode" : "PERM-012"
+      "permissionGroupCode" : "PERM-011"
     },
     {
       "id" : "8e914c08-046c-4f88-91a4-c7c2938ad06f",
       "groupName" : "Department Management",
       "name" : "View All Departments",
-      "permissionGroupCode" : "PERM-013"
+      "permissionGroupCode" : "PERM-012"
     },
     {
       "id" : "5cf083c8-44cb-440f-a32e-93c67762da2e",
       "groupName" : "Department Management",
       "name" : "View Department Details",
-      "permissionGroupCode" : "PERM-014"
+      "permissionGroupCode" : "PERM-013"
     },
     {
       "id" : "b0d877a3-1fd8-4cb2-9f77-80e57380eec8",
       "groupName" : "Department Management",
       "name" : "Update Department",
-      "permissionGroupCode" : "PERM-015"
+      "permissionGroupCode" : "PERM-014"
     },
     {
       "id" : "fd676b48-00fb-415e-ab9a-0e1965ae1328",
       "groupName" : "Department Management",
       "name" : "Disable\/Enable Department",
-      "permissionGroupCode" : "PERM-016"
+      "permissionGroupCode" : "PERM-015"
     },
     {
       "id" : "c83f12de-fd02-48a5-a5a9-ac848b592509",
       "groupName" : "Course Management",
       "name" : "Create Course",
-      "permissionGroupCode" : "PERM-017"
+      "permissionGroupCode" : "PERM-016"
     },
     {
       "id" : "d9688a7d-8f43-4828-8eef-b5028cba5fe6",
       "groupName" : "Course Management",
       "name" : "View All Courses",
-      "permissionGroupCode" : "PERM-018"
+      "permissionGroupCode" : "PERM-017"
     },
     {
       "id" : "e7e7fa54-c97c-4f11-8577-ef432c21a884",
       "groupName" : "Course Management",
       "name" : "View Course Details",
-      "permissionGroupCode" : "PERM-019"
+      "permissionGroupCode" : "PERM-018"
     },
     {
       "id" : "3983dc17-2333-4ed7-a610-b5b6bf6303c0",
       "groupName" : "Course Management",
       "name" : "Update Course",
-      "permissionGroupCode" : "PERM-020"
+      "permissionGroupCode" : "PERM-019"
     },
     {
       "id" : "6b1fa336-09f4-4627-bbfd-991ca9fb947f",
       "groupName" : "Course Management",
       "name" : "Archive Course",
-      "permissionGroupCode" : "PERM-021"
+      "permissionGroupCode" : "PERM-020"
     },
     {
       "id" : "cf1fd2f8-e853-4132-a9f8-b7c4657033d5",
       "groupName" : "Course Management",
       "name" : "Assign Trainers",
-      "permissionGroupCode" : "PERM-022"
+      "permissionGroupCode" : "PERM-021"
     },
     {
       "id" : "1df6d629-d2d1-42ac-a1d0-0f9cd6e0003a",
       "groupName" : "Course Management",
       "name" : "Remove Trainers",
-      "permissionGroupCode" : "PERM-023"
+      "permissionGroupCode" : "PERM-022"
     },
     {
       "id" : "4c617309-7252-4baa-80b9-beb6f2821995",
       "groupName" : "Subject Management",
       "name" : "Bulk Add Subjects",
-      "permissionGroupCode" : "PERM-024"
+      "permissionGroupCode" : "PERM-023"
     },
     {
       "id" : "cfcf6ef7-ee3f-4f24-a34e-0b5b7ac3470e",
       "groupName" : "Subject Management",
       "name" : "Add Single Subject",
-      "permissionGroupCode" : "PERM-025"
+      "permissionGroupCode" : "PERM-024"
     },
     {
       "id" : "05d86e15-be50-417c-9186-184d6a0e7652",
       "groupName" : "Subject Management",
       "name" : "View All Subjects",
-      "permissionGroupCode" : "PERM-026"
+      "permissionGroupCode" : "PERM-025"
     },
     {
       "id" : "0603d4fb-53b7-4511-9087-ba9955be94ff",
       "groupName" : "Subject Management",
       "name" : "View Subject Details",
-      "permissionGroupCode" : "PERM-027"
+      "permissionGroupCode" : "PERM-026"
     },
     {
       "id" : "8fb7af6e-08c7-42bf-b44c-5df158accfe2",
       "groupName" : "Subject Management",
       "name" : "Update Subject",
-      "permissionGroupCode" : "PERM-028"
+      "permissionGroupCode" : "PERM-027"
     },
     {
       "id" : "c0546c2f-e6df-4aca-a8cc-f8f0ae311a3b",
       "groupName" : "Subject Management",
       "name" : "Archive Subject",
-      "permissionGroupCode" : "PERM-029"
+      "permissionGroupCode" : "PERM-028"
     },
     {
       "id" : "57648763-e9d4-4e51-b194-a4d787b78c7f",
       "groupName" : "Trainee Enrollment",
       "name" : "Bulk Enroll Trainees",
-      "permissionGroupCode" : "PERM-030"
+      "permissionGroupCode" : "PERM-029"
     },
     {
       "id" : "907f9c69-d4a1-4e7e-b306-7e124e4be7d4",
       "groupName" : "Trainee Enrollment",
       "name" : "Enroll Single Trainee",
-      "permissionGroupCode" : "PERM-031"
+      "permissionGroupCode" : "PERM-030"
     },
     {
       "id" : "e0bb0fb9-94eb-4176-9f33-33a1c9e4cf5f",
       "groupName" : "Trainee Enrollment",
       "name" : "View All Enrollments",
-      "permissionGroupCode" : "PERM-032"
+      "permissionGroupCode" : "PERM-031"
     },
     {
       "id" : "c8362d02-57c7-4405-a77e-151d50b9f6d4",
       "groupName" : "Trainee Enrollment",
       "name" : "Remove Trainee from Enrollment",
+      "permissionGroupCode" : "PERM-032"
+    },
+    {
+      "id" : "df605833-705f-4bd3-b328-8eedd17f9fa0",
+      "groupName" : "Template Management",
+      "name" : "Create Template",
       "permissionGroupCode" : "PERM-033"
     },
     {
       "id" : "090116b3-92eb-4a74-af77-adb3cea1a3ff",
       "groupName" : "Template Management",
       "name" : "Edit Draft Template",
-      "permissionGroupCode" : "PERM-035"
+      "permissionGroupCode" : "PERM-034"
     },
     {
       "id" : "f55aa3b0-5aab-405d-aed4-053ba8ffa906",
       "groupName" : "Template Management",
       "name" : "Submit Template for Approval",
-      "permissionGroupCode" : "PERM-036"
+      "permissionGroupCode" : "PERM-035"
     },
     {
       "id" : "020c9be3-3f1f-4bc4-8e78-279e4f41a916",
       "groupName" : "Template Management",
       "name" : "Delete Draft Template",
-      "permissionGroupCode" : "PERM-037"
+      "permissionGroupCode" : "PERM-036"
     },
     {
       "id" : "f75122e4-60d7-4ced-a34b-70b23812ebff",
       "groupName" : "Template Management",
       "name" : "Update Template Version",
-      "permissionGroupCode" : "PERM-038"
+      "permissionGroupCode" : "PERM-037"
     },
     {
       "id" : "2f53a0ef-dcc6-4974-9826-2c2f3b3bc28e",
       "groupName" : "Template Management",
       "name" : "Disable\/Enable Template",
-      "permissionGroupCode" : "PERM-039"
+      "permissionGroupCode" : "PERM-038"
     },
     {
       "id" : "3c6dae35-5ae0-4ec0-88ac-8192aaa73428",
       "groupName" : "Template Management",
       "name" : "Approve\/Deny Template",
-      "permissionGroupCode" : "PERM-040"
+      "permissionGroupCode" : "PERM-039"
     },
     {
       "id" : "a6c7349d-86b4-4d64-b4c5-bd691e18f771",
       "groupName" : "Template Management",
       "name" : "View All Template",
-      "permissionGroupCode" : "PERM-041"
+      "permissionGroupCode" : "PERM-040"
     },
     {
       "id" : "96848ea4-7b19-4a63-a5a2-cdd05f946447",
       "groupName" : "Template Management",
       "name" : "View Template Details",
-      "permissionGroupCode" : "PERM-042"
+      "permissionGroupCode" : "PERM-041"
     },
     {
       "id" : "9c94fa1d-8766-45c2-b85b-c69b5ffaf79a",
       "groupName" : "Template Management",
       "name" : "Download Template As PDF",
-      "permissionGroupCode" : "PERM-043"
+      "permissionGroupCode" : "PERM-042"
     },
     {
       "id" : "a315b0dd-2188-47b0-94f3-303cc5676845",
       "groupName" : "Incident Reporting",
       "name" : "View All Incident\/Feedback Report",
-      "permissionGroupCode" : "PERM-044"
+      "permissionGroupCode" : "PERM-043"
     },
     {
       "id" : "ebb9ed37-4868-421d-8062-b86f277d61c6",
       "groupName" : "Incident Reporting",
       "name" : "View Incident\/Feedback Report Details",
-      "permissionGroupCode" : "PERM-045"
+      "permissionGroupCode" : "PERM-044"
     },
     {
       "id" : "16737a01-ac24-4a15-b9b0-4452192032e9",
       "groupName" : "Incident Reporting",
       "name" : "View Submitted Reports",
-      "permissionGroupCode" : "PERM-046"
+      "permissionGroupCode" : "PERM-045"
     },
     {
       "id" : "c0e91421-80cc-47c8-abbe-c13ebdb95ff0",
       "groupName" : "Incident Reporting",
       "name" : "Submit Incident\/Feedback Report",
-      "permissionGroupCode" : "PERM-047"
+      "permissionGroupCode" : "PERM-046"
     },
     {
       "id" : "e9f615bc-6f05-4cdb-b231-49e50517877b",
@@ -292,43 +286,43 @@
       "id" : "d2b6bff6-9906-4277-a05e-fb0468386398",
       "groupName" : "Incident Reporting",
       "name" : "Acknowledge Incident Reports",
-      "permissionGroupCode" : "PERM-049"
+      "permissionGroupCode" : "PERM-048"
     },
     {
       "id" : "1b06c99b-cc53-478b-900b-7f03d330b359",
       "groupName" : "Incident Reporting",
       "name" : "Resolve Incident\/Feedback Reports",
-      "permissionGroupCode" : "PERM-050"
+      "permissionGroupCode" : "PERM-049"
     },
     {
       "id" : "47a04d42-82ae-4447-8774-784a0c51aaa1",
       "groupName" : "Global Fields Configuration",
       "name" : "Create Global Field",
-      "permissionGroupCode" : "PERM-051"
+      "permissionGroupCode" : "PERM-050"
     },
     {
       "id" : "b56f9b63-4cc7-47ed-9f11-00e666a5fd25",
       "groupName" : "Global Fields Configuration",
       "name" : "View All Global Fields",
-      "permissionGroupCode" : "PERM-052"
+      "permissionGroupCode" : "PERM-051"
     },
     {
       "id" : "a1598b75-a9c8-47eb-aafc-f1c2315ea8d0",
       "groupName" : "Global Fields Configuration",
       "name" : "View Global Field Details",
-      "permissionGroupCode" : "PERM-053"
+      "permissionGroupCode" : "PERM-052"
     },
     {
       "id" : "ddc42e3a-e0e7-4192-b389-de55d0d86283",
       "groupName" : "Global Fields Configuration",
       "name" : "Update Global Field",
-      "permissionGroupCode" : "PERM-054"
+      "permissionGroupCode" : "PERM-053"
     },
     {
       "id" : "7913446b-2b98-4167-810a-8582a36378a4",
       "groupName" : "Global Fields Configuration",
       "name" : "Disable\/Enable Global Field",
-      "permissionGroupCode" : "PERM-055"
+      "permissionGroupCode" : "PERM-054"
     }
-  ]}
-  
+  ]
+}

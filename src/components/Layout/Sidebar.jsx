@@ -31,6 +31,7 @@ import { useAuth } from "../../hooks/useAuth";
 import useDepartmentManagement from "../../hooks/useDepartmentManagement";
 import { ROUTES } from "../../constants/routes";
 import { getAccessibleNavItems, isAcademicDepartment } from "../../utils/sidebarUtils";
+import { PERMISSION_IDS } from "../../constants/permissionIds";
 
 const Sidebar = ({ collapsed, onClose }) => {
   const { hasPermission } = usePermissions();
@@ -44,7 +45,7 @@ const Sidebar = ({ collapsed, onClose }) => {
   );
 
   const hasAcademicDeptPermission = useMemo(
-    () => hasPermission("PERM-013") && !hasPermission("PERM-015"),
+    () => hasPermission(PERMISSION_IDS.VIEW_ALL_DEPARTMENTS) && !hasPermission(PERMISSION_IDS.UPDATE_DEPARTMENT),
     [hasPermission]
   );
   

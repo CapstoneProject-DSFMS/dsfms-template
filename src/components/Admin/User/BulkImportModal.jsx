@@ -3,6 +3,7 @@ import { Modal, Button, Table, Row, Col, Card, OverlayTrigger, Tooltip, Alert } 
 import { X, Upload, FileEarmarkExcel, CheckCircle, XCircle, Pencil, Trash, Download } from 'react-bootstrap-icons';
 import * as XLSX from 'xlsx';
 import { userAPI } from '../../../api/user.js';
+import { roleAPI } from '../../../api/role.js';
 
 const BulkImportModal = ({ show, onClose, onImport, loading = false }) => {
   const [dragActive, setDragActive] = useState(false);

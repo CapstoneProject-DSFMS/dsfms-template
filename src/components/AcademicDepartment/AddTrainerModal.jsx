@@ -97,7 +97,12 @@ const AddTrainerModal = ({ show, onClose, onSave, loading = false, courseId = nu
     }
     
     try {
-      await onSave(formData);
+      // Transform snake_case to camelCase for API
+      const apiData = {
+        trainerUserId: formData.trainer_user_id,
+        roleInSubject: formData.role_in_subject
+      };
+      await onSave(apiData);
       handleClose();
     } catch (error) {
       // Error is handled by parent component via onSave callback

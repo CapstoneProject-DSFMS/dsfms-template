@@ -1,5 +1,6 @@
 import { useMemo } from 'react';
 import { usePermissions } from './usePermissions';
+import { PERMISSION_IDS } from '../constants/permissionIds';
 
 /**
  * Custom hook to determine template list mode based on user permissions
@@ -14,11 +15,11 @@ export const useTemplateListMode = () => {
   const { hasPermission } = usePermissions();
 
   const hasViewAll = useMemo(() => {
-    return hasPermission("PERM-041"); // View All Template
+    return hasPermission(PERMISSION_IDS.VIEW_ALL_TEMPLATE); // View All Template
   }, [hasPermission]);
 
   const hasApproveReject = useMemo(() => {
-    return hasPermission("PERM-040"); // Approve/Deny Template
+    return hasPermission(PERMISSION_IDS.APPROVE_DENY_TEMPLATE); // Approve/Deny Template
   }, [hasPermission]);
 
   const isSQAMode = useMemo(() => {
@@ -38,4 +39,3 @@ export const useTemplateListMode = () => {
     hasApproveReject
   };
 };
-

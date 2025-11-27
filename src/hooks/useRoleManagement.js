@@ -3,6 +3,27 @@ import { roleAPI } from '../api';
 import { mapError } from '../utils/errorMapping';
 import { toast } from 'react-toastify';
 
+// Helper function to flatten permissionGroups into flat permissions array
+const flattenPermissionGroups = (permissionGroups) => {
+  if (!permissionGroups || !Array.isArray(permissionGroups)) {
+    return [];
+  }
+  
+  const flattened = [];
+  permissionGroups.forEach(group => {
+    if (group.permissions && Array.isArray(group.permissions)) {
+      group.permissions.forEach(perm => {
+        flattened.push({
+          code: perm.code,
+          name: perm.name,
+          id: perm.code // Use code as id for consistency
+        });
+      });
+    }
+  });
+  return flattened;
+};
+
 // Helper function to check if role is active
 // API returns isActive as boolean (true/false) or string ('ACTIVE'/'INACTIVE')
 const isRoleActive = (isActive) => {
@@ -87,7 +108,17 @@ export const useRoleManagement = () => {
       setLoading(true);
       // Fetch fresh role data with permissions from API
       const response = await roleAPI.getRoleById(role.id);
-      setSelectedRole(response);
+      
+      // Flatten permissionGroups to permissions array
+      const permissions = flattenPermissionGroups(response.permissionGroups);
+      
+      // Transform the response
+      const transformedRole = {
+        ...response,
+        permissions: permissions
+      };
+      
+      setSelectedRole(transformedRole);
       setModalMode('view');
       setModalShow(true);
     } catch (err) {
@@ -105,6 +136,9 @@ export const useRoleManagement = () => {
       // Fetch fresh role data from API
       const roleDetail = await roleAPI.getRoleById(role.id);
       
+      // Flatten permissionGroups to permissions array
+      const permissions = flattenPermissionGroups(roleDetail.permissionGroups);
+      
       // Transform the fresh data
       const transformedRole = {
         id: roleDetail.id,
@@ -115,7 +149,7 @@ export const useRoleManagement = () => {
         createdAt: roleDetail.createdAt ? roleDetail.createdAt.split('T')[0] : '',
         lastModified: roleDetail.updatedAt ? roleDetail.updatedAt.split('T')[0] : '',
         isActive: roleDetail.isActive,
-        permissions: roleDetail.permissions || [], // Include permissions
+        permissions: permissions, // Flattened permissions
         originalData: roleDetail
       };
       

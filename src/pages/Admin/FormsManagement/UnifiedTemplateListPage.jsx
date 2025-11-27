@@ -31,7 +31,7 @@ import { PERMISSION_IDS } from '../../../constants/permissionIds';
  *   - "Preview" button opens preview modal
  * 
  * TODO: Implement API endpoint for viewing templates created by current user
- * API: GET /templates/my-templates
+ * API: GET /templates
  * This will be used by Admin to filter templates they created
  * const myTemplates = await templateAPI.getMyTemplates();
  */
