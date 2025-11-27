@@ -167,6 +167,30 @@ const courseAPI = {
       console.error('Error fetching available trainers for course:', error);
       throw error.response?.data || error.message;
     }
+  },
+
+  // Assign trainer to course
+  // POST {{baseUrl}}/courses/{courseId}/trainers
+  assignTrainerToCourse: async (courseId, trainerData) => {
+    try {
+      const response = await apiClient.post(`/courses/${courseId}/trainers`, trainerData);
+      return response.data;
+    } catch (error) {
+      console.error('Error assigning trainer to course:', error);
+      throw error;
+    }
+  },
+
+  // Remove trainer from course
+  // DELETE {{baseUrl}}/courses/{courseId}/trainers/{trainerId}
+  removeTrainerFromCourse: async (courseId, trainerId) => {
+    try {
+      const response = await apiClient.delete(`/courses/${courseId}/trainers/${trainerId}`);
+      return response.data;
+    } catch (error) {
+      console.error('Error removing trainer from course:', error);
+      throw error;
+    }
   }
 };
 

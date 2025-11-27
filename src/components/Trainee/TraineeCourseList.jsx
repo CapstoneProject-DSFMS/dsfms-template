@@ -5,9 +5,9 @@ import { useNavigate } from 'react-router-dom';
 import { toast } from 'react-toastify';
 import traineeAPI from '../../api/trainee';
 import courseAPI from '../../api/course';
-import { LoadingSkeleton, SortIcon, SearchBar, PermissionWrapper } from '../Common';
+import subjectAPI from '../../api/subject';
+import { LoadingSkeleton, SortIcon, SearchBar } from '../Common';
 import PortalUnifiedDropdown from '../Common/PortalUnifiedDropdown';
-import { PERMISSION_IDS } from '../../constants/permissionIds';
 import CourseFilterPanel from './CourseFilterPanel';
 import useTableSort from '../../hooks/useTableSort';
 import '../../styles/scrollable-table.css';
@@ -99,87 +99,38 @@ const TraineeCourseList = ({ traineeId }) => {
     try {
       setLoading(true);
       
-      // Call API to get trainee enrollments with status=ENROLLED
-      const response = await courseAPI.getTraineeEnrollmentsByStatus(traineeId, 'ENROLLED');
+      // Call new API to get trainee course-subjects
+      const response = await subjectAPI.getTraineeCourseSubjects(traineeId);
       
-      // API response structure: { enrollments: [...], totalCount: number }
-      const enrollments = response?.enrollments || response?.data?.enrollments || response?.data || [];
+      // API response structure: { traineeId, courses: [{ course: {...}, subjects: [...] }] }
+      const courseData = response?.courses || [];
       
-      if (!Array.isArray(enrollments) || enrollments.length === 0) {
+      if (!Array.isArray(courseData) || courseData.length === 0) {
         setCourses([]);
         setLoading(false);
         return;
       }
       
-      // Group enrollments by course (since multiple subjects can belong to same course)
-      const coursesMap = new Map();
-      
-      enrollments.forEach((item) => {
-        const course = item.subject?.course;
-        const subject = item.subject;
+      // Transform course data and calculate progress
+      const mappedCourses = courseData.map((item) => {
+        const course = item.course;
+        const subjects = item.subjects || [];
         
-        if (!course || !course.id || !subject) return;
+        if (!course || !course.id) return null;
         
-        const courseId = course.id;
-        
-        if (!coursesMap.has(courseId)) {
-          // Initialize course with first subject's data
-          coursesMap.set(courseId, {
-            id: courseId,
-            code: course.code || `COURSE-${courseId.substring(0, 8).toUpperCase()}`,
-            name: course.name || 'Unnamed Course',
-            description: '', // Course description not in API
-            level: 'BEGINNER', // Default level, not in API
-            status: 'PLANNED', // Will be calculated
-            startDate: null,
-            endDate: null,
-            subjects: []
-          });
-        }
-        
-        const courseData = coursesMap.get(courseId);
-        
-        // Add subject to course
-        courseData.subjects.push({
-          id: subject.id,
-          code: subject.code,
-          name: subject.name,
-          status: subject.status,
-          startDate: subject.startDate,
-          endDate: subject.endDate
-        });
-        
-        // Update course dates (earliest start, latest end)
-        if (subject.startDate) {
-          const subjectStart = new Date(subject.startDate);
-          if (!courseData.startDate || subjectStart < new Date(courseData.startDate)) {
-            courseData.startDate = subject.startDate;
-          }
-        }
-        
-        if (subject.endDate) {
-          const subjectEnd = new Date(subject.endDate);
-          if (!courseData.endDate || subjectEnd > new Date(courseData.endDate)) {
-            courseData.endDate = subject.endDate;
-          }
-        }
-      });
-      
-      // Convert map to array and calculate progress
-      const mappedCourses = Array.from(coursesMap.values()).map((course) => {
         // Calculate progress based on completed subjects
-        const totalSubjects = course.subjects.length;
-        const completedSubjects = course.subjects.filter(s => 
+        const totalSubjects = subjects.length;
+        const completedSubjects = subjects.filter(s => 
           s.status === 'COMPLETED' || s.status === 'COMPLETE'
         ).length;
         const progress = totalSubjects > 0 ? Math.round((completedSubjects / totalSubjects) * 100) : 0;
         
         // Determine course status based on subjects
-        let courseStatus = 'PLANNED';
-        const hasOngoing = course.subjects.some(s => 
+        let courseStatus = course.status || 'PLANNED';
+        const hasOngoing = subjects.some(s => 
           s.status === 'ON-GOING' || s.status === 'ONGOING' || s.status === 'ON_GOING'
         );
-        const allCompleted = course.subjects.every(s => 
+        const allCompleted = subjects.every(s => 
           s.status === 'COMPLETED' || s.status === 'COMPLETE'
         );
         
@@ -187,23 +138,41 @@ const TraineeCourseList = ({ traineeId }) => {
           courseStatus = 'COMPLETED';
         } else if (hasOngoing) {
           courseStatus = 'ON-GOING';
-        } else {
-          courseStatus = 'PLANNED';
         }
+        
+        // Calculate course dates from subjects
+        let startDate = null;
+        let endDate = null;
+        
+        subjects.forEach(subject => {
+          if (subject.startDate) {
+            const subjectStart = new Date(subject.startDate);
+            if (!startDate || subjectStart < new Date(startDate)) {
+              startDate = subject.startDate;
+            }
+          }
+          
+          if (subject.endDate) {
+            const subjectEnd = new Date(subject.endDate);
+            if (!endDate || subjectEnd > new Date(endDate)) {
+              endDate = subject.endDate;
+            }
+          }
+        });
         
         return {
           id: course.id,
-          code: course.code,
-          name: course.name,
+          code: course.code || `COURSE-${course.id.substring(0, 8).toUpperCase()}`,
+          name: course.name || 'Unnamed Course',
           description: course.description || '',
           level: course.level || 'BEGINNER',
           status: courseStatus,
-          startDate: course.startDate,
-          endDate: course.endDate,
+          startDate: startDate,
+          endDate: endDate,
           progress: progress,
           department: null // Not available in API response
         };
-      });
+      }).filter(course => course !== null);
       
       setCourses(mappedCourses);
     } catch (error) {
@@ -695,30 +664,24 @@ const TraineeCourseList = ({ traineeId }) => {
                   </div>
                 </td>
                 <td className="border-neutral-200 align-middle text-center show-mobile">
-                  <PermissionWrapper 
-                    permission={PERMISSION_IDS.VIEW_COURSE_DETAILS}
-                    fallback={null}
-                  >
-                    <PortalUnifiedDropdown
-                      align="end"
-                      className="table-dropdown"
-                      placement="bottom-end"
-                      trigger={{
-                        variant: 'link',
-                        className: 'btn btn-link p-0 text-primary-custom',
-                        style: { border: 'none', background: 'transparent' },
-                        children: <ThreeDotsVertical size={16} />
-                      }}
-                      items={[
-                        {
-                          label: 'View Course Details',
-                          icon: <Eye />,
-                          onClick: () => handleViewCourse(course),
-                          permission: PERMISSION_IDS.VIEW_COURSE_DETAILS
-                        }
-                      ]}
-                    />
-                  </PermissionWrapper>
+                  <PortalUnifiedDropdown
+                    align="end"
+                    className="table-dropdown"
+                    placement="bottom-end"
+                    trigger={{
+                      variant: 'link',
+                      className: 'btn btn-link p-0 text-primary-custom',
+                      style: { border: 'none', background: 'transparent' },
+                      children: <ThreeDotsVertical size={16} />
+                    }}
+                    items={[
+                      {
+                        label: 'View Course Details',
+                        icon: <Eye />,
+                        onClick: () => handleViewCourse(course)
+                      }
+                    ]}
+                  />
                 </td>
               </tr>
             ))
