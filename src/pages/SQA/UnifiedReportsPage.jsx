@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { Container, Row, Col, Card, Button, Badge, Nav } from 'react-bootstrap';
+import { Container, Row, Col, Card, Button, Badge, Nav, Tab } from 'react-bootstrap';
 import {
   ExclamationTriangle,
   ChatDots,
@@ -8,12 +8,18 @@ import {
   Clock,
   XCircle,
   ExclamationCircle,
+  ThreeDotsVertical,
 } from 'react-bootstrap-icons';
 import { useNavigate, useLocation } from 'react-router-dom';
+import { toast } from 'react-toastify';
 import { ROUTES } from '../../constants/routes';
 import { PERMISSION_IDS } from '../../constants/permissionIds';
 import { LoadingSkeleton, SearchBar, PermissionWrapper } from '../../components/Common';
 import AdminTable from '../../components/Common/AdminTable';
+import PortalUnifiedDropdown from '../../components/Common/PortalUnifiedDropdown';
+import reportAPI from '../../api/reports';
+import { Plus } from 'react-bootstrap-icons';
+import '../../styles/reports-page.css';
 
 const TABS = [
   {
@@ -28,22 +34,36 @@ const TABS = [
   },
 ];
 
+const SUBTABS = [
+  { id: 'pending', label: 'Pending' },
+  { id: 'acknowledge', label: 'Acknowledge' },
+  { id: 'resolved', label: 'Resolved' },
+  { id: 'cancel', label: 'Cancel' },
+];
+
+const SUBTABS_WITHOUT_CANCEL = [
+  { id: 'pending', label: 'Pending' },
+  { id: 'acknowledge', label: 'Acknowledge' },
+  { id: 'resolved', label: 'Resolved' },
+];
+
 const incidentStatusOptions = [
   { value: 'all', label: 'All Status' },
-  { value: 'open', label: 'Open' },
-  { value: 'in_progress', label: 'In Progress' },
-  { value: 'resolved', label: 'Resolved' },
-  { value: 'closed', label: 'Closed' },
+  { value: 'SUBMITTED', label: 'Submitted' },
+  { value: 'ACKNOWLEDGED', label: 'Acknowledged' },
+  { value: 'RESOLVED', label: 'Resolved' },
+  { value: 'CANCELLED', label: 'Cancelled' },
 ];
 
 const feedbackStatusOptions = [
   { value: 'all', label: 'All Status' },
-  { value: 'pending', label: 'Pending' },
-  { value: 'acknowledged', label: 'Acknowledged' },
-  { value: 'reviewed', label: 'Reviewed' },
+  { value: 'SUBMITTED', label: 'Submitted' },
+  { value: 'ACKNOWLEDGED', label: 'Acknowledged' },
+  { value: 'RESOLVED', label: 'Resolved' },
+  { value: 'CANCELLED', label: 'Cancelled' },
 ];
 
-const UnifiedReportsPage = ({ defaultTab }) => {
+const UnifiedReportsPage = ({ defaultTab, source = '/reports', onShowForm }) => {
   const navigate = useNavigate();
   const location = useLocation();
   const derivedTabFromPath = useMemo(() => {
@@ -55,6 +75,7 @@ const UnifiedReportsPage = ({ defaultTab }) => {
   const resolvedDefaultTab = defaultTab || derivedTabFromPath;
 
   const [activeTab, setActiveTab] = useState(resolvedDefaultTab);
+  const [activeSubTab, setActiveSubTab] = useState('pending');
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
   const [incidents, setIncidents] = useState([]);
@@ -65,92 +86,36 @@ const UnifiedReportsPage = ({ defaultTab }) => {
     setActiveTab(resolvedDefaultTab);
     setStatusFilter('all');
     setSearchTerm('');
+    setActiveSubTab('pending');
   }, [resolvedDefaultTab]);
 
   useEffect(() => {
-    const mockIncidents = [
-      {
-        id: 'INC-001',
-        title: 'Safety Procedure Issue',
-        description: 'Reported safety concern in training module',
-        reporter: 'John Smith',
-        reporterEmail: 'john.smith@company.com',
-        status: 'open',
-        priority: 'high',
-        createdAt: '2024-01-15T10:30:00Z',
-        updatedAt: '2024-01-15T14:20:00Z',
-      },
-      {
-        id: 'INC-002',
-        title: 'Training Material Error',
-        description: 'Incorrect information in assessment template',
-        reporter: 'Sarah Johnson',
-        reporterEmail: 'sarah.johnson@company.com',
-        status: 'in_progress',
-        priority: 'medium',
-        createdAt: '2024-01-14T09:15:00Z',
-        updatedAt: '2024-01-15T11:45:00Z',
-      },
-      {
-        id: 'INC-003',
-        title: 'System Performance Issue',
-        description: 'Slow loading times during assessment',
-        reporter: 'Mike Wilson',
-        reporterEmail: 'mike.wilson@company.com',
-        status: 'resolved',
-        priority: 'low',
-        createdAt: '2024-01-13T16:20:00Z',
-        updatedAt: '2024-01-14T09:30:00Z',
-      },
-    ];
+    const fetchReports = async () => {
+      try {
+        setLoading(true);
+        
+        // Use my-reports API if source is /reports/create, otherwise use regular reports API
+        const useMyReports = source === '/reports/create';
+        
+        const [incidentsResponse, feedbackResponse] = await Promise.all([
+          useMyReports ? reportAPI.getMyIncidents() : reportAPI.getIncidents(),
+          useMyReports ? reportAPI.getMyFeedback() : reportAPI.getFeedback(),
+        ]);
 
-    const mockFeedback = [
-      {
-        id: 'FB-001',
-        title: 'Training Course Feedback',
-        description: 'Positive feedback about the safety training course',
-        submitter: 'Sarah Johnson',
-        submitterEmail: 'sarah.johnson@company.com',
-        status: 'acknowledged',
-        category: 'training',
-        rating: 5,
-        createdAt: '2024-01-15T10:30:00Z',
-        acknowledgedAt: '2024-01-15T14:20:00Z',
-      },
-      {
-        id: 'FB-002',
-        title: 'System Usability Feedback',
-        description: 'Suggestions for improving the assessment interface',
-        submitter: 'Mike Wilson',
-        submitterEmail: 'mike.wilson@company.com',
-        status: 'pending',
-        category: 'system',
-        rating: 4,
-        createdAt: '2024-01-14T09:15:00Z',
-        acknowledgedAt: null,
-      },
-      {
-        id: 'FB-003',
-        title: 'Content Quality Feedback',
-        description: 'Feedback about the quality of training materials',
-        submitter: 'John Smith',
-        submitterEmail: 'john.smith@company.com',
-        status: 'acknowledged',
-        category: 'content',
-        rating: 3,
-        createdAt: '2024-01-13T16:20:00Z',
-        acknowledgedAt: '2024-01-14T09:30:00Z',
-      },
-    ];
+        setIncidents(incidentsResponse.reports || []);
+        setFeedback(feedbackResponse.reports || []);
+      } catch (error) {
+        console.error('Error fetching reports:', error);
+        toast.error('Failed to load reports. Please try again.');
+        setIncidents([]);
+        setFeedback([]);
+      } finally {
+        setLoading(false);
+      }
+    };
 
-    const timer = setTimeout(() => {
-      setIncidents(mockIncidents);
-      setFeedback(mockFeedback);
-      setLoading(false);
-    }, 700);
-
-    return () => clearTimeout(timer);
-  }, []);
+    fetchReports();
+  }, [source]);
 
   const formatDate = (dateString) => {
     if (!dateString) return 'N/A';
@@ -163,60 +128,37 @@ const UnifiedReportsPage = ({ defaultTab }) => {
 
   const getIncidentStatusBadge = (status) => {
     const statusConfig = {
-      open: { variant: 'danger', icon: ExclamationTriangle },
-      in_progress: { variant: 'warning', icon: Clock },
-      resolved: { variant: 'success', icon: CheckCircle },
-      closed: { variant: 'secondary', icon: XCircle },
+      SUBMITTED: { variant: 'warning', icon: Clock, display: 'Pending' },
+      ACKNOWLEDGED: { variant: 'info', icon: CheckCircle, display: 'Acknowledged' },
+      RESOLVED: { variant: 'success', icon: CheckCircle, display: 'Resolved' },
+      CANCELLED: { variant: 'secondary', icon: XCircle, display: 'Cancelled' },
+      // Keep old mapping for compatibility
+      open: { variant: 'danger', icon: ExclamationTriangle, display: 'Open' },
+      in_progress: { variant: 'warning', icon: Clock, display: 'In Progress' },
+      resolved: { variant: 'success', icon: CheckCircle, display: 'Resolved' },
+      closed: { variant: 'secondary', icon: XCircle, display: 'Closed' },
     };
 
-    const config = statusConfig[status] || statusConfig.open;
+    const config = statusConfig[status] || statusConfig['in_progress'];
     const IconComponent = config.icon;
 
     return (
       <Badge bg={config.variant} className="d-flex align-items-center">
         <IconComponent size={12} className="me-1" />
-        {status.replace('_', ' ').toUpperCase()}
+        {config.display}
       </Badge>
     );
   };
 
-  const getIncidentPriorityBadge = (priority) => {
-    const priorityConfig = {
-      high: 'danger',
-      medium: 'warning',
-      low: 'info',
+  // Map subtab to status filter
+  const getStatusFromSubTab = (subTab) => {
+    const statusMap = {
+      pending: 'SUBMITTED',
+      acknowledge: 'ACKNOWLEDGED',
+      resolved: 'RESOLVED',
+      cancel: 'CANCELLED',
     };
-
-    return <Badge bg={priorityConfig[priority] || 'secondary'}>{priority?.toUpperCase()}</Badge>;
-  };
-
-  const getFeedbackStatusBadge = (status) => {
-    const statusConfig = {
-      pending: { variant: 'warning', icon: Clock },
-      acknowledged: { variant: 'success', icon: CheckCircle },
-      reviewed: { variant: 'info', icon: ExclamationCircle },
-    };
-
-    const config = statusConfig[status] || statusConfig.pending;
-    const IconComponent = config.icon;
-
-    return (
-      <Badge bg={config.variant} className="d-flex align-items-center">
-        <IconComponent size={12} className="me-1" />
-        {status.toUpperCase()}
-      </Badge>
-    );
-  };
-
-  const getFeedbackCategoryBadge = (category) => {
-    const categoryConfig = {
-      training: 'primary',
-      system: 'info',
-      content: 'success',
-      general: 'secondary',
-    };
-
-    return <Badge bg={categoryConfig[category] || 'secondary'}>{category?.toUpperCase()}</Badge>;
+    return statusMap[subTab] || 'all';
   };
 
   const getActiveDataset = () => {
@@ -225,12 +167,11 @@ const UnifiedReportsPage = ({ defaultTab }) => {
         data: feedback,
         statusOptions: feedbackStatusOptions,
         columns: [
-          { key: 'title', title: 'Feedback Title', className: 'show-mobile', sortable: true },
-          { key: 'submitter', title: 'Submitter', className: 'hide-mobile', sortable: true },
-          { key: 'category', title: 'Category', className: 'hide-mobile', sortable: true },
-          { key: 'status', title: 'Status', className: 'show-mobile', sortable: true },
-          { key: 'createdAt', title: 'Submitted Date', className: 'hide-mobile', sortable: true },
-          { title: 'Actions', className: 'text-center show-mobile', sortable: false },
+          { key: 'title', title: 'FEEDBACK TITLE', className: 'show-mobile', sortable: true },
+          { key: 'createdBy', title: 'SUBMITTER', className: 'hide-mobile', sortable: true },
+          { key: 'status', title: 'STATUS', className: 'show-mobile', sortable: true },
+          { key: 'createdAt', title: 'SUBMITTED DATE', className: 'hide-mobile', sortable: true },
+          { title: 'ACTIONS', className: 'text-center show-mobile', sortable: false },
         ],
       };
     }
@@ -239,12 +180,12 @@ const UnifiedReportsPage = ({ defaultTab }) => {
       data: incidents,
       statusOptions: incidentStatusOptions,
       columns: [
-        { key: 'title', title: 'Incident Title', className: 'show-mobile', sortable: true },
-        { key: 'reporter', title: 'Reporter', className: 'hide-mobile', sortable: true },
-        { key: 'status', title: 'Status', className: 'show-mobile', sortable: true },
-        { key: 'priority', title: 'Priority', className: 'hide-mobile', sortable: true },
-        { key: 'createdAt', title: 'Created Date', className: 'hide-mobile', sortable: true },
-        { title: 'Actions', className: 'text-center show-mobile', sortable: false },
+        { key: 'title', title: 'INCIDENT TITLE', className: 'show-mobile', sortable: true },
+        { key: 'createdBy', title: 'REPORTER', className: 'hide-mobile', sortable: true },
+        { key: 'status', title: 'STATUS', className: 'show-mobile', sortable: true },
+        { key: 'severity', title: 'SEVERITY', className: 'hide-mobile', sortable: true },
+        { key: 'createdAt', title: 'CREATED DATE', className: 'hide-mobile', sortable: true },
+        { title: 'ACTIONS', className: 'text-center show-mobile', sortable: false },
       ],
     };
   };
@@ -252,28 +193,43 @@ const UnifiedReportsPage = ({ defaultTab }) => {
   const activeDataset = getActiveDataset();
 
   const filteredData = useMemo(() => {
-    return activeDataset.data.filter((item) => {
-      const baseFields =
-        activeTab === 'feedback'
-          ? [item.title, item.description, item.submitter, item.submitterEmail]
-          : [item.title, item.description, item.reporter, item.reporterEmail];
+    let filtered = activeDataset.data.filter((item) => {
+      const baseFields = [
+        item.title,
+        item.description,
+        item.createdBy?.firstName,
+        item.createdBy?.lastName,
+        item.createdBy?.email,
+      ];
 
       const matchesSearch = baseFields
         .filter(Boolean)
         .some((field) => field.toLowerCase().includes(searchTerm.toLowerCase()));
 
+      // Apply subtab filter
+      const subtabStatus = getStatusFromSubTab(activeSubTab);
+      const matchesSubTab = subtabStatus === 'all' || item.status === subtabStatus;
+
+      // Apply status filter dropdown
       const matchesStatus = statusFilter === 'all' || item.status === statusFilter;
 
-      return matchesSearch && matchesStatus;
+      return matchesSearch && matchesSubTab && matchesStatus;
     });
-  }, [activeDataset.data, activeTab, searchTerm, statusFilter]);
+
+    return filtered;
+  }, [activeDataset, searchTerm, statusFilter, activeSubTab]);
 
   const handleViewReport = (reportId) => {
-    navigate(ROUTES.REPORTS_DETAIL(reportId));
+    navigate(ROUTES.REPORTS_DETAIL(reportId), { 
+      state: { from: source }
+    });
   };
 
   const handleAcknowledgeFeedback = (reportId) => {
-    navigate(`/sqa/feedback/${reportId}/acknowledge`);
+    // TODO: Implement acknowledge API call
+    console.log('Acknowledging feedback:', reportId);
+    toast.success('Feedback acknowledged successfully');
+    // Refresh data or update local state
   };
 
   if (loading) {
@@ -286,39 +242,63 @@ const UnifiedReportsPage = ({ defaultTab }) => {
 
   return (
     <Container fluid className="py-4 reports-page">
-      <Card className="border-neutral-200 shadow-sm">
-        <Card.Header className="bg-light-custom border-neutral-200">
-          <Row className="align-items-center">
+      <Card className="border-0 shadow-sm">
+        <Card.Header className="border-bottom py-2 bg-primary">
+          <Row className="align-items-center mb-3">
             <Col>
-              <div className="d-flex align-items-center gap-2">
-                <ExclamationTriangle className="text-primary-custom" size={22} />
-                <div>
-                  <h4 className="mb-0 text-primary-custom">Incidents / Feedback Report</h4>
-                  <small className="text-muted">
-                    Monitor incident investigations and feedback acknowledgements
-                  </small>
+              <div className="d-flex align-items-center justify-content-between">
+                <div className="d-flex align-items-center gap-2">
+                  <div>
+                    <h4 className="mb-0 text-white">Issue List</h4>
+                  </div>
                 </div>
+                {source === '/reports/create' && onShowForm && (
+                  <PermissionWrapper 
+                    permission={PERMISSION_IDS.SUBMIT_INCIDENT_FEEDBACK_REPORT}
+                    fallback={null}
+                  >
+                    <Button 
+                      variant="light" 
+                      size="sm"
+                      onClick={onShowForm}
+                      className="d-flex align-items-center"
+                    >
+                      <Plus className="me-2" size={16} />
+                      Create Report
+                    </Button>
+                  </PermissionWrapper>
+                )}
               </div>
             </Col>
           </Row>
-          <Nav
-            variant="tabs"
-            className="mt-4"
-            activeKey={activeTab}
-            onSelect={(tab) => setActiveTab(tab)}
-          >
+
+          {/* Main Tabs - Incidents/Feedback */}
+          <Nav variant="tabs" className="border-0">
             {TABS.map((tab) => {
               const IconComponent = tab.icon;
               return (
                 <Nav.Item key={tab.id}>
                   <Nav.Link
-                    eventKey={tab.id}
-                    className="d-flex align-items-center gap-2"
-                    style={{ cursor: 'pointer' }}
+                    as="button"
+                    onClick={() => {
+                      setActiveTab(tab.id);
+                      setActiveSubTab('pending');
+                    }}
+                    active={activeTab === tab.id}
+                    className="d-flex align-items-center"
+                    style={{
+                      border: 'none',
+                      backgroundColor: 'transparent',
+                      color: '#ffffff',
+                      fontWeight: activeTab === tab.id ? '600' : '400',
+                      opacity: activeTab === tab.id ? '1' : '0.7',
+                      borderRadius: '4px 4px 0 0',
+                      cursor: 'pointer'
+                    }}
                   >
-                    <IconComponent size={16} />
+                    <IconComponent className="me-2" size={16} />
                     {tab.label}
-                    <Badge bg="light" text="dark">
+                    <Badge bg="light" text="dark" className="ms-2">
                       {tab.id === 'feedback' ? feedback.length : incidents.length}
                     </Badge>
                   </Nav.Link>
@@ -326,125 +306,169 @@ const UnifiedReportsPage = ({ defaultTab }) => {
               );
             })}
           </Nav>
+
+          {/* Sub-tabs - Pending/Acknowledge/etc */}
+          <Nav
+            className="border-0 mt-3 sub-tabs-nav"
+            style={{ display: 'flex', gap: '0' }}
+          >
+            {(source === '/reports/create' ? SUBTABS : SUBTABS_WITHOUT_CANCEL).map((subTab) => (
+              <Nav.Item key={subTab.id} style={{ marginBottom: '0' }}>
+                <Nav.Link
+                  as="button"
+                  onClick={() => setActiveSubTab(subTab.id)}
+                  className={`d-flex align-items-center sub-tab-link ${activeSubTab === subTab.id ? 'active-sub-tab' : ''}`}
+                  style={{
+                    border: 'none',
+                    backgroundColor: 'transparent',
+                    color: '#ffffff',
+                    fontWeight: activeSubTab === subTab.id ? '600' : '400',
+                    opacity: activeSubTab === subTab.id ? '1' : '0.7',
+                    cursor: 'pointer',
+                    borderBottom: activeSubTab === subTab.id ? '3px solid #ffffff' : 'none',
+                    padding: '12px',
+                    paddingBottom: '9px',
+                    margin: '0',
+                    transition: 'all 0.2s ease'
+                  }}
+                >
+                  {subTab.label}
+                </Nav.Link>
+              </Nav.Item>
+            ))}
+          </Nav>
         </Card.Header>
 
-        <Card.Body>
+        <Card.Body className="p-4">
           <Row className="mb-3 form-mobile-stack search-filter-section">
             <Col xs={12} lg={6} md={5} className="mb-2 mb-lg-0">
               <SearchBar
-                placeholder={
-                  activeTab === 'feedback'
-                    ? 'Search feedback by title, description, or submitter...'
-                    : 'Search incidents by title, description, or reporter...'
-                }
-                value={searchTerm}
-                onChange={setSearchTerm}
-                className="search-bar-mobile"
-              />
-            </Col>
-            <Col xs={12} lg={3} md={4} className="mb-2 mb-lg-0 position-relative">
-              <select
-                className="form-select filter-panel-mobile"
-                value={statusFilter}
-                onChange={(e) => setStatusFilter(e.target.value)}
-              >
-                {(activeTab === 'feedback' ? feedbackStatusOptions : incidentStatusOptions).map(
-                  (option) => (
-                    <option key={option.value} value={option.value}>
-                      {option.label}
-                    </option>
-                  ),
-                )}
-              </select>
-            </Col>
-            <Col xs={12} lg={3} md={3}>
-              <div className="text-end text-mobile-center">
-                <small className="text-muted">
-                  {filteredData.length}{' '}
-                  {activeTab === 'feedback'
-                    ? `feedback item${filteredData.length !== 1 ? 's' : ''}`
-                    : `incident${filteredData.length !== 1 ? 's' : ''}`}
-                </small>
-              </div>
-            </Col>
-          </Row>
-
-          <AdminTable
-            data={filteredData}
-            loading={loading}
-            columns={activeDataset.columns}
-            renderRow={(item, index) => (
-              <tr
-                key={item.id}
-                className={`${index % 2 === 0 ? 'bg-white' : 'bg-neutral-50'} transition-all`}
-                style={{ transition: 'background-color 0.2s ease' }}
-                onMouseEnter={(e) => {
-                  e.currentTarget.style.backgroundColor = 'var(--bs-neutral-100)';
-                }}
-                onMouseLeave={(e) => {
-                  e.currentTarget.style.backgroundColor =
-                    index % 2 === 0 ? 'white' : 'var(--bs-neutral-50)';
-                }}
-              >
-                <td className="align-middle show-mobile">
-                  <div>
-                    <h6 className="mb-1 fw-medium">{item.title}</h6>
-                    <small className="text-muted">{item.description}</small>
-                  </div>
-                </td>
-                <td className="align-middle hide-mobile">
-                  <div>
-                    <div className="fw-medium">
-                      {activeTab === 'feedback' ? item.submitter : item.reporter}
-                    </div>
-                    <small className="text-muted">
-                      {activeTab === 'feedback' ? item.submitterEmail : item.reporterEmail}
-                    </small>
-                  </div>
-                </td>
-                {activeTab === 'feedback' ? (
-                  <td className="align-middle hide-mobile">{getFeedbackCategoryBadge(item.category)}</td>
-                ) : (
-                  <td className="align-middle hide-mobile">{getIncidentPriorityBadge(item.priority)}</td>
-                )}
-                <td className="align-middle show-mobile">
-                  {activeTab === 'feedback'
-                    ? getFeedbackStatusBadge(item.status)
-                    : getIncidentStatusBadge(item.status)}
-                </td>
-                <td className="align-middle hide-mobile">
-                  <div className="text-muted small">{formatDate(item.createdAt)}</div>
-                </td>
-                <td className="align-middle text-center show-mobile">
-                  <PermissionWrapper permission={PERMISSION_IDS.LIST_ALL_REPORTS} fallback={null}>
-                    <div className="d-flex justify-content-center gap-2 flex-wrap">
-                      <Button
-                        variant="outline-primary"
-                        size="sm"
-                        className="d-flex align-items-center"
-                        onClick={() => handleViewReport(item.id)}
-                      >
-                        <Eye className="me-1" size={14} />
-                        View
-                      </Button>
-                      {activeTab === 'feedback' && (
-                        <Button
-                          variant="outline-success"
-                          size="sm"
-                          className="d-flex align-items-center"
-                          disabled={item.status === 'acknowledged' || item.status === 'reviewed'}
-                          onClick={() => handleAcknowledgeFeedback(item.id)}
-                        >
-                          <CheckCircle className="me-1" size={14} />
-                          Acknowledge
-                        </Button>
+                      placeholder={
+                        activeTab === 'feedback'
+                          ? 'Search feedback by title, description, or submitter...'
+                          : 'Search incidents by title, description, or reporter...'
+                      }
+                      value={searchTerm}
+                      onChange={setSearchTerm}
+                      className="search-bar-mobile"
+                    />
+                  </Col>
+                  <Col xs={12} lg={3} md={4} className="mb-2 mb-lg-0 position-relative">
+                    <select
+                      className="form-select filter-panel-mobile"
+                      value={statusFilter}
+                      onChange={(e) => setStatusFilter(e.target.value)}
+                    >
+                      {(activeTab === 'feedback' ? feedbackStatusOptions : incidentStatusOptions).map(
+                        (option) => (
+                          <option key={option.value} value={option.value}>
+                            {option.label}
+                          </option>
+                        ),
                       )}
+                    </select>
+                  </Col>
+                  <Col xs={12} lg={3} md={3}>
+                    <div className="text-end text-mobile-center">
+                      <small className="text-muted">
+                        {filteredData.length}{' '}
+                        {activeTab === 'feedback'
+                          ? `feedback item${filteredData.length !== 1 ? 's' : ''}`
+                          : `incident${filteredData.length !== 1 ? 's' : ''}`}
+                      </small>
                     </div>
-                  </PermissionWrapper>
-                </td>
-              </tr>
-            )}
-          />
+                  </Col>
+                </Row>
+
+                {filteredData.length === 0 ? (
+                  <div className="text-center py-5">
+                    <p className="text-muted mb-0">No {activeTab === 'feedback' ? 'feedback' : 'incidents'} found</p>
+                  </div>
+                ) : (
+                  <AdminTable
+                    data={filteredData}
+                    loading={loading}
+                    columns={activeDataset.columns}
+                    renderRow={(item, index) => (
+                      <tr
+                        key={item.id}
+                        className={`${index % 2 === 0 ? 'bg-white' : 'bg-neutral-50'} transition-all`}
+                        style={{ transition: 'background-color 0.2s ease' }}
+                        onMouseEnter={(e) => {
+                          e.currentTarget.style.backgroundColor = 'var(--bs-neutral-100)';
+                        }}
+                        onMouseLeave={(e) => {
+                          e.currentTarget.style.backgroundColor =
+                            index % 2 === 0 ? 'white' : 'var(--bs-neutral-50)';
+                        }}
+                      >
+                        {/* TITLE - Show Mobile */}
+                        <td className="align-middle show-mobile">
+                          <div>
+                            <h6 className="mb-1 fw-medium">{item.title}</h6>
+                            <small className="text-muted">{item.description}</small>
+                          </div>
+                        </td>
+
+                        {/* SUBMITTER/REPORTER - Hide Mobile */}
+                        <td className="align-middle hide-mobile">
+                          <div>
+                            <div className="fw-medium">
+                              {item.createdBy?.firstName} {item.createdBy?.lastName}
+                            </div>
+                            <small className="text-muted">{item.createdBy?.email}</small>
+                          </div>
+                        </td>
+
+                        {/* STATUS - Show Mobile */}
+                        <td className="align-middle show-mobile">
+                          {getIncidentStatusBadge(item.status)}
+                        </td>
+
+                        {/* SEVERITY - Hide Mobile (Incidents only) */}
+                        {activeTab === 'incidents' && (
+                          <td className="align-middle hide-mobile">
+                            {item.severity ? <Badge bg={item.severity === 'CRITICAL' ? 'danger' : item.severity === 'HIGH' ? 'warning' : item.severity === 'MEDIUM' ? 'warning' : 'info'}>{item.severity}</Badge> : 'N/A'}
+                          </td>
+                        )}
+
+                        {/* CREATED/SUBMITTED DATE - Hide Mobile */}
+                        <td className="align-middle hide-mobile">
+                          <div className="text-muted small">{formatDate(item.createdAt)}</div>
+                        </td>
+
+                        {/* ACTIONS */}
+                        <td className="align-middle text-center show-mobile">
+                          <PermissionWrapper permission={PERMISSION_IDS.VIEW_ALL_INCIDENT_FEEDBACK_REPORT} fallback={null}>
+                            <PortalUnifiedDropdown
+                              align="end"
+                              className="table-dropdown"
+                              placement="bottom-end"
+                              trigger={{
+                                variant: 'link',
+                                className: 'btn btn-link p-0 text-primary-custom',
+                                style: { border: 'none', background: 'transparent' },
+                                children: <ThreeDotsVertical size={16} />
+                              }}
+                              items={[
+                                {
+                                  label: 'View Detail',
+                                  icon: <Eye />,
+                                  onClick: () => handleViewReport(item.id)
+                                },
+                                ...(activeTab === 'feedback' && item.status !== 'acknowledged' && item.status !== 'reviewed' ? [{
+                                  label: 'Acknowledge',
+                                  icon: <CheckCircle />,
+                                  onClick: () => handleAcknowledgeFeedback(item.id)
+                                }] : [])
+                              ]}
+                            />
+                          </PermissionWrapper>
+                        </td>
+                      </tr>
+                    )}
+                  />
+                )}
         </Card.Body>
       </Card>
     </Container>
@@ -452,4 +476,3 @@ const UnifiedReportsPage = ({ defaultTab }) => {
 };
 
 export default UnifiedReportsPage;
-

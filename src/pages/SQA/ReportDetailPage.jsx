@@ -1,9 +1,8 @@
 import React, { useState, useEffect } from 'react';
-import { Container, Row, Col, Card, Button, Badge, Alert } from 'react-bootstrap';
+import { Container, Row, Col, Card, Button, Badge, Alert, Modal, Form } from 'react-bootstrap';
 import {
   ArrowLeft,
   ExclamationTriangle,
-  ChatDots,
   Clock,
   CheckCircle,
   XCircle,
@@ -11,43 +10,33 @@ import {
   Calendar,
   FileText,
 } from 'react-bootstrap-icons';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import { ROUTES } from '../../constants/routes';
 import { toast } from 'react-toastify';
+import reportAPI from '../../api/reports';
 
 const ReportDetailPage = () => {
   const { reportId } = useParams();
   const navigate = useNavigate();
+  const location = useLocation();
+  
+  // Get source from location.state (default to '/reports' if not provided)
+  const source = location.state?.from || '/reports';
+  const isFromIssueList = source === '/reports/create';
+  
   const [report, setReport] = useState(null);
   const [loading, setLoading] = useState(true);
-  const [response, setResponse] = useState('');
+  const [showResolveModal, setShowResolveModal] = useState(false);
+  const [resolveText, setResolveText] = useState('');
+  const [resolving, setResolving] = useState(false);
+  const [actionLoading, setActionLoading] = useState(false);
 
   useEffect(() => {
-    // TODO: Implement API call to fetch report details
     const fetchReport = async () => {
       try {
         setLoading(true);
-        // Simulate API call
-        await new Promise(resolve => setTimeout(resolve, 500));
-        
-        // Mock data
-        const mockReport = {
-          id: reportId,
-          title: 'Safety Procedure Issue',
-          description: 'Reported safety concern in training module. The safety procedures need to be updated to reflect the latest regulations.',
-          requestType: 'SAFETY_REPORT',
-          severity: 'HIGH',
-          status: 'in_progress',
-          reporter: 'John Smith',
-          reporterEmail: 'john.smith@company.com',
-          createdAt: '2024-01-15T10:30:00Z',
-          updatedAt: '2024-01-15T14:20:00Z',
-          actionsTaken: 'Reported to supervisor immediately',
-          isAnonymous: false,
-          response: null, // Will be populated when response is added
-        };
-        
-        setReport(mockReport);
+        const data = await reportAPI.getReportById(reportId);
+        setReport(data);
       } catch (error) {
         console.error('Error fetching report:', error);
         toast.error('Failed to load report details');
@@ -59,34 +48,59 @@ const ReportDetailPage = () => {
     fetchReport();
   }, [reportId]);
 
-  const handleSubmitResponse = async () => {
-    if (!response.trim()) {
-      toast.error('Please enter a response');
+  const handleCancel = async () => {
+    try {
+      setActionLoading(true);
+      await reportAPI.cancelReport(reportId);
+      toast.success('Report cancelled successfully');
+      navigate(source);
+    } catch (error) {
+      console.error('Error cancelling report:', error);
+      toast.error('Failed to cancel report');
+    } finally {
+      setActionLoading(false);
+    }
+  };
+
+  const handleAcknowledge = async () => {
+    try {
+      setActionLoading(true);
+      await reportAPI.acknowledgeReport(reportId);
+      toast.success('Report acknowledged successfully');
+      setReport(prev => ({
+        ...prev,
+        status: 'ACKNOWLEDGED'
+      }));
+    } catch (error) {
+      console.error('Error acknowledging report:', error);
+      toast.error('Failed to acknowledge report');
+    } finally {
+      setActionLoading(false);
+    }
+  };
+
+  const handleResolve = async () => {
+    if (!resolveText.trim()) {
+      toast.error('Please enter resolution notes');
       return;
     }
 
     try {
-      // TODO: Implement API call to submit response
-      console.log('Submitting response:', response);
-      
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 500));
-      
-      toast.success('Response submitted successfully');
-      setResponse('');
-      
-      // Update report with response
+      setResolving(true);
+      await reportAPI.respondToReport(reportId, resolveText);
+      toast.success('Report resolved successfully');
+      setShowResolveModal(false);
+      setResolveText('');
       setReport(prev => ({
         ...prev,
-        response: {
-          content: response,
-          respondedBy: 'Current User',
-          respondedAt: new Date().toISOString(),
-        }
+        status: 'RESOLVED',
+        response: resolveText
       }));
     } catch (error) {
-      console.error('Error submitting response:', error);
-      toast.error('Failed to submit response');
+      console.error('Error resolving report:', error);
+      toast.error('Failed to resolve report');
+    } finally {
+      setResolving(false);
     }
   };
 
@@ -101,15 +115,71 @@ const ReportDetailPage = () => {
     });
   };
 
+  const handleBack = () => {
+    if (isFromIssueList) {
+      navigate('/reports/create');
+    } else {
+      navigate('/reports');
+    }
+  };
+
+  const renderActionButtons = () => {
+    // If from Issue List, only show Cancel button when status is SUBMITTED (Pending)
+    if (isFromIssueList) {
+      if (report?.status !== 'SUBMITTED') {
+        return null;
+      }
+      return (
+        <Button
+          variant="danger"
+          size="sm"
+          onClick={handleCancel}
+          disabled={actionLoading}
+        >
+          Cancel
+        </Button>
+      );
+    }
+
+    // If from Reports page, show buttons based on status
+    return (
+      <>
+        {report?.status === 'SUBMITTED' && (
+          <Button
+            variant="success"
+            size="sm"
+            onClick={handleAcknowledge}
+            disabled={actionLoading}
+          >
+            Acknowledge
+          </Button>
+        )}
+        {report?.status === 'ACKNOWLEDGED' && (
+          <Button
+            variant="primary"
+            size="sm"
+            onClick={() => setShowResolveModal(true)}
+            disabled={actionLoading}
+          >
+            Resolve
+          </Button>
+        )}
+      </>
+    );
+  };
+
   const getStatusBadge = (status) => {
     const statusConfig = {
-      open: { variant: 'danger', icon: ExclamationTriangle, label: 'OPEN' },
-      in_progress: { variant: 'warning', icon: Clock, label: 'IN PROGRESS' },
-      resolved: { variant: 'success', icon: CheckCircle, label: 'RESOLVED' },
-      closed: { variant: 'secondary', icon: XCircle, label: 'CLOSED' },
-      pending: { variant: 'warning', icon: Clock, label: 'PENDING' },
-      acknowledged: { variant: 'success', icon: CheckCircle, label: 'ACKNOWLEDGED' },
-      reviewed: { variant: 'info', icon: CheckCircle, label: 'REVIEWED' },
+      SUBMITTED: { variant: 'warning', icon: Clock, label: 'Pending' },
+      ACKNOWLEDGED: { variant: 'info', icon: CheckCircle, label: 'Acknowledged' },
+      RESOLVED: { variant: 'success', icon: CheckCircle, label: 'Resolved' },
+      CANCELLED: { variant: 'secondary', icon: XCircle, label: 'Cancelled' },
+      // Keep old mapping for compatibility
+      open: { variant: 'danger', icon: ExclamationTriangle, label: 'Open' },
+      in_progress: { variant: 'warning', icon: Clock, label: 'In Progress' },
+      pending: { variant: 'warning', icon: Clock, label: 'Pending' },
+      acknowledged: { variant: 'success', icon: CheckCircle, label: 'Acknowledged' },
+      reviewed: { variant: 'info', icon: CheckCircle, label: 'Reviewed' },
     };
 
     const config = statusConfig[status] || statusConfig.open;
@@ -170,11 +240,14 @@ const ReportDetailPage = () => {
             <Button
               variant="outline-secondary"
               size="sm"
-              onClick={() => navigate(ROUTES.REPORTS)}
+              onClick={handleBack}
             >
               <ArrowLeft size={16} className="me-2" />
-              Back to Reports
+              {isFromIssueList ? 'Back to Issue List' : 'Back to Reports'}
             </Button>
+            <div className="d-flex gap-2">
+              {renderActionButtons()}
+            </div>
           </div>
         </Col>
       </Row>
@@ -235,6 +308,15 @@ const ReportDetailPage = () => {
                 </div>
               )}
 
+              {report.response && (
+                <div className="mb-3">
+                  <small className="text-muted d-block mb-2">Resolution Notes</small>
+                  <Alert variant="success">
+                    <p className="mb-0">{report.response}</p>
+                  </Alert>
+                </div>
+              )}
+
               <hr />
 
               <Row>
@@ -242,15 +324,17 @@ const ReportDetailPage = () => {
                   <div className="mb-2">
                     <small className="text-muted d-block mb-1">
                       <Person size={12} className="me-1" />
-                      Reporter
+                      Created By
                     </small>
                     <div>
-                      {report.isAnonymous ? (
+                      {report?.isAnonymous ? (
                         <span className="text-muted">Anonymous</span>
                       ) : (
                         <>
-                          <div className="fw-medium">{report.reporter}</div>
-                          <small className="text-muted">{report.reporterEmail}</small>
+                          <div className="fw-medium">
+                            {report?.createdBy?.firstName} {report?.createdBy?.lastName}
+                          </div>
+                          <small className="text-muted">{report?.createdBy?.email}</small>
                         </>
                       )}
                     </div>
@@ -268,72 +352,34 @@ const ReportDetailPage = () => {
               </Row>
             </Card.Body>
           </Card>
-
-          {/* Issue Response Section */}
-          <Card className="border-0 shadow-sm">
-            <Card.Header className="bg-light">
-              <h5 className="mb-0 d-flex align-items-center">
-                <ChatDots className="me-2" size={20} />
-                Issue Response
-              </h5>
-            </Card.Header>
-            <Card.Body>
-              {report.response ? (
-                <div>
-                  <Alert variant="success">
-                    <Alert.Heading className="d-flex align-items-center">
-                      <CheckCircle className="me-2" size={20} />
-                      Response Submitted
-                    </Alert.Heading>
-                    <div className="mb-2">
-                      <small className="text-muted d-block mb-1">Response by: {report.response.respondedBy}</small>
-                      <small className="text-muted">Date: {formatDate(report.response.respondedAt)}</small>
-                    </div>
-                  </Alert>
-                  <div className="p-3 bg-light rounded">
-                    <p className="mb-0">{report.response.content}</p>
-                  </div>
-                </div>
-              ) : (
-                <div>
-                  <div className="mb-3">
-                    <label className="form-label">Response</label>
-                    <textarea
-                      className="form-control"
-                      rows={6}
-                      value={response}
-                      onChange={(e) => setResponse(e.target.value)}
-                      placeholder="Enter your response to this issue..."
-                    />
-                  </div>
-                  <div className="d-flex justify-content-end">
-                    <Button
-                      variant="primary"
-                      onClick={handleSubmitResponse}
-                      disabled={!response.trim()}
-                    >
-                      <ChatDots className="me-2" size={16} />
-                      Submit Response
-                    </Button>
-                  </div>
-                </div>
-              )}
-            </Card.Body>
-          </Card>
         </Col>
 
         <Col lg={4}>
-          {/* Additional Info */}
+          {/* Report Meta Info */}
           <Card className="border-0 shadow-sm">
-            <Card.Header className="bg-light">
-              <h6 className="mb-0">Additional Information</h6>
+            <Card.Header className="bg-primary text-white">
+              <h6 className="mb-0">Report Information</h6>
             </Card.Header>
             <Card.Body>
               <div className="mb-3">
-                <small className="text-muted d-block mb-1">Last Updated</small>
-                <div>{formatDate(report.updatedAt)}</div>
+                <small className="text-muted d-block mb-1">Created By</small>
+                <div>
+                  {report?.createdBy?.firstName} {report?.createdBy?.lastName}
+                  <br />
+                  <small className="text-muted">{report?.createdBy?.email}</small>
+                </div>
               </div>
-              {report.isAnonymous && (
+              {report?.managedBy && (
+                <div className="mb-3">
+                  <small className="text-muted d-block mb-1">Managed By</small>
+                  <div>
+                    {report?.managedBy?.firstName} {report?.managedBy?.lastName}
+                    <br />
+                    <small className="text-muted">{report?.managedBy?.email}</small>
+                  </div>
+                </div>
+              )}
+              {report?.isAnonymous && (
                 <Alert variant="info" className="small mb-0">
                   This report was submitted anonymously.
                 </Alert>
@@ -342,9 +388,65 @@ const ReportDetailPage = () => {
           </Card>
         </Col>
       </Row>
+
+      {/* Resolve Modal */}
+      <Modal show={showResolveModal} onHide={() => {
+        setShowResolveModal(false);
+        setResolveText('');
+      }}>
+        <Modal.Header closeButton>
+          <Modal.Title>Resolve Report - Add Resolution Notes</Modal.Title>
+        </Modal.Header>
+        <Modal.Body>
+          <Form>
+            <Form.Group className="mb-3">
+              <Form.Label>Resolution Notes *</Form.Label>
+              <Form.Control
+                as="textarea"
+                rows={6}
+                value={resolveText}
+                onChange={(e) => setResolveText(e.target.value)}
+                placeholder="Enter details about how this issue was resolved..."
+                required
+              />
+              <Form.Text className="text-muted">
+                Please provide detailed information about the resolution of this issue.
+              </Form.Text>
+            </Form.Group>
+          </Form>
+        </Modal.Body>
+        <Modal.Footer>
+          <Button
+            variant="secondary"
+            onClick={() => {
+              setShowResolveModal(false);
+              setResolveText('');
+            }}
+            disabled={resolving}
+          >
+            Cancel
+          </Button>
+          <Button
+            variant="primary"
+            onClick={handleResolve}
+            disabled={!resolveText.trim() || resolving}
+          >
+            {resolving ? (
+              <>
+                <span className="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
+                Resolving...
+              </>
+            ) : (
+              <>
+                <CheckCircle className="me-2" size={16} />
+                Resolve
+              </>
+            )}
+          </Button>
+        </Modal.Footer>
+      </Modal>
     </Container>
   );
 };
 
 export default ReportDetailPage;
-

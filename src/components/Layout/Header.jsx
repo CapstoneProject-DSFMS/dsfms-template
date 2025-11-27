@@ -335,6 +335,11 @@ const Header = ({ onToggleSidebar }) => {
       return 'Assessment Review Request Details';
     }
     
+    // Check for report detail pages (pattern: /reports/:reportId)
+    if (path.match(/^\/reports\/[^/]+$/) && path !== '/reports' && path !== '/reports/create') {
+      return 'Report Details';
+    }
+    
     // Check for SQA template detail pages (pattern: /sqa/templates/:templateId)
     if (path.startsWith('/sqa/templates/') && path !== '/sqa/templates') {
       return 'Template Detail';
