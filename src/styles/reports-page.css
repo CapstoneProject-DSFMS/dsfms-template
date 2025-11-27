@@ -1,0 +1,58 @@
+/* Reports Page Styles */
+
+.reports-page .sub-tabs-nav {
+  display: flex;
+  gap: 0;
+  border-bottom: none !important;
+}
+
+.reports-page .sub-tabs-nav .nav-item {
+  margin-bottom: 0 !important;
+}
+
+.reports-page .sub-tab-link {
+  border: none !important;
+  background-color: transparent !important;
+  color: #ffffff;
+  cursor: pointer;
+  border-bottom: none !important;
+  position: relative;
+  padding: 12px !important;
+  margin: 0 !important;
+  font-weight: 400;
+  opacity: 0.7;
+  transition: all 0.2s ease;
+}
+
+.reports-page .sub-tab-link:hover {
+  opacity: 0.85;
+}
+
+.reports-page .sub-tab-link.active-sub-tab {
+  font-weight: 600;
+  opacity: 1;
+  border-bottom: 3px solid #ffffff !important;
+  background-color: transparent !important;
+  color: #ffffff;
+}
+
+/* Override Bootstrap Nav.Link active state */
+.reports-page .nav-tabs .nav-link {
+  border: none;
+  background-color: transparent;
+  color: #ffffff;
+}
+
+.reports-page .nav-tabs .nav-link:not(.active) {
+  opacity: 0.7;
+  font-weight: 400;
+}
+
+.reports-page .nav-tabs .nav-link.active {
+  border: none;
+  border-bottom: 3px solid #ffffff;
+  background-color: transparent;
+  color: #ffffff;
+  font-weight: 600;
+  opacity: 1;
+}
