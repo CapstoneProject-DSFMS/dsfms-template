@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { Container, Row, Col, Button, Card, Alert } from 'react-bootstrap';
-import { ArrowLeft, FileEarmarkPdf } from 'react-bootstrap-icons';
+import { ArrowLeft, FileEarmarkPdf, CheckCircle, XCircle } from 'react-bootstrap-icons';
 import { useParams, useNavigate } from 'react-router-dom';
 import { PermissionWrapper } from '../../components/Common';
 import { PERMISSION_IDS } from '../../constants/permissionIds';
@@ -317,30 +317,63 @@ const TemplateDetailPage = () => {
                 <p className="text-muted mb-0">{template.description}</p>
               </div>
             </div>
-                        <PermissionWrapper
-                          permission={PERMISSION_IDS.DOWNLOAD_TEMPLATE_AS_PDF}
-                          fallback={null}
-                        >
-                          <Button
-                            variant="primary"
-                            size="sm"
-                            onClick={handleExportPDF}
-                            className="d-flex align-items-center"
-                            disabled={exportingPDF}
-                          >
-                            {exportingPDF ? (
-                              <>
-                                <span className="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
-                                Exporting...
-                              </>
-                            ) : (
-                              <>
-                            <FileEarmarkPdf className="me-1" size={16} />
-                            Export PDF
-                              </>
-                            )}
-                          </Button>
-                        </PermissionWrapper>          </div>
+            <div className="d-flex align-items-center gap-2">
+              <PermissionWrapper
+                permission={PERMISSION_IDS.APPROVE_DENY_TEMPLATE}
+                fallback={null}
+              >
+                <Button
+                  variant="success"
+                  size="sm"
+                  onClick={handleOpenApproveModal}
+                  className="d-flex align-items-center"
+                  disabled={template?.status !== 'PENDING' || reviewing}
+                >
+                  <CheckCircle className="me-2" size={16} />
+                  Approve
+                </Button>
+              </PermissionWrapper>
+              <PermissionWrapper
+                permission={PERMISSION_IDS.APPROVE_DENY_TEMPLATE}
+                fallback={null}
+              >
+                <Button
+                  variant="danger"
+                  size="sm"
+                  onClick={handleOpenRejectModal}
+                  className="d-flex align-items-center"
+                  disabled={template?.status !== 'PENDING' || reviewing}
+                >
+                  <XCircle className="me-2" size={16} />
+                  Reject
+                </Button>
+              </PermissionWrapper>
+              <PermissionWrapper
+                permission={PERMISSION_IDS.DOWNLOAD_TEMPLATE_AS_PDF}
+                fallback={null}
+              >
+                <Button
+                  variant="primary"
+                  size="sm"
+                  onClick={handleExportPDF}
+                  className="d-flex align-items-center"
+                  disabled={exportingPDF}
+                >
+                  {exportingPDF ? (
+                    <>
+                      <span className="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
+                      Exporting...
+                    </>
+                  ) : (
+                    <>
+                      <FileEarmarkPdf className="me-1" size={16} />
+                      Export PDF
+                    </>
+                  )}
+                </Button>
+              </PermissionWrapper>
+            </div>
+          </div>
         </Col>
       </Row>
 
@@ -383,9 +416,6 @@ const TemplateDetailPage = () => {
                   pdfUrl={pdfUrl}
                   loadingPDF={loadingPDF}
                   onViewTemplateConfig={handleViewTemplateConfig}
-                  onOpenApproveModal={handleOpenApproveModal}
-                  onOpenRejectModal={handleOpenRejectModal}
-                  reviewing={reviewing}
                 />
               )}
 

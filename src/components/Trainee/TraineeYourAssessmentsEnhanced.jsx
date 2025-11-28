@@ -1,12 +1,12 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { Container, Card, Nav, Tab, Spinner, Alert, Table, Badge } from 'react-bootstrap';
-import { ExclamationTriangle, Book, FileText, CheckCircle, Clock, ThreeDotsVertical, Eye } from 'react-bootstrap-icons';
+import { Container, Card, Nav, Tab, Spinner, Alert, Table, Badge, Button } from 'react-bootstrap';
+import { ExclamationTriangle, Book, FileText, CheckCircle, Clock, Play } from 'react-bootstrap-icons';
 import { useAuth } from '../../hooks/useAuth';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'react-toastify';
 import subjectAPI from '../../api/subject';
 import assessmentAPI from '../../api/assessment';
-import PortalUnifiedDropdown from '../Common/PortalUnifiedDropdown';
+import { ROUTES } from '../../constants/routes';
 import SortableHeader from './SortableHeader';
 import useTableSort from '../../hooks/useTableSort';
 import '../../styles/scrollable-table.css';
@@ -49,12 +49,15 @@ const TraineeYourAssessmentsEnhanced = () => {
               const assessmentResponse = await assessmentAPI.getCourseAssessments(course.id);
               const courseAssessments = assessmentResponse?.assessments || [];
               
-              // Add course info to each assessment
+              // Add course info to each assessment and filter by allowed statuses
               courseAssessments.forEach(assessment => {
-                allAssessments.push({
-                  ...assessment,
-                  courseInfo: assessmentResponse?.courseInfo || course
-                });
+                const allowedStatuses = ['APPROVED', 'ON_GOING', 'DRAFT', 'SIGNATURE_PENDING'];
+                if (allowedStatuses.includes(assessment.status)) {
+                  allAssessments.push({
+                    ...assessment,
+                    courseInfo: assessmentResponse?.courseInfo || course
+                  });
+                }
               });
             } catch (err) {
               console.error(`Error loading assessments for course ${course.id}:`, err);
@@ -72,13 +75,16 @@ const TraineeYourAssessmentsEnhanced = () => {
                 const assessmentResponse = await assessmentAPI.getSubjectAssessments(subject.id);
                 const subjectAssessments = assessmentResponse?.assessments || [];
                 
-                // Add subject and course info to each assessment
+                // Add subject and course info to each assessment and filter by allowed statuses
                 subjectAssessments.forEach(assessment => {
-                  allAssessments.push({
-                    ...assessment,
-                    subjectInfo: assessmentResponse?.subjectInfo || subject,
-                    courseInfo: item.course
-                  });
+                  const allowedStatuses = ['APPROVED', 'ON_GOING', 'DRAFT', 'SIGNATURE_PENDING'];
+                  if (allowedStatuses.includes(assessment.status)) {
+                    allAssessments.push({
+                      ...assessment,
+                      subjectInfo: assessmentResponse?.subjectInfo || subject,
+                      courseInfo: item.course
+                    });
+                  }
                 });
               } catch (err) {
                 console.error(`Error loading assessments for subject ${subject.id}:`, err);
@@ -118,7 +124,9 @@ const TraineeYourAssessmentsEnhanced = () => {
       'APPROVED': { variant: 'success', text: 'Approved', icon: CheckCircle },
       'COMPLETED': { variant: 'success', text: 'Completed', icon: CheckCircle },
       'REJECTED': { variant: 'danger', text: 'Rejected', icon: ExclamationTriangle },
-      'CANCELLED': { variant: 'secondary', text: 'Cancelled', icon: ExclamationTriangle }
+      'CANCELLED': { variant: 'secondary', text: 'Cancelled', icon: ExclamationTriangle },
+      'DRAFT': { variant: 'primary', text: 'Draft', icon: Clock },
+      'SIGNATURE_PENDING': { variant: 'warning', text: 'Signature Pending', icon: Clock }
     };
 
     const config = statusConfig[status] || { variant: 'secondary', text: status, icon: ExclamationTriangle };
@@ -150,14 +158,9 @@ const TraineeYourAssessmentsEnhanced = () => {
     return resultText || '-';
   };
 
-  const handleViewAssessment = (assessment) => {
-    navigate(`/trainee/assessment/${assessment.id}`, {
-      state: {
-        assessment,
-        entityType: activeTab === 'course' ? 'course' : 'subject',
-        entityId: activeTab === 'course' ? assessment.courseId : assessment.subjectId
-      }
-    });
+  const handleParticipate = (assessment) => {
+    // Navigate to Assessment Sections page
+    navigate(ROUTES.ASSESSMENTS_SECTIONS(assessment.id));
   };
 
   if (loading) {
@@ -404,24 +407,20 @@ const TraineeYourAssessmentsEnhanced = () => {
                           {getResultBadge(assessment.resultScore, assessment.resultText)}
                         </td>
                         <td className="border-neutral-200 align-middle text-center">
-                          <PortalUnifiedDropdown
-                            align="end"
-                            className="table-dropdown"
-                            placement="bottom-end"
-                            trigger={{
-                              variant: 'link',
-                              className: 'btn btn-link p-0 text-primary-custom',
-                              style: { border: 'none', background: 'transparent' },
-                              children: <ThreeDotsVertical size={16} />
-                            }}
-                            items={[
-                              {
-                                label: 'View Details',
-                                icon: <Eye />,
-                                onClick: () => handleViewAssessment(assessment)
-                              }
-                            ]}
-                          />
+                          {assessment.isTraineeLocked === false && (
+                            <Button
+                              size="sm"
+                              variant="primary"
+                              onClick={() => handleParticipate(assessment)}
+                              className="d-flex align-items-center gap-1"
+                            >
+                              <Play size={14} />
+                              Participate
+                            </Button>
+                          )}
+                          {assessment.isTraineeLocked !== false && (
+                            <span className="text-muted">—</span>
+                          )}
                         </td>
                       </tr>
                     ))}

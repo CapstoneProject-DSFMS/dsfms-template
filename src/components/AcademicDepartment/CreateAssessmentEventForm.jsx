@@ -112,7 +112,7 @@ const CreateAssessmentEventForm = ({ onSuccess }) => {
         }
         
         // Filter active and planned courses
-        const filteredCourses = coursesData.filter(c => c.status === 'ACTIVE' || c.status === 'PLANNED');
+        const filteredCourses = coursesData.filter(c => c.status === 'ON_GOING' || c.status === 'PLANNED');
         setCourses(filteredCourses);
         
         // Extract subjects from courses (if each course has subjects array)

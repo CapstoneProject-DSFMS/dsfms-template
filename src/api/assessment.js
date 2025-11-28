@@ -169,6 +169,54 @@ const assessmentAPI = {
       throw error;
     }
   },
+
+  /**
+   * Save assessment section field values
+   * @param {Object} data - { assessmentSectionId, values: [{ assessmentValueId, answerValue }] }
+   * @returns {Promise} Save response
+   */
+  saveSectionValues: async (data) => {
+    try {
+      const response = await apiClient.post('/assessments/sections/save-values', data);
+      return response.data;
+    } catch (error) {
+      console.error('Error saving section values:', error);
+      throw error;
+    }
+  },
+
+  /**
+   * Update assessment section field values
+   * @param {Object} data - { assessmentSectionId, values: [{ assessmentValueId, answerValue }] }
+   * @returns {Promise} Update response
+   */
+  updateSectionValues: async (data) => {
+    try {
+      const response = await apiClient.patch('/assessments/sections/update-values', data);
+      return response.data;
+    } catch (error) {
+      console.error('Error updating section values:', error);
+      throw error;
+    }
+  },
+
+  /**
+   * Update trainee lock status for an assessment
+   * @param {string} assessmentId - Assessment ID
+   * @param {boolean} isTraineeLocked - Lock status
+   * @returns {Promise} Update response
+   */
+  updateTraineeLock: async (assessmentId, isTraineeLocked) => {
+    try {
+      const response = await apiClient.put(`/assessments/${assessmentId}/trainee-lock`, {
+        isTraineeLocked
+      });
+      return response.data;
+    } catch (error) {
+      console.error('Error updating trainee lock:', error);
+      throw error;
+    }
+  },
 };
 
 export default assessmentAPI;

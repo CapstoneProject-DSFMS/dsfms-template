@@ -3,6 +3,7 @@ import { Container, Card, Spinner, Alert, Button } from 'react-bootstrap';
 import { useNavigate, useParams } from 'react-router-dom';
 import { ArrowLeft } from 'react-bootstrap-icons';
 import { toast } from 'react-toastify';
+import { useAuth } from '../../hooks/useAuth';
 import assessmentAPI from '../../api/assessment';
 import AssessmentOverview from '../../components/Trainer/AssessmentOverview';
 import AssessmentSectionCard from '../../components/Trainer/AssessmentSectionCard';
@@ -11,6 +12,8 @@ import '../../styles/assessment-sections.css';
 const TrainerAssessmentSectionsPage = () => {
   const { assessmentId } = useParams();
   const navigate = useNavigate();
+  const { user } = useAuth();
+  const isTrainee = user?.role === 'TRAINEE';
   const [state, setState] = useState({
     loading: true,
     error: null,
@@ -84,8 +87,21 @@ const TrainerAssessmentSectionsPage = () => {
     toast.info('Viewing trainee sections (mock).');
   };
 
-  const handleOpenForTrainee = () => {
-    toast.success('Assessment opened for trainee (mock).');
+  const handleOpenForTrainee = async () => {
+    if (!assessmentId) {
+      toast.error('Assessment ID is missing');
+      return;
+    }
+
+    try {
+      await assessmentAPI.updateTraineeLock(assessmentId, true);
+      toast.success('Assessment opened for trainee');
+      // Optionally refresh sections to update state
+      fetchSections();
+    } catch (error) {
+      console.error('Error opening assessment for trainee:', error);
+      toast.error(error.response?.data?.message || 'Failed to open assessment for trainee');
+    }
   };
 
   const handleSubmitAssessment = () => {
@@ -153,29 +169,31 @@ const TrainerAssessmentSectionsPage = () => {
           </Card.Body>
         </Card>
 
-        <div className="assessment-footer-actions mt-4">
-          <Button
-            variant="outline-secondary"
-            className="footer-btn"
-            onClick={handleViewTraineeSections}
-          >
-            View Trainee Section
-          </Button>
-          <Button
-            variant="outline-primary"
-            className="footer-btn"
-            onClick={handleOpenForTrainee}
-          >
-            Open For Trainee
-          </Button>
-          <Button
-            variant="primary"
-            className="footer-btn submit-btn"
-            onClick={handleSubmitAssessment}
-          >
-            Submit Assessment
-          </Button>
-        </div>
+        {!isTrainee && (
+          <div className="assessment-footer-actions mt-4">
+            <Button
+              variant="outline-secondary"
+              className="footer-btn"
+              onClick={handleViewTraineeSections}
+            >
+              View Trainee Section
+            </Button>
+            <Button
+              variant="outline-primary"
+              className="footer-btn"
+              onClick={handleOpenForTrainee}
+            >
+              Open For Trainee
+            </Button>
+            <Button
+              variant="primary"
+              className="footer-btn submit-btn"
+              onClick={handleSubmitAssessment}
+            >
+              Submit Assessment
+            </Button>
+          </div>
+        )}
       </Container>
     </div>
   );
