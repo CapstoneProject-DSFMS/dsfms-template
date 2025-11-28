@@ -31,14 +31,13 @@ const EditDepartmentDetails = ({ department, onUpdate }) => {
   useEffect(() => {
     const loadDepartmentHeads = async () => {
       try {
-        // Try to use public departments API first, then fallback to getDepartmentHeads if needed
-        // Note: Public API may not have department heads info, so we'll use empty array
-        // If department heads info is needed, it should be added to public API response
-        setAvailableUsers([]);
+        // Call API to get all department heads
+        const response = await departmentAPI.getDepartmentHeads();
+        const heads = response?.users || response?.data?.users || [];
+        setAvailableUsers(heads);
       } catch (error) {
         console.error('Error loading department heads:', error);
         toast.error('Failed to load department heads');
-        // Fallback to empty array if API fails
         setAvailableUsers([]);
       }
     };
