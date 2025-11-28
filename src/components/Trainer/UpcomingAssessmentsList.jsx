@@ -28,11 +28,11 @@ const UpcomingAssessmentsList = () => {
         const response = await assessmentAPI.getUserEvents();
         
         if (response?.success && response?.data?.events) {
-          const allowedStatuses = new Set(['NOT_STARTED', 'ON_GOING']);
+          // No overall filter by allowedStatuses here, as per new requirement
+          // Filtering for assess button visibility will be done at the button level
 
           // Map API data to component format
           const mappedAssessments = response.data.events
-            .filter((event) => allowedStatuses.has(event.status))
             .map((event) => {
             const occurrenceDate = new Date(event.occuranceDate);
             const dateStr = occurrenceDate.toLocaleDateString('en-US', { 
@@ -65,7 +65,9 @@ const UpcomingAssessmentsList = () => {
               scheduledTime: timeStr,
               occurrenceDate: event.occuranceDate,
               status: event.status || 'NOT_STARTED',
-              templateInfo: event.templateInfo
+              templateInfo: event.templateInfo,
+              resultScore: event.resultScore || null, // Added as per request
+              resultText: event.resultText || null    // Added as per request
             };
           });
           
@@ -90,7 +92,10 @@ const UpcomingAssessmentsList = () => {
     ON_GOING: { variant: 'info', text: 'On Going' },
     APPROVED: { variant: 'success', text: 'Approved' },
     COMPLETED: { variant: 'success', text: 'Completed' },
-    PENDING: { variant: 'warning', text: 'Pending' }
+    PENDING: { variant: 'warning', text: 'Pending' },
+    DRAFT: { variant: 'primary', text: 'Draft' }, // Added DRAFT status
+    SUBMITTED: { variant: 'dark', text: 'Submitted' }, // Assuming SUBMITTED status
+    CANCELLED: { variant: 'danger', text: 'Cancelled' }, // Assuming CANCELLED status
   };
 
   const getStatusBadge = (status) => {
@@ -149,7 +154,7 @@ const UpcomingAssessmentsList = () => {
   const { sortedData, sortConfig, handleSort } = useTableSort(filteredAssessments);
 
   if (loading) {
-    return <LoadingSkeleton rows={5} columns={6} />;
+    return <LoadingSkeleton rows={5} columns={7} />;
   }
 
   if (error) {
@@ -231,6 +236,9 @@ const UpcomingAssessmentsList = () => {
       </th>
     );
   };
+
+  // Define statuses that should NOT show the Assess button
+  const excludedStatusesForAssessButton = new Set(['NOT_STARTED', 'SUBMITTED', 'APPROVED', 'CANCELLED']);
 
   return (
     <div>
@@ -314,6 +322,12 @@ const UpcomingAssessmentsList = () => {
                 <SortableHeader columnKey="status" className="show-mobile">
                   Status
                 </SortableHeader>
+                <SortableHeader columnKey="resultScore" className="show-mobile">
+                  Score
+                </SortableHeader>
+                <SortableHeader columnKey="resultText" className="show-mobile">
+                  Result
+                </SortableHeader>
                 <th className="border-neutral-200 text-primary-custom fw-semibold text-center show-mobile">
                   Actions
                 </th>
@@ -322,7 +336,7 @@ const UpcomingAssessmentsList = () => {
             <tbody>
               {sortedData.length === 0 ? (
                 <tr>
-                  <td colSpan={6} className="text-center py-4 text-muted">
+                  <td colSpan={8} className="text-center py-4 text-muted">
                     <div>
                       <h6 className="mb-1">No upcoming assessments found</h6>
                       <small>Try adjusting your search criteria or schedule a new assessment.</small>
@@ -393,25 +407,33 @@ const UpcomingAssessmentsList = () => {
                     <td className="border-neutral-200 align-middle">
                       {getStatusBadge(assessment.status)}
                     </td>
+                    <td className="border-neutral-200 align-middle">
+                      {assessment.resultScore !== null ? assessment.resultScore : '-'}
+                    </td>
+                    <td className="border-neutral-200 align-middle">
+                      {assessment.resultText || '-'}
+                    </td>
                     <td className="border-neutral-200 align-middle text-center">
-                      <PortalUnifiedDropdown
-                        align="end"
-                        className="table-dropdown"
-                        placement="bottom-end"
-                        trigger={{
-                          variant: 'link',
-                          className: 'btn btn-link p-0 text-primary-custom',
-                          style: { border: 'none', background: 'transparent' },
-                          children: <ThreeDotsVertical size={16} />
-                        }}
-                        items={[
-                          {
-                            label: 'Assess',
-                            icon: <Eye />,
-                            onClick: () => handleViewAssignments(assessment)
-                          }
-                        ]}
-                      />
+                      {!excludedStatusesForAssessButton.has(assessment.status) && (
+                        <PortalUnifiedDropdown
+                          align="end"
+                          className="table-dropdown"
+                          placement="bottom-end"
+                          trigger={{
+                            variant: 'link',
+                            className: 'btn btn-link p-0 text-primary-custom',
+                            style: { border: 'none', background: 'transparent' },
+                            children: <ThreeDotsVertical size={16} />
+                          }}
+                          items={[
+                            {
+                              label: 'Assess',
+                              icon: <Eye />,
+                              onClick: () => handleViewAssignments(assessment)
+                            }
+                          ]}
+                        />
+                      )}
                     </td>
                   </tr>
                 ))

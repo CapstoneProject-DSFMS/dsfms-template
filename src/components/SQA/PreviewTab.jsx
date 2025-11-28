@@ -1,17 +1,15 @@
 import React from 'react';
 import { Row, Col, Button, Alert, Spinner } from 'react-bootstrap';
-import { Download, FileEarmarkPdf, CheckCircle, XCircle } from 'react-bootstrap-icons';
+import { Download, FileEarmarkPdf } from 'react-bootstrap-icons';
 import TemplateConfigSchema from './TemplateConfigSchema';
-import { PERMISSION_IDS } from '../../constants/permissionIds'; // Add this line
+import { PERMISSION_IDS } from '../../constants/permissionIds';
+import { PermissionWrapper } from '../Common';
 
 const PreviewTab = ({
   template,
   pdfUrl,
   loadingPDF,
-  onViewTemplateConfig,
-  onOpenApproveModal,
-  onOpenRejectModal,
-  reviewing
+  onViewTemplateConfig
 }) => {
   return (
     <div className="p-4">
@@ -31,41 +29,6 @@ const PreviewTab = ({
               >
                 <Download className="me-2" size={16} />
                 View Template Config
-              </Button>
-            </PermissionWrapper>
-            <PermissionWrapper
-              permission={PERMISSION_IDS.APPROVE_DENY_TEMPLATE}
-              fallback={null}
-            >
-              <Button
-                variant="primary"
-                size="sm"
-                onClick={onOpenApproveModal}
-                className="d-flex align-items-center"
-                disabled={template?.status !== 'PENDING' || reviewing}
-              >
-                <CheckCircle className="me-2" size={16} />
-                Approve
-              </Button>
-            </PermissionWrapper>
-            <PermissionWrapper
-              permission={PERMISSION_IDS.APPROVE_DENY_TEMPLATE}
-              fallback={null}
-            >
-              <Button
-                variant="outline-secondary"
-                size="sm"
-                onClick={onOpenRejectModal}
-                className="d-flex align-items-center"
-                disabled={template?.status !== 'PENDING' || reviewing}
-                style={{
-                  backgroundColor: 'white',
-                  borderColor: '#dee2e6',
-                  color: '#333'
-                }}
-              >
-                <XCircle className="me-2" size={16} />
-                Reject
               </Button>
             </PermissionWrapper>
           </div>
