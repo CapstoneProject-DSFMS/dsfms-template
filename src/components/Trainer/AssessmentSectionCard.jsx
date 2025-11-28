@@ -30,16 +30,13 @@ const AssessmentSectionCard = ({ section, formatDate }) => {
 
   const getSectionStatusBadge = () => {
     if (section.canAssessed) {
-      return <Badge bg="primary">Ready</Badge>;
+      return <Badge bg="primary">Requires Assess</Badge>;
     }
-    if (section.canUpdated) {
-      return <Badge bg="warning">Pending Update</Badge>;
-    }
-    return <Badge bg="secondary">Locked</Badge>;
+    return <Badge bg="secondary">Assessed</Badge>;
   };
 
+  // Only check canAssessed for styling (change color), but still allow action
   const isDisabled = !section.canAssessed;
-  const showUpdate = !section.canAssessed && section.canUpdated;
 
   // Build dropdown items based on state
   const dropdownItems = [];
@@ -56,23 +53,12 @@ const AssessmentSectionCard = ({ section, formatDate }) => {
     }
   };
   
-  // Only show "Assess Section" if canAssessed is true
-  if (section.canAssessed) {
-    dropdownItems.push({
-      label: 'Assess Section',
-      icon: <ArrowClockwise size={14} />,
-      onClick: handleAssessSection
-    });
-  }
-
-  // Only show "Update Section" if canAssessed = false AND canUpdated = true
-  if (showUpdate) {
-    dropdownItems.push({
-      label: 'Update Section',
-      icon: <ArrowClockwise size={14} />,
-      onClick: handleUpdateSection
-    });
-  }
+  // Always show "Assess Section" action (regardless of canAssessed)
+  dropdownItems.push({
+    label: 'Assess Section',
+    icon: <ArrowClockwise size={14} />,
+    onClick: handleAssessSection
+  });
 
   return (
     <Card className={`assessment-section-card ${isDisabled ? 'disabled' : ''}`}>
@@ -108,7 +94,7 @@ const AssessmentSectionCard = ({ section, formatDate }) => {
                   align="end"
                   className="section-action-dropdown"
                   placement="bottom-end"
-                  disabled={isDisabled && !showUpdate}
+                  disabled={false}
                   trigger={{
                     variant: 'link',
                     className: 'btn btn-link p-0 text-primary-custom',
@@ -122,11 +108,8 @@ const AssessmentSectionCard = ({ section, formatDate }) => {
           </div>
 
           <div className="section-subtext">
-            <small className="text-muted">
-              Created: {formatDate(section.createdAt)}
-            </small>
             {section.assessedBy && (
-              <span className="ms-3 text-muted">
+              <span className="text-muted">
                 <small className="text-uppercase text-muted">Assessed By</small>{' '}
                 <span className="fw-semibold">{section.assessedBy?.id || '—'}</span>
               </span>

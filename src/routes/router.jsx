@@ -247,6 +247,19 @@ export const router = createBrowserRouter(
             </PermissionRoute>
           ),
         },
+        {
+          path: ':templateId',
+          element: (
+            <PermissionRoute
+              permission={PERMISSION_IDS.VIEW_TEMPLATE_DETAILS}
+              fallback={
+                <div className="p-4 text-center text-muted">You don't have permission to access template details.</div>
+              }
+            >
+              <TemplateDetailPage />
+            </PermissionRoute>
+          ),
+        },
       ],
     },
     {

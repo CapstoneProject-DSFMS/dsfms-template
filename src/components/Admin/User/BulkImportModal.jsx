@@ -475,13 +475,47 @@ const BulkImportModal = ({ show, onClose, onImport, loading = false }) => {
           raw: false
         });
 
-        if (jsonData.length < 2) {
-          setErrors(['File must contain at least a header row and one data row']);
+        // Filter out completely empty rows (rows where all cells are empty/null/undefined)
+        const nonEmptyRows = jsonData.filter(row => {
+          if (!row || row.length === 0) return false;
+          // Check if row has at least one non-empty cell
+          return row.some(cell => cell !== null && cell !== undefined && cell !== '' && String(cell).trim() !== '');
+        });
+
+        console.log('📊 File parsing results:', {
+          totalRowsParsed: jsonData.length,
+          nonEmptyRowsFound: nonEmptyRows.length,
+          firstRow: jsonData[0],
+          sampleRows: jsonData.slice(0, 3)
+        });
+
+        if (nonEmptyRows.length < 2) {
+          setErrors(['File must contain at least a header row and one data row. Please check if your file has empty rows or formatting issues.']);
+          console.error('❌ File validation failed:', {
+            totalRows: jsonData.length,
+            nonEmptyRows: nonEmptyRows.length,
+            firstFewRows: jsonData.slice(0, 3),
+            allRows: jsonData
+          });
           return;
         }
 
-        const headers = jsonData[0].map(h => h ? h.toString().trim().toLowerCase().replace(/\s+/g, '_') : '');
-        const dataRows = jsonData.slice(1);
+        const headers = nonEmptyRows[0].map(h => h ? h.toString().trim().toLowerCase().replace(/\s+/g, '_') : '');
+        const dataRows = nonEmptyRows.slice(1).filter(row => {
+          // Filter out data rows that are completely empty
+          return row.some(cell => cell !== null && cell !== undefined && cell !== '' && String(cell).trim() !== '');
+        });
+
+        // Check again after filtering data rows
+        if (dataRows.length === 0) {
+          setErrors(['File must contain at least one data row with content. Please check if your data rows are empty or have formatting issues.']);
+          console.error('No valid data rows found after filtering:', {
+            totalRows: jsonData.length,
+            nonEmptyRows: nonEmptyRows.length,
+            dataRowsAfterFilter: dataRows.length
+          });
+          return;
+        }
 
         // Map Excel headers to our field names
         const headerMapping = {

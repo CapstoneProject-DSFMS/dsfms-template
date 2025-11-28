@@ -11,7 +11,10 @@ const statusDisplayMap = {
   ON_GOING: { variant: 'info', text: 'On Going' },
   APPROVED: { variant: 'success', text: 'Approved' },
   COMPLETED: { variant: 'success', text: 'Completed' },
-  PENDING: { variant: 'warning', text: 'Pending' }
+  PENDING: { variant: 'warning', text: 'Pending' },
+  DRAFT: { variant: 'primary', text: 'Draft' },
+  SUBMITTED: { variant: 'dark', text: 'Submitted' },
+  CANCELLED: { variant: 'danger', text: 'Cancelled' }
 };
 
 const getStatusBadge = (status) => {
@@ -88,7 +91,9 @@ const AssessmentAssignmentsPage = () => {
   }
 
   const handleAssessTrainee = (record) => {
-    if (record.status !== 'ON_GOING') return;
+    // Exclude these statuses: NOT_STARTED, SUBMITTED, APPROVED, CANCELLED
+    const excludedStatuses = ['NOT_STARTED', 'SUBMITTED', 'APPROVED', 'CANCELLED'];
+    if (excludedStatuses.includes(record.status)) return;
     navigate(ROUTES.ASSESSMENTS_SECTIONS(record.id));
   };
 
@@ -137,6 +142,7 @@ const AssessmentAssignmentsPage = () => {
                     <th>Trainee</th>
                     <th>Date & Time</th>
                     <th>Status</th>
+                    <th>Score</th>
                     <th>Result</th>
                     <th>PDF</th>
                     <th className="text-center">Action</th>
@@ -159,7 +165,8 @@ const AssessmentAssignmentsPage = () => {
                           <small className="text-muted">{formatted.time}</small>
                         </td>
                         <td>{getStatusBadge(item.status)}</td>
-                        <td>{item.resultText || item.resultScore || '—'}</td>
+                        <td>{item.resultScore !== null && item.resultScore !== undefined ? item.resultScore : '—'}</td>
+                        <td>{item.resultText || '—'}</td>
                             <td>
                               {item.pdfUrl ? (
                                 <a href={item.pdfUrl} target="_blank" rel="noreferrer">
@@ -170,17 +177,21 @@ const AssessmentAssignmentsPage = () => {
                               )}
                             </td>
                             <td className="text-center">
-                              {item.status === 'ON_GOING' ? (
-                                <Button
-                                  size="sm"
-                                  variant="primary"
-                                  onClick={() => handleAssessTrainee(item)}
-                                >
-                                  Assess
-                                </Button>
-                              ) : (
-                                <span className="text-muted">—</span>
-                              )}
+                              {(() => {
+                                const excludedStatuses = ['NOT_STARTED', 'SUBMITTED', 'APPROVED', 'CANCELLED'];
+                                const canAssess = !excludedStatuses.includes(item.status);
+                                return canAssess ? (
+                                  <Button
+                                    size="sm"
+                                    variant="primary"
+                                    onClick={() => handleAssessTrainee(item)}
+                                  >
+                                    Assess
+                                  </Button>
+                                ) : (
+                                  <span className="text-muted">—</span>
+                                );
+                              })()}
                             </td>
                       </tr>
                     );
