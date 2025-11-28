@@ -89,6 +89,16 @@ const templateAPI = {
     }
   },
 
+  // Get template PDF config (for rendering PDF preview)
+  getTemplatePdfConfig: async (templateId) => {
+    try {
+      const response = await apiClient.get(`/templates/pdf-config/${templateId}`);
+      return response.data;
+    } catch (error) {
+      throw error;
+    }
+  },
+
   // Review template (approve or reject)
   reviewTemplate: async (templateId, reviewData) => {
     try {
