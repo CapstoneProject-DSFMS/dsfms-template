@@ -137,7 +137,7 @@ const EditDepartmentDetails = ({ department, onUpdate }) => {
                 <option value="">Select Department Head</option>
                 {Array.isArray(availableUsers) && availableUsers.map(user => (
                   <option key={user.id} value={user.id}>
-                    [{user.eid}] - {user.firstName} {user.lastName}
+                    [{user.eid}] - {user.lastName}{user.middleName ? ' ' + user.middleName : ''} {user.firstName}
                   </option>
                 ))}
               </select>

@@ -9,7 +9,11 @@
 }
 
 .assessment-review-requests-page {
-  background-color: #f8f9fa;
+  background-color: white !important;
+}
+
+.assessment-review-requests-page .container-fluid {
+  background-color: transparent !important;
 }
 
 /* Custom Tabs Container */

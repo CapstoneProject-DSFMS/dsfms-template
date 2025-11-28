@@ -70,7 +70,7 @@ const DepartmentInfo = ({ department }) => {
                 <span className="info-label">Head of Department:</span>
                 <span className="info-value">
                   {department.headUser ? 
-                    `${department.headUser.firstName} ${department.headUser.lastName}` : 
+                    `${department.headUser.lastName}${department.headUser.middleName ? ' ' + department.headUser.middleName : ''} ${department.headUser.firstName}`.trim() : 
                     'Not assigned'
                   }
                 </span>

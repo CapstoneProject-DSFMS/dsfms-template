@@ -8,7 +8,7 @@ const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'https://dsfms.id.vn';
 // Create axios instance with default config
 const apiClient = axios.create({
   baseURL: API_BASE_URL,
-  timeout: 10000,
+  timeout: 20000, // Increased timeout to 20 seconds
   headers: {
     'Content-Type': 'application/json',
   },
@@ -17,7 +17,7 @@ const apiClient = axios.create({
 // Create public API client (no authentication required)
 const publicApiClient = axios.create({
   baseURL: API_BASE_URL,
-  timeout: 10000,
+  timeout: 20000, // Increased timeout to 20 seconds
   headers: {
     'Content-Type': 'application/json',
   },

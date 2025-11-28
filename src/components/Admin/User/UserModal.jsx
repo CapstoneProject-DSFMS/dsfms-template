@@ -212,7 +212,7 @@ const UserModal = ({ show, user, mode, onSave, onClose }) => {
         });
         
         if (existingHead) {
-          const headName = `${existingHead.headUser?.firstName || ''} ${existingHead.headUser?.lastName || ''}`.trim();
+          const headName = `${existingHead.headUser?.lastName || ''}${existingHead.headUser?.middleName ? ' ' + existingHead.headUser.middleName : ''} ${existingHead.headUser?.firstName || ''}`.trim();
           newErrors.department = `Department "${formData.department}" already has a head: ${headName}`;
         }
       }
@@ -341,7 +341,7 @@ const UserModal = ({ show, user, mode, onSave, onClose }) => {
             });
             
             if (existingHead) {
-              const headName = `${existingHead.headUser?.firstName || ''} ${existingHead.headUser?.lastName || ''}`.trim();
+              const headName = `${existingHead.headUser?.lastName || ''}${existingHead.headUser?.middleName ? ' ' + existingHead.headUser.middleName : ''} ${existingHead.headUser?.firstName || ''}`.trim();
               newErrors.department = `Department "${value}" already has a head: ${headName}`;
             }
           }

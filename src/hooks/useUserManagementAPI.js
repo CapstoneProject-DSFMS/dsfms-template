@@ -560,18 +560,9 @@ export const useUserManagementAPI = () => {
         toast.success(successMessage);
       }
       
-      if (failedList.length > 0) {
-        const failedMessages = failedList.map(failure => 
-          `User ${failure.index + 1}: ${failure.error}`
-        );
-        const failedMessage = summary?.failed
-          ? `Failed to import ${summary.failed} user(s): ${failedMessages.join(', ')}`
-          : `Failed to import ${failedList.length} user(s): ${failedMessages.join(', ')}`;
-        toast.error(failedMessage);
-      }
-      
       // Refresh users list (departments will be fetched separately if needed)
-      const usersResponse = await userAPI.getUsers();
+      console.log('Refreshing user list after bulk import...');
+      const usersResponse = await userAPI.getUsers({ _t: new Date().getTime() });
       
       // Handle different response formats - ensure data is an array
       let usersArray = [];
