@@ -452,7 +452,7 @@ const EnrollTraineesPage = () => {
 
           {/* Panel 2: Trainee Selection */}
           <Col lg={6}>
-            <div style={{ height: '500px', position: 'relative', zIndex: 1, overflow: 'visible', marginBottom: '2rem' }}>
+            <div style={{ height: '500px', position: 'relative', zIndex: 1, overflow: 'hidden', marginBottom: '2rem' }}>
               <TraineeSelectionPanel 
                 selectedTrainees={selectedTrainees}
                 onSelectionChange={setSelectedTrainees}

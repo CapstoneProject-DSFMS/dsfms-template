@@ -4,6 +4,7 @@ import { Search, Plus, X, ChevronDown, People, CheckCircle } from 'react-bootstr
 import { PermissionWrapper } from '../Common';
 import { PERMISSION_IDS } from '../../constants/permissionIds';
 import traineeAPI from '../../api/trainee';
+import './TraineeSelectionPanel.css';  // ← ADD CUSTOM CSS
 
 const TraineeSelectionPanel = ({ selectedTrainees, onSelectionChange }) => {
   const [searchTerm, setSearchTerm] = useState('');
@@ -119,16 +120,16 @@ const TraineeSelectionPanel = ({ selectedTrainees, onSelectionChange }) => {
   
 
   return (
-    <Card className="d-flex flex-column h-100" style={{ border: '1px solid #e9ecef', boxShadow: '0 4px 12px rgba(0,0,0,0.15)', overflow: 'hidden', marginBottom: '2rem' }}>
-      <Card.Header className="bg-gradient-primary-custom text-white border-0">
+    <Card className="trainee-selection-card">
+      <Card.Header className="bg-gradient-primary-custom text-white border-0 trainee-card-header">
         <div className="d-flex justify-content-between align-items-center">
           <h6 className="mb-0 text-white">Add Trainees</h6>
         </div>
       </Card.Header>
-      <Card.Body className="p-0 d-flex flex-column" style={{ height: '500px' }}>
+      <Card.Body className="trainee-card-body p-0">
 
         {/* Available Trainees - Top Section */}
-        <div className="flex-shrink-0" style={{ position: 'relative', paddingBottom: '1rem' }} ref={dropdownRef}>
+        <div className="trainee-available-section" ref={dropdownRef}>
           {/* Search Bar */}
           <div className="p-2 border-bottom">
             <Form.Control
@@ -230,17 +231,18 @@ const TraineeSelectionPanel = ({ selectedTrainees, onSelectionChange }) => {
         </div>
 
         {/* Selected Trainees - Main Focus at Bottom */}
-        <div className="border-top flex-grow-1 d-flex flex-column" style={{ minHeight: 0, marginTop: '1rem' }}>
-          <div className="p-2 bg-gradient-primary-custom text-white border-bottom">
+        <div className="trainee-selected-section">
+          <div className="trainee-selected-header">
             <small className="text-white fw-semibold">Selected Trainees ({selectedTrainees.length})</small>
           </div>
-          <div style={{ overflowY: 'auto', flex: 1, minHeight: 0 }}>
+          <div className="trainee-selected-list">
             {selectedTrainees.length === 0 ? (
               <div className="p-3 text-center text-muted">
                 <p className="mb-0">No trainees selected</p>
               </div>
             ) : (
-              selectedTrainees.map(trainee => {
+              <div style={{ display: 'flex', flexDirection: 'column', width: '100%' }}>
+                {selectedTrainees.map(trainee => {
                 const isJustAdded = justAddedTraineeId === trainee.id;
                 return (
                   <div 
@@ -250,7 +252,8 @@ const TraineeSelectionPanel = ({ selectedTrainees, onSelectionChange }) => {
                       minWidth: 0,
                       backgroundColor: isJustAdded ? 'rgba(40, 167, 69, 0.1)' : 'transparent',
                       animation: isJustAdded ? 'slideInRight 0.5s ease-out, highlightPulse 0.5s ease-out' : 'none',
-                      transition: 'background-color 0.3s ease'
+                      transition: 'background-color 0.3s ease',
+                      flexShrink: 0
                     }}
                   >
                     <div style={{ minWidth: 0, overflow: 'hidden', flex: 1 }}>
@@ -267,7 +270,8 @@ const TraineeSelectionPanel = ({ selectedTrainees, onSelectionChange }) => {
                     </Button>
                   </div>
                 );
-              })
+              })}
+              </div>
             )}
           </div>
         </div>

@@ -1057,38 +1057,39 @@ const CustomFieldsPanel = ({
       const finalScoreTestFields = allFields.filter(f => f.fieldType === 'FINAL_SCORE_TEST');
       const hasFinalScoreNum = finalScoreNumFields.length > 0;
       const hasFinalScoreText = finalScoreTextFields.length > 0;
-      const hasBoth = hasFinalScoreNum && hasFinalScoreText;
+      // const hasBoth = hasFinalScoreNum && hasFinalScoreText;
 
-      for (const testField of finalScoreTestFields) {
-        // If both FINAL_SCORE_NUM and FINAL_SCORE_TEXT exist, options are not required
-        if (hasBoth) {
-          // Options not required - skip validation
-          continue;
-        }
+      // TODO: Uncomment this validation when FINAL_SCORE_TEXT options UI is implemented
+      // for (const testField of finalScoreTestFields) {
+      //   // If both FINAL_SCORE_NUM and FINAL_SCORE_TEXT exist, options are not required
+      //   if (hasBoth) {
+      //     // Options not required - skip validation
+      //     continue;
+      //   }
 
-        // If only FINAL_SCORE_TEXT exists (no FINAL_SCORE_NUM), options are required
-        if (hasFinalScoreText && !hasFinalScoreNum) {
-          if (!testField.option || !testField.option.trim()) {
-            toast.error(`FINAL_SCORE_TEST field "${testField.label || testField.fieldName || testField.name}" requires options when only FINAL_SCORE_TEXT exists. Please provide options in JSON format: {"items": ["value1", "value2", ...]}`);
-            setIsSubmitting(false);
-            return;
-          }
+      //   // If only FINAL_SCORE_TEXT exists (no FINAL_SCORE_NUM), options are required
+      //   if (hasFinalScoreText && !hasFinalScoreNum) {
+      //     if (!testField.option || !testField.option.trim()) {
+      //       toast.error(`FINAL_SCORE_TEST field "${testField.label || testField.fieldName || testField.name}" requires options when only FINAL_SCORE_TEXT exists. Please provide options in JSON format: {"items": ["value1", "value2", ...]}`);
+      //       setIsSubmitting(false);
+      //       return;
+      //     }
 
-          // Validate options format
-          try {
-            const parsed = JSON.parse(testField.option);
-            if (!parsed.items || !Array.isArray(parsed.items) || parsed.items.length === 0) {
-              toast.error(`FINAL_SCORE_TEST field "${testField.label || testField.fieldName || testField.name}" options must be a JSON object with a non-empty "items" array. Example: {"items": ["value1", "value2"]}`);
-              setIsSubmitting(false);
-              return;
-            }
-          } catch {
-            toast.error(`FINAL_SCORE_TEST field "${testField.label || testField.fieldName || testField.name}" has invalid JSON format for options. Example: {"items": ["value1", "value2"]}`);
-            setIsSubmitting(false);
-            return;
-          }
-        }
-      }
+      //     // Validate options format
+      //     try {
+      //       const parsed = JSON.parse(testField.option);
+      //       if (!parsed.items || !Array.isArray(parsed.items) || parsed.items.length === 0) {
+      //         toast.error(`FINAL_SCORE_TEST field "${testField.label || testField.fieldName || testField.name}" options must be a JSON object with a non-empty "items" array. Example: {"items": ["value1", "value2"]}`);
+      //         setIsSubmitting(false);
+      //         return;
+      //       }
+      //     } catch {
+      //       toast.error(`FINAL_SCORE_TEST field "${testField.label || testField.fieldName || testField.name}" has invalid JSON format for options. Example: {"items": ["value1", "value2"]}`);
+      //       setIsSubmitting(false);
+      //       return;
+      //     }
+      //   }
+      // }
       
       // Check if this is a create version flow (has originalTemplateId) or update draft (has currentTemplateId)
       const originalTemplateId = meta.originalTemplateId;

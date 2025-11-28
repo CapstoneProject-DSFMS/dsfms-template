@@ -111,8 +111,8 @@ const CreateAssessmentEventForm = ({ onSuccess }) => {
           coursesData = response.data.courses;
         }
         
-        // Filter active and planned courses
-        const filteredCourses = coursesData.filter(c => c.status === 'ON_GOING' || c.status === 'PLANNED');
+        // Filter courses with status PLANNED, ON_GOING, or FINISHED
+        const filteredCourses = coursesData.filter(c => c.status === 'PLANNED' || c.status === 'ON_GOING' || c.status === 'FINISHED');
         setCourses(filteredCourses);
         
         // Extract subjects from courses (if each course has subjects array)
@@ -135,8 +135,8 @@ const CreateAssessmentEventForm = ({ onSuccess }) => {
           index === self.findIndex(s => s.id === subject.id)
         );
         
-        // Filter active, ongoing, and planned subjects
-        const filteredSubjects = uniqueSubjects.filter(s => s.status === 'ON_GOING' || s.status === 'ACTIVE' || s.status === 'PLANNED');
+        // Filter subjects with status PLANNED, ON_GOING, or FINISHED
+        const filteredSubjects = uniqueSubjects.filter(s => s.status === 'PLANNED' || s.status === 'ON_GOING' || s.status === 'FINISHED');
         setSubjects(filteredSubjects);
         
         // Reset course and subject selection when department changes
