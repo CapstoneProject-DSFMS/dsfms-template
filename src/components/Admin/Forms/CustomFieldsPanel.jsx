@@ -1028,19 +1028,27 @@ const CustomFieldsPanel = ({
       
       console.log('📤 Submitting template to backend...');
       
-      // Validate FINAL_SCORE_TEXT and FINAL_SCORE_NUM (must have exactly 1 of each)
+      // Validate FINAL_SCORE_TEXT and FINAL_SCORE_NUM
       const allFields = sections.flatMap(s => s.fields || []);
       const finalScoreTextFields = allFields.filter(f => f.fieldType === 'FINAL_SCORE_TEXT');
       const finalScoreNumFields = allFields.filter(f => f.fieldType === 'FINAL_SCORE_NUM');
       
-      if (finalScoreTextFields.length !== 1) {
-        toast.error(`Template must have exactly 1 FINAL_SCORE_TEXT field. Found: ${finalScoreTextFields.length}`);
+      // Must have at least 1 of either field
+      if (finalScoreTextFields.length === 0 && finalScoreNumFields.length === 0) {
+        toast.error('Template must have at least 1 FINAL_SCORE_TEXT or FINAL_SCORE_NUM field (or both)');
         setIsSubmitting(false);
         return;
       }
       
-      if (finalScoreNumFields.length !== 1) {
-        toast.error(`Template must have exactly 1 FINAL_SCORE_NUM field. Found: ${finalScoreNumFields.length}`);
+      // Cannot have more than 1 of each type
+      if (finalScoreTextFields.length > 1) {
+        toast.error(`Template must have at most 1 FINAL_SCORE_TEXT field. Found: ${finalScoreTextFields.length}`);
+        setIsSubmitting(false);
+        return;
+      }
+      
+      if (finalScoreNumFields.length > 1) {
+        toast.error(`Template must have at most 1 FINAL_SCORE_NUM field. Found: ${finalScoreNumFields.length}`);
         setIsSubmitting(false);
         return;
       }

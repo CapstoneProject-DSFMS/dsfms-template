@@ -340,6 +340,11 @@ const Header = ({ onToggleSidebar }) => {
       return 'Report Details';
     }
     
+    // Check for template detail pages (pattern: /templates/:templateId)
+    if (path.match(/^\/templates\/[^/]+$/) && path !== '/templates' && !path.startsWith('/templates/editor') && !path.startsWith('/templates/drafts')) {
+      return 'Template Detail';
+    }
+    
     // Check for SQA template detail pages (pattern: /sqa/templates/:templateId)
     if (path.startsWith('/sqa/templates/') && path !== '/sqa/templates') {
       return 'Template Detail';

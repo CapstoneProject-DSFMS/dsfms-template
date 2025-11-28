@@ -322,12 +322,6 @@ const UpcomingAssessmentsList = () => {
                 <SortableHeader columnKey="status" className="show-mobile">
                   Status
                 </SortableHeader>
-                <SortableHeader columnKey="resultScore" className="show-mobile">
-                  Score
-                </SortableHeader>
-                <SortableHeader columnKey="resultText" className="show-mobile">
-                  Result
-                </SortableHeader>
                 <th className="border-neutral-200 text-primary-custom fw-semibold text-center show-mobile">
                   Actions
                 </th>
@@ -336,7 +330,7 @@ const UpcomingAssessmentsList = () => {
             <tbody>
               {sortedData.length === 0 ? (
                 <tr>
-                  <td colSpan={8} className="text-center py-4 text-muted">
+                  <td colSpan={6} className="text-center py-4 text-muted">
                     <div>
                       <h6 className="mb-1">No upcoming assessments found</h6>
                       <small>Try adjusting your search criteria or schedule a new assessment.</small>
@@ -406,12 +400,6 @@ const UpcomingAssessmentsList = () => {
                     </td>
                     <td className="border-neutral-200 align-middle">
                       {getStatusBadge(assessment.status)}
-                    </td>
-                    <td className="border-neutral-200 align-middle">
-                      {assessment.resultScore !== null ? assessment.resultScore : '-'}
-                    </td>
-                    <td className="border-neutral-200 align-middle">
-                      {assessment.resultText || '-'}
                     </td>
                     <td className="border-neutral-200 align-middle text-center">
                       {!excludedStatusesForAssessButton.has(assessment.status) && (

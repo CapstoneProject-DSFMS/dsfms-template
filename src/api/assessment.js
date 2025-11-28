@@ -192,7 +192,7 @@ const assessmentAPI = {
    */
   updateSectionValues: async (data) => {
     try {
-      const response = await apiClient.patch('/assessments/sections/update-values', data);
+      const response = await apiClient.put('/assessments/sections/update-values', data);
       return response.data;
     } catch (error) {
       console.error('Error updating section values:', error);
