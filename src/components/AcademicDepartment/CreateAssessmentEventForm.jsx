@@ -135,8 +135,8 @@ const CreateAssessmentEventForm = ({ onSuccess }) => {
           index === self.findIndex(s => s.id === subject.id)
         );
         
-        // Filter active and ongoing subjects
-        const filteredSubjects = uniqueSubjects.filter(s => s.status === 'ON_GOING' || s.status === 'ACTIVE');
+        // Filter active, ongoing, and planned subjects
+        const filteredSubjects = uniqueSubjects.filter(s => s.status === 'ON_GOING' || s.status === 'ACTIVE' || s.status === 'PLANNED');
         setSubjects(filteredSubjects);
         
         // Reset course and subject selection when department changes

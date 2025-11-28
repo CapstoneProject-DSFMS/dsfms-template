@@ -437,12 +437,21 @@ const AssessmentSectionFieldsPage = () => {
         answerValue = String(answerValue);
       }
 
-      // When toggle is FALSE, set all fields to null (fields are disabled)
-      // When toggle is TRUE, keep the values as they are (fields are enabled)
-      if (!state.sectionControlToggleValue) {
-        if (fieldType === 'TOGGLE') {
+      // Handle TOGGLE fields specially
+      if (fieldType === 'TOGGLE') {
+        // When toggle is FALSE, set TOGGLE field to 'false' (section is disabled)
+        // When toggle is TRUE, keep the value as-is or default to 'false'
+        if (!state.sectionControlToggleValue) {
           answerValue = 'false';
         } else {
+          // Section is enabled, use current value or default to 'false'
+          answerValue = answerValue || 'false';
+        }
+      } else {
+        // For non-TOGGLE fields
+        // When toggle is FALSE, set all other fields to null (fields are disabled)
+        // When toggle is TRUE, keep the values as they are (fields are enabled)
+        if (!state.sectionControlToggleValue) {
           answerValue = null;
         }
       }
