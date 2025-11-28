@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
-import { Container, Card, Nav, Tab, Table, Badge, Spinner, Alert, Button } from 'react-bootstrap';
+import { Container, Card, Nav, Tab, Table, Badge, Spinner, Alert, Button, Form } from 'react-bootstrap';
 import { Pen, Book, FileText, ExclamationTriangle } from 'react-bootstrap-icons';
 import { useAuth } from '../../hooks/useAuth';
 import { toast } from 'react-toastify';
@@ -52,6 +52,8 @@ const TraineeSignatureRequiredList = ({ traineeId }) => {
 
       // Fetch assessments for all courses or subjects based on active tab
       const allAssessments = [];
+      // Filter for SIGNATURE_PENDING and READY_TO_SUBMIT statuses
+      const allowedStatuses = ['SIGNATURE_PENDING', 'READY_TO_SUBMIT'];
 
       if (activeTab === 'course') {
         // Fetch assessments for all courses
@@ -62,9 +64,9 @@ const TraineeSignatureRequiredList = ({ traineeId }) => {
               const assessmentResponse = await assessmentAPI.getCourseAssessments(course.id);
               const courseAssessments = assessmentResponse?.assessments || [];
               
-              // Filter only SIGNATURE_PENDING assessments and add course info
+              // Filter SIGNATURE_PENDING and READY_TO_SUBMIT assessments and add course info
               courseAssessments
-                .filter(assessment => assessment.status === 'SIGNATURE_PENDING')
+                .filter(assessment => allowedStatuses.includes(assessment.status))
                 .forEach(assessment => {
                   allAssessments.push({
                     ...assessment,
@@ -88,9 +90,9 @@ const TraineeSignatureRequiredList = ({ traineeId }) => {
                 const assessmentResponse = await assessmentAPI.getSubjectAssessments(subject.id);
                 const subjectAssessments = assessmentResponse?.assessments || [];
                 
-                // Filter only SIGNATURE_PENDING assessments and add course info
+                // Filter SIGNATURE_PENDING and READY_TO_SUBMIT assessments and add course info
                 subjectAssessments
-                  .filter(assessment => assessment.status === 'SIGNATURE_PENDING')
+                  .filter(assessment => allowedStatuses.includes(assessment.status))
                   .forEach(assessment => {
                     const courseId = assessment.courseId || item.course?.id;
                     allAssessments.push({
@@ -153,17 +155,20 @@ const TraineeSignatureRequiredList = ({ traineeId }) => {
 
     try {
       setSigningAssessmentId(assessmentId);
-      await assessmentAPI.confirmParticipation(assessmentId);
+      const response = await assessmentAPI.confirmParticipation(assessmentId);
       
-      toast.success('Participation confirmed successfully');
+      // Get message from response
+      const successMessage = response?.data?.message || response?.message || 'Participation confirmed successfully';
+      toast.success(successMessage);
       
-      // Remove the signed assessment from the list
-      setAssessments(prev => prev.filter(assessment => assessment.id !== assessmentId));
+      // Auto-refresh the page after 1.5 seconds
+      setTimeout(() => {
+        window.location.reload();
+      }, 1500);
     } catch (err) {
       console.error('Error confirming participation:', err);
       const errorMessage = err.response?.data?.message || err.message || 'Failed to confirm participation';
       toast.error(errorMessage);
-    } finally {
       setSigningAssessmentId(null);
     }
   };
@@ -261,21 +266,21 @@ const TraineeSignatureRequiredList = ({ traineeId }) => {
                       </th>
                       <th className="border-neutral-200 text-primary-custom fw-semibold">
                         <SortableHeader 
-                          title="Status" 
-                          sortKey="status" 
-                          sortConfig={sortConfig} 
-                          onSort={handleSort} 
-                        />
-                      </th>
-                      <th className="border-neutral-200 text-primary-custom fw-semibold">
-                        <SortableHeader 
                           title="Course Name" 
                           sortKey="courseName" 
                           sortConfig={sortConfig} 
                           onSort={handleSort} 
                         />
                       </th>
-                      <th className="border-neutral-200 text-primary-custom fw-semibold text-center">Actions</th>
+                      <th className="border-neutral-200 text-primary-custom fw-semibold">
+                        <SortableHeader 
+                          title="Date" 
+                          sortKey="occuranceDate" 
+                          sortConfig={sortConfig} 
+                          onSort={handleSort} 
+                        />
+                      </th>
+                      <th className="border-neutral-200 text-primary-custom fw-semibold text-center">Sign</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -297,27 +302,27 @@ const TraineeSignatureRequiredList = ({ traineeId }) => {
                           <div className="fw-medium text-dark">{assessment.name}</div>
                         </td>
                         <td className="border-neutral-200 align-middle">
-                          {getStatusBadge(assessment.status)}
-                        </td>
-                        <td className="border-neutral-200 align-middle">
                           <div className="fw-medium text-dark">{assessment.courseName}</div>
                         </td>
+                        <td className="border-neutral-200 align-middle">
+                          <div className="text-dark">
+                            {assessment.occuranceDate ? new Date(assessment.occuranceDate).toLocaleDateString('en-US', { year: 'numeric', month: '2-digit', day: '2-digit' }) : '-'}
+                          </div>
+                        </td>
                         <td className="border-neutral-200 align-middle text-center">
-                          <Button
-                            variant="primary"
-                            size="sm"
-                            onClick={() => handleSign(assessment.id)}
-                            disabled={signingAssessmentId === assessment.id}
-                          >
-                            {signingAssessmentId === assessment.id ? (
-                              <>
-                                <Spinner animation="border" size="sm" className="me-2" />
-                                Signing...
-                              </>
-                            ) : (
-                              'Sign'
-                            )}
-                          </Button>
+                          <Form.Check
+                            type="checkbox"
+                            checked={assessment.status === 'READY_TO_SUBMIT' || signingAssessmentId === assessment.id}
+                            disabled={assessment.status === 'READY_TO_SUBMIT' || signingAssessmentId === assessment.id}
+                            onChange={() => {
+                              if (assessment.status === 'SIGNATURE_PENDING') {
+                                handleSign(assessment.id);
+                              }
+                            }}
+                            style={{
+                              cursor: assessment.status === 'SIGNATURE_PENDING' ? 'pointer' : 'not-allowed'
+                            }}
+                          />
                         </td>
                       </tr>
                     ))}

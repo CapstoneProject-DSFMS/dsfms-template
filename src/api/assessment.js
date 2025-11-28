@@ -217,6 +217,57 @@ const assessmentAPI = {
       throw error;
     }
   },
+
+  /**
+   * Submit an assessment
+   * @param {string} assessmentId - Assessment ID
+   * @returns {Promise} Submit response
+   */
+  submitAssessment: async (assessmentId) => {
+    try {
+      const response = await apiClient.post(`/assessments/${assessmentId}/submit`);
+      return response.data;
+    } catch (error) {
+      console.error('Error submitting assessment:', error);
+      throw error;
+    }
+  },
+
+  /**
+   * Get assessments by department
+   * @param {Object} params - Query parameters (page, limit, etc.)
+   * @returns {Promise} Department assessments response
+   */
+  getDepartmentAssessments: async (params = {}) => {
+    try {
+      const response = await apiClient.get('/assessments/department', { params });
+      return response.data;
+    } catch (error) {
+      console.error('Error fetching department assessments:', error);
+      throw error;
+    }
+  },
+
+  /**
+   * Approve or reject an assessment
+   * @param {string} assessmentId - Assessment ID
+   * @param {string} action - 'APPROVED' or 'REJECTED'
+   * @param {string} comment - Optional comment (required for REJECTED)
+   * @returns {Promise} Approve/reject response
+   */
+  approveRejectAssessment: async (assessmentId, action, comment = '') => {
+    try {
+      const body = { action };
+      if (action === 'REJECTED' && comment) {
+        body.comment = comment;
+      }
+      const response = await apiClient.put(`/assessments/${assessmentId}/approve-reject`, body);
+      return response.data;
+    } catch (error) {
+      console.error('Error approving/rejecting assessment:', error);
+      throw error;
+    }
+  },
 };
 
 export default assessmentAPI;

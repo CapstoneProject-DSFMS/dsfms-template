@@ -206,7 +206,7 @@ const DepartmentModal = ({ show, department, mode, onSave, onClose, availableUse
                   <option value="">Select department head</option>
                   {availableUsers.map(user => (
                     <option key={user.id} value={user.id}>
-                      {user.firstName} {user.lastName} ({user.eid})
+                      {user.lastName}{user.middleName ? ' ' + user.middleName : ''} {user.firstName} ({user.eid})
                     </option>
                   ))}
                 </Form.Select>

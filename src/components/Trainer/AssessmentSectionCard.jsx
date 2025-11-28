@@ -11,7 +11,7 @@ import { useNavigate } from 'react-router-dom';
 import { ROUTES } from '../../constants/routes';
 import { PortalUnifiedDropdown } from '../Common';
 
-const AssessmentSectionCard = ({ section, formatDate }) => {
+const AssessmentSectionCard = ({ section }) => {
   const navigate = useNavigate();
   
   if (!section) return null;
@@ -47,12 +47,6 @@ const AssessmentSectionCard = ({ section, formatDate }) => {
     }
   };
 
-  const handleUpdateSection = () => {
-    if (section.id) {
-      navigate(ROUTES.ASSESSMENTS_SECTION_FIELDS(section.id));
-    }
-  };
-  
   // Always show "Assess Section" action (regardless of canAssessed)
   dropdownItems.push({
     label: 'Assess Section',
@@ -77,14 +71,18 @@ const AssessmentSectionCard = ({ section, formatDate }) => {
                 <small className="text-uppercase text-muted">Edit By</small>
                 <span className="fw-semibold">{section.templateSection?.editBy || '—'}</span>
               </div>
-              <div className="flag-item">
-                <small className="text-uppercase text-muted">Submittable</small>
-                {getBooleanIcon(section.templateSection?.isSubmittable)}
-              </div>
-              <div className="flag-item">
-                <small className="text-uppercase text-muted">Toggle Dependent</small>
-                {getBooleanIcon(section.templateSection?.isToggleDependent)}
-              </div>
+              {section.templateSection?.editBy !== 'TRAINEE' && (
+                <>
+                  <div className="flag-item">
+                    <small className="text-uppercase text-muted">Submittable</small>
+                    {getBooleanIcon(section.templateSection?.isSubmittable)}
+                  </div>
+                  <div className="flag-item">
+                    <small className="text-uppercase text-muted">Toggle Dependent</small>
+                    {getBooleanIcon(section.templateSection?.isToggleDependent)}
+                  </div>
+                </>
+              )}
             </div>
 
             <div className="section-actions">
@@ -123,8 +121,7 @@ const AssessmentSectionCard = ({ section, formatDate }) => {
 };
 
 AssessmentSectionCard.propTypes = {
-  section: PropTypes.object.isRequired,
-  formatDate: PropTypes.func.isRequired
+  section: PropTypes.object.isRequired
 };
 
 export default AssessmentSectionCard;
