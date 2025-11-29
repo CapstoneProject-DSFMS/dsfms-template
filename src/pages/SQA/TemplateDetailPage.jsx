@@ -26,7 +26,6 @@ const TemplateDetailPage = () => {
   const [showRejectModal, setShowRejectModal] = useState(false);
   const [rejectComment, setRejectComment] = useState('');
   const [reviewing, setReviewing] = useState(false);
-  const [exportingPDF, setExportingPDF] = useState(false);
 
   const loadTemplateDetail = useCallback(async () => {
     if (!templateId) {
@@ -95,84 +94,61 @@ const TemplateDetailPage = () => {
     loadTemplateDetail();
   }, [loadTemplateDetail]);
 
-  // Load PDF when preview tab is active
+  // Load PDF when tab changes to preview
   useEffect(() => {
-    const loadPDF = async () => {
-      if (activeTab === 'preview' && template?.formId && template?.templateContent) {
+    if (activeTab === 'preview' && template?.id && !pdfUrl) {
+      const loadPreviewPDF = async () => {
+        if (!template?.id) {
+          toast.warning('Template ID is not available');
+          return;
+        }
+
         try {
           setLoadingPDF(true);
-          const pdfBlob = await templateAPI.getTemplatePDF(template.formId);
-          const url = URL.createObjectURL(pdfBlob);
-          setPdfUrl(url);
+          const templateId = template.id;
+          
+          console.log('Loading PDF config with ID:', templateId);
+          
+          // Get PDF blob from API
+          const pdfBlob = await templateAPI.getTemplatePdfConfig(templateId);
+          
+          console.log('PDF Blob received:', pdfBlob);
+          console.log('PDF Blob type:', pdfBlob.type);
+          console.log('PDF Blob size:', pdfBlob.size);
+          
+          // Create object URL from blob (this is required for iframe to display PDF)
+          const pdfObjectUrl = URL.createObjectURL(pdfBlob);
+          console.log('Created object URL:', pdfObjectUrl);
+          
+          setPdfUrl(pdfObjectUrl);
         } catch (error) {
-          console.error('Error loading PDF:', error);
-          setPdfUrl(null);
+          console.error('Error loading PDF preview:', error);
           toast.error('Failed to load PDF preview');
         } finally {
           setLoadingPDF(false);
         }
-      } else {
-        // Clean up PDF URL when tab changes
-        setPdfUrl(prevUrl => {
-          if (prevUrl) {
-            URL.revokeObjectURL(prevUrl);
-          }
-          return null;
-        });
+      };
+
+      loadPreviewPDF();
+    }
+  }, [activeTab, template?.id, pdfUrl]);
+
+  // Clean up PDF URL when component unmounts
+  useEffect(() => {
+    return () => {
+      if (pdfUrl) {
+        URL.revokeObjectURL(pdfUrl);
       }
     };
-
-    loadPDF();
-
-    // Cleanup function
-    return () => {
-      setPdfUrl(prevUrl => {
-        if (prevUrl) {
-          URL.revokeObjectURL(prevUrl);
-        }
-        return null;
-      });
-    };
-  }, [activeTab, template?.formId, template?.templateContent]);
+  }, [pdfUrl]);
 
 
   const handleExportPDF = async () => {
-    if (!template?.formId && !template?.id) {
-      toast.warning('Template ID is not available');
+    if (!template?.templateConfig) {
+      toast.warning('Template config is not available');
       return;
     }
-
-    try {
-      setExportingPDF(true);
-      const templateFormId = template.formId || template.id;
-      
-      // Call API to get PDF blob - this takes time because:
-      // 1. Network request to server (network latency)
-      // 2. Server needs to process/generate the PDF (server processing time)
-      // 3. Download the PDF blob from server (file size dependent)
-      const pdfBlob = await templateAPI.getTemplatePDF(templateFormId);
-      
-      // Create download link
-      const url = URL.createObjectURL(pdfBlob);
-      const link = document.createElement('a');
-      link.href = url;
-      
-      // Use template name for filename
-      const fileName = `${template.name || 'template'}.pdf`;
-      link.download = fileName;
-      
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
-      
-      // Clean up
-      URL.revokeObjectURL(url);
-    } catch (error) {
-      console.error('Error downloading PDF:', error);
-      toast.error(error.response?.data?.message || 'Failed to download template PDF');
-    } finally {
-      setExportingPDF(false);
-    }
+    window.open(template.templateConfig, '_blank', 'noopener,noreferrer');
   };
 
   const handleBackToList = () => {
@@ -357,19 +333,10 @@ const TemplateDetailPage = () => {
                   size="sm"
                   onClick={handleExportPDF}
                   className="d-flex align-items-center"
-                  disabled={exportingPDF}
+                  disabled={!template?.templateConfig}
                 >
-                  {exportingPDF ? (
-                    <>
-                      <span className="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
-                      Exporting...
-                    </>
-                  ) : (
-                    <>
-                      <FileEarmarkPdf className="me-1" size={16} />
-                      Export PDF
-                    </>
-                  )}
+                  <FileEarmarkPdf className="me-1" size={16} />
+                  Download PDF
                 </Button>
               </PermissionWrapper>
             </div>
