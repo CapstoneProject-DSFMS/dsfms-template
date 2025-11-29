@@ -1,11 +1,9 @@
-import React, { useState, useEffect } from 'react';
+import React from 'react';
 import { Row, Col, Button, Alert, Spinner } from 'react-bootstrap';
 import { Download, FileEarmarkPdf } from 'react-bootstrap-icons';
 import TemplateConfigSchema from './TemplateConfigSchema';
 import { PERMISSION_IDS } from '../../constants/permissionIds';
 import { PermissionWrapper } from '../Common';
-import templateAPI from '../../api/template';
-import { toast } from 'react-toastify';
 
 const PreviewTab = ({
   template,
@@ -13,35 +11,6 @@ const PreviewTab = ({
   loadingPDF,
   onViewTemplateConfig
 }) => {
-  const [pdfConfigUrl, setPdfConfigUrl] = useState(null);
-  const [loadingPdfConfig, setLoadingPdfConfig] = useState(false);
-
-  // Load PDF config from /templates/pdf-config/{templateId} endpoint
-  useEffect(() => {
-    const loadPdfConfig = async () => {
-      if (template?.id || template?.formId) {
-        try {
-          setLoadingPdfConfig(true);
-          const templateId = template.id || template.formId;
-          const response = await templateAPI.getTemplatePdfConfig(templateId);
-          
-          // Extract PDF URL from response
-          if (response?.data?.pdfUrl) {
-            setPdfConfigUrl(response.data.pdfUrl);
-          } else if (response?.pdfUrl) {
-            setPdfConfigUrl(response.pdfUrl);
-          }
-        } catch (error) {
-          console.error('Error loading PDF config:', error);
-          toast.warning('Could not load PDF configuration');
-        } finally {
-          setLoadingPdfConfig(false);
-        }
-      }
-    };
-
-    loadPdfConfig();
-  }, [template?.id, template?.formId]);
   return (
     <div className="p-4">
       <Row>
@@ -72,17 +41,17 @@ const PreviewTab = ({
           <div className="mb-2">
             <h6 className="mb-0" style={{ color: '#333', fontWeight: 500 }}>PDF Preview</h6>
           </div>
-          {loadingPDF || loadingPdfConfig ? (
+          {loadingPDF ? (
             <div className="border rounded p-4 bg-light text-center" style={{ minHeight: '500px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
               <div>
                 <Spinner animation="border" variant="primary" className="mb-3" />
                 <p className="text-muted mb-0">Loading PDF preview...</p>
               </div>
             </div>
-          ) : pdfUrl || pdfConfigUrl ? (
+          ) : pdfUrl ? (
             <div style={{ height: '60vh', overflow: 'hidden' }}>
               <iframe
-                src={pdfUrl || pdfConfigUrl}
+                src={pdfUrl}
                 style={{
                   width: '100%',
                   height: '100%',

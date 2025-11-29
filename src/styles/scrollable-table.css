@@ -695,10 +695,8 @@ table .department-table-container .badge {
   overflow: visible !important;
 }
 
-/* EXCEPTION: Trainee Selection Panel needs overflow hidden for scroll */
-.enroll-page .col-lg-6 .trainee-selection-card .trainee-card-body {
-  overflow: hidden !important;
-}
+/* NOTE: TraineeSelectionPanel scroll/dropdown handled in TraineeSelectionPanel.css to avoid conflicts
+   Removed overflow: hidden rule for .trainee-card-body - component-scoped CSS now handles it */
 
 /* CRITICAL: Trainee Selected List must scroll */
 .enroll-page .col-lg-6 .trainee-selection-card .trainee-selected-list {

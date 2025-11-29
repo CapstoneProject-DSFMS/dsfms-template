@@ -92,7 +92,9 @@ const templateAPI = {
   // Get template PDF config (for rendering PDF preview)
   getTemplatePdfConfig: async (templateId) => {
     try {
-      const response = await apiClient.get(`/templates/pdf-config/${templateId}`);
+      const response = await apiClient.get(`/templates/pdf-config/${templateId}`, {
+        responseType: 'blob' // Important: get PDF as blob, not text
+      });
       return response.data;
     } catch (error) {
       throw error;
