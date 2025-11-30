@@ -7,7 +7,6 @@ const EditSubjectModal = ({ show, onClose, onSave, subject, loading = false }) =
     name: '',
     code: '',
     description: '',
-    duration: '',
     level: 'Beginner'
   });
   const [errors, setErrors] = useState([]);
@@ -18,7 +17,6 @@ const EditSubjectModal = ({ show, onClose, onSave, subject, loading = false }) =
         name: subject.name || '',
         code: subject.code || '',
         description: subject.description || '',
-        duration: subject.duration || '',
         level: subject.level || 'Beginner'
       });
       setErrors([]);
@@ -48,10 +46,6 @@ const EditSubjectModal = ({ show, onClose, onSave, subject, loading = false }) =
       newErrors.push('Description is required');
     }
     
-    if (!formData.duration.trim()) {
-      newErrors.push('Duration is required');
-    }
-    
     setErrors(newErrors);
     return newErrors.length === 0;
   };
@@ -75,7 +69,6 @@ const EditSubjectModal = ({ show, onClose, onSave, subject, loading = false }) =
       name: '',
       code: '',
       description: '',
-      duration: '',
       level: 'Beginner'
     });
     setErrors([]);
@@ -136,19 +129,6 @@ const EditSubjectModal = ({ show, onClose, onSave, subject, loading = false }) =
           </Row>
 
           <Row>
-            <Col md={6}>
-              <Form.Group className="mb-3">
-                <Form.Label>Duration *</Form.Label>
-                <Form.Control
-                  type="text"
-                  name="duration"
-                  value={formData.duration}
-                  onChange={handleInputChange}
-                  placeholder="e.g., 2 weeks, 1 month"
-                  disabled={loading}
-                />
-              </Form.Group>
-            </Col>
             <Col md={6}>
               <Form.Group className="mb-3">
                 <Form.Label>Level</Form.Label>

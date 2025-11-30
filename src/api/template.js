@@ -77,6 +77,16 @@ const templateAPI = {
     }
   },
 
+  // Delete draft template
+  deleteDraft: async (draftId) => {
+    try {
+      const response = await apiClient.delete(`/templates/draft/${draftId}`);
+      return response.data;
+    } catch (error) {
+      throw error;
+    }
+  },
+
   // Get template PDF preview
   getTemplatePDF: async (templateFormId) => {
     try {
@@ -128,6 +138,18 @@ const templateAPI = {
   createVersion: async (versionData) => {
     try {
       const response = await apiClient.post('/templates/create-version', versionData);
+      return response.data;
+    } catch (error) {
+      throw error;
+    }
+  },
+
+  // Disable template
+  disableTemplate: async (templateId) => {
+    try {
+      const response = await apiClient.patch(`/templates/${templateId}/status`, {
+        status: 'DISABLE'
+      });
       return response.data;
     } catch (error) {
       throw error;

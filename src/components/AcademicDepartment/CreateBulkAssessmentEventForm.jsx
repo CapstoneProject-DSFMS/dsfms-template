@@ -35,6 +35,10 @@ const CreateBulkAssessmentEventForm = ({ onSuccess }) => {
   const [loadingSubjects, setLoadingSubjects] = useState(true);
   const [loadingTrainees, setLoadingTrainees] = useState(false);
 
+  // Confirmation modal state
+  const [showConfirmation, setShowConfirmation] = useState(false);
+  const [pendingSubmitData, setPendingSubmitData] = useState(null);
+
   // Load departments from public API (no permission required)
   useEffect(() => {
     const loadDepartments = async () => {
@@ -111,8 +115,8 @@ const CreateBulkAssessmentEventForm = ({ onSuccess }) => {
           coursesData = response.data.courses;
         }
         
-        // Filter active and planned courses
-        const filteredCourses = coursesData.filter(c => c.status === 'ON_GOING' || c.status === 'PLANNED');
+        // Filter courses with status PLANNED, ONGOING, or FINISHED
+        const filteredCourses = coursesData.filter(c => c.status === 'PLANNED' || c.status === 'ON_GOING' || c.status === 'FINISHED');
         setCourses(filteredCourses);
         
         // Extract subjects from courses (if each course has subjects array)
@@ -135,12 +139,12 @@ const CreateBulkAssessmentEventForm = ({ onSuccess }) => {
           index === self.findIndex(s => s.id === subject.id)
         );
         
-        // Filter active and ongoing subjects
-        const filteredSubjects = uniqueSubjects.filter(s => s.status === 'ON_GOING' || s.status === 'ACTIVE');
+        // Filter subjects with status PLANNED, ONGOING, or FINISHED
+        const filteredSubjects = uniqueSubjects.filter(s => s.status === 'PLANNED' || s.status === 'ON_GOING' || s.status === 'FINISHED');
         setSubjects(filteredSubjects);
         
-        // Reset course and subject selection when department changes
-        setFormData(prev => ({ ...prev, courseId: '', subjectId: '', excludeTraineeIds: [] }));
+        // DON'T reset subjectId here - let user choose subjects after loading
+        // Only reset courseId when department is cleared
         
       } catch (error) {
         console.error('Error loading courses and subjects:', error);
@@ -219,19 +223,19 @@ const CreateBulkAssessmentEventForm = ({ onSuccess }) => {
   const handleInputChange = (e) => {
     const { name, value } = e.target;
     
-    // Handle courseId/subjectId validation
+    // Handle courseId/subjectId - both can be selected now
     if (name === 'courseId') {
       setFormData(prev => ({
         ...prev,
         courseId: value,
-        subjectId: value ? '' : prev.subjectId, // Clear subjectId if courseId is selected
+        // Don't clear subjectId - user can select both
         excludeTraineeIds: [] // Reset excluded trainees when source changes
       }));
     } else if (name === 'subjectId') {
       setFormData(prev => ({
         ...prev,
         subjectId: value,
-        courseId: value ? '' : prev.courseId, // Clear courseId if subjectId is selected
+        // Don't clear courseId - user can select both
         excludeTraineeIds: [] // Reset excluded trainees when source changes
       }));
     } else {
@@ -321,16 +325,44 @@ const CreateBulkAssessmentEventForm = ({ onSuccess }) => {
       newErrors.templateId = 'Template is required';
     }
 
-    if (!formData.subjectId && !formData.courseId) {
-      newErrors.courseSubject = 'Either Course or Subject must be selected';
-    }
-
-    if (formData.subjectId && formData.courseId) {
-      newErrors.courseSubject = 'Course and Subject cannot be selected at the same time';
+    // Course is required, Subject is optional
+    if (!formData.courseId) {
+      newErrors.courseSubject = 'Course is required';
     }
 
     if (!formData.occuranceDate) {
       newErrors.occuranceDate = 'Occurrence date is required';
+    } else {
+      // Validate occurrence date against subject or course date range
+      const occDate = new Date(formData.occuranceDate);
+      
+      if (formData.subjectId) {
+        // If subject is selected, validate against subject date range
+        const selectedSubject = subjects.find(s => s.id === formData.subjectId);
+        if (selectedSubject) {
+          const subjectStart = new Date(selectedSubject.startDate);
+          const subjectEnd = new Date(selectedSubject.endDate);
+          
+          if (occDate < subjectStart) {
+            newErrors.occuranceDate = `Occurrence date must be on or after subject start date (${subjectStart.toLocaleDateString()})`;
+          } else if (occDate > subjectEnd) {
+            newErrors.occuranceDate = `Occurrence date must be on or before subject end date (${subjectEnd.toLocaleDateString()})`;
+          }
+        }
+      } else if (formData.courseId) {
+        // If only course is selected, validate against course date range
+        const selectedCourse = courses.find(c => c.id === formData.courseId);
+        if (selectedCourse) {
+          const courseStart = new Date(selectedCourse.startDate);
+          const courseEnd = new Date(selectedCourse.endDate);
+          
+          if (occDate < courseStart) {
+            newErrors.occuranceDate = `Occurrence date must be on or after course start date (${courseStart.toLocaleDateString()})`;
+          } else if (occDate > courseEnd) {
+            newErrors.occuranceDate = `Occurrence date must be on or before course end date (${courseEnd.toLocaleDateString()})`;
+          }
+        }
+      }
     }
 
     if (!formData.name || formData.name.trim() === '') {
@@ -350,25 +382,49 @@ const CreateBulkAssessmentEventForm = ({ onSuccess }) => {
       return;
     }
 
+    // Build request data for confirmation
+    const requestData = {
+      templateId: formData.templateId,
+      occuranceDate: formData.occuranceDate,
+      name: formData.name,
+      excludeTraineeIds: formData.excludeTraineeIds || []
+    };
+
+    if (formData.subjectId) {
+      requestData.subjectId = formData.subjectId;
+    } else if (formData.courseId) {
+      requestData.courseId = formData.courseId;
+    }
+
+    // Calculate trainees count and entity name
+    const numTraineesToCreate = trainees.length - (formData.excludeTraineeIds?.length || 0);
+    let entityName = '';
+    
+    if (formData.subjectId) {
+      const subject = subjects.find(s => s.id === formData.subjectId);
+      entityName = subject?.name || 'Subject';
+    } else if (formData.courseId) {
+      const course = courses.find(c => c.id === formData.courseId);
+      entityName = course?.name || 'Course';
+    }
+
+    // Store pending data and show confirmation
+    setPendingSubmitData({
+      requestData,
+      numTraineesToCreate,
+      entityName
+    });
+    setShowConfirmation(true);
+  };
+
+  const handleConfirmSubmit = async () => {
+    if (!pendingSubmitData) return;
+
     setIsSubmitting(true);
+    setShowConfirmation(false);
 
     try {
-      // Build request data
-      const requestData = {
-        templateId: formData.templateId,
-        occuranceDate: formData.occuranceDate, // YYYY-MM-DD format
-        name: formData.name,
-        excludeTraineeIds: formData.excludeTraineeIds || []
-      };
-
-      // Add courseId or subjectId (not both)
-      if (formData.courseId) {
-        requestData.courseId = formData.courseId;
-      } else if (formData.subjectId) {
-        requestData.subjectId = formData.subjectId;
-      }
-
-      await assessmentAPI.createBulkAssessmentEvent(requestData);
+      await assessmentAPI.createBulkAssessmentEvent(pendingSubmitData.requestData);
 
       toast.success('Bulk assessment event created successfully');
       
@@ -384,8 +440,8 @@ const CreateBulkAssessmentEventForm = ({ onSuccess }) => {
       });
       setErrors({});
       setTrainees([]);
+      setPendingSubmitData(null);
 
-      
       if (onSuccess) {
         onSuccess();
       }
@@ -479,45 +535,49 @@ const CreateBulkAssessmentEventForm = ({ onSuccess }) => {
         <Col md={6}>
           <Form.Group className="mb-3 course-select-group">
             <Form.Label className="fw-semibold">
-              Course
+              Course <span className="text-danger">*</span>
             </Form.Label>
             <DownwardSelect
               name="courseId"
               value={formData.courseId}
               onChange={handleInputChange}
-              disabled={isSubmitting || loadingCourses || !!formData.subjectId}
-              placeholder="Select a course (optional)"
+              isInvalid={!!errors.courseSubject}
+              disabled={isSubmitting || loadingCourses}
+              placeholder="Select a course"
               options={courses.map(course => ({
                 value: course.id,
                 label: `${course.name} (${course.code})`
               }))}
             />
-            {formData.subjectId && (
-              <Form.Text className="text-muted">
-                Subject is selected. Course cannot be selected.
-              </Form.Text>
-            )}
+            <Form.Control.Feedback type="invalid">
+              {errors.courseSubject}
+            </Form.Control.Feedback>
           </Form.Group>
         </Col>
         <Col md={6}>
           <Form.Group className="mb-3 subject-select-group">
             <Form.Label className="fw-semibold">
-              Subject
+              Subject (Optional)
             </Form.Label>
             <DownwardSelect
               name="subjectId"
               value={formData.subjectId}
               onChange={handleInputChange}
-              disabled={isSubmitting || loadingSubjects || !!formData.courseId}
-              placeholder="Select a subject (optional)"
-              options={subjects.map(subject => ({
-                value: subject.id,
-                label: `${subject.name} (${subject.code})`
-              }))}
+              disabled={isSubmitting || loadingSubjects || !formData.courseId}
+              placeholder={!formData.courseId ? 'Select a course first' : 'Select a subject (optional)'}
+              options={formData.courseId 
+                ? subjects
+                    .filter(s => s.courseId === formData.courseId)
+                    .map(subject => ({
+                      value: subject.id,
+                      label: `${subject.name} (${subject.code})`
+                    }))
+                : []
+              }
             />
-            {formData.courseId && (
+            {!formData.courseId && (
               <Form.Text className="text-muted">
-                Course is selected. Subject cannot be selected.
+                Please select a course first to load subjects.
               </Form.Text>
             )}
           </Form.Group>
@@ -593,21 +653,34 @@ const CreateBulkAssessmentEventForm = ({ onSuccess }) => {
                 No trainees found for the selected {formData.courseId ? 'course' : 'subject'}.
               </Alert>
             ) : (
-              <Card className="border" style={{ maxHeight: '300px', overflowY: 'auto' }}>
-                <Card.Body className="p-3">
+              <div style={{ 
+                maxHeight: 'clamp(200px, 40vh, 400px)',
+                overflowY: 'auto',
+                overflowX: 'hidden',
+                WebkitOverflowScrolling: 'touch',
+                border: '1px solid #dee2e6',
+                borderRadius: '0.375rem',
+                backgroundColor: '#fff'
+              }}>
+                <div style={{ padding: '0.75rem' }}>
                   <div className="d-flex flex-column gap-2">
                     {trainees.map(trainee => {
                       const isExcluded = formData.excludeTraineeIds?.includes(trainee.id);
                       return (
                         <div
                           key={trainee.id}
-                          className={`p-2 border rounded cursor-pointer ${isExcluded ? 'bg-primary' : 'bg-light'}`}
+                          className={`border rounded cursor-pointer ${isExcluded ? 'bg-primary' : 'bg-light'}`}
                           onClick={() => handleTraineeToggle(trainee.id)}
                           style={{ 
+                            padding: '0.5rem',
                             cursor: 'pointer',
                             transition: 'all 0.2s ease',
                             backgroundColor: isExcluded ? 'var(--bs-primary)' : 'var(--bs-light)',
-                            color: isExcluded ? '#ffffff' : 'var(--bs-dark)'
+                            color: isExcluded ? '#ffffff' : 'var(--bs-dark)',
+                            minHeight: '48px',
+                            display: 'flex',
+                            alignItems: 'center',
+                            userSelect: 'none'
                           }}
                           onMouseEnter={(e) => {
                             if (!isExcluded) {
@@ -620,17 +693,19 @@ const CreateBulkAssessmentEventForm = ({ onSuccess }) => {
                             }
                           }}
                         >
-                          <div className="d-flex align-items-center justify-content-between">
-                            <div>
-                              <strong style={{ color: isExcluded ? '#ffffff' : 'inherit' }}>
+                          <div className="d-flex align-items-center justify-content-between w-100 gap-2" style={{ flexWrap: 'wrap' }}>
+                            <div style={{ flex: '1 1 auto', minWidth: '0px' }}>
+                              <strong style={{ color: isExcluded ? '#ffffff' : 'inherit', wordBreak: 'break-word', fontSize: '0.95rem' }}>
                                 {getTraineeName(trainee)}
                               </strong>
                               {trainee.eid && (
                                 <Badge 
                                   bg={isExcluded ? 'light' : 'secondary'} 
-                                  className="ms-2"
                                   style={{ 
-                                    color: isExcluded ? 'var(--bs-primary)' : '#ffffff'
+                                    marginLeft: '0.5rem',
+                                    color: isExcluded ? 'var(--bs-primary)' : '#ffffff',
+                                    fontSize: '0.7rem',
+                                    padding: '0.35rem 0.6rem'
                                   }}
                                 >
                                   {trainee.eid}
@@ -638,7 +713,16 @@ const CreateBulkAssessmentEventForm = ({ onSuccess }) => {
                               )}
                             </div>
                             {isExcluded && (
-                              <Badge bg="light" style={{ color: 'var(--bs-primary)' }}>
+                              <Badge 
+                                bg="light" 
+                                style={{ 
+                                  color: 'var(--bs-primary)', 
+                                  fontSize: '0.7rem',
+                                  whiteSpace: 'nowrap',
+                                  flex: '0 0 auto',
+                                  padding: '0.35rem 0.6rem'
+                                }}
+                              >
                                 Excluded
                               </Badge>
                             )}
@@ -647,8 +731,8 @@ const CreateBulkAssessmentEventForm = ({ onSuccess }) => {
                       );
                     })}
                   </div>
-                </Card.Body>
-              </Card>
+                </div>
+              </div>
             )}
             {formData.excludeTraineeIds && formData.excludeTraineeIds.length > 0 && (
               <Form.Text className="text-muted">
@@ -699,6 +783,101 @@ const CreateBulkAssessmentEventForm = ({ onSuccess }) => {
           )}
         </Button>
       </div>
+
+      {/* Confirmation Modal */}
+      <Modal
+        show={showConfirmation}
+        onHide={() => {
+          setShowConfirmation(false);
+          setPendingSubmitData(null);
+        }}
+        centered
+        size="lg"
+      >
+        <Modal.Header 
+          closeButton 
+          className="bg-primary text-white"
+          style={{ borderBottom: 'none' }}
+        >
+          <Modal.Title className="fw-bold">
+            Confirm Bulk Assessment Event Creation
+          </Modal.Title>
+        </Modal.Header>
+        <Modal.Body style={{ padding: '2rem' }}>
+          <div style={{ lineHeight: '1.8' }}>
+            <p style={{ fontSize: '1rem', color: 'var(--bs-dark)', marginBottom: '1.5rem' }}>
+              Assessment Forms will be generated for{' '}
+              <strong style={{ fontSize: '1.15rem', color: 'var(--bs-primary)' }}>
+                {pendingSubmitData?.numTraineesToCreate || 0}
+              </strong>{' '}
+              Trainees of{' '}
+              <strong style={{ fontSize: '1.15rem', color: 'var(--bs-secondary)' }}>
+                {formData.subjectId ? 'Subject' : 'Course'}
+              </strong>{' '}
+              <strong style={{ fontSize: '1.15rem', color: 'var(--bs-primary)' }}>
+                {pendingSubmitData?.entityName || 'N/A'}
+              </strong>
+              .
+            </p>
+            <div style={{ 
+              backgroundColor: 'var(--bs-light)',
+              border: '1px solid var(--bs-neutral)',
+              borderRadius: '0.375rem',
+              padding: '1rem',
+              marginBottom: '1.5rem'
+            }}>
+              <p style={{ marginBottom: '0.5rem', fontSize: '0.9rem', color: 'var(--bs-dark)' }}>
+                <strong>Summary:</strong>
+              </p>
+              <ul style={{ marginBottom: '0', paddingLeft: '1.5rem', color: 'var(--bs-dark)', fontSize: '0.95rem' }}>
+                <li>Type: <strong>{formData.subjectId ? 'Subject' : 'Course'}</strong></li>
+                <li>Name: <strong>{pendingSubmitData?.entityName || 'N/A'}</strong></li>
+                <li>Total Trainees: <strong>{trainees.length}</strong></li>
+                <li>Excluded Trainees: <strong>{formData.excludeTraineeIds?.length || 0}</strong></li>
+                <li>Trainees to Include: <strong style={{ color: 'var(--bs-primary)' }}>{pendingSubmitData?.numTraineesToCreate || 0}</strong></li>
+              </ul>
+            </div>
+            <p style={{ fontSize: '0.95rem', color: 'var(--bs-dark)', marginBottom: '0' }}>
+              Please review the information above before confirming.
+            </p>
+          </div>
+        </Modal.Body>
+        <Modal.Footer style={{ borderTop: '1px solid var(--bs-neutral)', padding: '1.5rem' }}>
+          <Button
+            variant="light"
+            onClick={() => {
+              setShowConfirmation(false);
+              setPendingSubmitData(null);
+            }}
+            disabled={isSubmitting}
+            style={{ 
+              color: 'var(--bs-dark)',
+              borderColor: 'var(--bs-neutral)',
+              transition: 'all 0.2s ease'
+            }}
+          >
+            Cancel
+          </Button>
+          <Button
+            variant="primary"
+            onClick={handleConfirmSubmit}
+            disabled={isSubmitting}
+            className="d-flex align-items-center"
+          >
+            {isSubmitting ? (
+              <>
+                <span className="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
+                Processing...
+              </>
+            ) : (
+              <>
+                <Save className="me-2" size={16} />
+                Confirm & Create
+              </>
+            )}
+          </Button>
+        </Modal.Footer>
+      </Modal>
 
       {/* Template PDF Preview Modal */}
       <Modal

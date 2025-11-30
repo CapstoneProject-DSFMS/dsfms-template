@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Modal, Button, Badge, Card, Alert, Spinner } from 'react-bootstrap';
+import { Modal, Button, Badge, Card, Alert, Spinner, Row, Col } from 'react-bootstrap';
 import { 
   X, 
   FileText, 
@@ -15,11 +15,17 @@ import {
   ListUl,
   ListCheck,
   ClockHistory,
+  PencilSquare,
+  Ban
 } from 'react-bootstrap-icons';
+import { useNavigate } from 'react-router-dom';
+import { toast } from 'react-toastify';
+import { ROUTES } from '../../../constants/routes';
 import { userAPI } from '../../../api/user';
 import templateAPI from '../../../api/template';
 
 const TemplateDetailModal = ({ show, onHide, template, onCreateVersion }) => {
+  const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState('details');
   const [reviewedByUser, setReviewedByUser] = useState(null);
   const [loadingReviewedBy, setLoadingReviewedBy] = useState(false);
@@ -27,6 +33,12 @@ const TemplateDetailModal = ({ show, onHide, template, onCreateVersion }) => {
   const [loadingFullData, setLoadingFullData] = useState(false);
   const [pdfUrl, setPdfUrl] = useState(null);
   const [loadingPDF, setLoadingPDF] = useState(false);
+  const [pdfConfigUrl, setPdfConfigUrl] = useState(null);
+  const [loadingPDFConfig, setLoadingPDFConfig] = useState(false);
+  const [collapsedSections, setCollapsedSections] = useState({});
+  const [disabling, setDisabling] = useState(false);
+
+  // console.log('TemplateDetailModal received template:', template);
 
   // Fetch reviewed by user info if reviewedByUserId exists
   useEffect(() => {
@@ -78,15 +90,14 @@ const TemplateDetailModal = ({ show, onHide, template, onCreateVersion }) => {
     fetchFullTemplateData();
   }, [template?.id, show, template?.sections]);
 
-  // Load PDF when content tab is active
+  // Load PDF for Content Preview tab (getTemplatePDF) - Cache it, don't reload on tab change
   useEffect(() => {
     const loadPDF = async () => {
-      if (activeTab === 'content' && template?.id && show) {
+      if (template?.id && show && !pdfUrl) {
         try {
           setLoadingPDF(true);
-          // Use template.id as templateFormId (or template.formId if available)
-          const templateFormId = template.formId || template.id;
-          const pdfBlob = await templateAPI.getTemplatePDF(templateFormId);
+          // Content Preview uses getTemplatePDF
+          const pdfBlob = await templateAPI.getTemplatePDF(template.id);
           const url = URL.createObjectURL(pdfBlob);
           setPdfUrl(url);
         } catch (error) {
@@ -95,8 +106,14 @@ const TemplateDetailModal = ({ show, onHide, template, onCreateVersion }) => {
         } finally {
           setLoadingPDF(false);
         }
-      } else {
-        // Clean up PDF URL when tab changes or modal closes
+      }
+    };
+
+    loadPDF();
+
+    // Cleanup only when modal closes
+    return () => {
+      if (!show) {
         setPdfUrl(prevUrl => {
           if (prevUrl) {
             URL.revokeObjectURL(prevUrl);
@@ -105,19 +122,41 @@ const TemplateDetailModal = ({ show, onHide, template, onCreateVersion }) => {
         });
       }
     };
+  }, [template?.id, show, pdfUrl]);
 
-    loadPDF();
-
-    // Cleanup function
-    return () => {
-      setPdfUrl(prevUrl => {
-        if (prevUrl) {
-          URL.revokeObjectURL(prevUrl);
+  // Load PDF Config for Template Config Overview tab (getTemplatePdfConfig) - Cache it, don't reload on tab change
+  useEffect(() => {
+    const loadPDFConfig = async () => {
+      if (template?.id && show && !pdfConfigUrl) {
+        try {
+          setLoadingPDFConfig(true);
+          // Template Config Overview uses getTemplatePdfConfig
+          const pdfBlob = await templateAPI.getTemplatePdfConfig(template.id);
+          const url = URL.createObjectURL(pdfBlob);
+          setPdfConfigUrl(url);
+        } catch (error) {
+          console.error('Error loading PDF config:', error);
+          setPdfConfigUrl(null);
+        } finally {
+          setLoadingPDFConfig(false);
         }
-        return null;
-      });
+      }
     };
-  }, [activeTab, template?.id, template?.formId, show]);
+
+    loadPDFConfig();
+
+    // Cleanup only when modal closes
+    return () => {
+      if (!show) {
+        setPdfConfigUrl(prevUrl => {
+          if (prevUrl) {
+            URL.revokeObjectURL(prevUrl);
+          }
+          return null;
+        });
+      }
+    };
+  }, [template?.id, show, pdfConfigUrl]);
 
   if (!template) return null;
 
@@ -165,6 +204,42 @@ const TemplateDetailModal = ({ show, onHide, template, onCreateVersion }) => {
     }
   };
 
+  const handleUpdateRejectedTemplate = () => {
+    // Navigate to FormEditorPage with update rejected template flag
+    const templateToUse = fullTemplateData || template;
+    navigate(ROUTES.TEMPLATES_EDITOR, {
+      state: {
+        isUpdateRejected: true,
+        templateId: templateToUse.id,
+        templateInfo: templateToUse,
+        fileName: templateToUse.name || 'Untitled Document',
+        importType: 'Update Rejected Template',
+        // Load template content if available
+        documentUrl: templateToUse.templateContent?.startsWith('http') ? templateToUse.templateContent : null,
+        content: templateToUse.templateContent?.startsWith('http') ? null : templateToUse.templateContent,
+        initialSections: templateToUse.sections || []
+      }
+    });
+    onHide(); // Close modal
+  };
+
+  const handleDisableTemplate = async () => {
+    try {
+      setDisabling(true);
+      await templateAPI.disableTemplate(template.id);
+      toast.success('Template disabled successfully');
+      onHide();
+    } catch (error) {
+      console.error('Error disabling template:', error);
+      toast.error(error?.response?.data?.message || 'Failed to disable template');
+    } finally {
+      setDisabling(false);
+    }
+  };
+
+  // Check if template is rejected
+  const isRejected = template?.status === 'REJECTED' || template?.status === 'DENIED';
+
 
   const renderDetails = () => (
     <div className="template-details" style={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
@@ -174,7 +249,7 @@ const TemplateDetailModal = ({ show, onHide, template, onCreateVersion }) => {
             <FileText className="text-primary-custom me-3" size={20} />
             <div className="flex-grow-1">
               <strong className="text-muted small d-block mb-1">Template Name</strong>
-              <span className="text-dark">{template.name}</span>
+              <span className="text-dark">{template?.name || 'N/A'}</span>
             </div>
           </div>
         </div>
@@ -400,138 +475,254 @@ const TemplateDetailModal = ({ show, onHide, template, onCreateVersion }) => {
   const renderOverview = () => {
     const sectionsData = fullTemplateData?.sections || template?.sections || [];
     
-    if (loadingFullData) {
-      return (
-        <div className="text-center" style={{ 
-          flex: 1, 
-          display: 'flex', 
-          alignItems: 'center', 
-          justifyContent: 'center',
-          minHeight: 0
-        }}>
-          <div>
-            <Spinner animation="border" variant="primary" />
-            <p className="mt-3 text-muted">Loading template config...</p>
-          </div>
-        </div>
-      );
-    }
+    // Build structure with parent-child relationship for collapse
+    const sectionStructure = sectionsData.map((section, sectionIndex) => ({
+      type: 'section',
+      id: section.id || `section-${sectionIndex}`,
+      name: section.label || section.name,
+      fieldCount: section.fields?.length || 0,
+      data: section,
+      fields: section.fields || []
+    }));
 
-    // Build a flat list: sections with their fields nested
-    const items = [];
-    
-    sectionsData.forEach((section, sectionIndex) => {
-      // Add section
-      items.push({
-        type: 'section',
-        id: section.id || `section-${sectionIndex}`,
-        name: section.label || section.name,
-        fieldCount: section.fields?.length || 0,
-        data: section
-      });
-      
-      // Add fields in this section (nested)
-      if (section.fields && section.fields.length > 0) {
-        section.fields.forEach((field, fieldIndex) => {
-          items.push({
-            type: 'field',
-            id: field.id || field.fieldName || `field-${sectionIndex}-${fieldIndex}`,
-            name: field.label || field.fieldName,
-            parentSectionId: section.id || `section-${sectionIndex}`,
-            data: field
-          });
-        });
-      }
-    });
-
-    if (items.length === 0) {
-      return (
-        <div style={{ 
-          flex: 1, 
-          display: 'flex', 
-          alignItems: 'center', 
-          justifyContent: 'center',
-          minHeight: 0
-        }}>
-          <Alert variant="info" className="mb-0" style={{ maxWidth: '600px', width: '100%' }}>
-            <div>
-              <strong>No template config found</strong>
-              <p className="mb-0 text-muted">This template has no sections or fields yet.</p>
-            </div>
-          </Alert>
-        </div>
-      );
-    }
+    const toggleSection = (sectionId) => {
+      setCollapsedSections(prev => ({
+        ...prev,
+        [sectionId]: !prev[sectionId]
+      }));
+    };
 
     return (
-      <div style={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
-        <h6 className="mb-3" style={{ color: '#333', fontWeight: 500 }}>Template fields & sections</h6>
-        <div className="list-group" style={{ border: 'none', flex: 1, overflowY: 'auto' }}>
-          {items.map((item, index) => {
-            const isSection = item.type === 'section';
-            const isField = item.type === 'field';
-            
-            return (
-              <div
-                key={item.id}
-                className="list-group-item"
-                style={{
-                  border: 'none',
-                  borderBottom: '1px solid #e9ecef',
-                  padding: '12px 16px',
-                  backgroundColor: 'white',
-                  paddingLeft: isField ? '40px' : '16px'
-                }}
-              >
-                <div className="d-flex align-items-center justify-content-between">
-                  <div className="d-flex align-items-center" style={{ flex: 1, minWidth: 0 }}>
-                    <span 
-                      style={{ 
-                        fontSize: '14px',
-                        color: '#333',
-                        fontWeight: isSection ? 500 : 400,
-                        wordBreak: 'break-word',
-                        overflowWrap: 'break-word'
-                      }}
-                    >
-                      {item.name}
-                    </span>
-                    {isSection && item.fieldCount > 0 && (
-                      <Badge 
-                        bg="info" 
-                        className="ms-2"
-                        style={{ 
-                          fontSize: '11px',
-                          padding: '2px 8px',
-                          borderRadius: '12px',
-                          backgroundColor: '#0dcaf0',
-                          color: '#000'
-                        }}
-                      >
-                        {item.fieldCount}
-                      </Badge>
-                    )}
-                  </div>
-                  <Badge
-                    bg={isSection ? 'warning' : 'secondary'}
-                    style={{
-                      fontSize: '11px',
-                      padding: '4px 10px',
-                      borderRadius: '4px',
-                      backgroundColor: isSection ? '#ffc107' : 'var(--bs-secondary)',
-                      color: isSection ? '#000' : '#fff',
-                      fontWeight: 500,
-                      marginLeft: '12px'
-                    }}
-                  >
-                    {isSection ? 'SECTION' : (item.data?.fieldType || item.data?.type || 'FIELD')}
-                  </Badge>
-                </div>
+      <Row style={{ height: '100%', margin: 0, gap: 0 }}>
+        {/* PDF Preview - Left Column */}
+        <Col xs={12} lg={6} style={{ display: 'flex', flexDirection: 'column', padding: '0 8px', height: '100%', minHeight: 0 }}>
+          <h6 className="mb-2" style={{ color: '#333', fontWeight: 500, flexShrink: 0 }}>Template Preview</h6>
+          <div style={{ 
+            flex: 1, 
+            display: 'flex', 
+            flexDirection: 'column', 
+            minHeight: 0,
+            border: '1px solid #dee2e6',
+            borderRadius: '4px',
+            overflow: 'hidden',
+            backgroundColor: '#f8f9fa'
+          }}>
+            {loadingPDFConfig ? (
+              <div style={{ 
+                flex: 1, 
+                display: 'flex', 
+                alignItems: 'center', 
+                justifyContent: 'center' 
+              }}>
+                <Spinner animation="border" variant="primary" />
               </div>
-            );
-          })}
-        </div>
-      </div>
+            ) : pdfConfigUrl ? (
+              <iframe 
+                src={pdfConfigUrl} 
+                style={{ 
+                  flex: 1, 
+                  border: 'none', 
+                  width: '100%',
+                  minHeight: 0
+                }}
+                title="Template PDF Preview"
+              />
+            ) : (
+              <div style={{ 
+                flex: 1, 
+                display: 'flex', 
+                alignItems: 'center', 
+                justifyContent: 'center',
+                padding: '20px'
+              }}>
+                <Alert variant="warning" className="mb-0">
+                  <strong>No PDF Preview</strong>
+                  <p className="mb-0 text-muted">PDF preview not available</p>
+                </Alert>
+              </div>
+            )}
+          </div>
+        </Col>
+
+        {/* Fields List - Right Column */}
+        <Col xs={12} lg={6} style={{ display: 'flex', flexDirection: 'column', padding: '0 8px', height: '100%', minHeight: 0 }}>
+          <h6 className="mb-2" style={{ color: '#333', fontWeight: 500, flexShrink: 0 }}>Template fields & sections</h6>
+          <div style={{ flex: 1, display: 'flex', flexDirection: 'column', minHeight: 0, overflow: 'hidden' }}>
+            {loadingFullData ? (
+              <div style={{ 
+                flex: 1, 
+                display: 'flex', 
+                alignItems: 'center', 
+                justifyContent: 'center' 
+              }}>
+                <Spinner animation="border" variant="primary" />
+              </div>
+            ) : sectionStructure.length === 0 ? (
+              <Alert variant="info" className="mb-0">
+                <div>
+                  <strong>No template config found</strong>
+                  <p className="mb-0 text-muted">This template has no sections or fields yet.</p>
+                </div>
+              </Alert>
+            ) : (
+              <div className="list-group" style={{ border: '1px solid #dee2e6', borderRadius: '4px', flex: 1, overflowY: 'auto', minHeight: 0, maxHeight: '100%' }}>
+                {sectionStructure.map((section) => {
+                  const isCollapsed = collapsedSections[section.id];
+                  
+                  return (
+                    <div key={section.id}>
+                      {/* Section Header */}
+                      <div
+                        className="list-group-item"
+                        style={{
+                          border: 'none',
+                          borderBottom: '1px solid #e9ecef',
+                          padding: '12px 16px',
+                          backgroundColor: '#f8f9fa',
+                          cursor: 'pointer',
+                          userSelect: 'none',
+                          flexShrink: 0,
+                          transition: 'background-color 0.2s ease'
+                        }}
+                        onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#e9ecef'}
+                        onMouseLeave={(e) => e.currentTarget.style.backgroundColor = '#f8f9fa'}
+                        onClick={() => toggleSection(section.id)}
+                      >
+                        <div className="d-flex align-items-center justify-content-between">
+                          <div className="d-flex align-items-center" style={{ flex: 1, minWidth: 0, gap: '8px' }}>
+                            {/* Arrow Icon */}
+                            <span
+                              style={{
+                                display: 'inline-flex',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                width: '20px',
+                                height: '20px',
+                                transition: 'transform 0.3s ease',
+                                transform: isCollapsed ? 'rotate(-90deg)' : 'rotate(0deg)',
+                                flexShrink: 0
+                              }}
+                            >
+                              <svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                <path d="M6 5L11 10L6 15" stroke="#666" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                              </svg>
+                            </span>
+                            <span 
+                              style={{ 
+                                fontSize: '14px',
+                                color: '#333',
+                                fontWeight: 600,
+                                wordBreak: 'break-word',
+                                overflowWrap: 'break-word'
+                              }}
+                            >
+                              {section.name}
+                            </span>
+                            {section.fieldCount > 0 && (
+                              <Badge 
+                                bg="info" 
+                                style={{ 
+                                  fontSize: '11px',
+                                  padding: '2px 8px',
+                                  borderRadius: '12px',
+                                  backgroundColor: '#0dcaf0',
+                                  color: '#000',
+                                  flexShrink: 0
+                                }}
+                              >
+                                {section.fieldCount}
+                              </Badge>
+                            )}
+                          </div>
+                          <Badge
+                            bg="warning"
+                            style={{
+                              fontSize: '11px',
+                              padding: '4px 10px',
+                              borderRadius: '4px',
+                              backgroundColor: '#ffc107',
+                              color: '#000',
+                              fontWeight: 500,
+                              marginLeft: '12px',
+                              flexShrink: 0
+                            }}
+                          >
+                            SECTION
+                          </Badge>
+                        </div>
+                      </div>
+
+                      {/* Fields List */}
+                      {!isCollapsed && section.fields.map((field, fieldIndex) => (
+                        <div
+                          key={field.id || field.fieldName || `field-${fieldIndex}`}
+                          className="list-group-item"
+                          style={{
+                            border: 'none',
+                            borderBottom: '1px solid #e9ecef',
+                            padding: '12px 16px',
+                            paddingLeft: '48px',
+                            backgroundColor: 'white',
+                            flexShrink: 0,
+                            animation: 'slideDown 0.2s ease',
+                            transition: 'background-color 0.2s ease'
+                          }}
+                          onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#f8f9fa'}
+                          onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'white'}
+                        >
+                          <div className="d-flex align-items-center justify-content-between">
+                            <div className="d-flex align-items-center" style={{ flex: 1, minWidth: 0 }}>
+                              <span 
+                                style={{ 
+                                  fontSize: '14px',
+                                  color: '#555',
+                                  fontWeight: 400,
+                                  wordBreak: 'break-word',
+                                  overflowWrap: 'break-word'
+                                }}
+                              >
+                                {field.label || field.fieldName}
+                              </span>
+                            </div>
+                            <Badge
+                              bg="secondary"
+                              style={{
+                                fontSize: '11px',
+                                padding: '4px 10px',
+                                borderRadius: '4px',
+                                backgroundColor: 'var(--bs-secondary)',
+                                color: '#fff',
+                                fontWeight: 500,
+                                marginLeft: '12px',
+                                flexShrink: 0
+                              }}
+                            >
+                              {field.fieldType || field.type || 'FIELD'}
+                            </Badge>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+          </div>
+          {/* CSS for animation */}
+          <style>{`
+            @keyframes slideDown {
+              from {
+                opacity: 0;
+                transform: translateY(-5px);
+              }
+              to {
+                opacity: 1;
+                transform: translateY(0);
+              }
+            }
+          `}</style>
+        </Col>
+      </Row>
     );
   };
 
@@ -685,9 +876,9 @@ const TemplateDetailModal = ({ show, onHide, template, onCreateVersion }) => {
       >
         <Modal.Title className="d-flex align-items-center text-white mb-0 template-detail-title flex-grow-1" style={{ minWidth: 0 }}>
           <FileText className="me-2 flex-shrink-0" size={20} />
-          <span className="template-detail-title-text text-truncate" style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }} title={`Template Detail: ${template.name}`}>
+          <span className="template-detail-title-text text-truncate" style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }} title={`Template Detail: ${template?.name || 'Template'}`}>
             <span className="d-none d-md-inline">Template Detail: </span>
-            {template.name}
+            {template?.name || 'Template'}
           </span>
         </Modal.Title>
         <Button 
@@ -793,7 +984,7 @@ const TemplateDetailModal = ({ show, onHide, template, onCreateVersion }) => {
             display: 'flex',
             flexDirection: 'column',
             minHeight: 0,
-            overflow: 'hidden',
+            overflow: 'auto',
             height: '100%'
           }}
         >
@@ -886,6 +1077,86 @@ const TemplateDetailModal = ({ show, onHide, template, onCreateVersion }) => {
         >
           Close
         </Button>
+        {isRejected && (
+          <Button
+            variant="warning"
+            onClick={handleUpdateRejectedTemplate}
+            className="d-flex align-items-center justify-content-center"
+            style={{
+              backgroundColor: '#ffc107',
+              borderColor: '#ffc107',
+              color: '#000',
+              fontWeight: 500,
+              padding: '0.5rem 1.5rem',
+              borderRadius: '0.375rem',
+              transition: 'all 0.3s ease'
+            }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.backgroundColor = '#ffb300'
+              e.currentTarget.style.borderColor = '#ffb300'
+              e.currentTarget.style.transform = 'translateY(-1px)'
+              e.currentTarget.style.boxShadow = '0 4px 8px rgba(255, 193, 7, 0.3)'
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.backgroundColor = '#ffc107'
+              e.currentTarget.style.borderColor = '#ffc107'
+              e.currentTarget.style.transform = 'translateY(0)'
+              e.currentTarget.style.boxShadow = 'none'
+            }}
+          >
+            <PencilSquare className="me-2" size={16} />
+            <span className="d-none d-sm-inline">Update Rejected Template</span>
+            <span className="d-inline d-sm-none">Update</span>
+          </Button>
+        )}
+        {template?.status !== 'PENDING' && (
+          <Button
+            variant="danger"
+            onClick={handleDisableTemplate}
+            disabled={disabling}
+            className="d-flex align-items-center justify-content-center"
+            style={{
+              backgroundColor: '#dc3545',
+              borderColor: '#dc3545',
+              color: 'white',
+              fontWeight: 500,
+              padding: '0.5rem 1.5rem',
+              borderRadius: '0.375rem',
+              transition: 'all 0.3s ease',
+              opacity: disabling ? 0.6 : 1
+            }}
+            onMouseEnter={(e) => {
+              if (!disabling) {
+                e.currentTarget.style.backgroundColor = '#c82333'
+                e.currentTarget.style.borderColor = '#c82333'
+                e.currentTarget.style.transform = 'translateY(-1px)'
+                e.currentTarget.style.boxShadow = '0 4px 8px rgba(220, 53, 69, 0.3)'
+              }
+            }}
+            onMouseLeave={(e) => {
+              if (!disabling) {
+                e.currentTarget.style.backgroundColor = '#dc3545'
+                e.currentTarget.style.borderColor = '#dc3545'
+                e.currentTarget.style.transform = 'translateY(0)'
+                e.currentTarget.style.boxShadow = 'none'
+              }
+            }}
+          >
+            {disabling ? (
+              <>
+                <Spinner animation="border" size="sm" className="me-2" />
+                <span className="d-none d-sm-inline">Disabling...</span>
+                <span className="d-inline d-sm-none">Disabling...</span>
+              </>
+            ) : (
+              <>
+                <Ban className="me-2" size={16} />
+                <span className="d-none d-sm-inline">Disable Template</span>
+                <span className="d-inline d-sm-none">Disable</span>
+              </>
+            )}
+          </Button>
+        )}
         {onCreateVersion && (
           <Button
             variant="primary"
@@ -916,41 +1187,6 @@ const TemplateDetailModal = ({ show, onHide, template, onCreateVersion }) => {
             <FileEarmarkPlus className="me-2" size={16} />
             <span className="d-none d-sm-inline">Create New Version</span>
             <span className="d-inline d-sm-none">New Version</span>
-          </Button>
-        )}
-        {template.templateConfig && (
-          <Button 
-            variant="primary"
-            href={template.templateConfig} 
-            target="_blank"
-            rel="noopener noreferrer"
-            className="d-flex align-items-center justify-content-center"
-            style={{
-              backgroundColor: 'var(--bs-primary)',
-              borderColor: 'var(--bs-primary)',
-              color: 'white',
-              fontWeight: 500,
-              padding: '0.5rem 1.5rem',
-              borderRadius: '0.375rem',
-              transition: 'all 0.3s ease',
-              textDecoration: 'none'
-            }}
-            onMouseEnter={(e) => {
-              e.currentTarget.style.backgroundColor = '#153a4a'
-              e.currentTarget.style.borderColor = '#153a4a'
-              e.currentTarget.style.transform = 'translateY(-1px)'
-              e.currentTarget.style.boxShadow = '0 4px 8px rgba(27, 60, 83, 0.3)'
-            }}
-            onMouseLeave={(e) => {
-              e.currentTarget.style.backgroundColor = 'var(--bs-primary)'
-              e.currentTarget.style.borderColor = 'var(--bs-primary)'
-              e.currentTarget.style.transform = 'translateY(0)'
-              e.currentTarget.style.boxShadow = 'none'
-            }}
-          >
-            <Download className="me-2" size={16} />
-            <span className="d-none d-sm-inline">Download File</span>
-            <span className="d-inline d-sm-none">Download</span>
           </Button>
         )}
       </Modal.Footer>

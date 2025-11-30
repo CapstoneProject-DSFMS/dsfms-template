@@ -560,7 +560,7 @@ export const router = createBrowserRouter(
           path: '',
           element: (
             <PermissionRoute
-              permission={PERMISSION_IDS.SUBMIT_INCIDENT_FEEDBACK_REPORT}
+              permission={PERMISSION_IDS.VIEW_SUBMITTED_REPORTS}
               fallback={
                 <div className="p-4 text-center text-muted">You don't have permission to create incident/feedback reports.</div>
               }

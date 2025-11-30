@@ -1,11 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { Container, Card, Row, Col, Nav, Tab } from 'react-bootstrap';
-import { ListUl, Plus, Collection } from 'react-bootstrap-icons';
+import { ListUl, PlusCircle } from 'react-bootstrap-icons';
 import { useSearchParams } from 'react-router-dom';
 import AssessmentEventTable from '../../components/AcademicDepartment/AssessmentEventTable';
 import AssessmentEventDetailModal from '../../components/AcademicDepartment/AssessmentEventDetailModal';
 import EditAssessmentEventModal from '../../components/AcademicDepartment/EditAssessmentEventModal';
-import CreateAssessmentEventForm from '../../components/AcademicDepartment/CreateAssessmentEventForm';
 import CreateBulkAssessmentEventForm from '../../components/AcademicDepartment/CreateBulkAssessmentEventForm';
 import { assessmentAPI } from '../../api';
 
@@ -48,8 +47,16 @@ const AssessmentEventPage = () => {
           course: courseName,
           occurrenceDate: event.occuranceDate || event.occurrenceDate,
           status: event.status || 'N/A',
+          createdAt: event.createdAt,
           originalEvent: event
         };
+      });
+      
+      // Sort by createdAt descending (newest first)
+      mappedEvents.sort((a, b) => {
+        const dateA = new Date(a.createdAt || 0);
+        const dateB = new Date(b.createdAt || 0);
+        return dateB - dateA;
       });
       
       setAssessmentEvents(mappedEvents);
@@ -68,7 +75,7 @@ const AssessmentEventPage = () => {
   useEffect(() => {
     // Update activeTab when URL query param changes
     const tabFromUrl = searchParams.get('tab');
-    if (tabFromUrl && ['list', 'create', 'create-bulk'].includes(tabFromUrl)) {
+    if (tabFromUrl && ['list', 'create-bulk'].includes(tabFromUrl)) {
       setActiveTab(tabFromUrl);
     }
   }, [searchParams]);
@@ -145,23 +152,6 @@ const AssessmentEventPage = () => {
                     </Nav.Item>
                     <Nav.Item>
                       <Nav.Link 
-                        eventKey="create"
-                        className="d-flex align-items-center"
-                        style={{ 
-                          border: 'none',
-                          backgroundColor: 'transparent',
-                          color: '#ffffff',
-                          fontWeight: activeTab === 'create' ? '600' : '400',
-                          opacity: activeTab === 'create' ? '1' : '0.7',
-                          borderRadius: '4px 4px 0 0'
-                        }}
-                      >
-                        <Plus className="me-2" size={16} />
-                        Create New Assessment Event
-                      </Nav.Link>
-                    </Nav.Item>
-                    <Nav.Item>
-                      <Nav.Link 
                         eventKey="create-bulk"
                         className="d-flex align-items-center"
                         style={{ 
@@ -173,8 +163,8 @@ const AssessmentEventPage = () => {
                           borderRadius: '4px 4px 0 0'
                         }}
                       >
-                        <Collection className="me-2" size={16} />
-                        Create Bulk Assessment Event
+                        <PlusCircle className="me-2" size={16} />
+                        Create Assessment Events
                       </Nav.Link>
                     </Nav.Item>
                   </Nav>
@@ -188,9 +178,6 @@ const AssessmentEventPage = () => {
                       onView={handleView}
                       onUpdate={handleUpdate}
                     />
-                  </Tab.Pane>
-                  <Tab.Pane eventKey="create" className="p-4" style={{ overflow: 'visible', minHeight: '800px' }}>
-                    <CreateAssessmentEventForm onSuccess={handleCreateSuccess} />
                   </Tab.Pane>
                   <Tab.Pane eventKey="create-bulk" className="p-4" style={{ overflow: 'visible', minHeight: '800px' }}>
                     <CreateBulkAssessmentEventForm onSuccess={handleCreateSuccess} />

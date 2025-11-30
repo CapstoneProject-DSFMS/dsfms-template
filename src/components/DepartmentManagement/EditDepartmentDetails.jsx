@@ -22,6 +22,7 @@ const transformDepartmentData = (response) => {
 const EditDepartmentDetails = ({ department, onUpdate }) => {
   const [formData, setFormData] = useState({
     name: department.name || '',
+    code: department.code || '',
     description: department.description || '',
     headUserId: department.headUserId || ''
   });
@@ -61,6 +62,12 @@ const EditDepartmentDetails = ({ department, onUpdate }) => {
       // Validate form data
       if (!formData.name || formData.name.trim() === '') {
         toast.error('Department name is required');
+        setLoading(false);
+        return;
+      }
+
+      if (!formData.code || formData.code.trim() === '') {
+        toast.error('Department code is required');
         setLoading(false);
         return;
       }
@@ -116,6 +123,24 @@ const EditDepartmentDetails = ({ department, onUpdate }) => {
                 name="name"
                 value={formData.name}
                 onChange={handleInputChange}
+                required
+              />
+            </div>
+          </Col>
+        </Row>
+
+        <Row>
+          <Col md={12}>
+            <div className="mb-3">
+              <label htmlFor="code" className="form-label">Department Code</label>
+              <input
+                type="text"
+                className="form-control"
+                id="code"
+                name="code"
+                value={formData.code}
+                onChange={handleInputChange}
+                placeholder="e.g., CCT"
                 required
               />
             </div>
