@@ -48,7 +48,17 @@ const DepartmentRow = ({ department, index, onView, onToggleStatus }) => {
       
       <td className="border-neutral-200 align-middle hide-mobile">
         <span className="text-dark">
-          {department.departmentHead?.name || 'Not assigned'}
+          {department.departmentHead ? (
+            (() => {
+              const { lastName, middleName, firstName } = department.departmentHead;
+              const fullName = [lastName, middleName, firstName]
+                .filter(Boolean)
+                .join(' ');
+              return fullName || department.departmentHead.name || 'Not assigned';
+            })()
+          ) : (
+            'Not assigned'
+          )}
         </span>
       </td>
       

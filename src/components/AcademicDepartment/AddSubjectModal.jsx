@@ -10,7 +10,6 @@ const AddSubjectModal = ({ show, onClose, onSave, loading = false, courseId }) =
     code: '',
     description: '',
     method: 'CLASSROOM',
-    duration: '',
     type: 'UNLIMIT',
     roomName: '',
     remarkNote: '',
@@ -31,7 +30,6 @@ const AddSubjectModal = ({ show, onClose, onSave, loading = false, courseId }) =
         code: '',
         description: '',
         method: 'CLASSROOM',
-        duration: '',
         type: 'UNLIMIT',
         roomName: '',
         remarkNote: '',
@@ -71,10 +69,6 @@ const AddSubjectModal = ({ show, onClose, onSave, loading = false, courseId }) =
     }
 
     // Optional fields validation (Y in schema) - only validate format if provided
-    if (formData.duration.trim() && (isNaN(formData.duration) || parseInt(formData.duration) <= 0)) {
-      newErrors.push('Duration must be a positive number');
-    }
-
     if (formData.passScore.trim() && (isNaN(formData.passScore) || parseFloat(formData.passScore) < 0 || parseFloat(formData.passScore) > 100)) {
       newErrors.push('Pass score must be between 0 and 100');
     }
@@ -106,21 +100,21 @@ const AddSubjectModal = ({ show, onClose, onSave, loading = false, courseId }) =
     setIsSubmitting(true);
     try {
       // Prepare data for API call
+      // Note: duration will be calculated by backend based on startDate and endDate
       const subjectData = {
         courseId: courseId, // Always use current course ID from prop
         name: formData.name.trim(),
         code: formData.code.trim(),
         description: formData.description.trim() || null, // Optional (Y in schema)
         method: formData.method,
-        duration: formData.duration.trim() ? parseInt(formData.duration) : null, // Optional (Y in schema)
         type: formData.type,
         roomName: formData.roomName.trim() || null, // Optional (Y in schema)
         remarkNote: formData.remarkNote.trim() || null, // Optional (Y in schema)
         timeSlot: formData.timeSlot.trim() || null, // Optional (Y in schema)
         isSIM: formData.isSIM,
         passScore: formData.passScore.trim() ? parseFloat(formData.passScore) : null, // Optional (Y in schema)
-        startDate: new Date(formData.startDate).toISOString(),
-        endDate: new Date(formData.endDate).toISOString()
+        startDate: formData.startDate, // Date only (YYYY-MM-DD)
+        endDate: formData.endDate // Date only (YYYY-MM-DD)
       };
 
       // Call API to create subject
@@ -153,7 +147,6 @@ const AddSubjectModal = ({ show, onClose, onSave, loading = false, courseId }) =
       code: '',
       description: '',
       method: 'CLASSROOM',
-      duration: '',
       type: 'UNLIMIT',
       roomName: '',
       remarkNote: '',
@@ -250,19 +243,6 @@ const AddSubjectModal = ({ show, onClose, onSave, loading = false, courseId }) =
                 </Form.Select>
               </Form.Group>
             </Col>
-            <Col md={6}>
-              <Form.Group className="mb-3">
-                <Form.Label>Duration (days)</Form.Label>
-                <Form.Control
-                  type="number"
-                  name="duration"
-                  value={formData.duration}
-                  onChange={handleInputChange}
-                  placeholder="Enter duration in days"
-                  min="1"
-                />
-              </Form.Group>
-            </Col>
           </Row>
 
           <Row>
@@ -329,7 +309,7 @@ const AddSubjectModal = ({ show, onClose, onSave, loading = false, courseId }) =
               <Form.Group className="mb-3">
                 <Form.Label>Start Date *</Form.Label>
                 <Form.Control
-                  type="datetime-local"
+                  type="date"
                   name="startDate"
                   value={formData.startDate}
                   onChange={handleInputChange}
@@ -341,7 +321,7 @@ const AddSubjectModal = ({ show, onClose, onSave, loading = false, courseId }) =
               <Form.Group className="mb-3">
                 <Form.Label>End Date *</Form.Label>
                 <Form.Control
-                  type="datetime-local"
+                  type="date"
                   name="endDate"
                   value={formData.endDate}
                   onChange={handleInputChange}

@@ -1155,3 +1155,126 @@ div.subject-details .card {
     display: table-cell !important;
   }
 }
+
+/* ============================================
+   TRAINER TABLE RESPONSIVE - MOBILE/TABLET
+   ============================================ */
+
+/* CRITICAL: Ensure Tab.Pane and Card.Body don't block scroll */
+.tab-pane[data-event-key="trainers"] {
+  overflow: visible !important;
+  height: auto !important;
+  max-height: none !important;
+}
+
+.card-body .tab-pane[data-event-key="trainers"] {
+  overflow: visible !important;
+  height: auto !important;
+}
+
+/* Base styles - Ensure vertical scroll is enabled with HIGHEST SPECIFICITY */
+.scrollable-table-container.admin-table.trainer-table-scroll,
+div.scrollable-table-container.admin-table.trainer-table-scroll,
+.tab-pane .scrollable-table-container.admin-table.trainer-table-scroll {
+  overflow-x: auto !important;
+  overflow-y: auto !important;
+  -webkit-overflow-scrolling: touch !important;
+  width: 100% !important;
+  max-height: 500px !important;
+  height: auto !important;
+  position: relative !important;
+  display: block !important;
+}
+
+/* Override scrollable-table.css responsive rules with HIGHEST SPECIFICITY */
+@media (max-width: 768px) {
+  /* CRITICAL: Override scrollable-table.css max-height: 300px with highest specificity */
+  .scrollable-table-container.admin-table.trainer-table-scroll,
+  div.scrollable-table-container.admin-table.trainer-table-scroll,
+  .tab-pane .scrollable-table-container.admin-table.trainer-table-scroll,
+  .tab-pane[data-event-key="trainers"] .scrollable-table-container.admin-table.trainer-table-scroll {
+    overflow-x: auto !important;
+    overflow-y: auto !important;
+    max-height: 400px !important; /* MUST override scrollable-table.css max-height: 300px */
+    height: auto !important;
+    margin: 0 -0.75rem !important;
+    padding: 0 0.75rem !important;
+    -webkit-overflow-scrolling: touch !important;
+    display: block !important;
+  }
+
+  .scrollable-table-container.admin-table .table,
+  div.scrollable-table-container.admin-table .table {
+    min-width: 600px !important;
+    font-size: 0.8rem !important;
+  }
+
+  .scrollable-table-container.admin-table .table th,
+  .scrollable-table-container.admin-table .table td,
+  div.scrollable-table-container.admin-table .table th,
+  div.scrollable-table-container.admin-table .table td {
+    padding: 0.5rem 0.4rem !important;
+    white-space: nowrap !important;
+    font-size: 0.8rem !important;
+  }
+
+  .scrollable-table-container.admin-table .sticky-header th,
+  div.scrollable-table-container.admin-table .sticky-header th {
+    font-size: 0.75rem !important;
+    padding: 0.5rem 0.4rem !important;
+  }
+
+  .scrollable-table-container.admin-table::-webkit-scrollbar,
+  div.scrollable-table-container.admin-table::-webkit-scrollbar {
+    width: 6px !important;
+  }
+}
+
+/* Mobile responsive - Small phones (576px and below) */
+@media (max-width: 576px) {
+  /* CRITICAL: Override scrollable-table.css max-height: 250px with highest specificity */
+  .scrollable-table-container.admin-table.trainer-table-scroll,
+  div.scrollable-table-container.admin-table.trainer-table-scroll,
+  .tab-pane .scrollable-table-container.admin-table.trainer-table-scroll,
+  .tab-pane[data-event-key="trainers"] .scrollable-table-container.admin-table.trainer-table-scroll {
+    overflow-x: auto !important;
+    overflow-y: auto !important;
+    max-height: 350px !important; /* MUST override scrollable-table.css max-height: 250px */
+    height: auto !important;
+    margin: 0 -0.5rem !important;
+    padding: 0 0.5rem !important;
+    -webkit-overflow-scrolling: touch !important;
+    display: block !important;
+  }
+
+  .scrollable-table-container.admin-table .table,
+  div.scrollable-table-container.admin-table .table {
+    min-width: 550px !important;
+    font-size: 0.75rem !important;
+  }
+
+  .scrollable-table-container.admin-table .table th,
+  .scrollable-table-container.admin-table .table td,
+  div.scrollable-table-container.admin-table .table th,
+  div.scrollable-table-container.admin-table .table td {
+    padding: 0.375rem 0.3rem !important;
+    font-size: 0.75rem !important;
+  }
+
+  .scrollable-table-container.admin-table .sticky-header th,
+  div.scrollable-table-container.admin-table .sticky-header th {
+    font-size: 0.7rem !important;
+    padding: 0.375rem 0.3rem !important;
+  }
+
+  .scrollable-table-container.admin-table .table .badge,
+  div.scrollable-table-container.admin-table .table .badge {
+    font-size: 0.7rem !important;
+    padding: 0.25rem 0.5rem !important;
+  }
+
+  .scrollable-table-container.admin-table::-webkit-scrollbar,
+  div.scrollable-table-container.admin-table::-webkit-scrollbar {
+    width: 6px !important;
+  }
+}

@@ -14,6 +14,7 @@ const YourDraftsPage = () => {
   const { user } = useAuth();
   const [drafts, setDrafts] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [deletingDraftId, setDeletingDraftId] = useState(null);
 
   useEffect(() => {
     if (user?.id) {
@@ -125,6 +126,26 @@ const YourDraftsPage = () => {
     } catch (error) {
       console.error('Error opening draft:', error);
       toast.error('Failed to load draft: ' + (error.message || 'Unknown error'));
+    }
+  };
+
+  const handleDeleteDraft = async (draftId, draftName) => {
+    try {
+      setDeletingDraftId(draftId);
+      const response = await templateAPI.deleteDraft(draftId);
+      
+      // Show success message from API response
+      const message = response?.message || `Draft "${draftName}" deleted successfully`;
+      toast.success(message);
+      
+      // Remove draft from list
+      setDrafts(prevDrafts => prevDrafts.filter(draft => draft.id !== draftId));
+    } catch (error) {
+      const errorMessage = error?.response?.data?.message || error.message || 'Failed to delete draft';
+      toast.error(errorMessage);
+      console.error('Error deleting draft:', error);
+    } finally {
+      setDeletingDraftId(null);
     }
   };
 
@@ -283,17 +304,78 @@ const YourDraftsPage = () => {
                         <small className="text-muted flex-shrink-0 ms-2">{formatDate(draft.createdAt)}</small>
                       </div>
 
-                      {/* Footer with Continue Editing Button */}
+                      {/* Footer with Continue Editing and Delete Buttons */}
                       <div className="mt-auto pt-2 border-top" style={{ flexShrink: 0 }}>
-                        <Button
-                          variant="primary-custom"
-                          size="sm"
-                          className="w-100 d-flex align-items-center justify-content-center"
-                          onClick={() => handleOpenDraft(draft.id)}
-                        >
-                          <Pencil size={14} className="me-2" />
-                          Continue Editing
-                        </Button>
+                        <div className="d-flex gap-2">
+                          <Button
+                            variant="primary"
+                            size="sm"
+                            className="flex-grow-1 d-flex align-items-center justify-content-center"
+                            onClick={() => handleOpenDraft(draft.id)}
+                            style={{
+                              backgroundColor: '#1b3c53',
+                              borderColor: '#1b3c53',
+                              color: '#fff',
+                              fontWeight: 500
+                            }}
+                            onMouseEnter={(e) => {
+                              e.currentTarget.style.backgroundColor = '#153a4a';
+                              e.currentTarget.style.borderColor = '#153a4a';
+                            }}
+                            onMouseLeave={(e) => {
+                              e.currentTarget.style.backgroundColor = '#1b3c53';
+                              e.currentTarget.style.borderColor = '#1b3c53';
+                            }}
+                          >
+                            <Pencil size={14} className="me-2" />
+                            Edit
+                          </Button>
+                          <Button
+                            variant="secondary"
+                            size="sm"
+                            className="d-flex align-items-center justify-content-center"
+                            onClick={() => handleDeleteDraft(draft.id, draft.name)}
+                            disabled={deletingDraftId === draft.id}
+                            style={{
+                              minWidth: '44px',
+                              padding: '0.375rem 0.75rem',
+                              backgroundColor: 'transparent',
+                              borderColor: '#6c757d',
+                              color: '#6c757d',
+                              border: '1px solid #6c757d !important',
+                              fontWeight: 500,
+                              cursor: deletingDraftId === draft.id ? 'not-allowed' : 'pointer',
+                              opacity: deletingDraftId === draft.id ? 0.6 : 1,
+                              transition: 'all 0.25s ease'
+                            }}
+                            onMouseEnter={(e) => {
+                              if (deletingDraftId !== draft.id) {
+                                e.currentTarget.style.backgroundColor = '#6c757d';
+                                e.currentTarget.style.color = '#fff';
+                                e.currentTarget.style.borderColor = '#6c757d';
+                                e.currentTarget.style.boxShadow = '0 2px 8px rgba(108, 117, 125, 0.3)';
+                                e.currentTarget.style.transform = 'translateY(-2px)';
+                              }
+                            }}
+                            onMouseLeave={(e) => {
+                              e.currentTarget.style.backgroundColor = 'transparent';
+                              e.currentTarget.style.color = '#6c757d';
+                              e.currentTarget.style.borderColor = '#6c757d';
+                              e.currentTarget.style.boxShadow = 'none';
+                              e.currentTarget.style.transform = 'translateY(0)';
+                            }}
+                            title="Delete this draft"
+                          >
+                            {deletingDraftId === draft.id ? (
+                              <>
+                                <span className="spinner-border spinner-border-sm" style={{ width: '14px', height: '14px', marginRight: '4px' }} />
+                                Deleting
+                              </>
+                            ) : (
+                              '✕ Delete'
+                            )}
+                          </Button>
+                        </div>
                       </div>
                     </Card.Body>
                   </Card>

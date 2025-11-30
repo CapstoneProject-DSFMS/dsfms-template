@@ -106,6 +106,21 @@ apiClient.interceptors.request.use(
           }
         });
       }
+      
+      // Debug log for department update requests
+      if (config.url?.includes('/departments/') && config.method === 'put') {
+        console.log('🔍 Department Update Request (Interceptor):', {
+          url: config.url,
+          method: config.method,
+          baseURL: config.baseURL,
+          fullURL: `${config.baseURL}${config.url}`,
+          data: config.data,
+          headers: {
+            'Content-Type': config.headers['Content-Type'],
+            Authorization: config.headers.Authorization ? 'Bearer [TOKEN]' : 'No token'
+          }
+        });
+      }
     }
     return config;
   },

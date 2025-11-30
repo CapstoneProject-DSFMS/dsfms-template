@@ -73,7 +73,7 @@ const NAV_ITEMS = [
   },
   {
     id: 'system-config',
-    label: 'System Configuration',
+    label: 'Global Fields',
     path: ROUTES.SYSTEM_CONFIG,
     icon: 'gear',
     permissions: [PERMISSION_IDS.VIEW_ALL_GLOBAL_FIELDS], // View All Global Fields

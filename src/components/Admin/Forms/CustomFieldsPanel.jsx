@@ -1053,6 +1053,21 @@ const CustomFieldsPanel = ({
         return;
       }
 
+      // Validate for exactly one trainer signature and one trainee signature
+      const trainerSignatureFields = allFields.filter(f => f.fieldType === 'SIGNATURE_IMAGE' && f.roleRequired === 'TRAINER');
+      if (trainerSignatureFields.length !== 1) {
+        toast.error('Template must have  one  SIGNATURE_IMAGE field.');
+        setIsSubmitting(false);
+        return;
+      }
+
+      const traineeSignatureFields = allFields.filter(f => f.fieldType === 'SIGNATURE_DRAW' && f.roleRequired === 'TRAINEE');
+      if (traineeSignatureFields.length !== 1) {
+        toast.error('Template must have  one  SIGNATURE_DRAW field.');
+        setIsSubmitting(false);
+        return;
+      }
+
       // Validate FINAL_SCORE_TEST fields
       const finalScoreTestFields = allFields.filter(f => f.fieldType === 'FINAL_SCORE_TEST');
       const hasFinalScoreNum = finalScoreNumFields.length > 0;
@@ -1432,6 +1447,31 @@ const CustomFieldsPanel = ({
     // order auto
     setPartSubFieldRoleRequired('TRAINER');
   };
+  
+  // Determine current section being edited for field type filtering
+  const currentSectionForField = editingSectionIndex !== null && editingSectionIndex < sections.length
+    ? sections[editingSectionIndex]
+    : null;
+  
+  const isTraineeSectionForField = currentSectionForField?.editBy === 'TRAINEE';
+
+  const allFieldTypeOptions = [
+    { value: 'TEXT', label: 'TEXT' },
+    { value: 'TOGGLE', label: 'TOGGLE' },
+    { value: 'IMAGE', label: 'IMAGE' },
+    { value: 'PART', label: 'PART' },
+    { value: 'SIGNATURE_DRAW', label: 'SIGNATURE_DRAW' },
+    { value: 'SIGNATURE_IMAGE', label: 'SIGNATURE_IMAGE' },
+    { value: 'FINAL_SCORE_TEXT', label: 'FINAL_SCORE_TEXT' },
+    { value: 'FINAL_SCORE_NUM', label: 'FINAL_SCORE_NUM' },
+    { value: 'VALUE_LIST', label: 'VALUE_LIST' },
+  ];
+
+  const traineeBlockedTypes = ['SIGNATURE_IMAGE', 'FINAL_SCORE_NUM', 'FINAL_SCORE_TEXT'];
+
+  const availableFieldTypeOptions = isTraineeSectionForField
+    ? allFieldTypeOptions.filter(option => !traineeBlockedTypes.includes(option.value))
+    : allFieldTypeOptions;
 
   return (
     <>
@@ -1571,6 +1611,14 @@ const CustomFieldsPanel = ({
                       if (readOnly || dragState.sectionIndex === null) return;
                       if (dragState.sectionIndex === sIdx) return; // Same section - no need to handle
                       if (!collapsedSections[sIdx]) return; // Only handle when collapsed
+
+                      // NEW: Check if source and target sections have matching editBy roles
+                      const sourceSection = sections[dragState.sectionIndex];
+                      const targetSection = sections[sIdx];
+                      if (sourceSection.editBy !== targetSection.editBy) {
+                          // If roles don't match, do not allow drag over visual feedback
+                          return; 
+                      }
                       
                       e.preventDefault();
                       e.stopPropagation();
@@ -1590,6 +1638,15 @@ const CustomFieldsPanel = ({
                       if (readOnly || dragState.sectionIndex === null || dragState.fromIndex === null) return;
                       if (dragState.sectionIndex === sIdx) return; // Same section - handled elsewhere
                       if (!collapsedSections[sIdx]) return; // Only handle when collapsed
+
+                      // NEW: Check if source and target sections have matching editBy roles
+                      const sourceSection = sections[dragState.sectionIndex];
+                      const targetSection = sections[sIdx];
+                      if (sourceSection.editBy !== targetSection.editBy) {
+                          toast.warning('Cannot move fields between sections with different "Edit By" roles.');
+                          setDragState({ sectionIndex: null, fromIndex: null, overIndex: null, position: 'above', targetSectionIndex: null });
+                          return; // Do not proceed with the drop
+                      }
                       
                       e.preventDefault();
                       e.stopPropagation();
@@ -1649,6 +1706,14 @@ const CustomFieldsPanel = ({
                       // Allow dropping fields from other sections into empty section body
                       if (readOnly || dragState.sectionIndex === null) return;
                       if (dragState.sectionIndex === sIdx) return; // Same section - handled by field onDragOver
+
+                      // NEW: Check if source and target sections have matching editBy roles
+                      const sourceSection = sections[dragState.sectionIndex];
+                      const targetSection = sections[sIdx];
+                      if (sourceSection.editBy !== targetSection.editBy) {
+                          // If roles don't match, do not allow drag over visual feedback
+                          return;
+                      }
                       
                       e.preventDefault();
                       e.stopPropagation();
@@ -1667,6 +1732,15 @@ const CustomFieldsPanel = ({
                       // Handle drop into empty section body or at the end of section
                       if (readOnly || dragState.sectionIndex === null || dragState.fromIndex === null) return;
                       if (dragState.sectionIndex === sIdx) return; // Same section - handled by field onDrop
+
+                      // NEW: Check if source and target sections have matching editBy roles
+                      const sourceSection = sections[dragState.sectionIndex];
+                      const targetSection = sections[sIdx];
+                      if (sourceSection.editBy !== targetSection.editBy) {
+                          toast.warning('Cannot move fields between sections with different "Edit By" roles.');
+                          setDragState({ sectionIndex: null, fromIndex: null, overIndex: null, position: 'above', targetSectionIndex: null });
+                          return; // Do not proceed with the drop
+                      }
                       
                       e.preventDefault();
                       e.stopPropagation();
@@ -2063,16 +2137,9 @@ const CustomFieldsPanel = ({
                     }}
                     required
                   >
-                    <option value="TEXT">TEXT</option>
-                    <option value="IMAGE">IMAGE</option>
-                    <option value="PART">PART</option>
-                    <option value="TOGGLE">TOGGLE</option>
-                    <option value="SECTION_CONTROL_TOGGLE">SECTION_CONTROL_TOGGLE</option>
-                    <option value="SIGNATURE_DRAW">SIGNATURE_DRAW</option>
-                    <option value="SIGNATURE_IMAGE">SIGNATURE_IMAGE</option>
-                    <option value="FINAL_SCORE_TEXT">FINAL_SCORE_TEXT</option>
-                    <option value="FINAL_SCORE_NUM">FINAL_SCORE_NUM</option>
-                    <option value="VALUE_LIST">VALUE_LIST</option>
+                    {availableFieldTypeOptions.map(option => (
+                      <option key={option.value} value={option.value}>{option.label}</option>
+                    ))}
                   </Form.Select>
                 </Form.Group>
               </Col>
@@ -2220,16 +2287,9 @@ const CustomFieldsPanel = ({
                     }}
                     required
                   >
-                    <option value="TEXT">TEXT</option>
-                    <option value="IMAGE">IMAGE</option>
-                    <option value="PART">PART</option>
-                    <option value="TOGGLE">TOGGLE</option>
-                    <option value="SECTION_CONTROL_TOGGLE">SECTION_CONTROL_TOGGLE</option>
-                    <option value="SIGNATURE_DRAW">SIGNATURE_DRAW</option>
-                    <option value="SIGNATURE_IMAGE">SIGNATURE_IMAGE</option>
-                    <option value="FINAL_SCORE_TEXT">FINAL_SCORE_TEXT</option>
-                    <option value="FINAL_SCORE_NUM">FINAL_SCORE_NUM</option>
-                    <option value="VALUE_LIST">VALUE_LIST</option>
+                    {availableFieldTypeOptions.map(option => (
+                      <option key={option.value} value={option.value}>{option.label}</option>
+                    ))}
                   </Form.Select>
                 </Form.Group>
               </Col>

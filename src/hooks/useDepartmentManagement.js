@@ -15,7 +15,10 @@ const transformDepartmentData = (departmentsData) => {
       id: dept.headUser.id,
       name: dept.headUser.name || dept.headUser.email,
       email: dept.headUser.email,
-      role: dept.headUser.role
+      role: dept.headUser.role,
+      lastName: dept.headUser.lastName,
+      middleName: dept.headUser.middleName,
+      firstName: dept.headUser.firstName
     } : null,
     status: dept.isActive === true ? 'ACTIVE' : 'INACTIVE',
     coursesCount: dept.courseCount || dept.coursesCount || 0,

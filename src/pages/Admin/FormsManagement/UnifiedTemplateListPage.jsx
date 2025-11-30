@@ -588,7 +588,8 @@ const UnifiedTemplateListPage = () => {
               show={showPreviewModal}
               onHide={() => {
                 setShowPreviewModal(false);
-                setSelectedTemplate(null);
+                // Delay template reset to avoid race condition
+                setTimeout(() => setSelectedTemplate(null), 300);
               }}
               template={selectedTemplate}
             />

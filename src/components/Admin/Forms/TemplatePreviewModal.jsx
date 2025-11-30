@@ -11,11 +11,15 @@ import {
   Clock,
   Download,
   FileEarmarkPlus,
-  Calendar
+  Calendar,
+  PencilSquare
 } from 'react-bootstrap-icons';
+import { useNavigate } from 'react-router-dom';
+import { ROUTES } from '../../../constants/routes';
 import { userAPI } from '../../../api/user';
 
 const TemplatePreviewModal = ({ show, onHide, template }) => {
+  const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState('details');
   const [reviewedByUser, setReviewedByUser] = useState(null);
   const [loadingReviewedBy, setLoadingReviewedBy] = useState(false);
@@ -83,6 +87,27 @@ const TemplatePreviewModal = ({ show, onHide, template }) => {
     // TODO: Implement create new version functionality
     console.log('Create new version for template:', template.id);
   };
+
+  const handleUpdateRejectedTemplate = () => {
+    // Navigate to FormEditorPage with update rejected template flag
+    navigate(ROUTES.TEMPLATES_EDITOR, {
+      state: {
+        isUpdateRejected: true,
+        templateId: template.id,
+        templateInfo: template,
+        fileName: template.name || 'Untitled Document',
+        importType: 'Update Rejected Template',
+        // Load template content if available
+        documentUrl: template.templateContent?.startsWith('http') ? template.templateContent : null,
+        content: template.templateContent?.startsWith('http') ? null : template.templateContent,
+        initialSections: template.sections || []
+      }
+    });
+    onHide(); // Close modal
+  };
+
+  // Check if template is rejected
+  const isRejected = template?.status === 'REJECTED' || template?.status === 'DENIED';
 
   const renderDetails = () => (
     <div className="template-details">
@@ -248,6 +273,56 @@ const TemplatePreviewModal = ({ show, onHide, template }) => {
     );
   };
 
+  const renderOverview = () => {
+    return (
+      <Row style={{ height: '100%', margin: 0 }}>
+        {/* PDF Preview */}
+        <Col xs={12} lg={6} style={{ paddingRight: '8px' }}>
+          <div className="mb-2">
+            <h6 className="mb-0" style={{ color: '#333', fontWeight: 500 }}>PDF Preview</h6>
+          </div>
+          {loadingPDF ? (
+            <div className="border rounded p-4 bg-light text-center" style={{ minHeight: '400px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+              <div>
+                <Spinner animation="border" variant="primary" className="mb-3" />
+                <p className="text-muted mb-0">Loading PDF preview...</p>
+              </div>
+            </div>
+          ) : pdfUrl ? (
+            <div style={{ height: '55vh', overflow: 'hidden' }}>
+              <iframe
+                src={pdfUrl}
+                style={{
+                  width: '100%',
+                  height: '100%',
+                  border: '1px solid #dee2e6',
+                  borderRadius: '0.375rem',
+                  display: 'block'
+                }}
+                title="Template PDF Preview"
+              />
+            </div>
+          ) : (
+            <Alert variant="warning" className="mb-0">
+              <FileEarmarkPdf className="me-2" />
+              PDF preview is not available. Please try again or contact support.
+            </Alert>
+          )}
+        </Col>
+
+        {/* Template Config Schema */}
+        <Col xs={12} lg={6} style={{ paddingLeft: '8px' }}>
+          <div className="mb-2">
+            <h6 className="mb-0" style={{ color: '#333', fontWeight: 500 }}>Template fields & sections</h6>
+          </div>
+          <div style={{ maxHeight: '55vh', overflowY: 'auto' }}>
+            <TemplateConfigSchema sections={template?.sections || []} />
+          </div>
+        </Col>
+      </Row>
+    );
+  };
+
   return (
     <Modal 
       show={show} 
@@ -301,6 +376,16 @@ const TemplatePreviewModal = ({ show, onHide, template }) => {
         <Button variant="outline-secondary" onClick={onHide}>
           Close
         </Button>
+        {isRejected && (
+          <Button
+            variant="warning"
+            onClick={handleUpdateRejectedTemplate}
+            className="d-flex align-items-center"
+          >
+            <PencilSquare className="me-2" size={16} />
+            Update Rejected Template
+          </Button>
+        )}
         <Button
           variant="primary-custom"
           onClick={handleCreateNewVersion}

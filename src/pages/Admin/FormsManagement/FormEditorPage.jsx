@@ -38,6 +38,7 @@ const FormEditorPage = () => {
   }, [hasUnsavedChanges]);
 
   const [initialSections, setInitialSections] = useState(null);
+  const [isUpdateRejected, setIsUpdateRejected] = useState(false);
 
   // Get data from navigation state
   useEffect(() => {
@@ -48,7 +49,9 @@ const FormEditorPage = () => {
         fileName: initialFileName, 
         importType: initialImportType,
         templateInfo: initialTemplateInfo,
-        initialSections: sectionsFromState // ← Get initialSections from navigation state
+        initialSections: sectionsFromState, // ← Get initialSections from navigation state
+        isUpdateRejected: updateRejectedFlag,
+        templateId
       } = location.state;
       
       // For "File with fields" or "Create Version": Use editorDocumentUrl if available (from import), otherwise use documentUrl/content
@@ -81,6 +84,22 @@ const FormEditorPage = () => {
           departmentId: initialTemplateInfo.departmentId || ''
         });
       }
+
+      // Handle Update Rejected Template flow
+      if (updateRejectedFlag && templateId) {
+        setIsUpdateRejected(true);
+        // Set currentTemplateId in localStorage so EditorWithMergeFields will use PUT API
+        const existingMeta = readTemplateMetaFromStorage();
+        const updatedMeta = {
+          ...existingMeta,
+          currentTemplateId: templateId
+        };
+        localStorage.setItem('templateInfo', JSON.stringify(updatedMeta));
+        localStorage.setItem('currentTemplateId', templateId);
+        console.log('🔄 Update Rejected Template flow - Set currentTemplateId:', templateId);
+      } else {
+        setIsUpdateRejected(false);
+      }
       
       console.log('📄 FormEditorPage received:', { 
         documentUrl: initialDocumentUrl, 
@@ -88,7 +107,9 @@ const FormEditorPage = () => {
         fileName: initialFileName,
         templateInfo: initialTemplateInfo,
         initialSections: sectionsFromState,
-        finalContent: finalContent
+        finalContent: finalContent,
+        isUpdateRejected: updateRejectedFlag,
+        templateId
       });
     }
   }, [location.state]);
@@ -325,44 +346,47 @@ const FormEditorPage = () => {
                     }}
                   />
                 )}
-                <Button
-                  variant="outline-light"
-                  size="sm"
-                  onClick={handleSaveDraft}
-                  disabled={isSavingDraft}
-                  className="d-flex align-items-center gap-2"
-                  style={{
-                    borderWidth: '2px',
-                    fontWeight: '500',
-                    backgroundColor: 'rgba(255, 255, 255, 0.1)',
-                    backdropFilter: 'blur(4px)',
-                    whiteSpace: 'nowrap'
-                  }}
-                  onMouseEnter={(e) => {
-                    if (!isSavingDraft) {
-                      e.currentTarget.style.backgroundColor = 'rgba(255, 255, 255, 0.2)';
-                      e.currentTarget.style.borderColor = '#fff';
-                    }
-                  }}
-                  onMouseLeave={(e) => {
-                    if (!isSavingDraft) {
-                      e.currentTarget.style.backgroundColor = 'rgba(255, 255, 255, 0.1)';
-                      e.currentTarget.style.borderColor = '#fff';
-                    }
-                  }}
-                >
-                  {isSavingDraft ? (
-                    <>
-                      <Spinner animation="border" size="sm" variant="light" style={{ width: '14px', height: '14px' }} />
-                      <span>Saving...</span>
-                    </>
-                  ) : (
-                    <>
-                      <Save size={16} />
-                      <span>Save Draft</span>
-                    </>
-                  )}
-                </Button>
+                {/* Hide Save Draft button when updating rejected template */}
+                {!isUpdateRejected && (
+                  <Button
+                    variant="outline-light"
+                    size="sm"
+                    onClick={handleSaveDraft}
+                    disabled={isSavingDraft}
+                    className="d-flex align-items-center gap-2"
+                    style={{
+                      borderWidth: '2px',
+                      fontWeight: '500',
+                      backgroundColor: 'rgba(255, 255, 255, 0.1)',
+                      backdropFilter: 'blur(4px)',
+                      whiteSpace: 'nowrap'
+                    }}
+                    onMouseEnter={(e) => {
+                      if (!isSavingDraft) {
+                        e.currentTarget.style.backgroundColor = 'rgba(255, 255, 255, 0.2)';
+                        e.currentTarget.style.borderColor = '#fff';
+                      }
+                    }}
+                    onMouseLeave={(e) => {
+                      if (!isSavingDraft) {
+                        e.currentTarget.style.backgroundColor = 'rgba(255, 255, 255, 0.1)';
+                        e.currentTarget.style.borderColor = '#fff';
+                      }
+                    }}
+                  >
+                    {isSavingDraft ? (
+                      <>
+                        <Spinner animation="border" size="sm" variant="light" style={{ width: '14px', height: '14px' }} />
+                        <span>Saving...</span>
+                      </>
+                    ) : (
+                      <>
+                        <Save size={16} />
+                        <span>Save Draft</span>
+                      </>
+                    )}
+                  </Button>
+                )}
                 <Button
                   variant="outline-light"
                   size="sm"
