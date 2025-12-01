@@ -9,6 +9,7 @@ import AddTemplateContentButton from '../../../components/Admin/Forms/AddTemplat
 import { PermissionWrapper } from '../../../components/Common';
 import { PERMISSION_IDS } from '../../../constants/permissionIds';
 import { departmentAPI } from '../../../api/department';
+import templateAPI from '../../../api/template';
 import { readTemplateMetaFromStorage } from '../../../utils/templateBuilder';
 
 const FormEditorPage = () => {
@@ -42,77 +43,108 @@ const FormEditorPage = () => {
 
   // Get data from navigation state
   useEffect(() => {
-    if (location.state) {
-      const { 
-        content: initialContent, 
-        documentUrl: initialDocumentUrl,
-        fileName: initialFileName, 
-        importType: initialImportType,
-        templateInfo: initialTemplateInfo,
-        initialSections: sectionsFromState, // ← Get initialSections from navigation state
-        isUpdateRejected: updateRejectedFlag,
-        templateId
-      } = location.state;
-      
-      // For "File with fields" or "Create Version": Use editorDocumentUrl if available (from import), otherwise use documentUrl/content
-      // This is the file to load in OnlyOffice editor (not templateContent)
-      let finalContent = initialDocumentUrl || initialContent || '';
-      if (initialTemplateInfo?.editorDocumentUrl) {
-        finalContent = initialTemplateInfo.editorDocumentUrl;
-      }
-      // For "Create Version": Use templateConfig or templateContent
-      if (initialImportType === 'Create Version' && !finalContent) {
-        finalContent = initialTemplateInfo?.templateConfig || initialTemplateInfo?.templateContent || '';
-      }
-      
-      setContent(finalContent);
-      setFileName(initialFileName || 'Untitled Document');
-      setImportType(initialImportType || '');
-      setTemplateInfo(initialTemplateInfo || null);
-      
-      // Set initialSections to pass down to OnlyOfficeFormEditor
-      if (sectionsFromState && Array.isArray(sectionsFromState)) {
-        setInitialSections(sectionsFromState);
-        console.log('📥 FormEditorPage received initialSections:', sectionsFromState);
-      }
-      
-      // Initialize edit form with template info
-      if (initialTemplateInfo) {
-        setEditTemplateInfo({
-          name: initialTemplateInfo.name || '',
-          description: initialTemplateInfo.description || '',
-          departmentId: initialTemplateInfo.departmentId || ''
+    const processState = async () => {
+      if (location.state) {
+        const { 
+          content: initialContent, 
+          documentUrl: initialDocumentUrl,
+          fileName: initialFileName, 
+          importType: initialImportType,
+          templateInfo: initialTemplateInfo,
+          initialSections: sectionsFromState, // ← Get initialSections from navigation state
+          isUpdateRejected: updateRejectedFlag,
+          templateId
+        } = location.state;
+        
+        // Handle Update Rejected Template flow FIRST to fetch fresh data
+        if (updateRejectedFlag && templateId) {
+          setIsUpdateRejected(true);
+          try {
+            console.log(`🔄 Update Rejected Template flow - Fetching data for templateId: ${templateId}`);
+            const response = await templateAPI.getTemplateById(templateId);
+            const templateData = response?.data?.template || response?.data?.data?.template || response?.data;
+
+            if (!templateData) {
+              toast.error('Failed to load rejected template data.');
+              navigate(ROUTES.TEMPLATES); // Go back if we can't load data
+              return;
+            }
+
+            const editorUrl = templateData.templateConfig || templateData.templateContent || '';
+            const freshMeta = {
+              currentTemplateId: templateData.id,
+              originalTemplateId: null,
+              name: templateData.name,
+              description: templateData.description,
+              departmentId: templateData.departmentId,
+              templateContent: templateData.templateContent,
+              templateConfig: templateData.templateConfig,
+              editorDocumentUrl: editorUrl,
+            };
+
+            localStorage.setItem('templateInfo', JSON.stringify(freshMeta));
+            localStorage.setItem('currentTemplateId', templateData.id);
+            console.log('✅ Fresh metadata for rejected template saved to localStorage:', freshMeta);
+
+            // Update component state with fresh data
+            setContent(editorUrl);
+            setFileName(freshMeta.name);
+            setImportType('Update Rejected Template');
+            setTemplateInfo(freshMeta);
+            setEditTemplateInfo({
+              name: freshMeta.name,
+              description: freshMeta.description,
+              departmentId: freshMeta.departmentId,
+            });
+            if (templateData.sections && Array.isArray(templateData.sections)) {
+              setInitialSections(templateData.sections);
+            }
+          } catch (error) {
+            console.error('Error handling update rejected flow:', error);
+            toast.error('An error occurred while loading the rejected template.');
+            navigate(ROUTES.TEMPLATES);
+          }
+        } else {
+          // Normal flow for other import types
+          let finalContent = initialDocumentUrl || initialContent || '';
+          if (initialTemplateInfo?.editorDocumentUrl) {
+            finalContent = initialTemplateInfo.editorDocumentUrl;
+          }
+          if (initialImportType === 'Create Version' && !finalContent) {
+            finalContent = initialTemplateInfo?.templateConfig || initialTemplateInfo?.templateContent || '';
+          }
+          
+          setIsUpdateRejected(false);
+          setContent(finalContent);
+          setFileName(initialFileName || 'Untitled Document');
+          setImportType(initialImportType || '');
+          setTemplateInfo(initialTemplateInfo || null);
+          if (sectionsFromState && Array.isArray(sectionsFromState)) {
+            setInitialSections(sectionsFromState);
+          }
+          if (initialTemplateInfo) {
+            setEditTemplateInfo({
+              name: initialTemplateInfo.name || '',
+              description: initialTemplateInfo.description || '',
+              departmentId: initialTemplateInfo.departmentId || ''
+            });
+          }
+        }
+
+        console.log('📄 FormEditorPage received:', { 
+          documentUrl: initialDocumentUrl, 
+          content: initialContent, 
+          fileName: initialFileName,
+          templateInfo: initialTemplateInfo,
+          initialSections: sectionsFromState,
+          isUpdateRejected: updateRejectedFlag,
+          templateId
         });
       }
+    };
 
-      // Handle Update Rejected Template flow
-      if (updateRejectedFlag && templateId) {
-        setIsUpdateRejected(true);
-        // Set currentTemplateId in localStorage so EditorWithMergeFields will use PUT API
-        const existingMeta = readTemplateMetaFromStorage();
-        const updatedMeta = {
-          ...existingMeta,
-          currentTemplateId: templateId
-        };
-        localStorage.setItem('templateInfo', JSON.stringify(updatedMeta));
-        localStorage.setItem('currentTemplateId', templateId);
-        console.log('🔄 Update Rejected Template flow - Set currentTemplateId:', templateId);
-      } else {
-        setIsUpdateRejected(false);
-      }
-      
-      console.log('📄 FormEditorPage received:', { 
-        documentUrl: initialDocumentUrl, 
-        content: initialContent, 
-        fileName: initialFileName,
-        templateInfo: initialTemplateInfo,
-        initialSections: sectionsFromState,
-        finalContent: finalContent,
-        isUpdateRejected: updateRejectedFlag,
-        templateId
-      });
-    }
-  }, [location.state]);
+    processState();
+  }, [location.state, navigate]);
 
   // Load departments when edit modal opens
   useEffect(() => {
