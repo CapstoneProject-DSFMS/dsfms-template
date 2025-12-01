@@ -1,15 +1,13 @@
 import React from 'react';
 import PropTypes from 'prop-types';
-import { Card, Badge } from 'react-bootstrap';
+import { Card, Badge, Button } from 'react-bootstrap';
 import {
   CheckCircleFill,
   XCircleFill,
-  ThreeDotsVertical,
-  ArrowClockwise
+  ClipboardCheck
 } from 'react-bootstrap-icons';
 import { useNavigate } from 'react-router-dom';
 import { ROUTES } from '../../constants/routes';
-import { PortalUnifiedDropdown } from '../Common';
 
 const AssessmentSectionCard = ({ section }) => {
   const navigate = useNavigate();
@@ -38,21 +36,11 @@ const AssessmentSectionCard = ({ section }) => {
   // Only check canAssessed for styling (change color), but still allow action
   const isDisabled = !section.canAssessed;
 
-  // Build dropdown items based on state
-  const dropdownItems = [];
-  
   const handleAssessSection = () => {
     if (section.id) {
       navigate(ROUTES.ASSESSMENTS_SECTION_FIELDS(section.id));
     }
   };
-
-  // Always show "Assess Section" action (regardless of canAssessed)
-  dropdownItems.push({
-    label: 'Assess Section',
-    icon: <ArrowClockwise size={14} />,
-    onClick: handleAssessSection
-  });
 
   return (
     <Card className={`assessment-section-card ${isDisabled ? 'disabled' : ''}`}>
@@ -87,21 +75,16 @@ const AssessmentSectionCard = ({ section }) => {
 
             <div className="section-actions">
               {getSectionStatusBadge()}
-              {dropdownItems.length > 0 && (
-                <PortalUnifiedDropdown
-                  align="end"
-                  className="section-action-dropdown"
-                  placement="bottom-end"
-                  disabled={false}
-                  trigger={{
-                    variant: 'link',
-                    className: 'btn btn-link p-0 text-primary-custom',
-                    style: { border: 'none', background: 'transparent' },
-                    children: <ThreeDotsVertical size={18} />
-                  }}
-                  items={dropdownItems}
-                />
-              )}
+              <Button
+                variant="primary"
+                size="sm"
+                onClick={handleAssessSection}
+                className="d-flex align-items-center"
+                style={{ gap: '0.5rem' }}
+              >
+                <ClipboardCheck size={14} />
+                Assess
+              </Button>
             </div>
           </div>
 
@@ -109,7 +92,12 @@ const AssessmentSectionCard = ({ section }) => {
             {section.assessedBy && (
               <span className="text-muted">
                 <small className="text-uppercase text-muted">Assessed By</small>{' '}
-                <span className="fw-semibold">{section.assessedBy?.id || '—'}</span>
+                <span className="fw-semibold">
+                  {section.assessedBy?.fullName || 
+                   (section.assessedBy?.firstName && section.assessedBy?.lastName 
+                     ? `${section.assessedBy.firstName} ${section.assessedBy.lastName}` 
+                     : section.assessedBy?.id || '—')}
+                </span>
               </span>
             )}
           </div>
