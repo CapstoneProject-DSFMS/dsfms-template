@@ -1053,17 +1053,25 @@ const CustomFieldsPanel = ({
         return;
       }
 
-      // Validate for exactly one trainer signature and one trainee signature
-      const trainerSignatureFields = allFields.filter(f => f.fieldType === 'SIGNATURE_IMAGE' && f.roleRequired === 'TRAINER');
-      if (trainerSignatureFields.length !== 1) {
-        toast.error('Template must have  one  SIGNATURE_IMAGE field.');
+      // Validate signatures based on roles
+      // 1. Trainer can have one or more signature fields of either type (IMAGE or DRAW)
+      const trainerSignatureFields = allFields.filter(f =>
+        (f.fieldType === 'SIGNATURE_IMAGE' || f.fieldType === 'SIGNATURE_DRAW') &&
+        f.roleRequired === 'TRAINER'
+      );
+      if (trainerSignatureFields.length === 0) { // Changed condition: check for at least one
+        toast.error('Template must have at least one signature field (IMAGE or DRAW) for the TRAINER role.'); // Updated error message
         setIsSubmitting(false);
         return;
       }
 
-      const traineeSignatureFields = allFields.filter(f => f.fieldType === 'SIGNATURE_DRAW' && f.roleRequired === 'TRAINEE');
+      // 2. Trainee must have exactly one signature field of type DRAW
+      const traineeSignatureFields = allFields.filter(f => 
+        f.fieldType === 'SIGNATURE_DRAW' && 
+        f.roleRequired === 'TRAINEE'
+      );
       if (traineeSignatureFields.length !== 1) {
-        toast.error('Template must have  one  SIGNATURE_DRAW field.');
+        toast.error('Template must have exactly one SIGNATURE_DRAW field for the TRAINEE role.');
         setIsSubmitting(false);
         return;
       }
@@ -1297,15 +1305,17 @@ const CustomFieldsPanel = ({
       } else {
         // Use currentTemplateId already checked above
         if (currentTemplateId) {
-          // UPDATE existing draft to PENDING (submit)
-          console.log('📝 Updating existing draft to PENDING:', currentTemplateId);
-          const res = await apiClient.put(`/templates/update-draft/${currentTemplateId}`, {
-            ...payload,
+          // UPDATE existing rejected template (submit)
+          console.log('📝 Updating existing rejected template:', currentTemplateId);
+          // Create a payload without the status field for the update-rejected endpoint
+          const { status: removedStatus, ...payloadWithoutStatus } = payload; // Destructure to omit status
+          const res = await apiClient.put(`/templates/update-rejected/${currentTemplateId}`, {
+            ...payloadWithoutStatus,
             id: currentTemplateId,
-            status: 'PENDING'
+            // The status is managed by the backend for rejected templates, so it's not sent from frontend.
           });
           toast.success('Template submitted successfully');
-          console.log('✅ Template updated and submitted:', res?.data ?? res);
+          console.log('✅ Rejected template updated and submitted:', res?.data ?? res);
           
           // Clear currentTemplateId after successful submit
           const updatedMeta = {

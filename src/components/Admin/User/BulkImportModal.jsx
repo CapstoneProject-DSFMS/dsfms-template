@@ -34,7 +34,6 @@ const BulkImportModal = ({ show, onClose, onImport, loading = false }) => {
     'avatar_url',
     'gender',
     'role',
-    'department',
     'certification_number',
     'specialization',
     'years_of_experience',
@@ -374,7 +373,6 @@ const BulkImportModal = ({ show, onClose, onImport, loading = false }) => {
         '', // avatar_url (optional)
         'FEMALE', // gender (M/F or MALE/FEMALE)
         'TRAINER', // role (must match system role name)
-        '', // department (TRAINER should keep this empty)
         'CERT555', // certification_number
         'Cabin Safety', // specialization
         '7', // years_of_experience
@@ -539,10 +537,6 @@ const BulkImportModal = ({ show, onClose, onImport, loading = false }) => {
           'phone number': 'phone_number',
           'phone': 'phone_number',
           'role': 'role',
-          'department': 'department',
-          'dept': 'department',
-          'dept_id': 'department',
-          'department_id': 'department',
           'certification_number': 'certification_number',
           'certificationnumber': 'certification_number',
           'certification number': 'certification_number',
@@ -705,11 +699,6 @@ const BulkImportModal = ({ show, onClose, onImport, loading = false }) => {
               hasError = true;
               rowErrors.push('Trainer requires years of experience');
             }
-            // Department is NOT allowed for Trainer - validate that it's empty
-            if (userData.department && userData.department.trim() !== '' && userData.department.trim() !== '-') {
-              hasError = true;
-              rowErrors.push('Department is not allowed for Trainer role');
-            }
           } else if (actualRoleName === 'TRAINEE') {
             // Trainee requires date of birth, training batch, passport number, and nation
             if (!userData.date_of_birth || userData.date_of_birth.trim() === '') {
@@ -804,25 +793,6 @@ const BulkImportModal = ({ show, onClose, onImport, loading = false }) => {
         }
       };
 
-      // Handle department based on role
-      // TRAINER: Department is NOT allowed - do not include departmentId
-      // DEPARTMENT_HEAD: Department is optional (nullable) - include departmentId only if provided
-      if (actualRoleName === 'DEPARTMENT_HEAD') {
-        // DEPARTMENT_HEAD can have department (nullable)
-        if (user.department && user.department.trim() !== '' && user.department.trim() !== '-') {
-          // If department is provided, find department ID from departments list
-          // Note: user.department might be name or ID, need to find matching department
-          // For now, assuming it's provided as ID or we need to lookup by name
-          userData.departmentId = user.department;
-        } else {
-          // Department is optional - send null explicitly
-          userData.departmentId = null;
-        }
-      }
-      // For other roles (except TRAINER), add department if provided
-      else if (actualRoleName !== 'TRAINER' && user.department && user.department.trim() !== '' && user.department.trim() !== '-') {
-        userData.departmentId = user.department;
-      }
       // TRAINER: Explicitly do NOT add departmentId field
 
       // Add role-specific profiles based on actual role name
@@ -1023,7 +993,6 @@ const BulkImportModal = ({ show, onClose, onImport, loading = false }) => {
                       <th style={{ minWidth: '120px' }}>LAST NAME</th>
                       <th style={{ minWidth: '200px' }}>EMAIL</th>
                       <th style={{ minWidth: '120px' }}>ROLE</th>
-                      <th style={{ minWidth: '100px' }}>DEPARTMENT</th>
                       <th style={{ minWidth: '150px' }}>PHONE NUMBER</th>
                       <th style={{ minWidth: '100px' }}>GENDER</th>
                       <th style={{ minWidth: '150px' }}>CERTIFICATION</th>
@@ -1047,7 +1016,6 @@ const BulkImportModal = ({ show, onClose, onImport, loading = false }) => {
                         <td>{user.last_name || '-'}</td>
                         <td>{user.email || '-'}</td>
                         <td>{user.role || '-'}</td>
-                        <td>{user.department || '-'}</td>
                         <td>{user.phone_number || '-'}</td>
                         <td>
                           {user.gender ? (

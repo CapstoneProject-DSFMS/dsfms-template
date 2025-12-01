@@ -486,6 +486,10 @@ const AssessmentSectionFieldsPage = () => {
       const payload = buildValuesPayload();
       await assessmentAPI.saveSectionValues(payload);
       toast.success('Section saved successfully');
+      // Navigate back after 1 second to let toast show
+      setTimeout(() => {
+        navigate(-1);
+      }, 1000);
     } catch (error) {
       console.error('Error saving section:', error);
       toast.error(error.response?.data?.message || 'Failed to save section');
@@ -502,6 +506,10 @@ const AssessmentSectionFieldsPage = () => {
       const payload = buildValuesPayload();
       await assessmentAPI.updateSectionValues(payload);
       toast.success('Section updated successfully');
+      // Navigate back after 1 second to let toast show
+      setTimeout(() => {
+        navigate(-1);
+      }, 1000);
     } catch (error) {
       console.error('Error updating section:', error);
       toast.error(error.response?.data?.message || 'Failed to update section');
