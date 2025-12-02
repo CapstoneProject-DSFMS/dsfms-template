@@ -1,6 +1,6 @@
 import React, { useRef, useState } from 'react';
-import { Card, Button, Badge, Spinner, Image } from 'react-bootstrap';
-import { Person, Key, Pen } from 'react-bootstrap-icons';
+import { Card, Button, Badge, Image } from 'react-bootstrap';
+import { Person, Key, Pen, Save } from 'react-bootstrap-icons';
 import profileAPI from '../../api/profile';
 import { toast } from 'react-toastify';
 
@@ -8,8 +8,10 @@ const ProfileAvatar = ({
   profileData, 
   user, 
   onResetPassword,
-  onAvatarUpdated,
-  onConfigureSignature
+  onAvatarSelected,
+  onConfigureSignature,
+  onSaveChanges,
+  loading
 }) => {
   const fileInputRef = useRef(null);
   const [uploading, setUploading] = useState(false);
@@ -102,37 +104,18 @@ const ProfileAvatar = ({
     }
 
     try {
-      setUploading(true);
-      
-      // Compress image first
-      const compressedBase64 = await compressImage(file, 200, 200, 0.7);
-      
       // Show local preview
-      setPreviewUrl(compressedBase64);
-
-      // Send compressed base64 to API with current profile data
-      const res = await profileAPI.updateAvatar(compressedBase64, profileData);
-      toast.success('Avatar updated successfully');
-      if (onAvatarUpdated) onAvatarUpdated(res);
+      const previewBase64 = await compressImage(file, 200, 200, 0.7);
+      setPreviewUrl(previewBase64);
       
-    } catch (error) {
-      console.error('Update avatar failed:', error);
-      
-      // Show more specific error message
-      if (error.response?.status === 422) {
-        toast.error('Invalid avatar format. Please try a different image.');
-      } else if (error.response?.status === 413) {
-        toast.error('Image too large. Please choose a smaller image.');
-      } else {
-        toast.error('Failed to update avatar. Please try again.');
+      // Notify parent with the file
+      if (onAvatarSelected) {
+        onAvatarSelected(file);
       }
       
-      // revert preview on failure
+    } catch (error) {
+      console.error('Preview avatar failed:', error);
       setPreviewUrl(null);
-    } finally {
-      setUploading(false);
-      // Clear the input so same file can be re-selected
-      if (fileInputRef.current) fileInputRef.current.value = '';
     }
   };
 
@@ -177,7 +160,7 @@ const ProfileAvatar = ({
             onClick={handleChooseFile}
             disabled={uploading}
           >
-            {uploading ? <Spinner animation="border" size="sm" /> : '📷'}
+            📷
           </button>
           <input
             ref={fileInputRef}
@@ -195,13 +178,7 @@ const ProfileAvatar = ({
         </Badge>
         
         <div className="text-start">
-          {profileData?.address && (
-            <div className="mb-3">
-              <strong>Address:</strong>
-              <br />
-              <span className="text-muted">{profileData.address}</span>
-            </div>
-          )}
+          
           
           <div className="d-flex flex-column gap-2">
             <Button
@@ -235,6 +212,26 @@ const ProfileAvatar = ({
                 Configure Signature
               </Button>
             )}
+            
+            <Button
+              variant="primary"
+              size="sm"
+              onClick={onSaveChanges}
+              disabled={loading}
+              className="d-flex align-items-center justify-content-center"
+              style={{ 
+                minWidth: '140px',
+                borderRadius: '20px',
+                fontWeight: '500'
+              }}
+            >
+              {loading ? 'Saving...' : (
+                <>
+                  <Save size={14} className="me-2" />
+                  Save Changes
+                </>
+              )}
+            </Button>
           </div>
         </div>
       </Card.Body>

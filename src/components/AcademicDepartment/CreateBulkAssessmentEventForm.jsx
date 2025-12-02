@@ -902,7 +902,7 @@ const CreateBulkAssessmentEventForm = ({ onSuccess }) => {
             </div>
           ) : pdfUrl ? (
             <iframe
-              src={pdfUrl}
+              src={`${pdfUrl}#toolbar=0`}
               style={{
                 width: '100%',
                 height: '100%',

@@ -32,7 +32,6 @@ import YourDraftsPage from '../pages/Admin/FormsManagement/YourDraftsPage';
 import MainMenuPage from '../pages/Admin/MainMenuPage';
 import GlobalFieldListPage from '../pages/Admin/GlobalField/GlobalFieldListPage';
 import SignatureRequiredPage from '../pages/Trainee/SignatureRequiredPage';
-import SectionCompletionPage from '../pages/Trainee/SectionCompletionPage';
 import YourAssessmentsPage from '../pages/Trainee/YourAssessmentsPage';
 import CreateIssuePage from '../pages/Trainee/CreateIssuePage';
 import UnifiedReportsPage from '../pages/SQA/UnifiedReportsPage';
@@ -469,21 +468,6 @@ export const router = createBrowserRouter(
         {
           path: '',
           element: <SignatureRequiredPage />,
-        },
-      ],
-    },
-    {
-      path: ROUTES.ASSESSMENTS_COMPLETION_REQUIRED,
-      element: (
-        <ProtectedRoute>
-          <LayoutWrapper />
-        </ProtectedRoute>
-      ),
-      errorElement: <ErrorBoundary />,
-      children: [
-        {
-          path: '',
-          element: <SectionCompletionPage />,
         },
       ],
     },
@@ -968,10 +952,6 @@ export const router = createBrowserRouter(
         {
           path: 'assessment-pending',
           element: <YourAssessmentsPage />,
-        },
-        {
-          path: 'assessment-pending/section-completion',
-          element: <SectionCompletionPage />,
         },
       ],
     },

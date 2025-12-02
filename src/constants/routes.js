@@ -72,7 +72,6 @@ export const ROUTES = {
   ASSESSMENTS_SECTION_FIELDS: (sectionId) => `/assessments/sections/${sectionId}/fields`,
   ASSESSMENTS_ASSIGN: (entityType, entityId) => `/assessments/assign/${entityType}/${entityId}`,
   ASSESSMENTS_SIGNATURE_REQUIRED: '/assessments/signature-required',
-  ASSESSMENTS_COMPLETION_REQUIRED: '/assessments/completion-required',
   ASSESSMENTS_PENDING: '/assessments/pending',
   
   // Assessment Events (Academic Department)

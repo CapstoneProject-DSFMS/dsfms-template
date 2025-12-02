@@ -4,8 +4,8 @@ import { Person, Save } from 'react-bootstrap-icons';
 import profileAPI from '../../api/profile';
 import { toast } from 'react-toastify';
 
-const PersonalInfoForm = ({ profileData, user, onUpdate }) => {
-  const [loading, setLoading] = useState(false);
+const PersonalInfoForm = ({ profileData, user, onUpdate, loading = false }) => {
+  const [formLoading, setFormLoading] = useState(false);
   const [personalInfo, setPersonalInfo] = useState({
     firstName: '',
     lastName: '',
@@ -47,25 +47,22 @@ const PersonalInfoForm = ({ profileData, user, onUpdate }) => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    setLoading(true);
+    setFormLoading(true);
     
     try {
-      // Call parent update function if provided
       if (onUpdate) {
         await onUpdate(personalInfo);
       } else {
-        // Fallback: call API directly if no parent handler
         await profileAPI.updateProfile(personalInfo);
         toast.success('Personal information updated successfully!');
       }
     } catch (error) {
       console.error('Error updating personal info:', error);
-      // Don't show toast here if onUpdate is provided (parent will handle it)
       if (!onUpdate) {
         toast.error('Failed to update personal information. Please try again.');
       }
     } finally {
-      setLoading(false);
+      setFormLoading(false);
     }
   };
 
@@ -78,6 +75,7 @@ const PersonalInfoForm = ({ profileData, user, onUpdate }) => {
         </div>
       </Card.Header>
       <Card.Body>
+    
         <Form onSubmit={handleSubmit}>
           <div className="row">
             <div className="col-md-4 mb-3">
@@ -88,6 +86,7 @@ const PersonalInfoForm = ({ profileData, user, onUpdate }) => {
                   name="firstName"
                   value={personalInfo.firstName}
                   onChange={handleInputChange}
+                  disabled={true}
                   required
                 />
               </Form.Group>
@@ -100,6 +99,7 @@ const PersonalInfoForm = ({ profileData, user, onUpdate }) => {
                   name="middleName"
                   value={personalInfo.middleName}
                   onChange={handleInputChange}
+                  disabled={true}
                 />
               </Form.Group>
             </div>
@@ -111,6 +111,7 @@ const PersonalInfoForm = ({ profileData, user, onUpdate }) => {
                   name="lastName"
                   value={personalInfo.lastName}
                   onChange={handleInputChange}
+                  disabled={true}
                   required
                 />
               </Form.Group>
@@ -126,6 +127,7 @@ const PersonalInfoForm = ({ profileData, user, onUpdate }) => {
                   name="email"
                   value={personalInfo.email}
                   onChange={handleInputChange}
+                  disabled={true}
                   required
                 />
               </Form.Group>
@@ -138,6 +140,7 @@ const PersonalInfoForm = ({ profileData, user, onUpdate }) => {
                   name="phoneNumber"
                   value={personalInfo.phoneNumber}
                   onChange={handleInputChange}
+                  disabled={true}
                 />
               </Form.Group>
             </div>
@@ -151,6 +154,7 @@ const PersonalInfoForm = ({ profileData, user, onUpdate }) => {
                   name="gender"
                   value={personalInfo.gender}
                   onChange={handleInputChange}
+                  disabled={true}
                 >
                   <option value="">Select Gender</option>
                   <option value="MALE">Male</option>
@@ -171,24 +175,10 @@ const PersonalInfoForm = ({ profileData, user, onUpdate }) => {
                   value={personalInfo.address}
                   onChange={handleInputChange}
                   placeholder="Enter your address"
+                  disabled={true}
                 />
               </Form.Group>
             </div>
-          </div>
-          
-          <div className="d-flex justify-content-end">
-            <Button 
-              type="submit" 
-              variant="primary"
-              disabled={loading}
-            >
-              {loading ? 'Saving...' : (
-                <>
-                  <Save size={16} className="me-1" />
-                  Save Changes
-                </>
-              )}
-            </Button>
           </div>
         </Form>
       </Card.Body>

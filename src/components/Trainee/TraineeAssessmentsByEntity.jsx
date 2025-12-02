@@ -206,9 +206,13 @@ const TraineeAssessmentsByEntity = ({ entityType, entityId }) => {
                   {getStatusBadge(assessment.status)}
                 </td>
                 <td className="border-neutral-200 align-middle">
-                  <Badge bg={assessment.resultScore >= 70 ? 'success' : 'warning'}>
-                    {assessment.resultScore || '-'}
-                  </Badge>
+                  {assessment.resultScore ? (
+                    <Badge bg={assessment.resultText === 'FAIL' ? 'danger' : 'success'}>
+                      {assessment.resultScore}
+                    </Badge>
+                  ) : (
+                    <span className="text-muted">-</span>
+                  )}
                 </td>
                 <td className="border-neutral-200 align-middle">
                   {getResultBadge(assessment.resultScore, assessment.resultText)}

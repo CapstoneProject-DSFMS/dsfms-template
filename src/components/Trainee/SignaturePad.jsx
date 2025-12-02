@@ -115,8 +115,8 @@ const SignaturePad = ({ show, onClose, onSave, documentName, loading = false }) 
         <div className="signature-container border rounded p-3 mb-3">
           <canvas
             ref={canvasRef}
-            width={600}
-            height={200}
+            width={250}
+            height={150}
             className="border rounded w-100"
             style={{ 
               cursor: 'crosshair',

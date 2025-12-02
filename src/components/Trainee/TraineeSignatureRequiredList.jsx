@@ -1,11 +1,13 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
-import { Container, Card, Nav, Tab, Table, Badge, Spinner, Alert, Button, Form } from 'react-bootstrap';
-import { Pen, Book, FileText, ExclamationTriangle } from 'react-bootstrap-icons';
+import { Container, Card, Nav, Tab, Table, Badge, Spinner, Alert, Button, Form, Modal } from 'react-bootstrap';
+import { Pen, Book, FileText, ExclamationTriangle, Save } from 'react-bootstrap-icons';
 import { useAuth } from '../../hooks/useAuth';
 import { toast } from 'react-toastify';
 import subjectAPI from '../../api/subject';
 import assessmentAPI from '../../api/assessment';
 import courseAPI from '../../api/course';
+import uploadAPI from '../../api/upload';
+import SignaturePad from '../Profile/SignaturePad';
 import SortableHeader from './SortableHeader';
 import useTableSort from '../../hooks/useTableSort';
 import '../../styles/scrollable-table.css';
@@ -17,6 +19,9 @@ const TraineeSignatureRequiredList = ({ traineeId }) => {
   const [error, setError] = useState(null);
   const [activeTab, setActiveTab] = useState('course');
   const [signingAssessmentId, setSigningAssessmentId] = useState(null); // Track which assessment is being signed
+  const [signaturePadModalOpen, setSignaturePadModalOpen] = useState(false); // Control signature pad modal
+  const [signatureDataUrl, setSignatureDataUrl] = useState(null); // Store signature data
+  const [uploadingSignature, setUploadingSignature] = useState(false); // Track upload progress
 
   const { sortedData, sortConfig, handleSort } = useTableSort(assessments);
 
@@ -148,29 +153,81 @@ const TraineeSignatureRequiredList = ({ traineeId }) => {
     );
   };
 
-  const handleSign = async (assessmentId) => {
-    if (signingAssessmentId) {
-      return; // Prevent multiple simultaneous requests
+  const handleSign = (assessmentId) => {
+    // Open signature pad modal (not calling old API)
+    setSigningAssessmentId(assessmentId);
+    setSignaturePadModalOpen(true);
+    setSignatureDataUrl(null); // Reset signature
+  };
+
+  const handleSignatureChange = (dataUrl) => {
+    // Callback from SignaturePad when user draws signature
+    setSignatureDataUrl(dataUrl);
+  };
+
+  const handleConfirmSignature = async () => {
+    if (!signatureDataUrl || !signingAssessmentId) {
+      toast.error('Please draw your signature first');
+      return;
     }
 
+    setUploadingSignature(true);
+
     try {
-      setSigningAssessmentId(assessmentId);
-      const response = await assessmentAPI.confirmParticipation(assessmentId);
+      // Step 1: Convert signature data URL to blob
+      const response = await fetch(signatureDataUrl);
+      const blob = await response.blob();
+      const file = new File([blob], `signature-${Date.now()}.png`, { type: 'image/png' });
+
+      // Step 2: Upload signature image to S3
+      const uploadResponse = await uploadAPI.uploadImage(file, 'signature');
       
-      // Get message from response
-      const successMessage = response?.data?.message || response?.message || 'Participation confirmed successfully';
+      // Get URL from response
+      let signatureUrl = '';
+      if (typeof uploadResponse === 'string') {
+        signatureUrl = uploadResponse;
+      } else if (uploadResponse?.url) {
+        signatureUrl = uploadResponse.url;
+      } else if (uploadResponse?.data?.[0]?.url) {
+        signatureUrl = uploadResponse.data[0].url;
+      }
+
+      if (!signatureUrl) {
+        throw new Error('Failed to get signature URL from upload response');
+      }
+
+      console.log('✅ Signature uploaded to S3:', signatureUrl);
+
+      // Step 3: Call confirm-participation API with traineeSignatureUrl
+      const confirmResponse = await assessmentAPI.confirmParticipation(signingAssessmentId, {
+        traineeSignatureUrl: signatureUrl
+      });
+
+      const successMessage = confirmResponse?.message || 'Signature submitted successfully';
       toast.success(successMessage);
-      
-      // Auto-refresh the page after 1.5 seconds
-      setTimeout(() => {
-        window.location.reload();
-      }, 1500);
-    } catch (err) {
-      console.error('Error confirming participation:', err);
-      const errorMessage = err.response?.data?.message || err.message || 'Failed to confirm participation';
-      toast.error(errorMessage);
+
+      // Close modal and refresh
+      setSignaturePadModalOpen(false);
       setSigningAssessmentId(null);
+      setSignatureDataUrl(null);
+
+      // Reload data
+      setTimeout(() => {
+        loadAssessments();
+      }, 500);
+    } catch (err) {
+      console.error('Error submitting signature:', err);
+      const errorMessage = err.response?.data?.message || err.message || 'Failed to submit signature';
+      toast.error(errorMessage);
+    } finally {
+      setUploadingSignature(false);
     }
+  };
+
+  const handleCloseSignaturePad = () => {
+    setSignaturePadModalOpen(false);
+    setSigningAssessmentId(null);
+    setSignatureDataUrl(null);
   };
 
   if (loading) {
@@ -333,6 +390,58 @@ const TraineeSignatureRequiredList = ({ traineeId }) => {
           </Card.Body>
         </Tab.Container>
       </Card>
+
+      {/* Signature Pad Modal */}
+      <Modal show={signaturePadModalOpen} onHide={handleCloseSignaturePad} size="lg" centered>
+        <Modal.Header closeButton>
+          <Modal.Title>Draw Your Signature</Modal.Title>
+        </Modal.Header>
+        <Modal.Body className="text-center py-4">
+          <p className="text-muted mb-3">
+            Please draw your signature in the box below using your mouse or touch device.
+          </p>
+          <div className="d-flex justify-content-center mb-3">
+            <SignaturePad
+              onSignatureChange={handleSignatureChange}
+              width={400}
+              height={200}
+            />
+          </div>
+        </Modal.Body>
+        <Modal.Footer>
+          <Button
+            variant="outline-secondary"
+            onClick={handleCloseSignaturePad}
+            disabled={uploadingSignature}
+          >
+            Cancel
+          </Button>
+          <Button
+            variant="primary"
+            onClick={handleConfirmSignature}
+            disabled={!signatureDataUrl || uploadingSignature}
+          >
+            {uploadingSignature ? (
+              <>
+                <Spinner
+                  as="span"
+                  animation="border"
+                  size="sm"
+                  role="status"
+                  aria-hidden="true"
+                  className="me-2"
+                />
+                Uploading...
+              </>
+            ) : (
+              <>
+                <Save size={16} className="me-2" />
+                Submit Signature
+              </>
+            )}
+          </Button>
+        </Modal.Footer>
+      </Modal>
     </Container>
   );
 };
