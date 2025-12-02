@@ -158,11 +158,12 @@ const assessmentAPI = {
   /**
    * Confirm participation in an assessment
    * @param {string} assessmentId
+   * @param {Object} data - Optional data like { traineeSignatureUrl: "..." }
    * @returns {Promise} Confirm participation response
    */
-  confirmParticipation: async (assessmentId) => {
+  confirmParticipation: async (assessmentId, data = {}) => {
     try {
-      const response = await apiClient.put(`/assessments/${assessmentId}/confirm-participation`);
+      const response = await apiClient.put(`/assessments/${assessmentId}/confirm-participation`, data);
       return response.data;
     } catch (error) {
       console.error('Error confirming participation:', error);

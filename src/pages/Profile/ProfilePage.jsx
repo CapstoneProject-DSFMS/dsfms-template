@@ -16,6 +16,7 @@ const ProfilePage = () => {
   const [showResetPasswordModal, setShowResetPasswordModal] = useState(false);
   const [profileData, setProfileData] = useState(null);
   const [profileLoading, setProfileLoading] = useState(true);
+  const [selectedAvatarFile, setSelectedAvatarFile] = useState(null);
   const refreshProfile = async () => {
     try {
       setProfileLoading(true);
@@ -38,17 +39,28 @@ const ProfilePage = () => {
     setLoading(true);
     
     try {
-      // Call API to update profile
-      const response = await profileAPI.updateProfile(personalInfo);
-      setProfileData(response);
-      toast.success('Personal information updated successfully!');
+      // If avatar file is selected, only send avatar
+      if (selectedAvatarFile) {
+        const response = await profileAPI.updateProfile(selectedAvatarFile);
+        setProfileData(response);
+        setSelectedAvatarFile(null);
+      } else {
+        // Otherwise send profile info normally
+        const response = await profileAPI.updateProfile(personalInfo);
+        setProfileData(response);
+      }
+      toast.success('Profile updated successfully!');
     } catch (error) {
       console.error('Error updating profile:', error);
-      toast.error('Failed to update personal information. Please try again.');
+      toast.error('Failed to update profile. Please try again.');
       throw error;
     } finally {
       setLoading(false);
     }
+  };
+
+  const handleAvatarSelected = (file) => {
+    setSelectedAvatarFile(file);
   };
 
   const handleResetPassword = async (passwordData) => {
@@ -107,8 +119,10 @@ const ProfilePage = () => {
             profileData={profileData}
             user={user}
             onResetPassword={() => setShowResetPasswordModal(true)}
-            onAvatarUpdated={refreshProfile}
+            onAvatarSelected={handleAvatarSelected}
             onConfigureSignature={handleConfigureSignature}
+            onSaveChanges={handleUpdatePersonalInfo}
+            loading={loading}
           />
         </Col>
 
@@ -117,7 +131,7 @@ const ProfilePage = () => {
           <PersonalInfoForm 
             profileData={profileData}
             user={user}
-            onUpdate={handleUpdatePersonalInfo}
+            onUpdate={null}
           />
         </Col>
       </Row>

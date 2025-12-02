@@ -90,7 +90,7 @@ const ResetPasswordModal = ({ show, onClose, onSave, loading = false }) => {
       <Modal.Header className="bg-primary text-white">
         <Modal.Title className="d-flex align-items-center">
           <Key className="me-2" size={20} />
-          Reset Password
+          Change Password
         </Modal.Title>
         <Button
           variant="link"
@@ -176,7 +176,7 @@ const ResetPasswordModal = ({ show, onClose, onSave, loading = false }) => {
               {loading ? 'Updating...' : (
                 <>
                   <Key size={16} className="me-1" />
-                  Update Password
+                  Change Password
                 </>
               )}
             </Button>

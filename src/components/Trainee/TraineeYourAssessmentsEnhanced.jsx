@@ -140,22 +140,22 @@ const TraineeYourAssessmentsEnhanced = () => {
     );
   };
 
-  const getResultBadge = (resultScore, resultText) => {
-    if (!resultScore && !resultText) return <span className="text-muted">-</span>;
+  const getResultBadge = (resultText) => {
+    if (!resultText) return <span className="text-muted">-</span>;
     
     if (resultText === 'NOT_APPLICABLE') {
       return <Badge bg="secondary">N/A</Badge>;
     }
 
-    if (resultScore) {
-      return (
-        <Badge bg={resultScore >= 70 ? 'success' : 'warning'}>
-          {resultScore}/100
-        </Badge>
-      );
+    if (resultText === 'PASS') {
+      return <Badge bg="success">PASS</Badge>;
     }
 
-    return resultText || '-';
+    if (resultText === 'FAIL') {
+      return <Badge bg="danger">FAIL</Badge>;
+    }
+
+    return <Badge bg="secondary">{resultText}</Badge>;
   };
 
   const handleParticipate = (assessment) => {
@@ -396,18 +396,18 @@ const TraineeYourAssessmentsEnhanced = () => {
                         </td>
                         <td className="border-neutral-200 align-middle">
                           {assessment.resultScore ? (
-                            <Badge bg={assessment.resultScore >= 70 ? 'success' : 'warning'}>
-                              {assessment.resultScore}/100
+                            <Badge bg={assessment.resultText === 'FAIL' ? 'danger' : 'success'}>
+                              {assessment.resultScore}
                             </Badge>
                           ) : (
                             <span className="text-muted">-</span>
                           )}
                         </td>
                         <td className="border-neutral-200 align-middle">
-                          {getResultBadge(assessment.resultScore, assessment.resultText)}
+                          {getResultBadge(assessment.resultText)}
                         </td>
                         <td className="border-neutral-200 align-middle text-center">
-                          {assessment.isTraineeLocked === false && (
+                          {(assessment.status === 'ON_GOING' || assessment.status === 'DRAFT') && assessment.isTraineeLocked === false && (
                             <Button
                               size="sm"
                               variant="primary"
@@ -418,7 +418,7 @@ const TraineeYourAssessmentsEnhanced = () => {
                               Participate
                             </Button>
                           )}
-                          {assessment.isTraineeLocked !== false && (
+                          {!((assessment.status === 'ON_GOING' || assessment.status === 'DRAFT') && assessment.isTraineeLocked === false) && (
                             <span className="text-muted">—</span>
                           )}
                         </td>

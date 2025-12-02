@@ -16,39 +16,24 @@ const profileAPI = {
     }
   },
 
-  // Update avatar (sends avatar string to PUT /profile)
-  updateAvatar: async (avatarString, currentProfileData) => {
+  // Update avatar (sends file as FormData with key 'avatar')
+  updateAvatar: async (file) => {
     try {
-      // Get current profile data first
-      const currentProfile = currentProfileData || await profileAPI.getProfile();
+      const formData = new FormData();
+      formData.append('avatar', file);
       
-      // Update only the avatar field while keeping other data
-      const updateData = {
-        ...currentProfile,
-        avatarUrl: avatarString // Backend expects 'avatarUrl' not 'avatar'
-      };
-      
-      // Ensure required string fields are not null/undefined
-      if (!updateData.address) updateData.address = '';
-      if (!updateData.phoneNumber) updateData.phoneNumber = '';
-      if (!updateData.avatarUrl) updateData.avatarUrl = '';
-      if (!updateData.firstName) updateData.firstName = '';
-      if (!updateData.lastName) updateData.lastName = '';
-      if (!updateData.middleName) updateData.middleName = '';
-      
-      // Remove any undefined or null values that might cause validation issues
-      Object.keys(updateData).forEach(key => {
-        if (updateData[key] === undefined || updateData[key] === null) {
-          delete updateData[key];
+      // Send FormData with Content-Type multipart/form-data
+      const response = await apiClient.put('/profile', formData, {
+        headers: {
+          'Content-Type': 'multipart/form-data'
         }
       });
       
-      const response = await apiClient.put('/profile', updateData);
       // Handle response format: { message, data } or direct data
       if (response.data && response.data.data) {
         return response.data.data;
       }
-      return response.data; // Expect updated profile
+      return response.data;
     } catch (error) {
       console.error('Error updating avatar:', error);
       throw error;
@@ -56,12 +41,32 @@ const profileAPI = {
   },
 
   // Update user profile
-  updateProfile: async (profileData) => {
+  updateProfile: async (data) => {
     try {
-      console.log('updateProfile - sending data:', profileData);
-      const response = await apiClient.put('/profile', profileData);
+      const formData = new FormData();
+      
+      // Check if data is a File object (avatar)
+      if (data instanceof File) {
+        // Only send avatar file
+        formData.append('avatar', data);
+      } else if (typeof data === 'object' && data !== null) {
+        // Send profile data fields
+        Object.keys(data).forEach(key => {
+          const value = data[key];
+          if (value !== null && value !== undefined) {
+            formData.append(key, value);
+          }
+        });
+      }
+      
+      console.log('updateProfile - sending FormData with keys:', Array.from(formData.keys()));
+      const response = await apiClient.put('/profile', formData, {
+        headers: {
+          'Content-Type': 'multipart/form-data'
+        }
+      });
       console.log('updateProfile - response:', response.data);
-      // Handle response format: { message, data } or direct data
+      
       if (response.data && response.data.data) {
         return response.data.data;
       }
@@ -83,6 +88,19 @@ const profileAPI = {
       return response.data;
     } catch (error) {
       console.error('Error resetting password:', error);
+      throw error;
+    }
+  },
+
+  // Update signature
+  updateSignature: async (signatureImageUrl) => {
+    try {
+      const response = await apiClient.put('/profile/signature', {
+        signatureImageUrl
+      });
+      return response.data;
+    } catch (error) {
+      console.error('Error updating signature:', error);
       throw error;
     }
   }

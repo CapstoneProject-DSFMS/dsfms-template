@@ -118,12 +118,6 @@ const NAV_ITEMS = [
         path: ROUTES.ASSESSMENTS_SIGNATURE_REQUIRED,
         roleOnly: ['TRAINEE'],
       },
-      {
-        id: 'completion-required',
-        label: 'Section Completion Required List',
-        path: ROUTES.ASSESSMENTS_COMPLETION_REQUIRED,
-        roleOnly: ['TRAINEE'],
-      },
     ],
   },
   {
