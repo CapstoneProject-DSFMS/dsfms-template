@@ -54,8 +54,7 @@ const useDepartmentManagement = (shouldLoad = true) => {
       setLoading(true);
       setError(null);
       try {
-        const response = await departmentAPI.getDepartments();
-        const departmentsData = response.departments || [];
+        const departmentsData = await departmentAPI.getDepartments();
         
         // Transform API data to match expected format
         const transformedDepartments = transformDepartmentData(departmentsData);
@@ -129,8 +128,7 @@ const useDepartmentManagement = (shouldLoad = true) => {
       const response = await departmentAPI.createDepartment(departmentData);
       
       // Reload departments to get the latest data
-      const updatedResponse = await departmentAPI.getDepartments();
-      const departmentsData = updatedResponse.departments || [];
+      const departmentsData = await departmentAPI.getDepartments();
       
       const transformedDepartments = transformDepartmentData(departmentsData);
       
@@ -152,8 +150,7 @@ const useDepartmentManagement = (shouldLoad = true) => {
       const response = await departmentAPI.updateDepartment(id, departmentData);
       
       // Reload departments to get the latest data
-      const updatedResponse = await departmentAPI.getDepartments();
-      const departmentsData = updatedResponse.departments || [];
+      const departmentsData = await departmentAPI.getDepartments();
       
       const transformedDepartments = transformDepartmentData(departmentsData);
       
@@ -175,8 +172,7 @@ const useDepartmentManagement = (shouldLoad = true) => {
       await departmentAPI.deleteDepartment(id);
       
       // Reload departments to get the latest data
-      const updatedResponse = await departmentAPI.getDepartments();
-      const departmentsData = updatedResponse.departments || [];
+      const departmentsData = await departmentAPI.getDepartments();
       
       const transformedDepartments = transformDepartmentData(departmentsData);
       
@@ -197,8 +193,7 @@ const useDepartmentManagement = (shouldLoad = true) => {
       await departmentAPI.toggleDepartmentStatus(id);
       
       // Reload departments to get the latest data
-      const updatedResponse = await departmentAPI.getDepartments();
-      const departmentsData = updatedResponse.departments || [];
+      const departmentsData = await departmentAPI.getDepartments();
       
       const transformedDepartments = transformDepartmentData(departmentsData);
       
@@ -219,8 +214,7 @@ const useDepartmentManagement = (shouldLoad = true) => {
       await departmentAPI.disableDepartment(id);
       
       // Reload departments to get the latest data
-      const updatedResponse = await departmentAPI.getDepartments();
-      const departmentsData = updatedResponse.departments || [];
+      const departmentsData = await departmentAPI.getDepartments();
       
       const transformedDepartments = transformDepartmentData(departmentsData);
       
@@ -241,8 +235,7 @@ const useDepartmentManagement = (shouldLoad = true) => {
       await departmentAPI.enableDepartment(id);
       
       // Reload departments to get the latest data
-      const updatedResponse = await departmentAPI.getDepartments();
-      const departmentsData = updatedResponse.departments || [];
+      const departmentsData = await departmentAPI.getDepartments();
       
       const transformedDepartments = transformDepartmentData(departmentsData);
       
@@ -264,8 +257,7 @@ const useDepartmentManagement = (shouldLoad = true) => {
       await departmentAPI.bulkDeleteDepartments(ids);
       
       // Reload departments to get the latest data
-      const updatedResponse = await departmentAPI.getDepartments();
-      const departmentsData = updatedResponse.departments || [];
+      const departmentsData = await departmentAPI.getDepartments();
       
       const transformedDepartments = transformDepartmentData(departmentsData);
       
@@ -287,8 +279,7 @@ const useDepartmentManagement = (shouldLoad = true) => {
       await departmentAPI.bulkToggleStatus(ids, status);
       
       // Reload departments to get the latest data
-      const updatedResponse = await departmentAPI.getDepartments();
-      const departmentsData = updatedResponse.departments || [];
+      const departmentsData = await departmentAPI.getDepartments();
       
       const transformedDepartments = transformDepartmentData(departmentsData);
       
@@ -351,8 +342,7 @@ const useDepartmentManagement = (shouldLoad = true) => {
     setLoading(true);
     setError(null);
     try {
-      const response = await departmentAPI.getDepartments();
-      const departmentsData = response.departments || [];
+      const departmentsData = await departmentAPI.getDepartments();
       const transformedDepartments = transformDepartmentData(departmentsData);
       setDepartments(transformedDepartments);
     } catch (err) {

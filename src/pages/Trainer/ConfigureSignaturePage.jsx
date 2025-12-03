@@ -81,6 +81,22 @@ const ConfigureSignaturePage = () => {
     setSignatureDataUrl(dataUrl);
   };
 
+  // Resize signature to 87x60
+  const resizeSignature = (originalDataUrl) => {
+    return new Promise((resolve) => {
+      const img = new Image();
+      img.onload = () => {
+        const canvas = document.createElement('canvas');
+        canvas.width = 87;
+        canvas.height = 60;
+        const ctx = canvas.getContext('2d');
+        ctx.drawImage(img, 0, 0, 87, 60);
+        resolve(canvas.toDataURL('image/png'));
+      };
+      img.src = originalDataUrl;
+    });
+  };
+
   const handleSaveSignature = async () => {
     if (!signatureDataUrl) {
       toast.warning('Please draw your signature first.');
@@ -90,8 +106,11 @@ const ConfigureSignaturePage = () => {
     setSaving(true);
 
     try {
+      // Resize signature to 87x60
+      const resizedDataUrl = await resizeSignature(signatureDataUrl);
+      
       // Step 1: Convert dataUrl to blob and file
-      const response = await fetch(signatureDataUrl);
+      const response = await fetch(resizedDataUrl);
       const blob = await response.blob();
       const file = new File([blob], `signature-${Date.now()}.png`, { type: 'image/png' });
 
