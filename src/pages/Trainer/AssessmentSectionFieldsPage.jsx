@@ -35,10 +35,17 @@ const AssessmentSectionFieldsPage = () => {
       setState((prev) => ({ ...prev, loading: true, error: null }));
       const response = await assessmentAPI.getAssessmentSectionFields(sectionId);
       
+      // 🔍 DEBUG: Log API response
+      console.log('📊 API Response:', response);
+      console.log('📝 Fields from API:', response?.fields);
+      console.log('🔢 Total fields count:', response?.fields?.length);
+      
       if (response?.success) {
         const fields = response.fields || [];
         const fieldValues = {};
         let sectionControlToggleValue = true; // Default to true
+        
+        console.log('✅ Processing', fields.length, 'fields');
         
         // Initialize field values from API
         fields.forEach((field) => {
@@ -70,6 +77,9 @@ const AssessmentSectionFieldsPage = () => {
         const sectionInfo = response.assessmentSectionInfo || null;
         const canUpdate = sectionInfo?.canUpdated || false;
         const canSave = sectionInfo?.canSave || false;
+        
+        console.log('📋 Section Info:', sectionInfo);
+        console.log('🎯 canUpdate:', canUpdate, 'canSave:', canSave);
         
         setState({
           loading: false,
@@ -178,6 +188,12 @@ const AssessmentSectionFieldsPage = () => {
     Object.keys(childrenMap).forEach((parentId) => {
       childrenMap[parentId].sort((a, b) => (a.templateField?.displayOrder || 0) - (b.templateField?.displayOrder || 0));
     });
+
+    console.log('🔍 organizeFields() result:');
+    console.log('   Total fields in state.fields:', state.fields.length);
+    console.log('   Parent fields (no parentId):', parentFields.length);
+    console.log('   Children by parent:', Object.keys(childrenMap).map(parentId => `${parentId}: ${childrenMap[parentId].length} children`));
+    console.log('   SectionControlToggle:', sectionControlToggleField ? 'YES' : 'NO');
 
     return { parentFields, childrenMap, sectionControlToggleField };
   };
@@ -361,6 +377,8 @@ const AssessmentSectionFieldsPage = () => {
     const { childrenMap } = organizeFields();
     const children = childrenMap[fieldId] || [];
     const itemCount = children.length;
+    
+    console.log(`👶 renderFieldGroup: "${label}" has ${children.length} children`);
 
     return (
       <div key={fieldId} className="field-group">
@@ -546,6 +564,31 @@ const AssessmentSectionFieldsPage = () => {
   const sectionSubtitle = state.sectionInfo?.templateSection 
     ? `${state.sectionInfo.templateSection.editBy} · ${state.sectionInfo.templateSection.roleInSubject}`
     : '';
+  
+  // Calculate total rendered fields
+  const { childrenMap } = organizeFields();
+  let totalRenderedCount = 0;
+  const partGroups = [];
+  let partGroupsCount = 0;
+  parentFields.forEach(field => {
+    const tf = field.templateField;
+    if (tf?.fieldType === 'PART') {
+      const childCount = (childrenMap[tf.id] || []).length;
+      totalRenderedCount += childCount;
+      partGroups.push(`${tf.label}(${childCount})`);
+      partGroupsCount++;
+    } else if (tf?.fieldType === 'CHECK_BOX') {
+      totalRenderedCount += 1;
+    } else {
+      totalRenderedCount += 1;
+    }
+  });
+  console.log('📊 SUMMARY:');
+  console.log('   API returned:', state.fields.length, 'fields');
+  console.log('   Parent fields:', parentFields.length);
+  console.log('   PART groups found:', partGroupsCount, '→', partGroups.join(' | '));
+  console.log('   ChildrenMap keys:', Object.keys(childrenMap).length, 'groups');
+  console.log('   Total rendering:', totalRenderedCount, 'fields');
 
   return (
     <Container fluid className="py-4">
@@ -589,47 +632,65 @@ const AssessmentSectionFieldsPage = () => {
           <div className="assessment-section-fields">
             <div className="fields-container">
               <Row className="g-3">
-                {parentFields.map((field, idx) => {
-                  const templateField = field.templateField;
-                  if (!templateField) return null;
+                {(() => {
+                  const result = [];
+                  let regularFieldIndex = 0; // Track index for regular fields only
+                  
+                  parentFields.forEach((field, idx) => {
+                    const templateField = field.templateField;
+                    if (!templateField) return;
 
-                  if (templateField.fieldType === 'PART') {
-                    return (
-                      <Col xs={12} key={templateField.id}>
-                        {renderFieldGroup(field)}
-                      </Col>
-                    );
-                  }
-
-                  if (templateField.fieldType === 'CHECK_BOX') {
-                    return (
-                      <Col xs={12} key={templateField.id}>
-                        {renderCheckboxField(field)}
-                      </Col>
-                    );
-                  }
-
-                  // Regular fields in pairs (2 columns)
-                  if (idx % 2 === 0) {
-                    const leftField = field;
-                    const rightField = parentFields[idx + 1];
-                    return (
-                      <React.Fragment key={`row-${idx}`}>
-                        <Col md={6}>
-                          {renderFieldInput(leftField)}
+                    if (templateField.fieldType === 'PART') {
+                      result.push(
+                        <Col xs={12} key={templateField.id}>
+                          {renderFieldGroup(field)}
                         </Col>
-                        {rightField && 
-                         rightField.templateField?.fieldType !== 'PART' && 
-                         rightField.templateField?.fieldType !== 'CHECK_BOX' && (
+                      );
+                      return;
+                    }
+
+                    if (templateField.fieldType === 'CHECK_BOX') {
+                      result.push(
+                        <Col xs={12} key={templateField.id}>
+                          {renderCheckboxField(field)}
+                        </Col>
+                      );
+                      return;
+                    }
+
+                    // Regular fields in pairs (2 columns)
+                    // Only render when regularFieldIndex is even
+                    if (regularFieldIndex % 2 === 0) {
+                      const leftField = field;
+                      // Find next regular field (skip PART and CHECK_BOX)
+                      let rightField = null;
+                      for (let i = idx + 1; i < parentFields.length; i++) {
+                        const nextField = parentFields[i];
+                        const nextTF = nextField.templateField;
+                        if (nextTF && nextTF.fieldType !== 'PART' && nextTF.fieldType !== 'CHECK_BOX') {
+                          rightField = nextField;
+                          break;
+                        }
+                      }
+                      
+                      result.push(
+                        <React.Fragment key={`row-${regularFieldIndex}`}>
                           <Col md={6}>
-                            {renderFieldInput(rightField)}
+                            {renderFieldInput(leftField)}
                           </Col>
-                        )}
-                      </React.Fragment>
-                    );
-                  }
-                  return null;
-                })}
+                          {rightField && (
+                            <Col md={6}>
+                              {renderFieldInput(rightField)}
+                            </Col>
+                          )}
+                        </React.Fragment>
+                      );
+                    }
+                    regularFieldIndex++;
+                  });
+                  
+                  return result;
+                })()}
               </Row>
             </div>
           </div>

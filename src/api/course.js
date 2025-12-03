@@ -98,8 +98,13 @@ const courseAPI = {
   // Get department by ID
   getDepartmentById: async (departmentId) => {
     try {
-      const response = await apiClient.get(`/departments/${departmentId}`);
-      return response.data;
+      const response = await apiClient.get(`/departments/${departmentId}`, {
+        params: {
+          includeDeleted: true,
+        }
+      });
+      // Handle response format: { message: "...", data: { id, name, courses, ... } }
+      return response.data?.data || response.data || {};
     } catch (error) {
       console.error('Error fetching department by ID:', error);
       throw error;

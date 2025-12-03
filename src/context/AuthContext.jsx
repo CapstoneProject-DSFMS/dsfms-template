@@ -231,7 +231,6 @@ export const AuthProvider = ({ children }) => {
     
     // Check for NEW FORMAT: permissionGroups
     if (actualData.permissionGroups && Array.isArray(actualData.permissionGroups)) {
-      console.log('✅ ========== NORMALIZING PERMISSIONS FROM NEW FORMAT (permissionGroups) ==========');
       
       const permissions = [];
       
@@ -250,13 +249,7 @@ export const AuthProvider = ({ children }) => {
           });
         }
       });
-      
-      console.log('📋 Normalized Permissions Count:', permissions.length);
-      console.log('📋 Sample Permissions (first 5):', permissions.slice(0, 5).map(p => ({
-        code: p.code,
-        name: p.name,
-        featureGroup: p.featureGroup
-      })));
+
       
       return permissions;
     }
@@ -303,25 +296,12 @@ export const AuthProvider = ({ children }) => {
         try {
           const fullRoleData = await roleAPI.getRoleById(roleId);
           
-          // Detailed logging for debugging
-          console.log('🔍 ========== ROLE DETAIL API RESPONSE ==========');
-          console.log('📋 Role ID:', roleId);
-          console.log('📋 Role Name:', roleName);
-          console.log('📋 Full Role Data Structure:', {
-            hasData: !!fullRoleData?.data,
-            hasPermissionGroups: !!fullRoleData?.data?.permissionGroups,
-            hasPermissions: !!fullRoleData?.permissions,
-            permissionGroupsCount: fullRoleData?.data?.permissionGroups?.length || 0,
-            permissionsCount: fullRoleData?.permissions?.length || 0
-          });
+
           
           // Normalize permissions from response (handles both new and old format)
           const permissions = normalizePermissionsFromResponse(fullRoleData);
           
-          // Log normalized permissions
-          console.log('✅ ========== PERMISSIONS NORMALIZED ==========');
-          console.log('📋 Total Permissions:', permissions.length);
-          console.log('📋 Permission Codes:', permissions.map(p => p.code).slice(0, 10));
+
           
           // Create role object (keep structure compatible)
           const role = {
@@ -332,14 +312,7 @@ export const AuthProvider = ({ children }) => {
             permissionCount: permissions.length
           };
           
-          console.log('✅ ========== ROLE DETAIL FETCHED SUCCESSFULLY ==========');
-          console.log('📋 Role:', {
-            id: role.id,
-            name: role.name,
-            description: role.description,
-            isActive: role.isActive,
-            permissionCount: role.permissionCount
-          });
+
           
           setUserRole(role);
           setUserPermissions(permissions);
@@ -502,13 +475,6 @@ export const AuthProvider = ({ children }) => {
       localStorage.setItem('user', JSON.stringify(userInfo));
       
       // Fetch user role and permissions using roleId
-      console.log('🔍 ========== LOGIN: FETCHING ROLE & PERMISSIONS ==========');
-      console.log('📋 User Info:', {
-        id: userInfo.id,
-        email: userInfo.email,
-        role: userInfo.role,
-        roleId: userInfo.roleId
-      });
       
       const { role, permissions } = await fetchUserRoleAndPermissions(userInfo.role, userInfo.roleId);
       
@@ -517,28 +483,14 @@ export const AuthProvider = ({ children }) => {
         throw new Error('Failed to fetch user role and permissions');
       }
       
-      console.log('✅ ========== LOGIN: ROLE & PERMISSIONS FETCHED ==========');
-      console.log('📋 Final Role:', {
-        id: role.id,
-        name: role.name,
-        description: role.description,
-        isActive: role.isActive
-      });
-      console.log('📋 Final Permissions Count:', permissions.length);
-      console.log('📋 Final Permissions Summary:', {
-        total: permissions.length,
-        withCode: permissions.filter(p => p.code).length,
-        withName: permissions.filter(p => p.name).length,
-        withFeatureGroup: permissions.filter(p => p.featureGroup).length,
-        sampleCodes: permissions.slice(0, 5).map(p => p.code)
-      });
+
       
       setUser(userInfo);
       setUserRole(role);
       setUserPermissions(permissions);
       setIsAuthenticated(true);
       
-      console.log('✅ ========== LOGIN SUCCESSFUL ==========');
+
       return { success: true, user: userInfo, role, permissions };
     } catch (error) {
       return { success: false, error: mapError(error) || 'Login failed' };
