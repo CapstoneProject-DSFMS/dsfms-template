@@ -1,10 +1,9 @@
 import axios from 'axios';
 import { API_CONFIG } from '../config/api.js';
 import { redirectToLogin } from '../utils/navigation.js';
-import { getApiBaseUrl } from '../config/env.js';
 
-// Base configuration for API calls - use centralized env config
-const API_BASE_URL = getApiBaseUrl();
+// Base configuration for API calls
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'https://dsfms.id.vn';
 
 // Create axios instance with default config
 const apiClient = axios.create({
@@ -36,7 +35,7 @@ const isTokenExpired = (token) => {
     const payload = JSON.parse(atob(token.split('.')[1]));
     const currentTime = Date.now() / 1000;
     return payload.exp < currentTime;
-  } catch (error) {
+  } catch {
     return true; // If can't decode, consider expired
   }
 };
@@ -48,7 +47,7 @@ const isTokenExpiringSoon = (token) => {
     const currentTime = Date.now() / 1000;
     const timeUntilExpiry = payload.exp - currentTime;
     return timeUntilExpiry < 300; // 5 minutes
-  } catch (error) {
+  } catch {
     return true; // If can't decode, consider expiring soon
   }
 };
