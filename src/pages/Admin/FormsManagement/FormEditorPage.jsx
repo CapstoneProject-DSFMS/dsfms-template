@@ -41,6 +41,40 @@ const FormEditorPage = () => {
   const [initialSections, setInitialSections] = useState(null);
   const [isUpdateRejected, setIsUpdateRejected] = useState(false);
 
+  // Helper function to clear currentTemplateId from localStorage
+  const clearCurrentTemplateId = () => {
+    try {
+      // Remove standalone currentTemplateId key
+      localStorage.removeItem('currentTemplateId');
+      
+      // Also clear from templateInfo object
+      const meta = readTemplateMetaFromStorage();
+      if (meta.currentTemplateId) {
+        const updatedMeta = {
+          ...meta,
+          currentTemplateId: null
+        };
+        localStorage.setItem('templateInfo', JSON.stringify(updatedMeta));
+        console.log('🗑️ Cleared currentTemplateId from localStorage');
+      }
+    } catch (error) {
+      console.error('Error clearing currentTemplateId:', error);
+    }
+  };
+
+  // Clear currentTemplateId when component unmounts (handles browser back button and any navigation away)
+  useEffect(() => {
+    // Cleanup function runs when component unmounts
+    return () => {
+      // Only clear if we're actually leaving the editor page
+      // Check if we're navigating away by checking if location will change
+      // But since we can't predict future location, we'll clear on unmount
+      // This handles: browser back button, direct navigation, programmatic navigation
+      console.log('🔙 FormEditorPage unmounting - clearing currentTemplateId');
+      clearCurrentTemplateId();
+    };
+  }, []); // Only run once on mount
+
   // Get data from navigation state
   useEffect(() => {
     const processState = async () => {
@@ -227,6 +261,8 @@ const FormEditorPage = () => {
       setShowDiscardModal(true);
     } else {
       console.log('✅ No unsaved changes, navigating back');
+      // Clear currentTemplateId before navigating away
+      clearCurrentTemplateId();
       navigate(ROUTES.TEMPLATES);
     }
   };
@@ -234,6 +270,8 @@ const FormEditorPage = () => {
   const handleConfirmDiscard = () => {
     setShowDiscardModal(false);
     setHasUnsavedChanges(false);
+    // Clear currentTemplateId before navigating away
+    clearCurrentTemplateId();
     navigate(ROUTES.TEMPLATES);
   };
 

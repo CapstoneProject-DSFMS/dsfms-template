@@ -104,7 +104,13 @@ const ImportFileModal = ({ show, onHide, onImportSuccess, onImportError }) => {
           const frontendSections = convertExtractFieldsToFrontendSections(extractResponse);
           console.log('🔄 Converted to frontend sections:', frontendSections);
           
+          // Clear currentTemplateId and originalTemplateId before creating new template
+          localStorage.removeItem('currentTemplateId');
+          localStorage.removeItem('originalTemplateId');
+          console.log('🗑️ Cleared currentTemplateId and originalTemplateId before creating new template');
+
           const templateData = {
+            id: null, // Clear id field to prevent using old draft ID
             name: templateInfo.name,
             description: templateInfo.description,
             departmentId: templateInfo.departmentId,
@@ -113,7 +119,10 @@ const ImportFileModal = ({ show, onHide, onImportSuccess, onImportError }) => {
             importType: 'File with fields',
             createdAt: new Date().toISOString(),
             // Lưu URL file import để dùng cho OnlyOffice editor (không phải templateContent)
-            editorDocumentUrl: documentUrl
+            editorDocumentUrl: documentUrl,
+            // Explicitly set to null to ensure no leftover values
+            currentTemplateId: null,
+            originalTemplateId: null
           };
 
           // Lưu vào localStorage
@@ -143,8 +152,14 @@ const ImportFileModal = ({ show, onHide, onImportSuccess, onImportError }) => {
           
           toast.warning(errorMessage);
           
+          // Clear currentTemplateId and originalTemplateId before creating new template
+          localStorage.removeItem('currentTemplateId');
+          localStorage.removeItem('originalTemplateId');
+          console.log('🗑️ Cleared currentTemplateId and originalTemplateId before creating new template');
+
           // Vẫn cho vào editor nhưng không có extracted fields
           const templateData = {
+            id: null, // Clear id field to prevent using old draft ID
             name: templateInfo.name,
             description: templateInfo.description,
             departmentId: templateInfo.departmentId,
@@ -152,7 +167,10 @@ const ImportFileModal = ({ show, onHide, onImportSuccess, onImportError }) => {
             fileName: selectedFile.name.replace('.docx', ''),
             importType: 'File with fields',
             createdAt: new Date().toISOString(),
-            editorDocumentUrl: documentUrl
+            editorDocumentUrl: documentUrl,
+            // Explicitly set to null to ensure no leftover values
+            currentTemplateId: null,
+            originalTemplateId: null
           };
 
           localStorage.setItem('templateInfo', JSON.stringify(templateData));
@@ -198,14 +216,23 @@ const ImportFileModal = ({ show, onHide, onImportSuccess, onImportError }) => {
           // File không có fields → tiếp tục như bình thường
           console.log('✅ File does not contain fields, proceeding with import...');
           
+          // Clear currentTemplateId and originalTemplateId before creating new template
+          localStorage.removeItem('currentTemplateId');
+          localStorage.removeItem('originalTemplateId');
+          console.log('🗑️ Cleared currentTemplateId and originalTemplateId before creating new template');
+          
           const templateData = {
+            id: null, // Clear id field to prevent using old draft ID
             name: templateInfo.name,
             description: templateInfo.description,
             departmentId: templateInfo.departmentId,
             templateContent: documentUrl,
             fileName: selectedFile.name.replace('.docx', ''),
             importType: 'File without fields',
-            createdAt: new Date().toISOString()
+            createdAt: new Date().toISOString(),
+            // Explicitly set to null to ensure no leftover values
+            currentTemplateId: null,
+            originalTemplateId: null
           };
 
           // Lưu vào localStorage
