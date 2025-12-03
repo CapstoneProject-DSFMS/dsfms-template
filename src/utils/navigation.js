@@ -1,8 +1,7 @@
 import { ROUTES, getCanonicalRoute } from '../constants/routes';
-import { getBasePath } from '../config/env.js';
 
 export const getCurrentBasename = () => {
-  return getBasePath();
+  return import.meta.env.VITE_BASE_PATH || "/";
 };
 
 // Simple redirect that respects the basename
