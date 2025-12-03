@@ -55,6 +55,21 @@ const AssessmentAssignmentsPage = () => {
         return;
       }
 
+      // Check if we have data from location.state (from Access button)
+      if (location.state?.assessments && location.state?.eventInfo) {
+        setState({
+          loading: false,
+          error: null,
+          assessments: location.state.assessments || [],
+          info: {
+            name: location.state.eventInfo?.entityInfo?.name || location.state.name,
+            code: location.state.eventInfo?.entityInfo?.code || location.state.code
+          }
+        });
+        return;
+      }
+
+      // Otherwise, fall back to old API for backward compatibility
       try {
         setState((prev) => ({ ...prev, loading: true, error: null }));
         const response =

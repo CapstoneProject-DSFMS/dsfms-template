@@ -634,12 +634,12 @@ const AssessmentSectionFieldsPage = () => {
               <Row className="g-3">
                 {(() => {
                   const result = [];
-                  let regularFieldIndex = 0; // Track index for regular fields only
                   
-                  parentFields.forEach((field, idx) => {
+                  parentFields.forEach((field) => {
                     const templateField = field.templateField;
                     if (!templateField) return;
 
+                    // PART fields - render full width
                     if (templateField.fieldType === 'PART') {
                       result.push(
                         <Col xs={12} key={templateField.id}>
@@ -649,6 +649,7 @@ const AssessmentSectionFieldsPage = () => {
                       return;
                     }
 
+                    // CHECK_BOX fields - render full width
                     if (templateField.fieldType === 'CHECK_BOX') {
                       result.push(
                         <Col xs={12} key={templateField.id}>
@@ -658,37 +659,15 @@ const AssessmentSectionFieldsPage = () => {
                       return;
                     }
 
-                    // Regular fields in pairs (2 columns)
-                    // Only render when regularFieldIndex is even
-                    if (regularFieldIndex % 2 === 0) {
-                      const leftField = field;
-                      // Find next regular field (skip PART and CHECK_BOX)
-                      let rightField = null;
-                      for (let i = idx + 1; i < parentFields.length; i++) {
-                        const nextField = parentFields[i];
-                        const nextTF = nextField.templateField;
-                        if (nextTF && nextTF.fieldType !== 'PART' && nextTF.fieldType !== 'CHECK_BOX') {
-                          rightField = nextField;
-                          break;
-                        }
-                      }
-                      
-                      result.push(
-                        <React.Fragment key={`row-${regularFieldIndex}`}>
-                          <Col md={6}>
-                            {renderFieldInput(leftField)}
-                          </Col>
-                          {rightField && (
-                            <Col md={6}>
-                              {renderFieldInput(rightField)}
-                            </Col>
-                          )}
-                        </React.Fragment>
-                      );
-                    }
-                    regularFieldIndex++;
+                    // Regular fields - render full width (no pairing)
+                    result.push(
+                      <Col xs={12} key={templateField.id}>
+                        {renderFieldInput(field)}
+                      </Col>
+                    );
                   });
                   
+                  console.log('✅ Rendered fields:', result.length);
                   return result;
                 })()}
               </Row>

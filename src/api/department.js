@@ -47,6 +47,18 @@ export const departmentAPI = {
     }
   },
 
+  // Get current user's department (for department heads)
+  getMyDepartment: async () => {
+    try {
+      const response = await apiClient.get('/departments/me');
+      // Handle response format: { message: "...", data: { id, name, courses, ... } }
+      return response.data?.data || response.data || {};
+    } catch (error) {
+      console.error('Error fetching my department:', error);
+      throw error;
+    }
+  },
+
   // Create new department
   createDepartment: async (departmentData) => {
     try {

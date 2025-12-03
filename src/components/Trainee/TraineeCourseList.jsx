@@ -12,7 +12,6 @@ import CourseFilterPanel from './CourseFilterPanel';
 import useTableSort from '../../hooks/useTableSort';
 import '../../styles/scrollable-table.css';
 
-// Add custom CSS to remove table borders
 const courseTableStyles = `
   .course-list-table-no-borders .table,
   .course-list-table-no-borders .table td,
@@ -30,6 +29,10 @@ const courseTableStyles = `
   }
   .course-list-table-no-borders .table tbody tr:last-child {
     border-bottom: none !important;
+  }
+  .course-list-table-no-borders .table th {
+    background-color: var(--bs-primary) !important;
+    color: white !important;
   }
 `;
 
@@ -563,9 +566,6 @@ const TraineeCourseList = ({ traineeId }) => {
             <SortableHeader columnKey="endDate" className="hide-mobile">
               End Date
             </SortableHeader>
-            <SortableHeader columnKey="progress" className="show-mobile">
-              Progress
-            </SortableHeader>
             <th className="border-neutral-200 text-primary-custom fw-semibold text-center show-mobile">
               Actions
             </th>
@@ -628,7 +628,6 @@ const TraineeCourseList = ({ traineeId }) => {
                   <div className="fw-medium text-dark">
                     {course.name}
                   </div>
-                  <small className="text-muted">{course.description}</small>
                 </td>
                 <td className="border-neutral-200 align-middle show-mobile">
                   {getLevelBadge(course.level)}
@@ -645,23 +644,6 @@ const TraineeCourseList = ({ traineeId }) => {
                   <span className="text-dark">
                     {course.endDate ? new Date(course.endDate).toLocaleDateString() : 'N/A'}
                   </span>
-                </td>
-                <td className="border-neutral-200 align-middle show-mobile">
-                  <div className="d-flex align-items-center" style={{ position: 'relative' }}>
-                    <small className="text-muted" style={{ 
-                      position: 'absolute',
-                      left: 0,
-                      width: '50px',
-                      textAlign: 'left',
-                      zIndex: 1
-                    }}>{course.progress || 0}%</small>
-                    <div className="progress" style={{ height: '6px', flex: '1 1 auto', marginLeft: '55px' }}>
-                      <div 
-                        className="progress-bar bg-primary" 
-                        style={{ width: `${course.progress || 0}%` }}
-                      ></div>
-                    </div>
-                  </div>
                 </td>
                 <td className="border-neutral-200 align-middle text-center show-mobile">
                   <PortalUnifiedDropdown

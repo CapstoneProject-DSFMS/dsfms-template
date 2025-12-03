@@ -89,21 +89,21 @@ const NAV_ITEMS = [
     id: 'trainee-dashboard',
     label: 'Trainee Dashboard',
     path: ROUTES.DASHBOARD,
-    icon: 'personCheck',
+    icon: 'house',
     roleOnly: ['TRAINEE'],
   },
   {
     id: 'enrolled-courses',
     label: 'Enrolled Course List',
     path: ROUTES.COURSES_ENROLLED,
-    icon: 'personCheck',
+    icon: 'book',
     roleOnly: ['TRAINEE'],
   },
   {
     id: 'all-assessments',
     label: 'All Assessments',
     path: ROUTES.ASSESSMENTS_MY_ASSESSMENTS,
-    icon: 'personCheck',
+    icon: 'checkCircle',
     roleOnly: ['TRAINEE'],
     children: [
       {
@@ -124,7 +124,7 @@ const NAV_ITEMS = [
     id: 'create-issue',
     label: 'Issue Reporting',
     path: ROUTES.REPORTS_CREATE,
-    icon: 'personCheck',
+    icon: 'fileEarmarkText',
     permissions: [PERMISSION_IDS.VIEW_SUBMITTED_REPORTS], // View Submitted Reports
   },
   {
@@ -147,14 +147,6 @@ const NAV_ITEMS = [
     path: '/department-head/dashboard',
     icon: 'building',
     roleOnly: ['DEPARTMENT_HEAD'],
-  },
-  {
-    id: 'my-department-details',
-    label: 'My Department Details',
-    path: ROUTES.DEPARTMENT_MY_DETAILS,
-    icon: 'book',
-    permissions: [PERMISSION_IDS.VIEW_DEPARTMENT_DETAILS], // View Department Details
-    excludePermissions: [PERMISSION_IDS.VIEW_ALL_DEPARTMENTS], // Hide if user can View All Departments
   },
   {
     id: 'assessment-review-requests',

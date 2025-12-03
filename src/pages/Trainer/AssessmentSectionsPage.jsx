@@ -74,7 +74,7 @@ const TrainerAssessmentSectionsPage = () => {
   const formatDate = (dateStr) => {
     if (!dateStr) return '—';
     const date = new Date(dateStr);
-    return date.toLocaleString();
+    return date.toLocaleDateString('en-US', { year: 'numeric', month: '2-digit', day: '2-digit' });
   };
 
   const handleBack = () => navigate(-1);
@@ -241,10 +241,6 @@ const TrainerAssessmentSectionsPage = () => {
           <Button variant="outline-secondary" onClick={handleBack} className="assess-back-btn">
             <ArrowLeft size={16} className="me-2" />
             Back
-          </Button>
-          <div className="assessment-pill">Assessment Details</div>
-          <Button variant="custom-purple" className="assess-preview-btn" onClick={handlePreviewForm}>
-            Assessment Form Preview
           </Button>
         </div>
 

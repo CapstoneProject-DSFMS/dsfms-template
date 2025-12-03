@@ -1,9 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { Table, Badge, Row, Col, Alert } from 'react-bootstrap';
-import { CalendarEvent, Clock, Person, Book, Eye, ThreeDotsVertical, JournalText } from 'react-bootstrap-icons';
+import { CalendarEvent, Clock, Person, Book, JournalText } from 'react-bootstrap-icons';
 import { useNavigate } from 'react-router-dom';
 import { ROUTES } from '../../constants/routes';
-import { LoadingSkeleton, SortIcon, PortalUnifiedDropdown, SearchBar } from '../Common';
+import { LoadingSkeleton, SortIcon, SearchBar } from '../Common';
 import TrainerFilterPanel from './TrainerFilterPanel';
 import useTableSort from '../../hooks/useTableSort';
 import assessmentAPI from '../../api/assessment';
@@ -119,6 +119,55 @@ const UpcomingAssessmentsList = () => {
         template: assessment.templateInfo?.name
       }
     });
+  };
+
+  const handleAccess = async (assessment) => {
+    try {
+      setLoading(true);
+
+      // Format date to YYYY-MM-DD
+      const dateStr = new Date(assessment.occurrenceDate).toISOString().split('T')[0];
+
+      let response;
+      const requestBody = {
+        courseId: entityFilter === 'course' ? assessment.entityId : undefined,
+        subjectId: entityFilter === 'subject' ? assessment.entityId : undefined,
+        templateId: assessment.templateInfo?.id,
+        occuranceDate: dateStr
+      };
+
+      // Remove undefined properties
+      Object.keys(requestBody).forEach(key => 
+        requestBody[key] === undefined && delete requestBody[key]
+      );
+
+      // Call API based on entityFilter
+      if (entityFilter === 'course') {
+        response = await assessmentAPI.getCourseEvents(requestBody);
+      } else {
+        response = await assessmentAPI.getSubjectEvents(requestBody);
+      }
+
+      if (response?.assessments && response?.eventInfo) {
+        // Navigate with API response data
+        navigate(ROUTES.ASSESSMENTS_ASSIGN(entityFilter, assessment.entityId), {
+          state: {
+            name: response.eventInfo?.name || assessment.entityName,
+            code: response.eventInfo?.entityInfo?.code || assessment.entityCode,
+            template: response.eventInfo?.name || assessment.templateInfo?.name,
+            assessments: response.assessments, // Pass full assessment list from API
+            eventInfo: response.eventInfo // Pass event info
+          }
+        });
+      } else {
+        toast.error('Failed to access assessment');
+      }
+    } catch (err) {
+      console.error('Error accessing assessment:', err);
+      toast.error('Error accessing assessment');
+    } finally {
+      setLoading(false);
+    }
   };
 
   // Get unique statuses for filter
@@ -393,34 +442,20 @@ const UpcomingAssessmentsList = () => {
                       </div>
                     </td>
                     <td className="border-neutral-200 align-middle">
-                      <div>
-                        <div className="fw-medium">{assessment.scheduledDate}</div>
-                        <small className="text-muted">{assessment.scheduledTime}</small>
-                      </div>
+                      <div className="fw-medium">{assessment.scheduledDate}</div>
                     </td>
                     <td className="border-neutral-200 align-middle">
                       {getStatusBadge(assessment.status)}
                     </td>
                     <td className="border-neutral-200 align-middle text-center">
                       {!excludedStatusesForAssessButton.has(assessment.status) && (
-                        <PortalUnifiedDropdown
-                          align="end"
-                          className="table-dropdown"
-                          placement="bottom-end"
-                          trigger={{
-                            variant: 'link',
-                            className: 'btn btn-link p-0 text-primary-custom',
-                            style: { border: 'none', background: 'transparent' },
-                            children: <ThreeDotsVertical size={16} />
-                          }}
-                          items={[
-                            {
-                              label: 'Assess',
-                              icon: <Eye />,
-                              onClick: () => handleViewAssignments(assessment)
-                            }
-                          ]}
-                        />
+                        <button
+                          className="btn btn-sm btn-primary"
+                          onClick={() => handleAccess(assessment)}
+                          disabled={loading}
+                        >
+                          {loading ? 'Processing...' : 'Access'}
+                        </button>
                       )}
                     </td>
                   </tr>

@@ -8,6 +8,7 @@ import { PermissionWrapper } from '../../components/Common';
 import { PERMISSION_IDS } from '../../constants/permissionIds';
 import { useAuth } from '../../hooks/useAuth';
 import { usePermissions } from '../../hooks/usePermissions';
+import { isDepartmentHead } from '../../utils/sidebarUtils';
 import courseAPI from '../../api/course';
 import subjectAPI from '../../api/subject';
 import SubjectTable from '../../components/AcademicDepartment/SubjectTable';
@@ -31,6 +32,9 @@ const InPageCourseDetail = ({ course, department } = {}) => {
   
   // Check if this is trainee view or academic view
   const isTraineeView = traineeId !== undefined;
+  
+  // Check if user is Department Head
+  const isDeptHead = isDepartmentHead(user);
   
   // Modal states
   const [showAddSubject, setShowAddSubject] = useState(false);
@@ -567,7 +571,7 @@ const InPageCourseDetail = ({ course, department } = {}) => {
                   </Nav.Link>
                 </Nav.Item>
               )}
-              {!isTraineeView && (
+              {!isTraineeView && !isDeptHead && (
                 <Nav.Item>
                   <Nav.Link 
                     eventKey="assessment-events" 
@@ -852,7 +856,7 @@ const InPageCourseDetail = ({ course, department } = {}) => {
               )}
 
               {/* Assessment Events Tab */}
-              {!isTraineeView && (
+              {!isTraineeView && !isDeptHead && (
                 <Tab.Pane eventKey="assessment-events" style={{ height: '100%' }}>
                   <AssessmentEventsList
                     courseId={courseId}

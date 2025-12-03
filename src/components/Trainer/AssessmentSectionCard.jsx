@@ -65,8 +65,8 @@ const AssessmentSectionCard = ({ section }) => {
       <Card 
         className={`assessment-section-card ${isDisabled ? 'disabled' : ''}`}
       >
-        <Card.Body style={isDisabled ? { filter: 'brightness(0.65)' } : {}}>
-          <div className="section-card-header">
+        <Card.Body>
+          <div className={`section-card-header ${isDisabled ? 'section-disabled-content' : ''}`}>
             <div className="section-header-grid">
               <div className="section-heading">
                 <div className="d-flex align-items-center gap-2 flex-wrap">
@@ -94,25 +94,8 @@ const AssessmentSectionCard = ({ section }) => {
                 )}
               </div>
 
-              <div className="section-actions">
-                {getSectionStatusBadge()}
-                <Button
-                  variant={isCompletedByOthers ? 'secondary' : 'primary'}
-                  size="sm"
-                  onClick={handleAssessSection}
-                  className="d-flex align-items-center"
-                  style={{
-                    gap: '0.5rem'
-                  }}
-                >
-                  {isCompletedByOthers ? (
-                    <Eye size={14} />
-                  ) : (
-                    <ClipboardCheck size={14} />
-                  )}
-                  {getButtonText()}
-                </Button>
-              </div>
+              {/* Placeholder để giữ layout grid */}
+              <div className="section-actions-placeholder"></div>
             </div>
 
             <div className="section-subtext">
@@ -129,9 +112,29 @@ const AssessmentSectionCard = ({ section }) => {
               )}
             </div>
           </div>
-
         </Card.Body>
       </Card>
+      
+      {/* Button đặt HOÀN TOÀN NGOÀI Card để không bị opacity/filter */}
+      <div className="section-actions-absolute">
+        {getSectionStatusBadge()}
+        <Button
+          variant={isCompletedByOthers ? 'secondary' : 'primary'}
+          size="sm"
+          onClick={handleAssessSection}
+          className="d-flex align-items-center"
+          style={{
+            gap: '0.5rem'
+          }}
+        >
+          {isCompletedByOthers ? (
+            <Eye size={14} />
+          ) : (
+            <ClipboardCheck size={14} />
+          )}
+          {getButtonText()}
+        </Button>
+      </div>
     </div>
   );
 };
