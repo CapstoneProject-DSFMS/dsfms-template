@@ -44,13 +44,34 @@ const Sidebar = ({ collapsed, onClose }) => {
     [user]
   );
 
-  const hasAcademicDeptPermission = useMemo(
-    () => hasPermission(PERMISSION_IDS.VIEW_ALL_DEPARTMENTS) && !hasPermission(PERMISSION_IDS.UPDATE_DEPARTMENT),
+  // Check if user has permission to view departments dropdown
+  // Show dropdown if:
+  // 1. Has VIEW_ALL_DEPARTMENTS but NOT UPDATE_DEPARTMENT (Academic Department)
+  // 2. Has ONLY VIEW_DEPARTMENT_DETAILS (not VIEW_ALL_DEPARTMENTS) - My Department
+  const hasDepartmentDropdownPermission = useMemo(
+    () => {
+      const hasViewAll = hasPermission(PERMISSION_IDS.VIEW_ALL_DEPARTMENTS);
+      const hasUpdate = hasPermission(PERMISSION_IDS.UPDATE_DEPARTMENT);
+      const hasViewDetail = hasPermission(PERMISSION_IDS.VIEW_DEPARTMENT_DETAILS);
+      
+      // Case 1: Academic Department (VIEW_ALL without UPDATE)
+      if (hasViewAll && !hasUpdate) {
+        return { show: true, mode: 'all' };
+      }
+      
+      // Case 2: My Department (ONLY VIEW_DETAIL, no VIEW_ALL)
+      if (hasViewDetail && !hasViewAll) {
+        return { show: true, mode: 'my' };
+      }
+      
+      return { show: false, mode: null };
+    },
     [hasPermission]
   );
   
   const { departments, loading: departmentsLoading } = useDepartmentManagement(
-    hasAcademicDeptPermission
+    hasDepartmentDropdownPermission.show,
+    hasDepartmentDropdownPermission.mode
   );
   const [isDepartmentDropdownOpen, setIsDepartmentDropdownOpen] = useState(false);
   const [openDropdownId, setOpenDropdownId] = useState(null);
@@ -95,6 +116,8 @@ const Sidebar = ({ collapsed, onClose }) => {
       book: Book,
       clipboardCheck: ClipboardCheck,
       exclamationTriangle: ExclamationTriangle,
+      checkCircle: CheckCircle,
+      fileEarmarkText: FileEarmarkText,
     }),
     []
   );
@@ -383,7 +406,7 @@ const Sidebar = ({ collapsed, onClose }) => {
         )}
 
         {/* Department dropdown */}
-        {hasAcademicDeptPermission && (
+        {hasDepartmentDropdownPermission.show && (
           <Nav.Item className="mb-3">
             <div className="position-relative">
               {/* Department dropdown trigger */}
@@ -410,7 +433,14 @@ const Sidebar = ({ collapsed, onClose }) => {
                       style={{ cursor: "pointer", overflowWrap: 'break-word', lineHeight: '1.2' }}
                       onClick={() => {
                         setIsDepartmentDropdownOpen(!isDepartmentDropdownOpen);
-                        navigate('/academic/departments'); // Keep old route for now (academic-specific)
+                        // Navigate based on mode
+                        if (hasDepartmentDropdownPermission.mode === 'my' && departments.length === 1) {
+                          // If only one department, navigate directly to it
+                          navigate(`/academic/course/${departments[0].id}`);
+                        } else {
+                          // Navigate to department list page
+                          navigate('/academic/departments');
+                        }
                       }}
                     >
                       Department

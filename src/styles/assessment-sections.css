@@ -107,6 +107,12 @@
   gap: 1.5rem;
 }
 
+/* Wrapper để chứa card và button absolute */
+.assessment-section-wrapper {
+  position: relative;
+  display: block;
+}
+
 .assessment-section-card {
   border: none;
   border-radius: 24px;
@@ -114,17 +120,35 @@
   box-shadow: inset 0 0 0 2px rgba(255, 255, 255, 0.6);
   border-left: 6px solid var(--bs-primary);
   padding: 1rem 1.25rem;
+  position: relative;
 }
 
 .assessment-section-card.disabled {
   background: #e9ecef;
-  opacity: 0.7;
   cursor: not-allowed;
   border-left-color: #adb5bd;
+  /* KHÔNG dùng opacity ở đây vì sẽ làm mờ cả button absolute bên trong */
 }
 
 .assessment-section-card.disabled .section-order-pill {
   background: #adb5bd;
+}
+
+/* Áp dụng opacity cho từng phần tử cụ thể trong disabled section */
+.assessment-section-card.disabled .section-disabled-content {
+  opacity: 0.6;
+}
+
+.assessment-section-card.disabled .section-disabled-content .section-heading,
+.assessment-section-card.disabled .section-disabled-content .section-inline-flags,
+.assessment-section-card.disabled .section-disabled-content .section-subtext {
+  opacity: 0.6;
+  color: #6c757d;
+}
+
+.assessment-section-card.disabled .section-disabled-content h5 {
+  opacity: 0.6;
+  color: #6c757d;
 }
 
 /* Allow dropdown to work even when section is disabled */
@@ -133,8 +157,8 @@
   opacity: 1;
 }
 
-/* Disable all other interactions in disabled section */
-.assessment-section-card.disabled .card-body > *:not(.section-card-header) {
+/* Disable all other interactions in disabled section (nhưng không ảnh hưởng button absolute) */
+.assessment-section-card.disabled .card-body > *:not(.section-card-header):not(.section-actions-absolute) {
   pointer-events: none;
   user-select: none;
 }
@@ -165,6 +189,7 @@
   align-items: center;
   gap: 1.5rem;
   width: 100%;
+  padding-right: 220px; /* Tạo space cho button absolute */
 }
 
 .section-inline-flags {
@@ -197,6 +222,58 @@
   flex-shrink: 0;
   justify-content: flex-end;
   margin-left: auto;
+}
+
+/* Placeholder để giữ layout grid khi button di chuyển ra ngoài */
+.section-actions-placeholder {
+  width: 100%;
+  min-width: 200px; /* Đảm bảo grid column có width */
+  visibility: hidden; /* Ẩn nhưng vẫn chiếm space */
+}
+
+/* Button đặt HOÀN TOÀN NGOÀI Card - KHÔNG BỊ OPACITY/FILTER */
+.section-actions-absolute {
+  position: absolute;
+  top: 1rem;
+  right: 1.25rem;
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  z-index: 100 !important; /* Đảm bảo button nằm trên cùng, cao hơn card */
+  pointer-events: auto !important; /* Đảm bảo button có thể click */
+  filter: none !important; /* Không bị filter brightness */
+  opacity: 1 !important; /* Không bị opacity - QUAN TRỌNG */
+  background: transparent; /* Không có background để không che card */
+  isolation: isolate; /* Tạo stacking context riêng, tách khỏi parent */
+}
+
+/* Đảm bảo button và badge bên trong không bị ảnh hưởng */
+.section-actions-absolute .btn,
+.section-actions-absolute button,
+.section-actions-absolute .badge {
+  opacity: 1 !important;
+  filter: none !important;
+  position: relative;
+  z-index: 101;
+}
+
+/* Responsive cho button absolute */
+@media (max-width: 992px) {
+  .section-header-grid {
+    grid-template-columns: 1fr;
+    padding-right: 0;
+    gap: 1rem;
+  }
+  
+  .section-actions-absolute {
+    position: static;
+    margin-top: 1rem;
+    justify-content: flex-end;
+  }
+  
+  .section-actions-placeholder {
+    display: none;
+  }
 }
 
 .section-subtext {
@@ -361,7 +438,6 @@
     font-size: 0.875rem;
     padding: 0.4rem 0.8rem !important;
   }
-}
 
   .section-actions {
     justify-content: space-between;

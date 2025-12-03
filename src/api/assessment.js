@@ -78,7 +78,7 @@ const assessmentAPI = {
   },
 
   /**
-   * Get assessments by course
+   * Get assessments by course (OLD API - deprecated)
    * @param {string} courseId
    * @param {Object} params
    */
@@ -95,7 +95,7 @@ const assessmentAPI = {
   },
 
   /**
-   * Get assessments by subject
+   * Get assessments by subject (OLD API - deprecated)
    * @param {string} subjectId
    * @param {Object} params
    */
@@ -107,6 +107,36 @@ const assessmentAPI = {
       return response.data;
     } catch (error) {
       console.error('Error fetching subject assessments:', error);
+      throw error;
+    }
+  },
+
+  /**
+   * Get assessment events by course (NEW API)
+   * @param {Object} data - { courseId, templateId, occuranceDate }
+   * @returns {Promise} Assessment events response
+   */
+  getCourseEvents: async (data = {}) => {
+    try {
+      const response = await apiClient.post('/assessments/events/course', data);
+      return response.data;
+    } catch (error) {
+      console.error('Error fetching course assessment events:', error);
+      throw error;
+    }
+  },
+
+  /**
+   * Get assessment events by subject (NEW API)
+   * @param {Object} data - { subjectId, templateId, occuranceDate }
+   * @returns {Promise} Assessment events response
+   */
+  getSubjectEvents: async (data = {}) => {
+    try {
+      const response = await apiClient.post('/assessments/events/subject', data);
+      return response.data;
+    } catch (error) {
+      console.error('Error fetching subject assessment events:', error);
       throw error;
     }
   },

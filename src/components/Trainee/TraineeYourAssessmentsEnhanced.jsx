@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { Container, Card, Nav, Tab, Spinner, Alert, Table, Badge, Button } from 'react-bootstrap';
-import { ExclamationTriangle, Book, FileText, CheckCircle, Clock, Play } from 'react-bootstrap-icons';
+import { ExclamationTriangle, Book, FileText, CheckCircle, Clock, Play, FileEarmarkPdf } from 'react-bootstrap-icons';
 import { useAuth } from '../../hooks/useAuth';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'react-toastify';
@@ -9,6 +9,7 @@ import assessmentAPI from '../../api/assessment';
 import { ROUTES } from '../../constants/routes';
 import SortableHeader from './SortableHeader';
 import useTableSort from '../../hooks/useTableSort';
+import PDFModal from '../Common/PDFModal';
 import '../../styles/scrollable-table.css';
 import '../../styles/trainee-your-assessments.css';
 
@@ -19,6 +20,8 @@ const TraineeYourAssessmentsEnhanced = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [activeTab, setActiveTab] = useState('course');
+  const [showPDFModal, setShowPDFModal] = useState(false);
+  const [selectedPDFUrl, setSelectedPDFUrl] = useState(null);
 
   const { sortedData, sortConfig, handleSort } = useTableSort(assessments);
 
@@ -161,6 +164,13 @@ const TraineeYourAssessmentsEnhanced = () => {
   const handleParticipate = (assessment) => {
     // Navigate to Assessment Sections page
     navigate(ROUTES.ASSESSMENTS_SECTIONS(assessment.id));
+  };
+
+  const handleViewPDF = (pdfUrl) => {
+    if (pdfUrl) {
+      setSelectedPDFUrl(pdfUrl);
+      setShowPDFModal(true);
+    }
   };
 
   if (loading) {
@@ -310,6 +320,7 @@ const TraineeYourAssessmentsEnhanced = () => {
                       </th>
                       <th className="border-neutral-200 text-primary-custom fw-semibold">Score</th>
                       <th className="border-neutral-200 text-primary-custom fw-semibold">Result</th>
+                      <th className="border-neutral-200 text-primary-custom fw-semibold text-center">PDF</th>
                       <th className="border-neutral-200 text-primary-custom fw-semibold text-center">Actions</th>
                     </tr>
                   </thead>
@@ -407,6 +418,20 @@ const TraineeYourAssessmentsEnhanced = () => {
                           {getResultBadge(assessment.resultText)}
                         </td>
                         <td className="border-neutral-200 align-middle text-center">
+                          {assessment.pdfUrl ? (
+                            <Button
+                              variant="link"
+                              className="p-0 text-primary-custom"
+                              onClick={() => handleViewPDF(assessment.pdfUrl)}
+                              style={{ border: 'none', background: 'transparent' }}
+                            >
+                              <FileEarmarkPdf size={18} />
+                            </Button>
+                          ) : (
+                            <span className="text-muted">-</span>
+                          )}
+                        </td>
+                        <td className="border-neutral-200 align-middle text-center">
                           {(assessment.status === 'ON_GOING' || assessment.status === 'DRAFT') && assessment.isTraineeLocked === false && (
                             <Button
                               size="sm"
@@ -431,6 +456,17 @@ const TraineeYourAssessmentsEnhanced = () => {
           </Card.Body>
         </Tab.Container>
       </Card>
+
+      {/* PDF Modal */}
+      <PDFModal
+        show={showPDFModal}
+        onHide={() => {
+          setShowPDFModal(false);
+          setSelectedPDFUrl(null);
+        }}
+        pdfUrl={selectedPDFUrl}
+        title="Assessment PDF"
+      />
     </Container>
   );
 };

@@ -6,7 +6,6 @@ import {
   XCircle,
   Clock,
   Eye,
-  FileEarmarkPdf,
   X
 } from 'react-bootstrap-icons';
 import { useNavigate } from 'react-router-dom';
@@ -99,20 +98,6 @@ const AssessmentRow = ({ assessment, index, onView }) => {
         <div className="text-muted small">
           {getResultText(assessment.resultText)}
         </div>
-      </td>
-      <td className="align-middle hide-mobile text-center">
-        {assessment.pdfUrl ? (
-          <a 
-            href={assessment.pdfUrl} 
-            target="_blank" 
-            rel="noopener noreferrer"
-            className="text-primary-custom"
-          >
-            <FileEarmarkPdf size={18} />
-          </a>
-        ) : (
-          <span className="text-muted">N/A</span>
-        )}
       </td>
       <td className="align-middle text-center show-mobile">
         <Button
@@ -244,7 +229,7 @@ const AssessmentReviewRequestsPage = () => {
     <Container 
       fluid 
       className="py-4 assessment-review-requests-page"
-      style={{ backgroundColor: 'transparent' }}
+      style={{ backgroundColor: 'transparent', height: '100vh', overflow: 'hidden', display: 'flex', flexDirection: 'column' }}
     >
       {/* Header */}
       <Row className="align-items-center mb-3">
@@ -398,16 +383,6 @@ const AssessmentReviewRequestsPage = () => {
                           <SortableHeader columnKey="resultText" className="hide-mobile">
                             Result
                           </SortableHeader>
-                          <th 
-                            className="fw-semibold text-center hide-mobile"
-                            style={{
-                              backgroundColor: 'var(--bs-primary)',
-                              color: 'white',
-                              borderColor: 'var(--bs-primary)'
-                            }}
-                          >
-                            PDF
-                          </th>
                           <th 
                             className="fw-semibold text-center show-mobile"
                             style={{
