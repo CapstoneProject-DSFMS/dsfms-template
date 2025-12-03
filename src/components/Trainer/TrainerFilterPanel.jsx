@@ -43,7 +43,7 @@ const TrainerFilterPanel = ({
           borderTopLeftRadius: 0,
           borderTopRightRadius: 0
         }}
-        align="end"
+        align="start"
         flip={true}
         popperConfig={{
           modifiers: [
@@ -61,7 +61,7 @@ const TrainerFilterPanel = ({
             {
               name: 'flip',
               options: {
-                fallbackPlacements: ['top-end', 'bottom-end', 'top-start'],
+                fallbackPlacements: ['top-start', 'bottom-start', 'top-end'],
               },
             },
           ],

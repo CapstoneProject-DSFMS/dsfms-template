@@ -1,9 +1,10 @@
 import axios from 'axios';
 import { API_CONFIG } from '../config/api.js';
 import { redirectToLogin } from '../utils/navigation.js';
+import { getApiBaseUrl } from '../config/env.js';
 
-// Base configuration for API calls
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'https://dsfms.id.vn';
+// Base configuration for API calls - use centralized env config
+const API_BASE_URL = getApiBaseUrl();
 
 // Create axios instance with default config
 const apiClient = axios.create({

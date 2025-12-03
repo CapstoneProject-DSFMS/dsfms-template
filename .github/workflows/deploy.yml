@@ -23,11 +23,43 @@ jobs:
     - name: Install dependencies
       run: npm ci
       
+    - name: Verify Environment Variables
+      run: |
+        echo "🔍 Verifying environment variables..."
+        if [ -n "$VITE_API_BASE_URL" ]; then
+          echo "✅ VITE_API_BASE_URL is set (length: ${#VITE_API_BASE_URL} chars)"
+          echo "   First 10 chars: ${VITE_API_BASE_URL:0:10}..."
+        else
+          echo "❌ VITE_API_BASE_URL is NOT set - using fallback"
+        fi
+        if [ -n "$VITE_BASE_PATH" ]; then
+          echo "✅ VITE_BASE_PATH is set: $VITE_BASE_PATH"
+        else
+          echo "❌ VITE_BASE_PATH is NOT set - using fallback"
+        fi
+      env:
+        VITE_API_BASE_URL: ${{ secrets.VITE_API_BASE_URL || 'https://dsfms.id.vn' }}
+        VITE_BASE_PATH: ${{ secrets.VITE_BASE_PATH || '/dsfms-template/' }}
+      
     - name: Build
       run: npm run build
       env:
-        VITE_API_BASE_URL: https://dsfms.id.vn
-        VITE_BASE_PATH: /dsfms-template/
+        VITE_API_BASE_URL: ${{ secrets.VITE_API_BASE_URL || 'https://dsfms.id.vn' }}
+        VITE_BASE_PATH: ${{ secrets.VITE_BASE_PATH || '/dsfms-template/' }}
+    
+    - name: Verify Env in Built Files
+      run: |
+        echo "🔍 Checking if env variables are injected in built files..."
+        # Check if API_BASE_URL is replaced (not showing as import.meta.env)
+        if grep -r "import.meta.env.VITE_API_BASE_URL" dist/ 2>/dev/null; then
+          echo "⚠️  WARNING: Found 'import.meta.env.VITE_API_BASE_URL' in built files - env might not be injected"
+        else
+          echo "✅ Env variables seem to be injected (no 'import.meta.env' found)"
+        fi
+        # Show a sample of the built JS to verify (first 500 chars)
+        echo ""
+        echo "📄 Sample from built files:"
+        find dist/assets -name "*.js" -type f | head -1 | xargs head -c 500 || echo "Could not read built files"
         
     - name: Deploy to GitHub Pages
       uses: peaceiris/actions-gh-pages@v3

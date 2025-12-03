@@ -1,4 +1,5 @@
 import apiClient from './config.js';
+import { getApiBaseUrl } from '../config/env.js';
 
 // Upload API functions - FRESH VERSION 2025-01-17
 
@@ -57,7 +58,7 @@ export const uploadAPI = {
 
   // Build upload URL (for reference)
   buildUploadUrl: (docsType) => {
-    const baseUrl = import.meta.env.VITE_API_BASE_URL || 'https://dsfms.id.vn';
+    const baseUrl = getApiBaseUrl();
     return `${baseUrl}/media/docs/upload/${docsType}`;
   },
 

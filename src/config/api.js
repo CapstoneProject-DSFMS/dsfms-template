@@ -1,6 +1,8 @@
 // API Configuration
+import { getApiBaseUrl } from './env.js';
+
 export const API_CONFIG = {
-  BASE_URL: import.meta.env.VITE_API_BASE_URL || 'https://dsfms.id.vn',
+  BASE_URL: getApiBaseUrl(),
   TIMEOUT: 10000,
   ENDPOINTS: {
     AUTH: {

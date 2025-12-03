@@ -86,10 +86,11 @@ const AssessmentSectionCard = ({ section }) => {
                       <small className="text-uppercase text-muted">Submittable</small>
                       {getBooleanIcon(section.templateSection?.isSubmittable)}
                     </div>
-                    <div className="flag-item">
+                    {/* Toggle Dependent - Hidden per user request */}
+                    {/* <div className="flag-item">
                       <small className="text-uppercase text-muted">Toggle Dependent</small>
                       {getBooleanIcon(section.templateSection?.isToggleDependent)}
-                    </div>
+                    </div> */}
                   </>
                 )}
               </div>

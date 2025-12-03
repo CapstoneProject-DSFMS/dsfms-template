@@ -562,7 +562,9 @@ const AssessmentSectionFieldsPage = () => {
   const { parentFields, sectionControlToggleField } = organizeFields();
   const sectionLabel = state.sectionInfo?.templateSection?.label || 'Section';
   const sectionSubtitle = state.sectionInfo?.templateSection 
-    ? `${state.sectionInfo.templateSection.editBy} · ${state.sectionInfo.templateSection.roleInSubject}`
+    ? state.sectionInfo.templateSection.roleInSubject 
+      ? `${state.sectionInfo.templateSection.editBy} · ${state.sectionInfo.templateSection.roleInSubject}`
+      : state.sectionInfo.templateSection.editBy
     : '';
   
   // Calculate total rendered fields
