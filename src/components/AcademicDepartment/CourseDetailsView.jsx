@@ -244,23 +244,53 @@ const CourseDetailsView = ({ courseId }) => {
       // Notify user
       toast.success('Course created successfully');
 
-      // Transform for table and update list
-      const createdForTable = {
-        id: created.id,
-        name: created.name,
-        code: created.code,
-        startDate: created.startDate ? new Date(created.startDate).toISOString().split('T')[0] : 'N/A',
-        endDate: created.endDate ? new Date(created.endDate).toISOString().split('T')[0] : 'N/A',
-        venue: created.venue || 'N/A',
-        note: created.note || 'N/A',
-        status: created.status || 'PLANNED',
-        description: created.description,
-        maxNumTrainee: created.maxNumTrainee,
-        passScore: created.passScore,
-        level: created.level,
-        department: created.department
-      };
-      setCourses(prev => [createdForTable, ...prev]);
+      // Refetch department data to get updated courses list from server
+      // This ensures data consistency and correct format
+      try {
+        const response = await courseAPI.getDepartmentById(course.id);
+        const departmentData = response;
+        
+        if (departmentData && departmentData.courses) {
+          // Transform API courses data to match expected format
+          const activeCourses = (departmentData.courses || []).filter(course => course.status !== 'ARCHIVED');
+          const transformedCourses = activeCourses.map(course => ({
+            id: course.id,
+            name: course.name,
+            code: course.code,
+            startDate: course.startDate ? new Date(course.startDate).toISOString().split('T')[0] : 'N/A',
+            endDate: course.endDate ? new Date(course.endDate).toISOString().split('T')[0] : 'N/A',
+            venue: course.venue || 'N/A',
+            note: course.note || 'N/A',
+            status: course.status,
+            description: course.description,
+            maxNumTrainee: course.maxNumTrainee,
+            passScore: course.passScore,
+            level: course.level,
+            subjectCount: course.subjectCount || 0
+          }));
+          
+          setCourses(transformedCourses);
+        }
+      } catch (refetchError) {
+        console.error('Error refetching courses after creation:', refetchError);
+        // Fallback to optimistic update if refetch fails
+        const createdForTable = {
+          id: created.id || created.data?.id,
+          name: created.name || created.data?.name,
+          code: created.code || created.data?.code,
+          startDate: (created.startDate || created.data?.startDate) ? new Date(created.startDate || created.data?.startDate).toISOString().split('T')[0] : 'N/A',
+          endDate: (created.endDate || created.data?.endDate) ? new Date(created.endDate || created.data?.endDate).toISOString().split('T')[0] : 'N/A',
+          venue: created.venue || created.data?.venue || 'N/A',
+          note: created.note || created.data?.note || 'N/A',
+          status: created.status || created.data?.status || 'PLANNED',
+          description: created.description || created.data?.description,
+          maxNumTrainee: created.maxNumTrainee || created.data?.maxNumTrainee,
+          passScore: created.passScore || created.data?.passScore,
+          level: created.level || created.data?.level,
+          subjectCount: created.subjectCount || created.data?.subjectCount || 0
+        };
+        setCourses(prev => [createdForTable, ...prev]);
+      }
     } catch (error) {
       
       // Check if it's a permission error

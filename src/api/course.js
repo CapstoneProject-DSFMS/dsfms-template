@@ -27,6 +27,10 @@ const courseAPI = {
   getCourseById: async (courseId) => {
     try {
       const response = await apiClient.get(`/courses/${courseId}`);
+      // Handle API response structure: { message: "...", data: {...} }
+      if (response.data && response.data.data) {
+        return response.data.data;
+      }
       return response.data;
     } catch (error) {
       console.error('Error fetching course:', error);
