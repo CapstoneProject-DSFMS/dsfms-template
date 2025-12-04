@@ -4,13 +4,17 @@ import { X, Upload, FileEarmarkExcel, CheckCircle, XCircle, Download, Trash } fr
 import * as XLSX from 'xlsx';
 import { toast } from 'react-toastify';
 
-const BulkImportSubjectsModal = ({ show, onClose, onImport, loading = false, courseId }) => {
+const BulkImportSubjectsModal = ({ show, onClose, onImport, loading: externalLoading = false, courseId, courseStartDate, courseEndDate }) => {
   const [dragActive, setDragActive] = useState(false);
   const [uploadedFile, setUploadedFile] = useState(null);
   const [previewData, setPreviewData] = useState([]);
   const [errors, setErrors] = useState([]);
   const [validationErrors, setValidationErrors] = useState([]);
+  const [isImporting, setIsImporting] = useState(false);
   const fileInputRef = useRef(null);
+  
+  // Use internal loading state if external loading is not provided
+  const loading = externalLoading || isImporting;
 
   // Required columns for subject import (based on database schema)
   const requiredColumns = [
@@ -234,57 +238,115 @@ const BulkImportSubjectsModal = ({ show, onClose, onImport, loading = false, cou
             subject.errors.push('Type must be UNLIMIT or RECURRENT');
           }
 
-          // Validate dates - normalize to ISO datetime format for API
-          // Keep original value for display, but validate format
-          if (subject.start_date) {
+          // Helper function to parse date for validation (returns Date object or null)
+          const parseDateForValidation = (dateValue) => {
+            if (!dateValue || dateValue === '' || dateValue === 'N/A') {
+              return null;
+            }
+            
             try {
               let parsedDate;
-            
-            // Check if it's an Excel serial number (numeric and large number)
-            if (typeof subject.start_date === 'number' && subject.start_date > 10000) {
-              // Convert Excel serial number to JavaScript Date
-              const excelSerial = parseFloat(subject.start_date);
+              
+              // Check if it's an Excel serial number (numeric and large number)
+              if (typeof dateValue === 'number' && dateValue > 10000) {
+                // Convert Excel serial number to JavaScript Date
+                const excelSerial = parseFloat(dateValue);
                 parsedDate = new Date((excelSerial - 25569) * 86400 * 1000);
-            } else {
-                // Parse string format
-              const dateStr = String(subject.start_date).trim();
-                parsedDate = new Date(dateStr);
+              } else if (typeof dateValue === 'string') {
+                const dateStr = dateValue.trim();
+                
+                // Check if it's a numeric string that could be an Excel serial number
+                if (/^\d+$/.test(dateStr)) {
+                  const numericValue = parseInt(dateStr);
+                  if (numericValue >= 1 && numericValue <= 100000) {
+                    // Excel serial number
+                    parsedDate = new Date((numericValue - 25569) * 86400 * 1000);
+                  } else {
+                    parsedDate = new Date(dateStr);
+                  }
+                } else if (dateStr.match(/^\d{4}-\d{2}-\d{2}$/)) {
+                  // YYYY-MM-DD format
+                  parsedDate = new Date(dateStr + 'T00:00:00.000Z');
+                } else {
+                  // Try to parse as date string
+                  parsedDate = new Date(dateStr);
+                }
+              } else {
+                parsedDate = new Date(dateValue);
               }
               
               if (isNaN(parsedDate.getTime())) {
-                subject.hasError = true;
-                subject.errors.push('Start date must be a valid date');
+                return null;
               }
-              // Keep original format for now, will be converted to ISO in formatDate function
+              
+              return parsedDate;
             } catch (error) {
+              return null;
+            }
+          };
+
+          // Validate start_date is required
+          let parsedStartDate = null;
+          if (!subject.start_date || subject.start_date === '' || subject.start_date === 'N/A') {
+            subject.hasError = true;
+            subject.errors.push('Start date is required');
+          } else {
+            parsedStartDate = parseDateForValidation(subject.start_date);
+            if (!parsedStartDate) {
               subject.hasError = true;
               subject.errors.push('Start date must be a valid date');
             }
           }
 
-          if (subject.end_date) {
-            try {
-              let parsedDate;
-            
-            // Check if it's an Excel serial number (numeric and large number)
-            if (typeof subject.end_date === 'number' && subject.end_date > 10000) {
-              // Convert Excel serial number to JavaScript Date
-              const excelSerial = parseFloat(subject.end_date);
-                parsedDate = new Date((excelSerial - 25569) * 86400 * 1000);
-            } else {
-                // Parse string format
-              const dateStr = String(subject.end_date).trim();
-                parsedDate = new Date(dateStr);
-              }
-              
-              if (isNaN(parsedDate.getTime())) {
-                subject.hasError = true;
-                subject.errors.push('End date must be a valid date');
-              }
-              // Keep original format for now, will be converted to ISO in formatDate function
-            } catch (error) {
+          // Validate end_date is required
+          let parsedEndDate = null;
+          if (!subject.end_date || subject.end_date === '' || subject.end_date === 'N/A') {
+            subject.hasError = true;
+            subject.errors.push('End date is required');
+          } else {
+            parsedEndDate = parseDateForValidation(subject.end_date);
+            if (!parsedEndDate) {
               subject.hasError = true;
               subject.errors.push('End date must be a valid date');
+            }
+          }
+
+          // Validate date range relationships (only if both dates are valid)
+          if (parsedStartDate && parsedEndDate) {
+            // Validate start_date <= end_date
+            if (parsedStartDate > parsedEndDate) {
+              subject.hasError = true;
+              subject.errors.push('Start date must be before or equal to end date');
+            }
+            
+            // Validate both dates are within course range (if course dates are available)
+            if (courseStartDate && courseEndDate) {
+              const courseStart = new Date(courseStartDate);
+              const courseEnd = new Date(courseEndDate);
+              
+              // Normalize dates to start of day for comparison (ignore time component)
+              const courseStartNormalized = new Date(courseStart.getFullYear(), courseStart.getMonth(), courseStart.getDate());
+              const courseEndNormalized = new Date(courseEnd.getFullYear(), courseEnd.getMonth(), courseEnd.getDate());
+              const subjectStartNormalized = new Date(parsedStartDate.getFullYear(), parsedStartDate.getMonth(), parsedStartDate.getDate());
+              const subjectEndNormalized = new Date(parsedEndDate.getFullYear(), parsedEndDate.getMonth(), parsedEndDate.getDate());
+              
+              // Format course dates for display (YYYY-MM-DD)
+              const formatDateForDisplay = (date) => {
+                if (!date) return '';
+                const d = new Date(date);
+                const year = d.getFullYear();
+                const month = String(d.getMonth() + 1).padStart(2, '0');
+                const day = String(d.getDate()).padStart(2, '0');
+                return `${year}-${month}-${day}`;
+              };
+              
+              const courseStartDisplay = formatDateForDisplay(courseStartDate);
+              const courseEndDisplay = formatDateForDisplay(courseEndDate);
+              
+              if (subjectStartNormalized < courseStartNormalized || subjectEndNormalized > courseEndNormalized) {
+                subject.hasError = true;
+                subject.errors.push(`Subject dates must stay within the course date range (Course: ${courseStartDisplay} to ${courseEndDisplay})`);
+              }
             }
           }
 
@@ -317,6 +379,10 @@ const BulkImportSubjectsModal = ({ show, onClose, onImport, loading = false, cou
         return;
       }
     }
+
+    // Set loading state
+    setIsImporting(true);
+    setErrors([]);
 
     // Format data for API
     // ALWAYS prioritize courseId from props (if importing from Course Detail page)
@@ -582,6 +648,8 @@ const BulkImportSubjectsModal = ({ show, onClose, onImport, loading = false, cou
         });
       }
 
+      // Reset loading state before closing modal
+      setIsImporting(false);
       handleClose();
     } catch (error) {
       // Handle 304 Not Modified specifically
@@ -589,13 +657,15 @@ const BulkImportSubjectsModal = ({ show, onClose, onImport, loading = false, cou
         toast.info('All subjects already exist. No new subjects were imported.', {
           icon: false
         });
-        handleClose();
       } else {
         toast.error(error?.response?.data?.message || error.message || 'Failed to import subjects.', {
           icon: false
         });
         setErrors([error?.response?.data?.message || error.message || 'Failed to import subjects. Please try again.']);
       }
+    } finally {
+      // Always reset loading state after all operations complete
+      setIsImporting(false);
     }
   };
 
@@ -605,6 +675,8 @@ const BulkImportSubjectsModal = ({ show, onClose, onImport, loading = false, cou
     setErrors([]);
     setValidationErrors([]);
     setDragActive(false);
+    // Don't reset isImporting here - let finally block handle it
+    // This ensures spinner stays visible during import
     onClose();
   };
 
@@ -632,8 +704,8 @@ const BulkImportSubjectsModal = ({ show, onClose, onImport, loading = false, cou
         'This is a required course for all students', // remark_note
         '09:00-17:00', // time_slot
         '70.0', // pass_score
-        '2025-01-15 09:00:00', // start_date
-        '2025-01-29 17:00:00' // end_date
+        '2025-01-15', // start_date
+        '2025-01-29' // end_date
       ],
       [
         'PHYS101', // code
@@ -647,8 +719,8 @@ const BulkImportSubjectsModal = ({ show, onClose, onImport, loading = false, cou
         'Hands-on experiments and demonstrations', // remark_note
         '14:00-18:00', // time_slot
         '75.0', // pass_score
-        '2025-02-01 14:00:00', // start_date
-        '2025-02-08 18:00:00' // end_date
+        '2025-02-01', // start_date
+        '2025-02-08' // end_date
       ],
       [
         'SAFETY301', // code
@@ -662,8 +734,8 @@ const BulkImportSubjectsModal = ({ show, onClose, onImport, loading = false, cou
         'Hands-on practical training required', // remark_note
         '08:00-16:00', // time_slot
         '80.0', // pass_score
-        '2025-03-01 08:00:00', // start_date
-        '2025-03-06 16:00:00' // end_date
+        '2025-03-01', // start_date
+        '2025-03-06' // end_date
       ]
     ];
 
@@ -869,14 +941,9 @@ const BulkImportSubjectsModal = ({ show, onClose, onImport, loading = false, cou
               {loading ? (
                 <>
                   <span 
-                    className="spinner-border me-2" 
+                    className="spinner-border spinner-border-sm me-2" 
                     role="status" 
                     aria-hidden="true"
-                    style={{ 
-                      width: '1rem', 
-                      height: '1rem',
-                      borderWidth: '0.15em'
-                    }}
                   ></span>
                   Importing...
                 </>
