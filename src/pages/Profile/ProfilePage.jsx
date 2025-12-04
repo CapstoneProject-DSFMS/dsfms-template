@@ -67,8 +67,15 @@ const ProfilePage = () => {
     setLoading(true);
     
     try {
+      // Map password data to API format
+      const apiData = {
+        oldPassword: passwordData.oldPassword || '',
+        newPassword: passwordData.newPassword || '',
+        confirmNewPassword: passwordData.confirmPassword || ''
+      };
+      
       // Call reset password API
-      const response = await profileAPI.resetPassword(passwordData);
+      const response = await profileAPI.resetPassword(apiData);
       
       // Show success toast
       toast.success(response.message || 'Password updated successfully!');
