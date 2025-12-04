@@ -18,37 +18,30 @@ const AddTrainerModal = ({ show, onClose, onSave, loading = false, courseId = nu
     try {
       let trainersList = [];
       
-      // Only load trainers if courseId is provided
-      if (courseId) {
-        try {
-          const response = await courseAPI.getAvailableTrainersForCourse(courseId);
-          
-          // Handle different response formats from available trainers API
-          if (response) {
-            // Format 1: { data: [...] }
-            if (response.data && Array.isArray(response.data)) {
-              trainersList = response.data;
-            }
-            // Format 2: { trainers: [...] }
-            else if (response.trainers && Array.isArray(response.trainers)) {
-              trainersList = response.trainers;
-            }
-            // Format 3: { data: { trainers: [...] } }
-            else if (response.data && response.data.trainers && Array.isArray(response.data.trainers)) {
-              trainersList = response.data.trainers;
-            }
-            // Format 4: Direct array
-            else if (Array.isArray(response)) {
-              trainersList = response;
-            }
+      try {
+        const response = await courseAPI.getActiveTrainers();
+        
+        // Handle different response formats from active trainers API
+        if (response) {
+          // Format 1: { data: [...] }
+          if (response.data && Array.isArray(response.data)) {
+            trainersList = response.data;
           }
-        } catch (apiError) {
-          console.error('Error loading available trainers for course:', apiError);
-          trainersList = [];
+          // Format 2: { trainers: [...] }
+          else if (response.trainers && Array.isArray(response.trainers)) {
+            trainersList = response.trainers;
+          }
+          // Format 3: { data: { trainers: [...] } }
+          else if (response.data && response.data.trainers && Array.isArray(response.data.trainers)) {
+            trainersList = response.data.trainers;
+          }
+          // Format 4: Direct array
+          else if (Array.isArray(response)) {
+            trainersList = response;
+          }
         }
-      } else {
-        // If no courseId, show empty list
-        console.warn('No courseId provided. Cannot load available trainers.');
+      } catch (apiError) {
+        console.error('Error loading active trainers:', apiError);
         trainersList = [];
       }
       
@@ -59,7 +52,7 @@ const AddTrainerModal = ({ show, onClose, onSave, loading = false, courseId = nu
     } finally {
       setLoadingTrainers(false);
     }
-  }, [courseId]);
+  }, []); // Removed courseId dependency since API no longer needs it
 
   useEffect(() => {
     if (show) {
@@ -72,7 +65,7 @@ const AddTrainerModal = ({ show, onClose, onSave, loading = false, courseId = nu
       // Load trainers when modal opens
       loadTrainers();
     }
-  }, [show, courseId, loadTrainers]);
+  }, [show, loadTrainers]); // Removed courseId dependency since API no longer needs it
 
   const validateForm = () => {
     const newErrors = [];
@@ -166,7 +159,9 @@ const AddTrainerModal = ({ show, onClose, onSave, loading = false, courseId = nu
                     <span className="flex-grow-1 text-truncate" style={{ minWidth: 0, overflow: 'hidden' }}>
                       {formData.trainer_user_id
                         ? trainers.find(t => t.id === formData.trainer_user_id)
-                          ? `${trainers.find(t => t.id === formData.trainer_user_id).firstName} ${trainers.find(t => t.id === formData.trainer_user_id).lastName} - ${trainers.find(t => t.id === formData.trainer_user_id).department?.name || 'General'}`
+                          ? trainers.find(t => t.id === formData.trainer_user_id).department?.name
+                            ? `${trainers.find(t => t.id === formData.trainer_user_id).firstName} ${trainers.find(t => t.id === formData.trainer_user_id).lastName} - ${trainers.find(t => t.id === formData.trainer_user_id).department.name}`
+                            : `${trainers.find(t => t.id === formData.trainer_user_id).firstName} ${trainers.find(t => t.id === formData.trainer_user_id).lastName}`
                           : 'Choose a trainer...'
                         : loadingTrainers
                           ? 'Loading trainers...'
@@ -219,7 +214,7 @@ const AddTrainerModal = ({ show, onClose, onSave, loading = false, courseId = nu
                           key={trainer.id}
                           eventKey={trainer.id}
                         >
-                          {trainer.firstName} {trainer.lastName} - {trainer.department?.name || 'General'}
+                          {trainer.firstName} {trainer.lastName}{trainer.department?.name ? ` - ${trainer.department.name}` : ''}
                         </Dropdown.Item>
                       ))
                     )}

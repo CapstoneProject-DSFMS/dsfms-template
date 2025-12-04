@@ -475,15 +475,145 @@ const TemplateDetailModal = ({ show, onHide, template, onCreateVersion }) => {
   const renderOverview = () => {
     const sectionsData = fullTemplateData?.sections || template?.sections || [];
     
-    // Build structure with parent-child relationship for collapse
-    const sectionStructure = sectionsData.map((section, sectionIndex) => ({
-      type: 'section',
-      id: section.id || `section-${sectionIndex}`,
-      name: section.label || section.name,
-      fieldCount: section.fields?.length || 0,
-      data: section,
-      fields: section.fields || []
-    }));
+    // Build structure with parent-child relationship for collapse and indentation
+    const sectionStructure = sectionsData.map((section, sectionIndex) => {
+      if (!section.fields || !Array.isArray(section.fields) || section.fields.length === 0) {
+        return {
+          type: 'section',
+          id: section.id || `section-${sectionIndex}`,
+          name: section.label || section.name,
+          fieldCount: 0,
+          data: section,
+          fields: [],
+          isSubmittable: Boolean(section.isSubmittable),
+          isToggleDependent: Boolean(section.isToggleDependent)
+        };
+      }
+
+      // Build field maps for lookup
+      const mapById = {};
+      const mapByTempId = {};
+      const mapByName = {};
+      
+      section.fields.forEach((field) => {
+        if (field.id) mapById[field.id] = field;
+        if (field.tempId) mapByTempId[field.tempId] = field;
+        const fieldName = field.fieldName || field.name;
+        if (fieldName) mapByName[fieldName] = field;
+      });
+
+      // Find parent field
+      const findParent = (field) => {
+        // Try parentId (UUID) first
+        if (field.parentId) {
+          const parent = mapById[field.parentId];
+          if (parent) return parent;
+        }
+        
+        // Try parentTempId (string) - for PART/CHECKBOX fields
+        if (field.parentTempId) {
+          const parent = mapByTempId[field.parentTempId];
+          if (parent) return parent;
+          
+          // Fallback: try to find PART/CHECKBOX field by name
+          // parentTempId format: "{fieldName}-parent"
+          const parentName = field.parentTempId.replace('-parent', '');
+          const parentByName = mapByName[parentName];
+          if (parentByName && (parentByName.fieldType === 'PART' || parentByName.fieldType === 'CHECK_BOX')) {
+            return parentByName;
+          }
+        }
+        
+        return null;
+      };
+
+      // Calculate field level based on parent chain
+      const getFieldLevel = (field, visited = new Set()) => {
+        // If no parent reference, it's level 1
+        if (!field.parentId && !field.parentTempId) {
+          return 1;
+        }
+
+        // Prevent circular reference
+        const fieldId = field.id || field.fieldName || field.tempId;
+        if (fieldId && visited.has(fieldId)) {
+          return 1; // Fallback to level 1 if circular
+        }
+        if (fieldId) {
+          visited.add(fieldId);
+        }
+
+        // Find parent field
+        const parent = findParent(field);
+        if (!parent) {
+          return 1; // Parent not found, treat as level 1
+        }
+
+        // Recursively calculate parent level + 1
+        return 1 + getFieldLevel(parent, visited);
+      };
+
+      // Build hierarchy: organize fields by parent-child relationship
+      const topLevelFields = [];
+      const childrenMap = {}; // parentKey → [children]
+      
+      section.fields.forEach((field) => {
+        const parent = findParent(field);
+        
+        if (!parent) {
+          // Top-level field (no parent)
+          topLevelFields.push(field);
+        } else {
+          // Child field - group by parent
+          const parentKey = parent.id || parent.tempId || (parent.fieldName ? `${parent.fieldName}-parent` : null);
+          if (parentKey) {
+            if (!childrenMap[parentKey]) {
+              childrenMap[parentKey] = [];
+            }
+            childrenMap[parentKey].push(field);
+          } else {
+            // Fallback: treat as top-level if can't determine parent key
+            topLevelFields.push(field);
+          }
+        }
+      });
+
+      // Build ordered fields list with hierarchy
+      const orderedFields = [];
+      const renderFieldWithChildren = (field) => {
+        const fieldId = field.id || field.fieldName;
+        const parentKey = field.id || field.tempId || (field.fieldName ? `${field.fieldName}-parent` : null);
+        
+        // Add current field with level
+        orderedFields.push({
+          ...field,
+          _level: getFieldLevel(field)
+        });
+
+        // Add children if any
+        if (parentKey && childrenMap[parentKey] && childrenMap[parentKey].length > 0) {
+          childrenMap[parentKey].forEach((child) => {
+            renderFieldWithChildren(child);
+          });
+        }
+      };
+
+      // Render all top-level fields (they will render their children recursively)
+      topLevelFields.forEach((field) => {
+        renderFieldWithChildren(field);
+      });
+
+      return {
+        type: 'section',
+        id: section.id || `section-${sectionIndex}`,
+        name: section.label || section.name,
+        fieldCount: section.fields.length,
+        data: section,
+        fields: orderedFields.length > 0 ? orderedFields : section.fields, // Use ordered fields if hierarchy was built
+        isSubmittable: Boolean(section.isSubmittable),
+        isToggleDependent: Boolean(section.isToggleDependent)
+      };
+    });
 
     const toggleSection = (sectionId) => {
       setCollapsedSections(prev => ({
@@ -634,74 +764,137 @@ const TemplateDetailModal = ({ show, onHide, template, onCreateVersion }) => {
                               </Badge>
                             )}
                           </div>
-                          <Badge
-                            bg="warning"
-                            style={{
-                              fontSize: '11px',
-                              padding: '4px 10px',
-                              borderRadius: '4px',
-                              backgroundColor: '#ffc107',
-                              color: '#000',
-                              fontWeight: 500,
-                              marginLeft: '12px',
-                              flexShrink: 0
-                            }}
-                          >
-                            SECTION
-                          </Badge>
-                        </div>
-                      </div>
-
-                      {/* Fields List */}
-                      {!isCollapsed && section.fields.map((field, fieldIndex) => (
-                        <div
-                          key={field.id || field.fieldName || `field-${fieldIndex}`}
-                          className="list-group-item"
-                          style={{
-                            border: 'none',
-                            borderBottom: '1px solid #e9ecef',
-                            padding: '12px 16px',
-                            paddingLeft: '48px',
-                            backgroundColor: 'white',
-                            flexShrink: 0,
-                            animation: 'slideDown 0.2s ease',
-                            transition: 'background-color 0.2s ease'
-                          }}
-                          onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#f8f9fa'}
-                          onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'white'}
-                        >
-                          <div className="d-flex align-items-center justify-content-between">
-                            <div className="d-flex align-items-center" style={{ flex: 1, minWidth: 0 }}>
-                              <span 
-                                style={{ 
-                                  fontSize: '14px',
-                                  color: '#555',
-                                  fontWeight: 400,
-                                  wordBreak: 'break-word',
-                                  overflowWrap: 'break-word'
-                                }}
-                              >
-                                {field.label || field.fieldName}
-                              </span>
+                          <div className="d-flex align-items-center gap-2" style={{ flexWrap: 'wrap', justifyContent: 'flex-end', flexShrink: 0 }}>
+                            {/* isSubmittable and isToggleDependent badges */}
+                            <div className="d-flex align-items-center gap-1" style={{ flexWrap: 'wrap' }}>
+                              {section.isSubmittable && (
+                                <Badge
+                                  bg="success"
+                                  style={{
+                                    fontSize: '10px',
+                                    padding: '3px 8px',
+                                    borderRadius: '4px',
+                                    backgroundColor: '#28a745',
+                                    color: '#fff',
+                                    fontWeight: 500,
+                                    whiteSpace: 'nowrap'
+                                  }}
+                                >
+                                  Submittable
+                                </Badge>
+                              )}
+                              {section.isToggleDependent && (
+                                <Badge
+                                  bg="info"
+                                  style={{
+                                    fontSize: '10px',
+                                    padding: '3px 8px',
+                                    borderRadius: '4px',
+                                    backgroundColor: '#17a2b8',
+                                    color: '#fff',
+                                    fontWeight: 500,
+                                    whiteSpace: 'nowrap'
+                                  }}
+                                >
+                                  Toggle Dependent
+                                </Badge>
+                              )}
                             </div>
                             <Badge
-                              bg="secondary"
+                              bg="warning"
                               style={{
                                 fontSize: '11px',
                                 padding: '4px 10px',
                                 borderRadius: '4px',
-                                backgroundColor: 'var(--bs-secondary)',
-                                color: '#fff',
-                                fontWeight: 500,
-                                marginLeft: '12px',
-                                flexShrink: 0
+                                backgroundColor: '#ffc107',
+                                color: '#000',
+                                fontWeight: 500
                               }}
                             >
-                              {field.fieldType || field.type || 'FIELD'}
+                              SECTION
                             </Badge>
                           </div>
                         </div>
-                      ))}
+                      </div>
+
+                      {/* Fields List */}
+                      {!isCollapsed && section.fields.map((field, fieldIndex) => {
+                        // Calculate padding based on level
+                        const level = field._level || 1;
+                        const getPaddingLeft = (level) => {
+                          // Level 1 (no parent): 48px
+                          // Level 2 (child of PART/CHECKBOX): 80px
+                          // Level 3 (child of CHECKBOX): 112px
+                          // Level 4+: 144px+
+                          return `${48 + ((level - 1) * 32)}px`;
+                        };
+                        const paddingLeft = getPaddingLeft(level);
+                        const isChildField = level > 1;
+
+                        return (
+                          <div
+                            key={field.id || field.fieldName || `field-${fieldIndex}`}
+                            className="list-group-item"
+                            style={{
+                              border: 'none',
+                              borderBottom: '1px solid #e9ecef',
+                              padding: '12px 16px',
+                              paddingLeft: paddingLeft,
+                              backgroundColor: 'white',
+                              flexShrink: 0,
+                              animation: 'slideDown 0.2s ease',
+                              transition: 'background-color 0.2s ease'
+                            }}
+                            onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#f8f9fa'}
+                            onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'white'}
+                          >
+                            <div className="d-flex align-items-center justify-content-between">
+                              <div className="d-flex align-items-center" style={{ flex: 1, minWidth: 0 }}>
+                                {/* Visual indicator for hierarchy */}
+                                {isChildField && (
+                                  <span 
+                                    style={{ 
+                                      color: '#6c757d',
+                                      marginRight: '8px',
+                                      fontSize: '12px',
+                                      userSelect: 'none',
+                                      flexShrink: 0
+                                    }}
+                                  >
+                                    {'└─ '}
+                                  </span>
+                                )}
+                                <span 
+                                  style={{ 
+                                    fontSize: '14px',
+                                    color: '#555',
+                                    fontWeight: 400,
+                                    wordBreak: 'break-word',
+                                    overflowWrap: 'break-word'
+                                  }}
+                                >
+                                  {field.label || field.fieldName}
+                                </span>
+                              </div>
+                              <Badge
+                                bg="secondary"
+                                style={{
+                                  fontSize: '11px',
+                                  padding: '4px 10px',
+                                  borderRadius: '4px',
+                                  backgroundColor: 'var(--bs-secondary)',
+                                  color: '#fff',
+                                  fontWeight: 500,
+                                  marginLeft: '12px',
+                                  flexShrink: 0
+                                }}
+                              >
+                                {field.fieldType || field.type || 'FIELD'}
+                              </Badge>
+                            </div>
+                          </div>
+                        );
+                      })}
                     </div>
                   );
                 })}

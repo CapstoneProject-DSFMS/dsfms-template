@@ -163,13 +163,13 @@ const courseAPI = {
     }
   },
 
-  // Get available trainers for a course
-  getAvailableTrainersForCourse: async (courseId) => {
+  // Get active trainers (replaced old getAvailableTrainersForCourse)
+  getActiveTrainers: async () => {
     try {
-      const response = await apiClient.get(`/subjects/courses/${courseId}/available-trainers`);
+      const response = await apiClient.get(`/subjects/courses/active-trainers`);
       return response.data;
     } catch (error) {
-      console.error('Error fetching available trainers for course:', error);
+      console.error('Error fetching active trainers:', error);
       throw error.response?.data || error.message;
     }
   },
