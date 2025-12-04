@@ -885,6 +885,8 @@ const InPageCourseDetail = ({ course, department } = {}) => {
         onClose={() => setShowBulkImport(false)}
         onImport={handleBulkImportSubjects}
         courseId={courseId}
+        courseStartDate={courseDetails?.startDate}
+        courseEndDate={courseDetails?.endDate}
       />
 
       <EditCourseModal
