@@ -22,9 +22,10 @@ const UserRow = ({ user, index, onView, onEdit, onDisable }) => {
 
   return (
     <tr 
-      className={`${index % 2 === 0 ? 'bg-white' : 'bg-neutral-50'} transition-all`}
+      className={`${index % 2 === 0 ? 'bg-white' : 'bg-neutral-50'} user-management-row`}
       style={{
-        transition: 'background-color 0.2s ease'
+        transition: 'background-color 0.2s ease',
+        willChange: 'background-color'
       }}
       onMouseEnter={(e) => {
         e.currentTarget.style.backgroundColor = 'var(--bs-neutral-100)';
