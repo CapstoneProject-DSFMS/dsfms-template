@@ -80,9 +80,10 @@ const ProfilePage = () => {
       // Show success toast
       toast.success(response.message || 'Password updated successfully!');
     } catch (error) {
-      // Show error toast
-      toast.error(error.message || 'Failed to update password. Please check your current password.');
-      throw error; // Re-throw to let modal handle it
+      // Show error toast (handles both validation errors and API errors)
+      const errorMessage = error.message || error.response?.data?.message || 'Failed to update password. Please check your current password.';
+      toast.error(errorMessage);
+      throw error; // Re-throw to prevent modal from closing on error
     } finally {
       setLoading(false);
     }
