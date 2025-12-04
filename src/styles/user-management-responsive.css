@@ -7,20 +7,58 @@
   width: 100%;
 }
 
+/* CSS Variables - MINIMAL changes to reduce reflow */
+.user-management-page {
+  --table-font-size: 0.875rem;
+  --table-font-size-collapsed: 0.85rem; /* Reduced change: 0.875rem → 0.85rem (smaller diff) */
+  --table-padding-x: 0.75rem;
+  --table-padding-x-collapsed: 0.6rem; /* Reduced change */
+  --table-padding-y: 0.875rem;
+  --table-padding-y-collapsed: 0.7rem; /* Reduced change */
+}
+
 .user-management-page .user-management-table-wrapper {
   overflow: hidden;
   border-radius: 0.75rem;
   background-color: #fff;
+  /* Performance optimizations - isolate layout changes */
+  contain: layout style paint;
+  /* GPU acceleration */
+  transform: translateZ(0);
+  backface-visibility: hidden;
+  /* Prevent layout shifts */
+  isolation: isolate;
+}
+
+/* Optimize scrollable table container within user-management-page */
+.user-management-page .scrollable-table-container {
+  /* Performance optimizations for scrolling */
+  contain: layout style paint;
+  /* Smooth scrolling */
+  -webkit-overflow-scrolling: touch;
+  /* GPU acceleration */
+  transform: translateZ(0);
+  /* NO will-change - only add when actually scrolling */
 }
 
 .user-management-page .user-management-table-wrapper .table {
   width: 100%;
   min-width: 0;
+  font-size: var(--table-font-size);
+  /* NO transition for font-size - causes expensive reflow */
 }
 
 .user-management-page .user-management-table-wrapper .table th,
 .user-management-page .user-management-table-wrapper .table td {
   white-space: nowrap;
+  padding: var(--table-padding-y) var(--table-padding-x);
+  font-size: var(--table-font-size);
+  /* Only transition padding, NOT font-size (causes expensive reflow) */
+  transition: padding 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.user-management-page .user-management-table-wrapper .table th {
+  font-size: var(--table-font-size);
 }
 
 .user-management-page .scroll-indicator {
@@ -72,30 +110,16 @@
   }
 }
 
-/* ⭐ Sidebar Collapsed: Adjust table to prevent horizontal scroll */
+/* ⭐ Sidebar Collapsed: MINIMAL changes to prevent lag */
 @media (min-width: 769px) {
-  .sidebar-collapsed-active .user-management-page .user-management-table-wrapper .table {
-    font-size: 0.8rem !important;
+  /* Update CSS variables - MINIMAL changes only */
+  .sidebar-collapsed-active .user-management-page {
+    --table-font-size: var(--table-font-size-collapsed);
+    --table-padding-x: var(--table-padding-x-collapsed);
+    --table-padding-y: var(--table-padding-y-collapsed);
   }
 
-  .sidebar-collapsed-active .user-management-page .user-management-table-wrapper .table th,
-  .sidebar-collapsed-active .user-management-page .user-management-table-wrapper .table td {
-    padding: 0.5rem 0.4rem !important;
-    font-size: 0.8rem !important;
-  }
-
-  .sidebar-collapsed-active .user-management-page .user-management-table-wrapper .table th {
-    font-size: 0.75rem !important;
-    font-weight: 600 !important;
-  }
-
-  /* Reduce badge size when sidebar collapsed */
-  .sidebar-collapsed-active .user-management-page .badge {
-    font-size: 0.7rem !important;
-    padding: 0.25rem 0.5rem !important;
-  }
-
-  /* Adjust table container when sidebar collapsed */
+  /* Table container - NO transitions, instant change */
   .sidebar-collapsed-active .user-management-page .user-management-table-wrapper {
     overflow-x: auto;
   }
@@ -105,23 +129,63 @@
     width: 100% !important;
   }
   
-  /* Allow text wrapping in some columns when sidebar collapsed */
+  /* REMOVED: Text wrapping causes expensive reflow - use ellipsis instead */
+  /* Instead of wrapping, use text-overflow: ellipsis for better performance */
   .sidebar-collapsed-active .user-management-page .user-management-table-wrapper .table td:nth-child(2), /* Full Name */
   .sidebar-collapsed-active .user-management-page .user-management-table-wrapper .table td:nth-child(3) { /* Email */
-    white-space: normal !important;
-    word-break: break-word;
-    max-width: 150px;
+    white-space: nowrap !important; /* Keep nowrap - NO wrapping */
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 120px; /* Fixed width, no transition */
   }
   
   .sidebar-collapsed-active .user-management-page .user-management-table-wrapper .table th:nth-child(2),
   .sidebar-collapsed-active .user-management-page .user-management-table-wrapper .table th:nth-child(3) {
-    white-space: normal !important;
+    white-space: nowrap !important; /* Keep nowrap */
+  }
+
+  /* Badge - MINIMAL change, no transition */
+  .sidebar-collapsed-active .user-management-page .badge {
+    font-size: 0.7rem !important; /* Direct value, no variable */
+    padding: 0.25rem 0.5rem !important;
+    /* NO transition - instant change */
   }
   
-  /* Reduce icon sizes in table when sidebar collapsed */
+  /* Icons - MINIMAL change, no transition */
   .sidebar-collapsed-active .user-management-page .user-management-table-wrapper .table svg {
-    width: 16px !important;
-    height: 16px !important;
+    width: 16px !important; /* Direct value */
+    height: 16px !important; /* Direct value */
+    /* NO transition - instant change */
   }
+
+  /* Table header - keep same font-size, just adjust weight */
+  .sidebar-collapsed-active .user-management-page .user-management-table-wrapper .table th {
+    font-weight: 600 !important;
+    /* NO font-size change - reduces reflow */
+  }
+}
+
+/* Optimize table row hover - scope to user-management-page only */
+.user-management-page .user-management-row {
+  transition: background-color 0.15s ease; /* Faster transition */
+  /* NO will-change - only add on hover */
+}
+
+/* Add will-change only on hover to save resources */
+.user-management-page .user-management-row:hover {
+  will-change: background-color;
+}
+
+/* Optimize SortableHeader transitions - only on hover, not on sidebar collapse */
+.user-management-page .scrollable-table-container .table thead th {
+  /* NO transition here - only add on hover to prevent lag during sidebar collapse */
+}
+
+/* Optimize table header hover - scope to user-management-page */
+.user-management-page .scrollable-table-container .table thead th:hover {
+  transition: transform 0.2s ease, 
+              background-color 0.2s ease,
+              box-shadow 0.2s ease;
+  will-change: transform;
 }
 
