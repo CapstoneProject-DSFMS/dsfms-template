@@ -47,38 +47,16 @@ export const mapApiSubjectsToTable = (apiSubjects) => {
 };
 
 /**
- * Format duration from number to readable string
- * @param {number} duration - Duration in days
- * @returns {string} Formatted duration string
+ * Return duration as-is from API (no formatting)
+ * @param {any} duration - Duration value from API
+ * @returns {any} Duration value as returned from API
  */
 const formatDuration = (duration) => {
-  if (!duration && duration !== 0) return 'N/A';
-  
-  // Handle duration less than 1 day
-  if (duration < 1) {
-    const hours = Math.round(duration * 24);
-    if (hours === 0) {
-      return '< 1 hour';
-    } else if (hours === 1) {
-      return '1 hour';
-    } else {
-      return `${hours} hours`;
-    }
+  // Return raw value from API, no formatting
+  if (duration === null || duration === undefined) {
+    return 'N/A';
   }
-  
-  if (duration === 1) {
-    return '1 day';
-  } else if (duration < 7) {
-    return `${duration} days`;
-  } else if (duration === 7) {
-    return '1 week';
-  } else if (duration < 14) {
-    return `${Math.round(duration / 7)} weeks`;
-  } else if (duration === 14) {
-    return '2 weeks';
-  } else {
-    return `${Math.round(duration / 7)} weeks`;
-  }
+  return duration;
 };
 
 /**
