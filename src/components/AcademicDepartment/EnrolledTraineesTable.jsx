@@ -1,26 +1,25 @@
-import React, { useState, useEffect, useCallback, useRef } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { Card, Table, Badge, Modal, Button } from 'react-bootstrap';
-import { People, X } from 'react-bootstrap-icons';
+import { X } from 'react-bootstrap-icons';
 import { toast } from 'react-toastify';
-import { LoadingSkeleton, SortIcon, PermissionWrapper } from '../Common'; // Add PermissionWrapper
-import { PERMISSION_IDS } from '../../constants/permissionIds'; // Add this
+import { LoadingSkeleton, SortIcon, PermissionWrapper } from '../Common';
+import { PERMISSION_IDS } from '../../constants/permissionIds';
 import useTableSort from '../../hooks/useTableSort';
 import EnrolledTraineeActions from './EnrolledTraineeActions';
 import RemoveTraineeModal from './RemoveTraineeModal';
 import courseAPI from '../../api/course';
-import { traineeAPI } from '../../api/trainee';
 import subjectAPI from '../../api/subject';
 
 
-const EnrolledTraineesTable = ({ courseId, loading = false, title = 'Enrolled Trainees' }) => {
+const EnrolledTraineesTable = ({ courseId, loading = false }) => {
   const [enrolledTrainees, setEnrolledTrainees] = useState([]);
-  const enrollmentCacheRef = useRef({}); // Use ref instead of state to avoid re-renders and dependency issues
   const [loadingEnrolled, setLoadingEnrolled] = useState(true);
   const [showSubjectModal, setShowSubjectModal] = useState(false);
   const [selectedTrainee, setSelectedTrainee] = useState(null);
   const [showRemoveModal, setShowRemoveModal] = useState(false);
   const [traineeToRemove, setTraineeToRemove] = useState(null);
-  const [subjectToRemove, setSubjectToRemove] = useState(null);
+  const [subjectToRemove, setSubjectToRemove] = useState(null); // Store subject ID
+  const [subjectToRemoveName, setSubjectToRemoveName] = useState(null); // Store subject name for display
   const [removeLoading, setRemoveLoading] = useState(false);
   
   const { sortedData, sortConfig, handleSort } = useTableSort(enrolledTrainees);
@@ -34,13 +33,11 @@ const EnrolledTraineesTable = ({ courseId, loading = false, title = 'Enrolled Tr
 
     setLoadingEnrolled(true);
     try {
-      // OPTIMIZED: Use getCourseTrainees to get enrolled trainees directly (1 API call)
-      const courseTraineesResponse = await courseAPI.getCourseTrainees(courseId);
+      // Call API to get enrolled trainees (only 1 API call)
+      const response = await courseAPI.getCourseTrainees(courseId);
       
-      // Backend returns: { trainees: [...] } or { data: { trainees: [...] } }
-      const traineesList = courseTraineesResponse?.trainees || 
-                          courseTraineesResponse?.data?.trainees || 
-                          [];
+      // Handle response format: { message: "...", data: { trainees: [...] } }
+      const traineesList = response?.data?.trainees || response?.trainees || [];
       
       if (!Array.isArray(traineesList) || traineesList.length === 0) {
         setEnrolledTrainees([]);
@@ -48,76 +45,30 @@ const EnrolledTraineesTable = ({ courseId, loading = false, title = 'Enrolled Tr
         return;
       }
       
-      // Step 2: For each enrolled trainee, get their enrollment details to extract subject IDs
-      // Fetch ALL trainee enrollments in ONE call to avoid N API calls
-      const enrollmentPromises = traineesList.map(async (trainee) => {
-        try {
-          // Check if already cached
-          if (enrollmentCacheRef.current[trainee.id]) {
-            const cachedData = enrollmentCacheRef.current[trainee.id];
-            const enrolledEnrollments = cachedData.filter(e => e.enrollment?.status === 'ENROLLED');
-            if (enrolledEnrollments.length > 0) {
-              return {
-                id: trainee.id,
-                eid: trainee.eid,
-                name: `${trainee.firstName || ''} ${trainee.lastName || ''}`.trim() || trainee.name || 'Unknown',
-                subjects: enrolledEnrollments.map(e => e.subject.id),
-                userId: trainee.id,
-                email: trainee.email || '',
-                department: trainee.department || null
-              };
-            }
-            return null;
-          }
-          
-          // Call API to get trainee's enrollment details
-          const enrollmentData = await courseAPI.getTraineeEnrollments(trainee.id);
-          
-          // Cache the result
-          if (enrollmentData?.enrollments) {
-            enrollmentCacheRef.current[trainee.id] = enrollmentData.enrollments;
-          }
-          
-          // Check if trainee has any ENROLLED enrollments
-          if (enrollmentData && enrollmentData.enrollments && enrollmentData.enrollments.length > 0) {
-            // Filter only ENROLLED enrollments
-            const enrolledEnrollments = enrollmentData.enrollments.filter(
-              enrollment => enrollment.enrollment?.status === 'ENROLLED'
-            );
-            
-            if (enrolledEnrollments.length > 0) {
-              // Transform enrollment data to get subject IDs (only ENROLLED ones)
-              const subjectIds = enrolledEnrollments.map(enrollment => enrollment.subject.id);
-              
-              return {
-                id: trainee.id,
-                eid: trainee.eid,
-                name: `${trainee.firstName || ''} ${trainee.lastName || ''}`.trim() || trainee.name || 'Unknown',
-                subjects: subjectIds,
-                userId: trainee.id,
-                email: trainee.email || '',
-                department: trainee.department || null
-              };
-            }
-          }
-          return null;
-        } catch {
-          // Continue to next trainee
-          return null;
-        }
+      // Map API response to component format
+      const mappedTrainees = traineesList.map((trainee) => {
+        // Build full name from firstName, middleName, lastName
+        const nameParts = [
+          trainee.firstName,
+          trainee.middleName,
+          trainee.lastName
+        ].filter(Boolean);
+        const fullName = nameParts.join(' ') || 'Unknown';
+        
+        return {
+          id: trainee.id,
+          eid: trainee.eid || '',
+          name: fullName,
+          email: trainee.email || '',
+          subjectCount: trainee.subjectCount || 0,
+          userId: trainee.id
+        };
       });
       
-      // Wait for all enrollment requests to complete
-      const results = await Promise.all(enrollmentPromises);
-      
-      // Filter out null values (failed requests or trainees without enrollments)
-      const validTrainees = results.filter(trainee => trainee !== null);
-      
-      setEnrolledTrainees(validTrainees);
+      setEnrolledTrainees(mappedTrainees);
       
     } catch (error) {
       console.error('Error loading enrolled trainees:', error);
-      // Fallback to empty array if API fails
       setEnrolledTrainees([]);
     } finally {
       setLoadingEnrolled(false);
@@ -133,50 +84,44 @@ const EnrolledTraineesTable = ({ courseId, loading = false, title = 'Enrolled Tr
 
   const handleViewSubjects = async (trainee) => {
     try {
-      // OPTIMIZED: Use cached enrollment data if available
-      let enrollmentData = null;
+      // Call API to get trainee enrollments for this course
+      const response = await courseAPI.getTraineeEnrollments(courseId, trainee.userId);
       
-      if (enrollmentCacheRef.current[trainee.userId]) {
-        // Use cached data
-        enrollmentData = { enrollments: enrollmentCacheRef.current[trainee.userId] };
-      } else {
-        // Only call API if not cached
-        enrollmentData = await courseAPI.getTraineeEnrollments(trainee.userId);
-        
-        // Cache the result
-        if (enrollmentData?.enrollments) {
-          enrollmentCacheRef.current[trainee.userId] = enrollmentData.enrollments;
-        }
-      }
+      // Handle response format: { message: "...", data: { trainee: {...}, subjects: [...], totalSubjects: ... } }
+      const responseData = response?.data || response;
       
-      // Transform API data to match component format (only ENROLLED enrollments)
-      const enrolledEnrollments = enrollmentData.enrollments?.filter(
-        enrollment => enrollment.enrollment?.status === 'ENROLLED'
-      ) || [];
-      
+      // Map API response to component format
       const transformedTrainee = {
-        ...trainee,
-        enrollmentDetails: enrollmentData,
-        subjects: enrolledEnrollments.map(enrollment => ({
-          id: enrollment.subject.id,
-          name: enrollment.subject.name,
-          code: enrollment.subject.code,
-          status: enrollment.subject.status,
-          type: enrollment.subject.type,
-          method: enrollment.subject.method,
-          startDate: enrollment.subject.startDate,
-          endDate: enrollment.subject.endDate,
-          course: enrollment.subject.course,
-          enrollment: enrollment.enrollment
+        id: trainee.id,
+        eid: responseData.trainee?.eid || trainee.eid,
+        name: responseData.trainee?.fullName || trainee.name,
+        email: responseData.trainee?.email || trainee.email,
+        department: responseData.trainee?.department || null,
+        userId: responseData.trainee?.userId || trainee.userId,
+        subjectCount: responseData.totalSubjects || 0,
+        subjects: (responseData.subjects || []).map(item => ({
+          id: item.subject?.id,
+          code: item.subject?.code,
+          name: item.subject?.name,
+          status: item.subject?.status,
+          type: item.subject?.type,
+          method: item.subject?.method,
+          startDate: item.subject?.startDate,
+          endDate: item.subject?.endDate,
+          course: item.subject?.course,
+          enrollment: item.enrollment
         }))
       };
       
       setSelectedTrainee(transformedTrainee);
       setShowSubjectModal(true);
-    } catch {
-      // Fallback to basic trainee data
-      setSelectedTrainee(trainee);
-      setShowSubjectModal(true);
+    } catch (error) {
+      console.error('Error loading trainee enrollments:', error);
+      toast.error('Failed to load trainee subjects', {
+        autoClose: 3000,
+        position: "top-right",
+        icon: false
+      });
     }
   };
 
@@ -194,32 +139,21 @@ const EnrolledTraineesTable = ({ courseId, loading = false, title = 'Enrolled Tr
 
     setRemoveLoading(true);
     try {
-      // OPTIMIZED: Use cached enrollment data if available
-      let enrollmentData = null;
+      // Call API to get trainee enrollments
+      const response = await courseAPI.getTraineeEnrollments(courseId, traineeToRemove.userId);
+      const responseData = response?.data || response;
+      const subjects = responseData.subjects || [];
       
-      if (enrollmentCacheRef.current[traineeToRemove.userId]) {
-        // Use cached data
-        enrollmentData = { enrollments: enrollmentCacheRef.current[traineeToRemove.userId] };
-      } else {
-        // Only call API if not cached
-        enrollmentData = await courseAPI.getTraineeEnrollments(traineeToRemove.userId);
-        
-        // Cache the result
-        if (enrollmentData?.enrollments) {
-          enrollmentCacheRef.current[traineeToRemove.userId] = enrollmentData.enrollments;
-        }
-      }
-      
-      if (enrollmentData && enrollmentData.enrollments && enrollmentData.enrollments.length > 0) {
-        
+      if (subjects.length > 0) {
         // Remove trainee from each subject
-        const removePromises = enrollmentData.enrollments.map(async (enrollment) => {
-          const subjectId = enrollment.subject.id;
-          const batchCode = enrollment.enrollment?.batchCode || 'TEST0012025';
+        const removePromises = subjects.map(async (item) => {
+          const subject = item.subject || item;
+          const enrollment = item.enrollment;
+          const subjectId = subject.id;
+          const batchCode = enrollment?.batchCode;
           
-          // Check if enrollment status is ENROLLED
-          if (enrollment.enrollment?.status !== 'ENROLLED') {
-            return null; // Skip this enrollment
+          if (!batchCode) {
+            return null; // Skip if no batch code
           }
           
           return subjectAPI.removeTraineeFromSubject(subjectId, traineeToRemove.userId, batchCode);
@@ -230,9 +164,6 @@ const EnrolledTraineesTable = ({ courseId, loading = false, title = 'Enrolled Tr
         if (validPromises.length > 0) {
           await Promise.all(validPromises);
         }
-        
-        // Clear cache for this trainee after removal and refresh
-        delete enrollmentCacheRef.current[traineeToRemove.userId];
         
         // Refresh the enrolled trainees data
         await loadEnrolledTrainees();
@@ -274,21 +205,14 @@ const EnrolledTraineesTable = ({ courseId, loading = false, title = 'Enrolled Tr
     
     if (!trainee) return;
 
-    // Find the subject name from the selected trainee's subjects
-    const subject = selectedTrainee?.subjects?.find(s => s.id === subjectId);
-    const subjectName = subject ? subject.name : 'Unknown Subject';
-
-    setTraineeToRemove(trainee);
-    setSubjectToRemove(subjectName);
-    setShowRemoveModal(true);
-  };
-
-  const handleConfirmRemoveSubject = async () => {
-    if (!traineeToRemove || !subjectToRemove) return;
-
-    // Find the subject ID from the selected trainee's subjects
-    const subject = selectedTrainee?.subjects?.find(s => s.name === subjectToRemove);
-    if (!subject) {
+    // Find the subject from the selected trainee's subjects
+    // API response format: { subject: {...}, enrollment: {...} }
+    const subjectItem = selectedTrainee?.subjects?.find(item => {
+      const subject = item.subject || item;
+      return subject.id === subjectId;
+    });
+    
+    if (!subjectItem) {
       toast.error('Subject not found', {
         autoClose: 3000,
         position: "top-right",
@@ -297,15 +221,45 @@ const EnrolledTraineesTable = ({ courseId, loading = false, title = 'Enrolled Tr
       return;
     }
 
+    const subject = subjectItem.subject || subjectItem;
+    const subjectName = subject.name || 'Unknown Subject';
+
+    setTraineeToRemove(trainee);
+    setSubjectToRemove(subjectId); // Store subject ID
+    setSubjectToRemoveName(subjectName); // Store subject name for display
+    setShowRemoveModal(true);
+  };
+
+  const handleConfirmRemoveSubject = async () => {
+    if (!traineeToRemove || !subjectToRemove) return;
+
+    // Find the subject from the selected trainee's subjects by ID
+    const subjectItem = selectedTrainee?.subjects?.find(item => {
+      const subject = item.subject || item;
+      return subject.id === subjectToRemove;
+    });
+    
+    if (!subjectItem) {
+      toast.error('Subject not found', {
+        autoClose: 3000,
+        position: "top-right",
+        icon: false
+      });
+      return;
+    }
+
+    const subject = subjectItem.subject || subjectItem;
+    const enrollment = subjectItem.enrollment;
+    const subjectName = subject.name || 'Unknown Subject';
+
     setRemoveLoading(true);
     try {
       // Get batch code from enrollment data
-      const batchCode = subject.enrollment?.batchCode || 'TEST0012025';
+      const batchCode = enrollment?.batchCode;
       
-      // Check if enrollment status is ENROLLED
-      if (subject.enrollment?.status !== 'ENROLLED') {
-        toast.warning(`Cannot remove trainee from ${subjectToRemove}. Enrollment status is not ENROLLED.`, {
-          autoClose: 4000,
+      if (!batchCode) {
+        toast.error('Batch code not found', {
+          autoClose: 3000,
           position: "top-right",
           icon: false
         });
@@ -316,14 +270,11 @@ const EnrolledTraineesTable = ({ courseId, loading = false, title = 'Enrolled Tr
       // Call API to remove trainee from subject
       await subjectAPI.removeTraineeFromSubject(subject.id, traineeToRemove.userId, batchCode);
       
-      // Clear cache for this trainee after removal and refresh
-      delete enrollmentCacheRef.current[traineeToRemove.userId];
-      
       // Refresh the enrolled trainees data
       await loadEnrolledTrainees();
       
       // Show success toast
-      toast.success(`Successfully removed ${traineeToRemove.name} from ${subjectToRemove}`, {
+      toast.success(`Successfully removed ${traineeToRemove.name} from ${subjectName}`, {
         autoClose: 3000,
         position: "top-right",
         icon: false
@@ -499,19 +450,16 @@ const EnrolledTraineesTable = ({ courseId, loading = false, title = 'Enrolled Tr
                       </Badge>
                     </td>
                     <td className="show-mobile">
-                      <div className="d-flex align-items-center">
-                        <People size={14} className="me-1 text-muted" />
-                        <Badge 
-                          bg="info"
-                          className="px-2 py-1"
-                          style={{ 
-                            fontSize: '0.75rem',
-                            width: 'fit-content'
-                          }}
-                        >
-                          {trainee.subjects.length} subjects
-                        </Badge>
-                      </div>
+                      <Badge 
+                        bg="info"
+                        className="px-2 py-1"
+                        style={{ 
+                          fontSize: '0.75rem',
+                          width: 'fit-content'
+                        }}
+                      >
+                        {trainee.subjectCount || 0} subjects
+                      </Badge>
                     </td>
                     <td className="text-center show-mobile">
                       <EnrolledTraineeActions
@@ -531,8 +479,7 @@ const EnrolledTraineesTable = ({ courseId, loading = false, title = 'Enrolled Tr
       {/* Subject List Modal */}
       <Modal show={showSubjectModal} onHide={() => setShowSubjectModal(false)} size="lg" centered>
         <Modal.Header className="bg-gradient-primary-custom text-white border-0">
-          <Modal.Title className="d-flex align-items-center text-white">
-            <People className="me-2" size={20} />
+          <Modal.Title className="text-white">
             {selectedTrainee?.name} - Enrolled Subjects
           </Modal.Title>
           <Button variant="link" onClick={() => setShowSubjectModal(false)} className="text-white p-0">
@@ -554,105 +501,132 @@ const EnrolledTraineesTable = ({ courseId, loading = false, title = 'Enrolled Tr
                   </div>
                   <div className="col-md-6 text-md-end">
                     <div className="text-primary-custom small">
-                      <div>Total Subjects: <Badge bg="primary-custom" className="text-white">{selectedTrainee.subjects.length}</Badge></div>
+                      <div>Total Subjects: <Badge bg="primary-custom" className="text-white">{selectedTrainee.subjectCount || 0}</Badge></div>
                     </div>
                   </div>
                 </div>
               </div>
 
               {/* Subjects List */}
-              <div className="row g-3">
-                {selectedTrainee.subjects.map(subject => (
-                  <div key={subject.id} className="col-12">
-                    <Card className="border-0 shadow-sm">
-                      <Card.Body className="p-3">
-                        <div className="row">
-                          {/* Subject Info */}
-                          <div className="col-md-8">
-                            <div className="d-flex justify-content-between align-items-start mb-3">
-                              <div>
-                                <h6 className="mb-1 text-primary-custom fw-bold">{subject.name}</h6>
-                                <div className="d-flex flex-wrap gap-2 align-items-center">
-                                  <Badge bg="primary-custom" className="text-white">
-                                    {subject.code}
-                                  </Badge>
-                                  <Badge bg={subject.status === 'ACTIVE' ? 'success' : 'primary-custom'} className={subject.status === 'ACTIVE' ? '' : 'text-white'}>
-                                    {subject.status}
-                                  </Badge>
-                                </div>
-                              </div>
-                                                            <PermissionWrapper
-                                                              permission={PERMISSION_IDS.REMOVE_TRAINEE_FROM_ENROLLMENT}
-                                                              fallback={null}
-                                                            >
-                                                              <Button
-                                                                size="sm"
-                                                                variant="outline-danger"
-                                                                className="ms-2"
-                                                                onClick={() => {
-                                                                  handleRemoveSubject(selectedTrainee.id, subject.id);
-                                                                }}
-                                                              >
-                                                                <X size={14} />
-                                                              </Button>
-                                                            </PermissionWrapper>                            </div>
-                            
-                            {/* Subject Details */}
-                            <div className="row g-2 mb-3">
-                              <div className="col-sm-6">
-                                <div className="d-flex align-items-center">
-                                  <span className="text-primary-custom small me-2 fw-semibold">Type:</span>
-                                  <Badge bg="primary-custom" className="text-white">
-                                    {subject.type}
-                                  </Badge>
-                                </div>
-                              </div>
-                              <div className="col-sm-6">
-                                <div className="d-flex align-items-center">
-                                  <span className="text-primary-custom small me-2 fw-semibold">Method:</span>
-                                  <Badge bg="primary-custom" className="text-white">
-                                    {subject.method}
-                                  </Badge>
-                                </div>
-                              </div>
-                            </div>
-                            
-                            <div className="mb-3">
-                              <span className="text-primary-custom small me-2 fw-semibold">Course:</span>
-                              <span className="fw-medium text-primary-custom">{subject.course?.name}</span>
-                            </div>
-                          </div>
-
-                          {/* Enrollment Info */}
-                          {subject.enrollment && (
-                            <div className="col-md-4">
-                              <div className="p-3 bg-primary bg-opacity-10 rounded border-start border-primary border-3">
-                                <h6 className="text-primary-custom mb-2 fw-bold">Enrollment Details</h6>
-                                <div className="space-y-2">
-                                  <div className="d-flex justify-content-between align-items-center">
-                                    <span className="text-primary-custom small fw-semibold">Status:</span>
-                                    <Badge bg="primary-custom" className="text-white">{subject.enrollment.status}</Badge>
+              {selectedTrainee.subjects && selectedTrainee.subjects.length > 0 ? (
+                <div className="row g-3">
+                  {selectedTrainee.subjects.map((item, index) => {
+                    const subject = item.subject || item;
+                    const enrollment = item.enrollment;
+                    
+                    return (
+                      <div key={subject.id || index} className="col-12">
+                        <Card className="border-0 shadow-sm">
+                          <Card.Body className="p-3">
+                            <div className="row">
+                              {/* Subject Info */}
+                              <div className="col-md-8">
+                                <div className="d-flex justify-content-between align-items-start mb-3">
+                                  <div>
+                                    <h6 className="mb-1 text-primary-custom fw-bold">{subject.name}</h6>
+                                    <div className="d-flex flex-wrap gap-2 align-items-center">
+                                      <Badge bg="primary-custom" className="text-white">
+                                        {subject.code}
+                                      </Badge>
+                                      <Badge bg={subject.status === 'ON_GOING' ? 'success' : 'primary-custom'} className={subject.status === 'ON_GOING' ? '' : 'text-white'}>
+                                        {subject.status}
+                                      </Badge>
+                                    </div>
                                   </div>
-                                  <div className="d-flex justify-content-between align-items-center">
-                                    <span className="text-primary-custom small fw-semibold">Batch:</span>
-                                    <span className="fw-medium small text-primary-custom">{subject.enrollment.batchCode}</span>
+                                  <PermissionWrapper
+                                    permission={PERMISSION_IDS.REMOVE_TRAINEE_FROM_ENROLLMENT}
+                                    fallback={null}
+                                  >
+                                    <Button
+                                      size="sm"
+                                      variant="outline-danger"
+                                      className="ms-2"
+                                      onClick={() => {
+                                        handleRemoveSubject(selectedTrainee.id, subject.id);
+                                      }}
+                                    >
+                                      <X size={14} />
+                                    </Button>
+                                  </PermissionWrapper>
+                                </div>
+                                
+                                {/* Subject Details */}
+                                <div className="row g-2 mb-3">
+                                  <div className="col-sm-6">
+                                    <div className="d-flex align-items-center">
+                                      <span className="text-primary-custom small me-2 fw-semibold">Type:</span>
+                                      <Badge bg="primary-custom" className="text-white">
+                                        {subject.type}
+                                      </Badge>
+                                    </div>
                                   </div>
-                                  <div className="d-flex justify-content-between align-items-center">
-                                    <span className="text-primary-custom small fw-semibold">Enrolled:</span>
-                                    <span className="fw-medium small text-primary-custom">
-                                      {new Date(subject.enrollment.enrollmentDate).toLocaleDateString()}
+                                  <div className="col-sm-6">
+                                    <div className="d-flex align-items-center">
+                                      <span className="text-primary-custom small me-2 fw-semibold">Method:</span>
+                                      <Badge bg="primary-custom" className="text-white">
+                                        {subject.method}
+                                      </Badge>
+                                    </div>
+                                  </div>
+                                </div>
+                                
+                                {subject.course && (
+                                  <div className="mb-3">
+                                    <span className="text-primary-custom small me-2 fw-semibold">Course:</span>
+                                    <span className="fw-medium text-primary-custom">{subject.course.name}</span>
+                                  </div>
+                                )}
+                                
+                                {subject.startDate && subject.endDate && (
+                                  <div className="mb-3">
+                                    <span className="text-primary-custom small me-2 fw-semibold">Duration:</span>
+                                    <span className="fw-medium text-primary-custom">
+                                      {new Date(subject.startDate).toLocaleDateString()} - {new Date(subject.endDate).toLocaleDateString()}
                                     </span>
                                   </div>
-                                </div>
+                                )}
                               </div>
+
+                              {/* Enrollment Info */}
+                              {enrollment && (
+                                <div className="col-md-4">
+                                  <div className="p-3 bg-primary bg-opacity-10 rounded border-start border-primary border-3">
+                                    <h6 className="text-primary-custom mb-2 fw-bold">Enrollment Details</h6>
+                                    <div className="space-y-2">
+                                      <div className="d-flex justify-content-between align-items-center">
+                                        <span className="text-primary-custom small fw-semibold">Status:</span>
+                                        <Badge bg="primary-custom" className="text-white">{enrollment.status}</Badge>
+                                      </div>
+                                      {enrollment.batchCode && (
+                                        <div className="d-flex justify-content-between align-items-center">
+                                          <span className="text-primary-custom small fw-semibold">Batch:</span>
+                                          <span className="fw-medium small text-primary-custom">{enrollment.batchCode}</span>
+                                        </div>
+                                      )}
+                                      {enrollment.enrollmentDate && (
+                                        <div className="d-flex justify-content-between align-items-center">
+                                          <span className="text-primary-custom small fw-semibold">Enrolled:</span>
+                                          <span className="fw-medium small text-primary-custom">
+                                            {new Date(enrollment.enrollmentDate).toLocaleDateString()}
+                                          </span>
+                                        </div>
+                                      )}
+                                    </div>
+                                  </div>
+                                </div>
+                              )}
                             </div>
-                          )}
-                        </div>
-                      </Card.Body>
-                    </Card>
-                  </div>
-                ))}
-              </div>
+                          </Card.Body>
+                        </Card>
+                      </div>
+                    );
+                  })}
+                </div>
+              ) : (
+                <div className="text-center py-4">
+                  <p className="text-muted">No subjects found</p>
+                </div>
+              )}
             </div>
           )}
         </Modal.Body>
@@ -670,13 +644,14 @@ const EnrolledTraineesTable = ({ courseId, loading = false, title = 'Enrolled Tr
           setShowRemoveModal(false);
           setTraineeToRemove(null);
           setSubjectToRemove(null);
+          setSubjectToRemoveName(null);
           setRemoveLoading(false);
           // If we were removing from a specific subject, keep the subject modal open
           // If we were removing from all subjects, the subject modal should already be closed
         }}
         onConfirm={subjectToRemove ? handleConfirmRemoveSubject : handleConfirmRemoveTrainee}
         trainee={traineeToRemove}
-        subjectName={subjectToRemove}
+        subjectName={subjectToRemoveName}
         loading={removeLoading}
       />
     </>
