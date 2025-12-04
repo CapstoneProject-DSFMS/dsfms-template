@@ -5,7 +5,6 @@ const profileAPI = {
   getProfile: async () => {
     try {
       const response = await apiClient.get('/profile');
-      // Handle response format: { message, data } or direct data
       if (response.data && response.data.data) {
         return response.data.data;
       }
@@ -16,20 +15,18 @@ const profileAPI = {
     }
   },
 
-  // Update avatar (sends file as FormData with key 'avatar')
+  // Update avatar
   updateAvatar: async (file) => {
     try {
       const formData = new FormData();
       formData.append('avatar', file);
       
-      // Send FormData with Content-Type multipart/form-data
       const response = await apiClient.put('/profile', formData, {
         headers: {
           'Content-Type': 'multipart/form-data'
         }
       });
       
-      // Handle response format: { message, data } or direct data
       if (response.data && response.data.data) {
         return response.data.data;
       }
@@ -40,14 +37,13 @@ const profileAPI = {
     }
   },
 
-  // Update user profile
+  // Update profile
   updateProfile: async (data) => {
     try {
       const formData = new FormData();
       
-      // Check if data is a File object (avatar)
       if (data instanceof File) {
-        // Only send avatar file
+        // If data is a file, treat it as avatar
         formData.append('avatar', data);
       } else if (typeof data === 'object' && data !== null) {
         // Send profile data fields
@@ -84,7 +80,7 @@ const profileAPI = {
   // Reset password
   resetPassword: async (passwordData) => {
     try {
-      const response = await apiClient.put('/profile/password', passwordData);
+      const response = await apiClient.put('/profile/reset-password', passwordData);
       return response.data;
     } catch (error) {
       console.error('Error resetting password:', error);
@@ -93,12 +89,26 @@ const profileAPI = {
   },
 
   // Update signature
-  updateSignature: async (signatureImageUrl) => {
+  updateSignature: async (signatureDataUrl) => {
     try {
-      const response = await apiClient.put('/profile/signature', {
-        signatureImageUrl
+      // Convert data URL to blob
+      const response = await fetch(signatureDataUrl);
+      const blob = await response.blob();
+      const file = new File([blob], 'signature.png', { type: 'image/png' });
+      
+      const formData = new FormData();
+      formData.append('signature', file);
+      
+      const apiResponse = await apiClient.put('/profile', formData, {
+        headers: {
+          'Content-Type': 'multipart/form-data'
+        }
       });
-      return response.data;
+      
+      if (apiResponse.data && apiResponse.data.data) {
+        return apiResponse.data.data;
+      }
+      return apiResponse.data;
     } catch (error) {
       console.error('Error updating signature:', error);
       throw error;
@@ -107,3 +117,4 @@ const profileAPI = {
 };
 
 export default profileAPI;
+
