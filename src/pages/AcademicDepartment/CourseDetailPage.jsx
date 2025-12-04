@@ -20,8 +20,10 @@ const CourseDetailPage = () => {
         // Since course API returns 500, we'll use department API as fallback
         try {
           const response = await courseAPI.getCourseById(courseId);
+          // API already handles response.data.data structure in courseAPI.getCourseById
+          // So response here should be the course object directly
           setCourse(response);
-          if (response.department) {
+          if (response && response.department) {
             setDepartment(response.department);
           }
         } catch (courseError) {
