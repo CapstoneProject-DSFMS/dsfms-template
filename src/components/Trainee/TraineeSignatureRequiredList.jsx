@@ -34,12 +34,26 @@ const TraineeSignatureRequiredList = ({ traineeId }) => {
       const coursesMapData = {};
       try {
         const coursesResponse = await courseAPI.getCourses();
-        const courses = coursesResponse?.courses || coursesResponse?.data || [];
-        courses.forEach(course => {
-          if (course.id) {
-            coursesMapData[course.id] = course.name || course.code || 'Unknown Course';
-          }
-        });
+        // Handle different response structures: { courses: [...] }, { data: [...] }, or direct array
+        let courses = [];
+        if (Array.isArray(coursesResponse)) {
+          courses = coursesResponse;
+        } else if (coursesResponse?.courses && Array.isArray(coursesResponse.courses)) {
+          courses = coursesResponse.courses;
+        } else if (coursesResponse?.data && Array.isArray(coursesResponse.data)) {
+          courses = coursesResponse.data;
+        }
+        
+        // Only iterate if courses is actually an array
+        if (Array.isArray(courses)) {
+          courses.forEach(course => {
+            if (course?.id) {
+              coursesMapData[course.id] = course.name || course.code || 'Unknown Course';
+            }
+          });
+        } else {
+          console.warn('Courses response is not an array:', coursesResponse);
+        }
       } catch (err) {
         console.error('Error loading courses map:', err);
         // Continue without course names if API fails

@@ -43,12 +43,20 @@ const TraineeSelectionPanel = ({ selectedTrainees, onSelectionChange }) => {
     try {
       const response = await traineeAPI.getTraineesForEnrollment();
       
-      // API returns: { trainees: [...], totalItems: ... }
+      // Handle different response formats:
+      // Format 1: { message: "...", data: { trainees: [...] } } (wrapped)
+      // Format 2: { trainees: [...], totalItems: ... }
+      // Format 3: Direct array [...]
       let traineesData = [];
-      if (response && response.trainees && Array.isArray(response.trainees)) {
+      
+      if (response?.data?.trainees && Array.isArray(response.data.trainees)) {
+        // Wrapped format: { data: { trainees: [...] } }
+        traineesData = response.data.trainees;
+      } else if (response?.trainees && Array.isArray(response.trainees)) {
+        // Format: { trainees: [...] }
         traineesData = response.trainees;
       } else if (Array.isArray(response)) {
-        // Fallback: direct array format
+        // Direct array format
         traineesData = response;
       }
       

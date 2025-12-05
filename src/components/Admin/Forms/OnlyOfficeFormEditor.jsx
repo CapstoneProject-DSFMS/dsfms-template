@@ -16,6 +16,7 @@ const OnlyOfficeFormEditor = forwardRef(({
   importType = '', // Kept for backward compatibility, no longer used after removing EditorWithMergeFields
     className = '',
   initialSections = null, // ← NEW prop to restore sections from draft
+  isUpdateRejected = false, // ← NEW prop to indicate Update Rejected Template flow
   onHasUnsavedChangesChange,
   onDraftSaved,
 }, ref) => {
@@ -195,8 +196,8 @@ const OnlyOfficeFormEditor = forwardRef(({
     }, [initialContent])
 
   // OnlyOffice Cloud Configuration - Updated URL and JWT Secret
-  // Cloud URL: https://c1e7e7aa.docs.onlyoffice.com
-    const ONLYOFFICE_SECRET = 'bd9aaaaddaf94061b51e976a8fd335ce'
+  // Cloud URL: https://d492cc7d.docs.onlyoffice.com
+    const ONLYOFFICE_SECRET = '06afd75229ef45e496e4107659a4db9e'
 
   // Generate JWT token for OnlyOffice Cloud - Hardcoded approach
   const generateJWTToken = async (payload) => {
@@ -1584,6 +1585,7 @@ console.log('🌐 Full S3 URL:', s3Url)
                 readOnly={readOnly}
                 className="h-100"
                 onSubmittingChange={setIsSubmitting}
+                isUpdateRejected={isUpdateRejected}
               />
             </div>
           </Col>

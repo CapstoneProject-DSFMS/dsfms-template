@@ -111,8 +111,10 @@ const YourDraftsPage = () => {
           documentUrl: documentUrl,
           fileName: template.name,
           importType: 'File without fields',
+          isEditDraft: true, // ← Flag to indicate Edit Draft flow
           templateInfo: {
             id: template.id, // ← To know this is editing draft (update instead of create)
+            currentTemplateId: template.id, // ← Include currentTemplateId in state
             name: template.name,
             description: template.description,
             departmentId: template.departmentId,
