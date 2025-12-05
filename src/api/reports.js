@@ -53,6 +53,16 @@ const reportAPI = {
     return reportAPI.getMyReports('FEEDBACK', params);
   },
 
+  // Get all other reports
+  getOther: async (params = {}) => {
+    return reportAPI.getReportsByType('OTHER', params);
+  },
+
+  // Get my other reports
+  getMyOther: async (params = {}) => {
+    return reportAPI.getMyReports('OTHER', params);
+  },
+
   // Get all reports
   getAllReports: async (params = {}) => {
     try {

@@ -89,20 +89,11 @@ const profileAPI = {
   },
 
   // Update signature
-  updateSignature: async (signatureDataUrl) => {
+  updateSignature: async (signatureImageUrl) => {
     try {
-      // Convert data URL to blob
-      const response = await fetch(signatureDataUrl);
-      const blob = await response.blob();
-      const file = new File([blob], 'signature.png', { type: 'image/png' });
-      
-      const formData = new FormData();
-      formData.append('signature', file);
-      
-      const apiResponse = await apiClient.put('/profile', formData, {
-        headers: {
-          'Content-Type': 'multipart/form-data'
-        }
+      // Send signature URL to API endpoint
+      const apiResponse = await apiClient.put('/profile/signature', {
+        signatureImageUrl: signatureImageUrl
       });
       
       if (apiResponse.data && apiResponse.data.data) {
