@@ -9,6 +9,7 @@ import {
   XCircle,
   ExclamationCircle,
   ThreeDotsVertical,
+  FileText,
 } from 'react-bootstrap-icons';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { toast } from 'react-toastify';
@@ -32,6 +33,11 @@ const TABS = [
     label: 'Feedback',
     icon: ChatDots,
   },
+  {
+    id: 'other',
+    label: 'Other',
+    icon: FileText,
+  },
 ];
 
 const SUBTABS = [
@@ -45,6 +51,7 @@ const SUBTABS_WITHOUT_CANCEL = [
   { id: 'pending', label: 'Pending' },
   { id: 'acknowledge', label: 'Acknowledge' },
   { id: 'resolved', label: 'Resolved' },
+  { id: 'cancel', label: 'Cancel' },
 ];
 
 const incidentStatusOptions = [
@@ -63,12 +70,21 @@ const feedbackStatusOptions = [
   { value: 'CANCELLED', label: 'Cancelled' },
 ];
 
+const otherStatusOptions = [
+  { value: 'all', label: 'All Status' },
+  { value: 'SUBMITTED', label: 'Submitted' },
+  { value: 'ACKNOWLEDGED', label: 'Acknowledged' },
+  { value: 'RESOLVED', label: 'Resolved' },
+  { value: 'CANCELLED', label: 'Cancelled' },
+];
+
 const UnifiedReportsPage = ({ defaultTab, source = '/reports', onShowForm }) => {
   const navigate = useNavigate();
   const location = useLocation();
   const derivedTabFromPath = useMemo(() => {
     if (location.pathname.includes('/feedback')) return 'feedback';
     if (location.pathname.includes('/issues')) return 'incidents';
+    if (location.pathname.includes('/other')) return 'other';
     return 'incidents';
   }, [location.pathname]);
 
@@ -77,14 +93,13 @@ const UnifiedReportsPage = ({ defaultTab, source = '/reports', onShowForm }) => 
   const [activeTab, setActiveTab] = useState(resolvedDefaultTab);
   const [activeSubTab, setActiveSubTab] = useState('pending');
   const [searchTerm, setSearchTerm] = useState('');
-  const [statusFilter, setStatusFilter] = useState('all');
   const [incidents, setIncidents] = useState([]);
   const [feedback, setFeedback] = useState([]);
+  const [other, setOther] = useState([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     setActiveTab(resolvedDefaultTab);
-    setStatusFilter('all');
     setSearchTerm('');
     setActiveSubTab('pending');
   }, [resolvedDefaultTab]);
@@ -97,18 +112,21 @@ const UnifiedReportsPage = ({ defaultTab, source = '/reports', onShowForm }) => 
         // Use my-reports API if source is /reports/create, otherwise use regular reports API
         const useMyReports = source === '/reports/create';
         
-        const [incidentsResponse, feedbackResponse] = await Promise.all([
+        const [incidentsResponse, feedbackResponse, otherResponse] = await Promise.all([
           useMyReports ? reportAPI.getMyIncidents() : reportAPI.getIncidents(),
           useMyReports ? reportAPI.getMyFeedback() : reportAPI.getFeedback(),
+          useMyReports ? reportAPI.getMyOther() : reportAPI.getOther(),
         ]);
 
         setIncidents(incidentsResponse.reports || []);
         setFeedback(feedbackResponse.reports || []);
+        setOther(otherResponse.reports || []);
       } catch (error) {
         console.error('Error fetching reports:', error);
         toast.error('Failed to load reports. Please try again.');
         setIncidents([]);
         setFeedback([]);
+        setOther([]);
       } finally {
         setLoading(false);
       }
@@ -176,6 +194,20 @@ const UnifiedReportsPage = ({ defaultTab, source = '/reports', onShowForm }) => 
       };
     }
 
+    if (activeTab === 'other') {
+      return {
+        data: other,
+        statusOptions: otherStatusOptions,
+        columns: [
+          { key: 'title', title: 'OTHER TITLE', className: 'show-mobile', sortable: true },
+          { key: 'createdBy', title: 'REPORTER', className: 'hide-mobile', sortable: true },
+          { key: 'status', title: 'STATUS', className: 'show-mobile', sortable: true },
+          { key: 'createdAt', title: 'SUBMITTED DATE', className: 'hide-mobile', sortable: true },
+          { title: 'ACTIONS', className: 'text-center show-mobile', sortable: false },
+        ],
+      };
+    }
+
     return {
       data: incidents,
       statusOptions: incidentStatusOptions,
@@ -210,14 +242,11 @@ const UnifiedReportsPage = ({ defaultTab, source = '/reports', onShowForm }) => 
       const subtabStatus = getStatusFromSubTab(activeSubTab);
       const matchesSubTab = subtabStatus === 'all' || item.status === subtabStatus;
 
-      // Apply status filter dropdown
-      const matchesStatus = statusFilter === 'all' || item.status === statusFilter;
-
-      return matchesSearch && matchesSubTab && matchesStatus;
+      return matchesSearch && matchesSubTab;
     });
 
     return filtered;
-  }, [activeDataset, searchTerm, statusFilter, activeSubTab]);
+  }, [activeDataset, searchTerm, activeSubTab]);
 
   const handleViewReport = (reportId) => {
     navigate(ROUTES.REPORTS_DETAIL(reportId), { 
@@ -299,7 +328,7 @@ const UnifiedReportsPage = ({ defaultTab, source = '/reports', onShowForm }) => 
                     <IconComponent className="me-2" size={16} />
                     {tab.label}
                     <Badge bg="light" text="dark" className="ms-2">
-                      {tab.id === 'feedback' ? feedback.length : incidents.length}
+                      {tab.id === 'feedback' ? feedback.length : tab.id === 'other' ? other.length : incidents.length}
                     </Badge>
                   </Nav.Link>
                 </Nav.Item>
@@ -312,7 +341,7 @@ const UnifiedReportsPage = ({ defaultTab, source = '/reports', onShowForm }) => 
             className="border-0 mt-3 sub-tabs-nav"
             style={{ display: 'flex', gap: '0' }}
           >
-            {(source === '/reports/create' ? SUBTABS : SUBTABS_WITHOUT_CANCEL).map((subTab) => (
+            {SUBTABS.map((subTab) => (
               <Nav.Item key={subTab.id} style={{ marginBottom: '0' }}>
                 <Nav.Link
                   as="button"
@@ -341,11 +370,13 @@ const UnifiedReportsPage = ({ defaultTab, source = '/reports', onShowForm }) => 
 
         <Card.Body className="p-4">
           <Row className="mb-3 form-mobile-stack search-filter-section">
-            <Col xs={12} lg={6} md={5} className="mb-2 mb-lg-0">
+            <Col xs={12} lg={9} md={9} className="mb-2 mb-lg-0">
               <SearchBar
                       placeholder={
                         activeTab === 'feedback'
                           ? 'Search feedback by title, description, or submitter...'
+                          : activeTab === 'other'
+                          ? 'Search other reports by title, description, or reporter...'
                           : 'Search incidents by title, description, or reporter...'
                       }
                       value={searchTerm}
@@ -353,27 +384,14 @@ const UnifiedReportsPage = ({ defaultTab, source = '/reports', onShowForm }) => 
                       className="search-bar-mobile"
                     />
                   </Col>
-                  <Col xs={12} lg={3} md={4} className="mb-2 mb-lg-0 position-relative">
-                    <select
-                      className="form-select filter-panel-mobile"
-                      value={statusFilter}
-                      onChange={(e) => setStatusFilter(e.target.value)}
-                    >
-                      {(activeTab === 'feedback' ? feedbackStatusOptions : incidentStatusOptions).map(
-                        (option) => (
-                          <option key={option.value} value={option.value}>
-                            {option.label}
-                          </option>
-                        ),
-                      )}
-                    </select>
-                  </Col>
                   <Col xs={12} lg={3} md={3}>
                     <div className="text-end text-mobile-center">
                       <small className="text-muted">
                         {filteredData.length}{' '}
                         {activeTab === 'feedback'
                           ? `feedback item${filteredData.length !== 1 ? 's' : ''}`
+                          : activeTab === 'other'
+                          ? `other report${filteredData.length !== 1 ? 's' : ''}`
                           : `incident${filteredData.length !== 1 ? 's' : ''}`}
                       </small>
                     </div>
@@ -382,7 +400,7 @@ const UnifiedReportsPage = ({ defaultTab, source = '/reports', onShowForm }) => 
 
                 {filteredData.length === 0 ? (
                   <div className="text-center py-5">
-                    <p className="text-muted mb-0">No {activeTab === 'feedback' ? 'feedback' : 'incidents'} found</p>
+                    <p className="text-muted mb-0">No {activeTab === 'feedback' ? 'feedback' : activeTab === 'other' ? 'other reports' : 'incidents'} found</p>
                   </div>
                 ) : (
                   <AdminTable

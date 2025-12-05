@@ -81,16 +81,23 @@ const ConfigureSignaturePage = () => {
     setSignatureDataUrl(dataUrl);
   };
 
-  // Resize signature to 87x60
+  // Resize signature to 350x200 with transparent background (same size as pad)
   const resizeSignature = (originalDataUrl) => {
     return new Promise((resolve) => {
       const img = new Image();
       img.onload = () => {
         const canvas = document.createElement('canvas');
-        canvas.width = 87;
-        canvas.height = 60;
+        canvas.width = 350;
+        canvas.height = 200;
         const ctx = canvas.getContext('2d');
-        ctx.drawImage(img, 0, 0, 87, 60);
+        
+        // Clear canvas to ensure transparent background
+        ctx.clearRect(0, 0, 350, 200);
+        
+        // Draw the signature image (preserves transparency from original)
+        ctx.drawImage(img, 0, 0, 350, 200);
+        
+        // Export as PNG with transparency
         resolve(canvas.toDataURL('image/png'));
       };
       img.src = originalDataUrl;
@@ -106,7 +113,7 @@ const ConfigureSignaturePage = () => {
     setSaving(true);
 
     try {
-      // Resize signature to 87x60
+      // Resize signature to 350x200
       const resizedDataUrl = await resizeSignature(signatureDataUrl);
       
       // Step 1: Convert dataUrl to blob and file
@@ -201,18 +208,29 @@ const ConfigureSignaturePage = () => {
                     </div>
                   ) : currentSignature ? (
                     <>
-                      <img 
-                        src={currentSignature} 
-                        alt="Current Signature" 
-                        style={{ 
-                          maxWidth: '90%', 
-                          maxHeight: '350px',
+                      <div
+                        style={{
+                          width: '350px',
+                          height: '200px',
                           border: '1px solid #ddd',
                           borderRadius: '4px',
                           padding: '8px',
-                          backgroundColor: '#f8f9fa'
-                        }} 
-                      />
+                          backgroundColor: '#f8f9fa',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center'
+                        }}
+                      >
+                        <img 
+                          src={currentSignature} 
+                          alt="Current Signature" 
+                          style={{ 
+                            width: '100%',
+                            height: '100%',
+                            objectFit: 'contain'
+                          }} 
+                        />
+                      </div>
                       <p className="text-muted mt-3 text-center">
                         <small>Your current digital signature</small>
                       </p>

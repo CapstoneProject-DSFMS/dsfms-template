@@ -4,6 +4,8 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { ArrowLeft, Gear } from 'react-bootstrap-icons';
 import assessmentAPI from '../../api/assessment';
 import { toast } from 'react-toastify';
+import SignaturePad from '../../components/Profile/SignaturePad';
+import uploadAPI from '../../api/upload';
 import '../../styles/assessment-section-fields.css';
 
 const AssessmentSectionFieldsPage = () => {
@@ -27,6 +29,9 @@ const AssessmentSectionFieldsPage = () => {
   const [currentCheckboxField, setCurrentCheckboxField] = useState(null);
   const [currentCheckboxDefault, setCurrentCheckboxDefault] = useState('X');
   const [saving, setSaving] = useState(false);
+  
+  // State for SIGNATURE_DRAW fields: track temporary signature dataUrl before upload
+  const [signatureDataUrls, setSignatureDataUrls] = useState({});
 
   const fetchFields = useCallback(async () => {
     if (!sectionId) return;
@@ -132,6 +137,7 @@ const AssessmentSectionFieldsPage = () => {
     fetchFields();
   }, [fetchFields]);
 
+
   const handleFieldChange = (fieldId, value) => {
     setState((prev) => ({
       ...prev,
@@ -155,6 +161,111 @@ const AssessmentSectionFieldsPage = () => {
   const handleCheckboxChange = (fieldId, checked, parentFieldId) => {
     const defaultValue = checkboxDefaults[parentFieldId] || 'X';
     handleFieldChange(fieldId, checked ? defaultValue : null);
+  };
+
+  // Resize signature to 350x200 with transparent background (same size as pad)
+  const resizeSignature = (originalDataUrl) => {
+    return new Promise((resolve) => {
+      const img = new Image();
+      img.onload = () => {
+        const canvas = document.createElement('canvas');
+        canvas.width = 350;
+        canvas.height = 200;
+        const ctx = canvas.getContext('2d');
+        
+        // Clear canvas to ensure transparent background
+        ctx.clearRect(0, 0, 350, 200);
+        
+        // Draw the signature image (preserves transparency from original)
+        ctx.drawImage(img, 0, 0, 350, 200);
+        
+        // Export as PNG with transparency
+        resolve(canvas.toDataURL('image/png'));
+      };
+      img.src = originalDataUrl;
+    });
+  };
+
+  // Handle signature drawing for SIGNATURE_DRAW fields - only save dataUrl, upload on save
+  const handleSignatureChange = (fieldId, dataUrl) => {
+    if (!dataUrl) {
+      // Clear only the temporary drawing (not the saved signature)
+      setSignatureDataUrls(prev => {
+        const updated = { ...prev };
+        delete updated[fieldId];
+        return updated;
+      });
+      // Do NOT clear fieldValues - keep the saved signature from backend
+      return;
+    }
+
+    // Save dataUrl temporarily (will be uploaded when user clicks Save)
+    setSignatureDataUrls(prev => ({ ...prev, [fieldId]: dataUrl }));
+  };
+
+  // Upload all signature dataUrls to S3 before saving
+  const uploadSignaturesBeforeSave = async () => {
+    const uploadedUrls = {};
+    
+    // Upload all signatures in parallel
+    const uploadPromises = Object.entries(signatureDataUrls).map(async ([fieldId, dataUrl]) => {
+      try {
+        // Resize signature to 350x200
+        const resizedDataUrl = await resizeSignature(dataUrl);
+        
+        // Convert dataUrl to blob and file
+        const response = await fetch(resizedDataUrl);
+        const blob = await response.blob();
+        const file = new File([blob], `signature-${Date.now()}-${fieldId}.png`, { type: 'image/png' });
+
+        // Upload signature to S3
+        const uploadResponse = await uploadAPI.uploadImage(file, 'signature');
+        
+        // Get URL from response
+        let signatureUrl = '';
+        if (typeof uploadResponse === 'string') {
+          signatureUrl = uploadResponse;
+        } else if (uploadResponse?.url) {
+          signatureUrl = uploadResponse.url;
+        } else if (uploadResponse?.data?.[0]?.url) {
+          signatureUrl = uploadResponse.data[0].url;
+        }
+
+        if (!signatureUrl) {
+          throw new Error('Failed to get signature URL from upload response');
+        }
+
+        uploadedUrls[fieldId] = signatureUrl;
+        return { fieldId, url: signatureUrl };
+      } catch (error) {
+        console.error(`Error uploading signature for field ${fieldId}:`, error);
+        throw error;
+      }
+    });
+
+    try {
+      await Promise.all(uploadPromises);
+      
+      // Update fieldValues with uploaded URLs (sync update using setState callback)
+      setState((prev) => {
+        const updatedFieldValues = { ...prev.fieldValues };
+        Object.entries(uploadedUrls).forEach(([fieldId, url]) => {
+          updatedFieldValues[fieldId] = url;
+        });
+        return {
+          ...prev,
+          fieldValues: updatedFieldValues
+        };
+      });
+      
+      // Clear temporary dataUrls
+      setSignatureDataUrls({});
+      
+      return uploadedUrls;
+    } catch (error) {
+      console.error('Error uploading signatures:', error);
+      throw error;
+    }
   };
 
   const handleOpenCheckboxConfig = (field) => {
@@ -282,6 +393,74 @@ const AssessmentSectionFieldsPage = () => {
             disabled={disabled}
             className="field-toggle"
           />
+        </div>
+      );
+    }
+
+    // SIGNATURE_DRAW - render signature pad
+    if (fieldType === 'SIGNATURE_DRAW') {
+      // Check if we have a saved signature URL from backend
+      const hasSavedSignature = value && typeof value === 'string' && (value.startsWith('http://') || value.startsWith('https://'));
+      const savedSignatureUrl = hasSavedSignature ? value : null;
+      
+      return (
+        <div key={fieldId} className="field-input-wrapper">
+          <Form.Label className="field-label">{label}</Form.Label>
+          
+          {/* Display saved signature and pad side by side */}
+          <Row className="g-3">
+             {/* Saved Signature Image (if exists) */}
+             {savedSignatureUrl && (
+               <Col md={6} sm={12}>
+                 <div>
+                   <Form.Label className="text-muted small mb-2">Current Signature</Form.Label>
+                   <div
+                     style={{
+                       width: '350px',
+                       height: '200px',
+                       border: '1px solid #ddd',
+                       borderRadius: '4px',
+                       padding: '8px',
+                       backgroundColor: '#f8f9fa',
+                       display: 'flex',
+                       alignItems: 'center',
+                       justifyContent: 'center'
+                     }}
+                   >
+                     <img 
+                       src={savedSignatureUrl} 
+                       alt="Saved Signature" 
+                       style={{ 
+                         maxWidth: '100%',
+                         maxHeight: '100%',
+                         objectFit: 'contain'
+                       }} 
+                     />
+                   </div>
+                 </div>
+               </Col>
+             )}
+             
+             {/* Signature Pad */}
+             <Col md={savedSignatureUrl ? 6 : 12} sm={12}>
+               <div>
+                 {savedSignatureUrl && (
+                   <Form.Label className="text-muted small mb-2">Draw New Signature</Form.Label>
+                 )}
+                 <div style={{ opacity: disabled ? 0.6 : 1, pointerEvents: disabled ? 'none' : 'auto' }}>
+                   <SignaturePad
+                     onSignatureChange={(dataUrl) => {
+                       if (!disabled) {
+                         handleSignatureChange(fieldId, dataUrl);
+                       }
+                     }}
+                     width={350}
+                     height={200}
+                   />
+                 </div>
+               </div>
+             </Col>
+          </Row>
         </div>
       );
     }
@@ -438,9 +617,11 @@ const AssessmentSectionFieldsPage = () => {
   };
 
   // Build values array for API payload (shared by Save, Update)
-  const buildValuesPayload = () => {
+  const buildValuesPayload = (stateOverride = null, uploadedUrlsOverride = {}) => {
+    // Use override state if provided, otherwise use current state
+    const currentState = stateOverride || state;
     const { sectionControlToggleField } = organizeFields();
-    const allFields = [...state.fields];
+    const allFields = [...currentState.fields];
     const values = [];
     const processedFieldIds = new Set();
     
@@ -457,7 +638,13 @@ const AssessmentSectionFieldsPage = () => {
       if (processedFieldIds.has(assessmentValueId)) return;
       processedFieldIds.add(assessmentValueId);
 
-      let answerValue = state.fieldValues[fieldId];
+      // For SIGNATURE_DRAW fields, use uploaded URL if available, otherwise use fieldValues
+      let answerValue;
+      if (fieldType === 'SIGNATURE_DRAW' && uploadedUrlsOverride[fieldId]) {
+        answerValue = uploadedUrlsOverride[fieldId];
+      } else {
+        answerValue = currentState.fieldValues[fieldId];
+      }
       
       if (answerValue === undefined || answerValue === null) {
         answerValue = null;
@@ -475,7 +662,7 @@ const AssessmentSectionFieldsPage = () => {
       if (fieldType === 'TOGGLE') {
         // When toggle is FALSE, set TOGGLE field to 'false' (section is disabled)
         // When toggle is TRUE, keep the value as-is or default to 'false'
-        if (!state.sectionControlToggleValue) {
+        if (!currentState.sectionControlToggleValue) {
           answerValue = 'false';
         } else {
           // Section is enabled, use current value or default to 'false'
@@ -485,7 +672,7 @@ const AssessmentSectionFieldsPage = () => {
         // For non-TOGGLE fields
         // When toggle is FALSE, set all other fields to null (fields are disabled)
         // When toggle is TRUE, keep the values as they are (fields are enabled)
-        if (!state.sectionControlToggleValue) {
+        if (!currentState.sectionControlToggleValue) {
           answerValue = null;
         }
       }
@@ -501,7 +688,7 @@ const AssessmentSectionFieldsPage = () => {
       if (toggleAssessmentValueId) {
         values.push({
           assessmentValueId: toggleAssessmentValueId,
-          answerValue: state.sectionControlToggleValue ? 'true' : 'false'
+          answerValue: currentState.sectionControlToggleValue ? 'true' : 'false'
         });
       }
     }
@@ -517,7 +704,15 @@ const AssessmentSectionFieldsPage = () => {
 
     try {
       setSaving(true);
-      const payload = buildValuesPayload();
+      
+      // Upload all signature drawings to S3 first
+      let uploadedUrls = {};
+      if (Object.keys(signatureDataUrls).length > 0) {
+        uploadedUrls = await uploadSignaturesBeforeSave();
+      }
+      
+      // Build payload with uploaded URLs override
+      const payload = buildValuesPayload(null, uploadedUrls);
       await assessmentAPI.saveSectionValues(payload);
       toast.success('Section saved successfully');
       // Navigate back after 1 second to let toast show
@@ -537,7 +732,15 @@ const AssessmentSectionFieldsPage = () => {
 
     try {
       setSaving(true);
-      const payload = buildValuesPayload();
+      
+      // Upload all signature drawings to S3 first
+      let uploadedUrls = {};
+      if (Object.keys(signatureDataUrls).length > 0) {
+        uploadedUrls = await uploadSignaturesBeforeSave();
+      }
+      
+      // Build payload with uploaded URLs override
+      const payload = buildValuesPayload(null, uploadedUrls);
       await assessmentAPI.updateSectionValues(payload);
       toast.success('Section updated successfully');
       // Navigate back after 1 second to let toast show

@@ -179,16 +179,21 @@ const TraineeSignatureRequiredList = ({ traineeId }) => {
     setSignatureDataUrl(dataUrl);
   };
 
-  // Resize signature to 87x60
+  // Resize signature to 400x200 with transparent background (same size as pad)
   const resizeSignature = (originalDataUrl) => {
     return new Promise((resolve) => {
       const img = new Image();
       img.onload = () => {
         const canvas = document.createElement('canvas');
-        canvas.width = 87;
-        canvas.height = 60;
+        canvas.width = 400;
+        canvas.height = 200;
         const ctx = canvas.getContext('2d');
-        ctx.drawImage(img, 0, 0, 87, 60);
+        
+        // Clear canvas to ensure transparent background
+        ctx.clearRect(0, 0, 400, 200);
+        
+        // Draw the signature image (preserves transparency from original)
+        ctx.drawImage(img, 0, 0, 400, 200);
         resolve(canvas.toDataURL('image/png'));
       };
       img.src = originalDataUrl;
@@ -204,7 +209,7 @@ const TraineeSignatureRequiredList = ({ traineeId }) => {
     setUploadingSignature(true);
 
     try {
-      // Resize signature to 87x60
+      // Resize signature to 400x200
       const resizedDataUrl = await resizeSignature(signatureDataUrl);
 
       // Step 1: Convert signature data URL to blob
