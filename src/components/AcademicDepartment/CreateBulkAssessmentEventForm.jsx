@@ -887,8 +887,8 @@ const CreateBulkAssessmentEventForm = ({ onSuccess }) => {
         centered
         fullscreen="lg-down"
       >
-        <Modal.Header closeButton>
-          <Modal.Title>Template Preview</Modal.Title>
+        <Modal.Header closeButton className="bg-primary text-white border-0">
+          <Modal.Title className="text-white">Template Preview</Modal.Title>
         </Modal.Header>
         <Modal.Body style={{ padding: 0, height: '70vh', minHeight: '500px' }}>
           {loadingPDF ? (
