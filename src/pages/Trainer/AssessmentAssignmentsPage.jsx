@@ -69,18 +69,57 @@ const AssessmentAssignmentsPage = () => {
         return;
       }
 
-      // If no state data (F5 or direct navigation), redirect back or show error
-      setState({
-        loading: false,
-        error: 'Please access this page through the "Access" button from the assessment list.',
-        assessments: [],
-        info: location.state || null
-      });
-      
-      // Auto redirect after 2 seconds
-      setTimeout(() => {
-        navigate(-1);
-      }, 2000);
+      // If no state data (F5 or direct navigation), use new API
+      // Try calling new API with just courseId/subjectId (backend may support this)
+      try {
+        setState((prev) => ({ ...prev, loading: true, error: null }));
+        
+        let response;
+        const requestBody = {
+          courseId: entityType === 'course' ? entityId : undefined,
+          subjectId: entityType === 'subject' ? entityId : undefined
+        };
+
+        // Remove undefined properties
+        Object.keys(requestBody).forEach(key => 
+          requestBody[key] === undefined && delete requestBody[key]
+        );
+
+        // Call new API
+        if (entityType === 'course') {
+          response = await assessmentAPI.getCourseEvents(requestBody);
+        } else {
+          response = await assessmentAPI.getSubjectEvents(requestBody);
+        }
+
+        if (response?.assessments && response?.eventInfo) {
+          setState({
+            loading: false,
+            error: null,
+            assessments: response.assessments || [],
+            info: {
+              name: response.eventInfo?.entityInfo?.name || response.eventInfo?.name,
+              code: response.eventInfo?.entityInfo?.code || ''
+            }
+          });
+        } else {
+          // If API doesn't return expected data structure, show empty state
+          setState({
+            loading: false,
+            error: null,
+            assessments: [],
+            info: location.state || null
+          });
+        }
+      } catch (err) {
+        console.error('Error loading assessments:', err);
+        toast.error('Failed to load assessments');
+        setState((prev) => ({
+          ...prev,
+          loading: false,
+          error: err.response?.data?.message || err.message || 'Failed to load assessments'
+        }));
+      }
     };
 
     fetchDetails();
