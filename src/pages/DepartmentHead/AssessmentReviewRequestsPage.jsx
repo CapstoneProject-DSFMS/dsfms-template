@@ -237,7 +237,7 @@ const AssessmentReviewRequestsPage = () => {
           <div className="d-flex align-items-center mb-3">
             <button 
               className="btn btn-link p-0 me-3"
-              onClick={() => navigate(ROUTES.DASHBOARD)}
+              onClick={() => navigate('/department-head/dashboard')}
             >
               <ArrowLeft size={20} />
             </button>
