@@ -88,7 +88,7 @@ const NAV_ITEMS = [
   {
     id: 'trainee-dashboard',
     label: 'Trainee Dashboard',
-    path: ROUTES.DASHBOARD,
+    path: '/trainee/dashboard',
     icon: 'house',
     roleOnly: ['TRAINEE'],
   },

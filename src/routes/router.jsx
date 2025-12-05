@@ -98,21 +98,6 @@ export const router = createBrowserRouter(
     // NEW: Function-based Routes (Primary Routes)
     // ============================================
     {
-      path: ROUTES.DASHBOARD,
-      element: (
-        <ProtectedRoute>
-          <LayoutWrapper />
-        </ProtectedRoute>
-      ),
-      errorElement: <ErrorBoundary />,
-      children: [
-        {
-          path: '',
-          element: <RoleBasedRedirect />,
-        },
-      ],
-    },
-    {
       path: ROUTES.USERS,
       element: (
         <ProtectedRoute>
@@ -859,16 +844,7 @@ export const router = createBrowserRouter(
       children: [
         {
           path: '',
-          element: (
-            <PermissionRoute
-              permission={PERMISSION_IDS.VIEW_ALL_ENROLLMENTS}
-              fallback={
-                <div className="p-4 text-center text-muted">You don't have permission to access trainee portal.</div>
-              }
-            >
-              <TraineeDashboardPage />
-            </PermissionRoute>
-          ),
+          element: <RoleBasedRedirect />,
         },
         {
           path: 'dashboard',

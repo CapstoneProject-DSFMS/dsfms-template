@@ -58,7 +58,7 @@ const TraineeDetailView = ({ traineeId }) => {
   };
 
   const handleBack = () => {
-    navigate(ROUTES.DASHBOARD);
+    navigate('/trainee/dashboard');
   };
 
 
