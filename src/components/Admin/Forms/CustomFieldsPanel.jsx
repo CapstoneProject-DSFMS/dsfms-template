@@ -113,9 +113,18 @@ const CustomFieldsPanel = ({
           const section = sections[sectionIndex];
           const sectionFields = section.fields || [];
           
-          // Check if fieldName already exists
-          if (sectionFields.some(f => f.fieldName === fieldData.fieldName)) {
-            toast.warning(`Field "${fieldData.fieldName}" already exists in this section`);
+          // Check if fieldName already exists in the entire template (exclude sub-fields of PART/CHECK_BOX)
+          // Flatten all fields from all sections
+          const allFields = sections.flatMap((section) => section.fields || []);
+          
+          // Filter to exclude sub-fields (those with parentTempId or parentId)
+          const topLevelFields = allFields.filter(field => !field.parentTempId && !field.parentId);
+          
+          // Check if fieldData is a sub-field (if so, skip duplicate check)
+          const isSubField = fieldData.parentTempId || fieldData.parentId;
+          
+          if (!isSubField && topLevelFields.some(f => f.fieldName === fieldData.fieldName)) {
+            toast.warning(`Field "${fieldData.fieldName}" already exists in the template`);
             return false; // Return false to indicate failure
           }
 
@@ -876,15 +885,39 @@ const CustomFieldsPanel = ({
       return;
     }
 
-    // Check if fieldName already exists within the section (exclude current field if editing)
-    const sectionFields = sections[editingSectionIndex].fields || [];
-    const existingFields = editingFieldIndex !== null 
-      ? sectionFields.filter((_, index) => index !== editingFieldIndex)
-      : sectionFields;
+    // Check if fieldName already exists in the entire template (exclude current field if editing, exclude sub-fields of PART/CHECK_BOX)
+    // Flatten all fields from all sections
+    const allFields = sections.flatMap((section, sIdx) => 
+      (section.fields || []).map((field, fIdx) => ({ ...field, sectionIndex: sIdx, fieldIndex: fIdx }))
+    );
     
-    if (existingFields.some(field => field.fieldName === fieldToSave.fieldName)) {
-      toast.warning('Field name must be unique');
+    // Filter to exclude current field if editing, and exclude sub-fields (those with parentTempId or parentId)
+    const existingFields = allFields.filter(field => {
+      // Exclude current field being edited
+      if (editingFieldIndex !== null && 
+          field.sectionIndex === editingSectionIndex && 
+          field.fieldIndex === editingFieldIndex) {
+        return false;
+      }
+      // Exclude sub-fields of PART/CHECK_BOX (they can have duplicate names as they're nested)
+      if (field.parentTempId || field.parentId) {
+        return false;
+      }
+      return true;
+    });
+    
+    // Check if fieldToSave is a sub-field (if so, skip duplicate check)
+    const isSubField = fieldToSave.parentTempId || fieldToSave.parentId;
+    
+    if (!isSubField && existingFields.some(field => field.fieldName === fieldToSave.fieldName)) {
+      toast.warning(`Field name "${fieldToSave.fieldName}" already exists in the template`);
       return;
+    }
+
+    // Auto-set roleRequired from section's editBy for sub-fields (PART/CHECK_BOX sub-fields)
+    if (isSubField) {
+      const section = sections[editingSectionIndex];
+      fieldToSave.roleRequired = section?.editBy || 'TRAINER';
     }
 
     const nextSections = [...sections];
@@ -1464,15 +1497,25 @@ const CustomFieldsPanel = ({
       return;
     }
     const sectionFields = sections[activePartSectionIndex].fields || [];
-    if (sectionFields.some((f) => f.fieldName === partSubFieldName)) {
-      toast.warning('Field name must be unique within section');
+    const parentTempId = activePartField?.tempId || activePartField?.fieldName || null;
+    
+    // Check duplicate only within the same PART parent (sub-fields of other PARTs can have the same name)
+    const sameParentFields = sectionFields.filter(f => 
+      (f.parentTempId || f.parentId) === parentTempId
+    );
+    if (sameParentFields.some((f) => f.fieldName === partSubFieldName)) {
+      toast.warning(`Field name "${partSubFieldName}" already exists in this PART`);
       return;
     }
+    // Auto-set roleRequired from section's editBy
+    const section = sections[activePartSectionIndex];
+    const roleRequired = section?.editBy || 'TRAINER';
+    
     const newSubField = {
       label: partSubFieldLabel,
       fieldName: partSubFieldName,
       fieldType: 'TEXT', // PART sub-fields are always TEXT
-      roleRequired: partSubFieldRoleRequired,
+      roleRequired: roleRequired, // Auto-set from section's editBy
       parentTempId: activePartField?.tempId || activePartField?.fieldName || null
     };
     const nextSections = [...sections];
@@ -1526,15 +1569,25 @@ const CustomFieldsPanel = ({
       return;
     }
     const sectionFields = sections[activeCheckBoxSectionIndex].fields || [];
-    if (sectionFields.some((f) => f.fieldName === checkBoxSubFieldName)) {
-      toast.warning('Field name must be unique within section');
+    const parentTempId = activeCheckBoxField?.tempId || activeCheckBoxField?.fieldName || null;
+    
+    // Check duplicate only within the same CHECK_BOX parent (sub-fields of other CHECK_BOXes can have the same name)
+    const sameParentFields = sectionFields.filter(f => 
+      (f.parentTempId || f.parentId) === parentTempId
+    );
+    if (sameParentFields.some((f) => f.fieldName === checkBoxSubFieldName)) {
+      toast.warning(`Field name "${checkBoxSubFieldName}" already exists in this CHECK_BOX`);
       return;
     }
+    // Auto-set roleRequired from section's editBy
+    const section = sections[activeCheckBoxSectionIndex];
+    const roleRequired = section?.editBy || 'TRAINER';
+    
     const newSubField = {
       label: checkBoxSubFieldLabel,
       fieldName: checkBoxSubFieldName,
       fieldType: 'TEXT', // CHECK_BOX only supports TEXT sub-fields
-      roleRequired: checkBoxSubFieldRoleRequired,
+      roleRequired: roleRequired, // Auto-set from section's editBy
       parentTempId: activeCheckBoxField?.tempId || activeCheckBoxField?.fieldName || null
     };
     const nextSections = [...sections];
@@ -2454,22 +2507,25 @@ const CustomFieldsPanel = ({
                   </Form.Select>
                 </Form.Group>
               </Col>
-              <Col md={6}>
-                <Form.Group>
-                  <Form.Label className="text-primary-custom">Role Required <span className="text-danger">*</span></Form.Label>
-                  <Form.Control
-                    type="text"
-                    value={editingSectionIndex !== null ? (sections[editingSectionIndex]?.editBy || 'TRAINER') : 'TRAINER'}
-                    readOnly
-                    disabled
-                    style={{ backgroundColor: '#e9ecef', cursor: 'not-allowed' }}
-                    required
-                  />
-                  <Form.Text className="text-muted">
-                    Automatically set from section's "Edit By" value.
-                  </Form.Text>
-                </Form.Group>
-              </Col>
+              {/* Hide Role Required for sub-fields of PART/CHECK_BOX */}
+              {!(newField.parentTempId || newField.parentId) && (
+                <Col md={6}>
+                  <Form.Group>
+                    <Form.Label className="text-primary-custom">Role Required <span className="text-danger">*</span></Form.Label>
+                    <Form.Control
+                      type="text"
+                      value={editingSectionIndex !== null ? (sections[editingSectionIndex]?.editBy || 'TRAINER') : 'TRAINER'}
+                      readOnly
+                      disabled
+                      style={{ backgroundColor: '#e9ecef', cursor: 'not-allowed' }}
+                      required
+                    />
+                    <Form.Text className="text-muted">
+                      Automatically set from section's "Edit By" value.
+                    </Form.Text>
+                  </Form.Group>
+                </Col>
+              )}
               {/* VALUE_LIST Options Field */}
               {newField.fieldType === 'VALUE_LIST' && (
                 <Col md={12}>
@@ -2591,19 +2647,6 @@ const CustomFieldsPanel = ({
                   <Form.Text className="text-muted">snake_case only (Type is always TEXT for PART sub-fields)</Form.Text>
                 </Form.Group>
               </Col>
-              <Col md={6}>
-                <Form.Group>
-                  <Form.Label className="text-primary-custom">Role Required</Form.Label>
-                  <Form.Select
-                    value={partSubFieldRoleRequired}
-                    onChange={(e) => setPartSubFieldRoleRequired(e.target.value)}
-                  >
-                    {availableRoles.map((r) => (
-                      <option key={r} value={r}>{r}</option>
-                    ))}
-                  </Form.Select>
-                </Form.Group>
-              </Col>
               <Col md={12}>
                 <Form.Text className="text-muted">Display order is assigned automatically by creation order.</Form.Text>
               </Col>
@@ -2654,19 +2697,6 @@ const CustomFieldsPanel = ({
                     onChange={(e) => setCheckBoxSubFieldName(e.target.value)}
                   />
                   <Form.Text className="text-muted">snake_case only (Type is always TEXT for CHECK_BOX sub-fields)</Form.Text>
-                </Form.Group>
-              </Col>
-              <Col md={6}>
-                <Form.Group>
-                  <Form.Label className="text-primary-custom">Role Required</Form.Label>
-                  <Form.Select
-                    value={checkBoxSubFieldRoleRequired}
-                    onChange={(e) => setCheckBoxSubFieldRoleRequired(e.target.value)}
-                  >
-                    {availableRoles.map((r) => (
-                      <option key={r} value={r}>{r}</option>
-                    ))}
-                  </Form.Select>
                 </Form.Group>
               </Col>
               <Col md={12}>
