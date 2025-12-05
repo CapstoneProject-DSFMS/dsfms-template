@@ -69,33 +69,22 @@ const AssessmentAssignmentsPage = () => {
         return;
       }
 
-      // Otherwise, fall back to old API for backward compatibility
-      try {
-        setState((prev) => ({ ...prev, loading: true, error: null }));
-        const response =
-          entityType === 'course'
-            ? await assessmentAPI.getCourseAssessments(entityId)
-            : await assessmentAPI.getSubjectAssessments(entityId);
-
-        setState({
-          loading: false,
-          error: null,
-          assessments: response?.assessments || [],
-          info: response?.courseInfo || response?.subjectInfo || location.state || null
-        });
-      } catch (err) {
-        console.error('Error loading assessments:', err);
-        toast.error('Failed to load assessments');
-        setState((prev) => ({
-          ...prev,
-          loading: false,
-          error: err.response?.data?.message || err.message || 'Failed to load assessments'
-        }));
-      }
+      // If no state data (F5 or direct navigation), redirect back or show error
+      setState({
+        loading: false,
+        error: 'Please access this page through the "Access" button from the assessment list.',
+        assessments: [],
+        info: location.state || null
+      });
+      
+      // Auto redirect after 2 seconds
+      setTimeout(() => {
+        navigate(-1);
+      }, 2000);
     };
 
     fetchDetails();
-  }, [entityType, entityId, isValidType, location.state]);
+  }, [entityType, entityId, isValidType, location.state, navigate]);
 
   if (!isValidType) {
     return (
@@ -155,7 +144,7 @@ const AssessmentAssignmentsPage = () => {
                   <tr>
                     <th>Assessment</th>
                     <th>Trainee</th>
-                    <th>Date & Time</th>
+                    <th>Date</th>
                     <th>Status</th>
                     <th>Score</th>
                     <th>Result</th>
@@ -177,7 +166,6 @@ const AssessmentAssignmentsPage = () => {
                         </td>
                         <td>
                           <div>{formatted.date}</div>
-                          <small className="text-muted">{formatted.time}</small>
                         </td>
                         <td>{getStatusBadge(item.status)}</td>
                         <td>{item.resultScore !== null && item.resultScore !== undefined ? item.resultScore : '—'}</td>

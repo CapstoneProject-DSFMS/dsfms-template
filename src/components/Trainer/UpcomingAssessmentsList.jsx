@@ -33,7 +33,7 @@ const UpcomingAssessmentsList = () => {
 
           // Map API data to component format
           const mappedAssessments = response.data.events
-            .map((event) => {
+            .map((event, index) => {
             const occurrenceDate = new Date(event.occuranceDate);
             const dateStr = occurrenceDate.toLocaleDateString('en-US', { 
               year: 'numeric', 
@@ -48,8 +48,19 @@ const UpcomingAssessmentsList = () => {
 
             const entityType = event.entityInfo?.type || (event.subjectId ? 'subject' : 'course');
             
+            // Create unique key: prefer event.id, otherwise use combination of identifiers
+            // Include event.name to ensure uniqueness even if other fields are same
+            const fallbackKey = [
+              event.courseId || 'course',
+              event.subjectId || 'subject',
+              event.templateInfo?.id || 'template',
+              event.name || 'unnamed',
+              event.occuranceDate || new Date().toISOString(),
+              index // Last resort to ensure uniqueness
+            ].join('-');
+            
             return {
-              id: event.id || `${event.courseId}-${event.subjectId}-${event.occuranceDate}`,
+              id: event.id || fallbackKey,
               title: event.name,
               entityInfo: event.entityInfo,
               entityType: entityType,
@@ -101,24 +112,6 @@ const UpcomingAssessmentsList = () => {
   const getStatusBadge = (status) => {
     const config = statusDisplayMap[status] || { variant: 'secondary', text: status || 'Unknown' };
     return <Badge bg={config.variant}>{config.text}</Badge>;
-  };
-
-  const handleViewAssignments = (assessment) => {
-    const targetType = entityFilter;
-    const identifier = assessment.entityId;
-
-    if (!identifier) {
-      toast.error(`Missing ${targetType} identifier`);
-      return;
-    }
-
-    navigate(ROUTES.ASSESSMENTS_ASSIGN(targetType, identifier), {
-      state: {
-        name: assessment.entityName,
-        code: assessment.entityCode,
-        template: assessment.templateInfo?.name
-      }
-    });
   };
 
   const handleAccess = async (assessment) => {
@@ -366,7 +359,7 @@ const UpcomingAssessmentsList = () => {
                   Trainees
                 </SortableHeader>
                 <SortableHeader columnKey="scheduledDate" className="show-mobile">
-                  Date & Time
+                  Date
                 </SortableHeader>
                 <SortableHeader columnKey="status" className="show-mobile">
                   Status

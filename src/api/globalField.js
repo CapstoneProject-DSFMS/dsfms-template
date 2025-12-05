@@ -21,6 +21,17 @@ const globalFieldAPI = {
     }
   },
 
+  // Get global fields detail (GET request)
+  getGlobalFieldsDetail: async () => {
+    try {
+      const response = await apiClient.get('/global-fields/detail');
+      // Handle response structure: { success: true, data: [...], message: "..." }
+      return response.data?.data || response.data || [];
+    } catch (error) {
+      throw error;
+    }
+  },
+
   // Get global field by ID
   getGlobalFieldById: async (id) => {
     try {

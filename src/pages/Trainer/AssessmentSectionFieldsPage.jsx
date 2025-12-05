@@ -47,6 +47,9 @@ const AssessmentSectionFieldsPage = () => {
         
         console.log('✅ Processing', fields.length, 'fields');
         
+        // Collect checkbox defaults to set them once
+        const newCheckboxDefaults = {};
+        
         // Initialize field values from API
         fields.forEach((field) => {
           const fieldId = field.templateField?.id;
@@ -65,14 +68,27 @@ const AssessmentSectionFieldsPage = () => {
               fieldValues[fieldId] = value !== null && value !== undefined ? value : null;
             }
             
-            // Initialize checkbox defaults
+            // Collect checkbox defaults
             if (fieldType === 'CHECK_BOX') {
-              if (!checkboxDefaults[fieldId]) {
-                setCheckboxDefaults(prev => ({ ...prev, [fieldId]: 'X' }));
-              }
+              newCheckboxDefaults[fieldId] = 'X';
             }
           }
         });
+        
+        // Initialize all checkbox defaults at once
+        if (Object.keys(newCheckboxDefaults).length > 0) {
+          setCheckboxDefaults(prev => {
+            const updated = { ...prev };
+            let hasChanges = false;
+            Object.keys(newCheckboxDefaults).forEach(fieldId => {
+              if (!updated[fieldId]) {
+                updated[fieldId] = newCheckboxDefaults[fieldId];
+                hasChanges = true;
+              }
+            });
+            return hasChanges ? updated : prev;
+          });
+        }
 
         const sectionInfo = response.assessmentSectionInfo || null;
         const canUpdate = sectionInfo?.canUpdated || false;
@@ -110,7 +126,7 @@ const AssessmentSectionFieldsPage = () => {
         error: error.response?.data?.message || error.message || 'Failed to load section fields'
       }));
     }
-  }, [sectionId, checkboxDefaults]);
+  }, [sectionId]);
 
   useEffect(() => {
     fetchFields();
