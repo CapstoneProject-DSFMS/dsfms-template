@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Container, Card, Table, Spinner, Alert, Button } from 'react-bootstrap';
-import { useParams, useLocation, useNavigate } from 'react-router-dom';
+import { useParams, useLocation, useNavigate, useSearchParams } from 'react-router-dom';
 import { ROUTES } from '../../constants/routes';
 import { ArrowLeft } from 'react-bootstrap-icons';
 import { assessmentAPI } from '../../api';
@@ -35,6 +35,7 @@ const AssessmentAssignmentsPage = () => {
   const { entityType, entityId } = useParams();
   const location = useLocation();
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const [state, setState] = useState({
     loading: true,
     error: null,
@@ -70,14 +71,30 @@ const AssessmentAssignmentsPage = () => {
       }
 
       // If no state data (F5 or direct navigation), use new API
-      // Try calling new API with just courseId/subjectId (backend may support this)
+      // Get templateId and occuranceDate from URL query params (set when navigating from Access button)
+      const templateId = searchParams.get('templateId');
+      const occuranceDate = searchParams.get('occuranceDate');
+      
+      if (!templateId || !occuranceDate) {
+        // Missing required params - show error message
+        setState({
+          loading: false,
+          error: 'Please access this page through the "Access" button from the assessment list.',
+          assessments: [],
+          info: location.state || null
+        });
+        return;
+      }
+
       try {
         setState((prev) => ({ ...prev, loading: true, error: null }));
         
         let response;
         const requestBody = {
           courseId: entityType === 'course' ? entityId : undefined,
-          subjectId: entityType === 'subject' ? entityId : undefined
+          subjectId: entityType === 'subject' ? entityId : undefined,
+          templateId: templateId,
+          occuranceDate: occuranceDate
         };
 
         // Remove undefined properties
@@ -85,7 +102,7 @@ const AssessmentAssignmentsPage = () => {
           requestBody[key] === undefined && delete requestBody[key]
         );
 
-        // Call new API
+        // Call new API with all required params
         if (entityType === 'course') {
           response = await assessmentAPI.getCourseEvents(requestBody);
         } else {
@@ -123,7 +140,7 @@ const AssessmentAssignmentsPage = () => {
     };
 
     fetchDetails();
-  }, [entityType, entityId, isValidType, location.state, navigate]);
+  }, [entityType, entityId, isValidType, location.state, navigate, searchParams]);
 
   if (!isValidType) {
     return (

@@ -142,8 +142,16 @@ const UpcomingAssessmentsList = () => {
       }
 
       if (response?.assessments && response?.eventInfo) {
-        // Navigate with API response data
-        navigate(ROUTES.ASSESSMENTS_ASSIGN(entityFilter, assessment.entityId), {
+        // Format date to YYYY-MM-DD for query params
+        const dateStr = new Date(assessment.occurrenceDate).toISOString().split('T')[0];
+        
+        // Navigate with API response data in state AND query params for F5 support
+        const searchParams = new URLSearchParams({
+          templateId: assessment.templateInfo?.id || '',
+          occuranceDate: dateStr
+        });
+        
+        navigate(`${ROUTES.ASSESSMENTS_ASSIGN(entityFilter, assessment.entityId)}?${searchParams.toString()}`, {
           state: {
             name: response.eventInfo?.name || assessment.entityName,
             code: response.eventInfo?.entityInfo?.code || assessment.entityCode,
