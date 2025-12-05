@@ -144,24 +144,36 @@ const TemplateDetailPage = () => {
 
 
   const handleExportPDF = async () => {
-    if (!template?.templateConfig) {
-      toast.warning('Template config is not available');
+    if (!template?.formId) {
+      toast.warning('Template form ID is not available');
       return;
     }
-    window.open(template.templateConfig, '_blank', 'noopener,noreferrer');
+
+    try {
+      // Call API to get PDF blob
+      const pdfBlob = await templateAPI.getTemplatePDF(template.formId);
+      
+      // Create download link
+      const url = URL.createObjectURL(pdfBlob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = `${template.name || 'template'}.pdf`;
+      
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      
+      // Clean up
+      URL.revokeObjectURL(url);
+      toast.success('PDF downloaded successfully');
+    } catch (error) {
+      console.error('Error downloading PDF:', error);
+      toast.error(error.response?.data?.message || 'Failed to download PDF');
+    }
   };
 
   const handleBackToList = () => {
     navigate(ROUTES.TEMPLATES);
-  };
-
-  const handleViewTemplateConfig = () => {
-    if (template?.templateConfig) {
-      // Open template config in new tab
-      window.open(template.templateConfig, '_blank', 'noopener,noreferrer');
-    } else {
-      toast.warning('Template config is not available');
-    }
   };
 
   const handleApprove = async () => {
@@ -333,7 +345,7 @@ const TemplateDetailPage = () => {
                   size="sm"
                   onClick={handleExportPDF}
                   className="d-flex align-items-center"
-                  disabled={!template?.templateConfig}
+                  disabled={!template?.formId}
                 >
                   <FileEarmarkPdf className="me-1" size={16} />
                   Download PDF
@@ -382,7 +394,6 @@ const TemplateDetailPage = () => {
                   template={template}
                   pdfUrl={pdfUrl}
                   loadingPDF={loadingPDF}
-                  onViewTemplateConfig={handleViewTemplateConfig}
                 />
               )}
 

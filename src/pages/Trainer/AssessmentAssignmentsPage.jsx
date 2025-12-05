@@ -5,6 +5,7 @@ import { ROUTES } from '../../constants/routes';
 import { ArrowLeft } from 'react-bootstrap-icons';
 import { assessmentAPI } from '../../api';
 import { toast } from 'react-toastify';
+import { PDFModal } from '../../components/Common';
 
 const statusDisplayMap = {
   NOT_STARTED: { variant: 'secondary', text: 'Not Started' },
@@ -42,6 +43,8 @@ const AssessmentAssignmentsPage = () => {
     info: location.state || null,
     assessments: []
   });
+  const [showPDFModal, setShowPDFModal] = useState(false);
+  const [selectedPDFUrl, setSelectedPDFUrl] = useState(null);
 
   const isValidType = entityType === 'course' || entityType === 'subject';
 
@@ -157,6 +160,16 @@ const AssessmentAssignmentsPage = () => {
     navigate(ROUTES.ASSESSMENTS_SECTIONS(record.id));
   };
 
+  const handleViewPDF = (pdfUrl) => {
+    setSelectedPDFUrl(pdfUrl);
+    setShowPDFModal(true);
+  };
+
+  const handleClosePDFModal = () => {
+    setShowPDFModal(false);
+    setSelectedPDFUrl(null);
+  };
+
   return (
     <Container fluid className="py-4">
       <div className="d-flex align-items-center mb-3 flex-wrap gap-3">
@@ -228,9 +241,13 @@ const AssessmentAssignmentsPage = () => {
                         <td>{item.resultText || '—'}</td>
                             <td>
                               {item.pdfUrl ? (
-                                <a href={item.pdfUrl} target="_blank" rel="noreferrer">
+                                <Button
+                                  variant="primary"
+                                  size="sm"
+                                  onClick={() => handleViewPDF(item.pdfUrl)}
+                                >
                                   View
-                                </a>
+                                </Button>
                               ) : (
                                 <span className="text-muted">—</span>
                               )}
@@ -261,6 +278,14 @@ const AssessmentAssignmentsPage = () => {
           )}
         </Card.Body>
       </Card>
+
+      {/* PDF Modal */}
+      <PDFModal
+        show={showPDFModal}
+        onHide={handleClosePDFModal}
+        pdfUrl={selectedPDFUrl}
+        title="Assessment PDF"
+      />
     </Container>
   );
 };

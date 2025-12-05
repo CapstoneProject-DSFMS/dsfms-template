@@ -10,8 +10,8 @@ const PDFModal = ({ show, onHide, pdfUrl, title = 'PDF Viewer' }) => {
       centered
       fullscreen="lg-down"
     >
-      <Modal.Header closeButton>
-        <Modal.Title>{title}</Modal.Title>
+      <Modal.Header closeButton className="bg-primary text-white border-0">
+        <Modal.Title className="text-white">{title}</Modal.Title>
       </Modal.Header>
       <Modal.Body style={{ padding: 0, height: '70vh', minHeight: '500px' }}>
         {pdfUrl ? (

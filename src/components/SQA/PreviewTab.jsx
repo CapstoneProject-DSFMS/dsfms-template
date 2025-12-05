@@ -1,40 +1,15 @@
 import React from 'react';
-import { Row, Col, Button, Alert, Spinner } from 'react-bootstrap';
-import { Download, FileEarmarkPdf } from 'react-bootstrap-icons';
+import { Row, Col, Alert, Spinner } from 'react-bootstrap';
+import { FileEarmarkPdf } from 'react-bootstrap-icons';
 import TemplateConfigSchema from './TemplateConfigSchema';
-import { PERMISSION_IDS } from '../../constants/permissionIds';
-import { PermissionWrapper } from '../Common';
 
 const PreviewTab = ({
   template,
   pdfUrl,
-  loadingPDF,
-  onViewTemplateConfig
+  loadingPDF
 }) => {
   return (
     <div className="p-4">
-      <Row>
-        <Col xs={12} className="mb-3">
-          <div className="d-flex justify-content-end gap-2 mb-3">
-            <PermissionWrapper
-              permission={PERMISSION_IDS.VIEW_TEMPLATE_DETAILS}
-              fallback={null}
-            >
-              <Button
-                variant="outline-primary"
-                size="sm"
-                onClick={onViewTemplateConfig}
-                className="d-flex align-items-center"
-                disabled={!template?.templateConfig}
-              >
-                <Download className="me-2" size={16} />
-                View Template Config
-              </Button>
-            </PermissionWrapper>
-          </div>
-        </Col>
-      </Row>
-      
       <Row>
         {/* PDF Preview */}
         <Col xs={12} lg={7} className="mb-4">
