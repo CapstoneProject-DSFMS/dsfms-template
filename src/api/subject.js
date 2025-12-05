@@ -338,7 +338,9 @@ const subjectAPI = {
   getTraineeCourseSubjects: async (traineeId) => {
     try {
       const response = await apiClient.get(`/subjects/trainees/${traineeId}/course-subjects`);
-      return response.data;
+      // Handle nested data structure: { message: "...", data: { traineeId: "...", courses: [...] } }
+      // Return the inner data object so components can access courses directly
+      return response.data?.data || response.data;
     } catch (error) {
       throw error;
     }

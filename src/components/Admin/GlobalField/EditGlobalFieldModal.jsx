@@ -9,7 +9,6 @@ const EditGlobalFieldModal = ({ show, onHide, field, onSuccess }) => {
     label: '',
     fieldName: '',
     fieldType: 'TEXT',
-    roleRequired: '',
     options: null
   });
   const [errors, setErrors] = useState({});
@@ -21,7 +20,6 @@ const EditGlobalFieldModal = ({ show, onHide, field, onSuccess }) => {
         label: field.label || '',
         fieldName: field.fieldName || '',
         fieldType: field.fieldType || 'TEXT',
-        roleRequired: field.roleRequired || '',
         options: field.options || null
       });
       setErrors({});
@@ -76,7 +74,7 @@ const EditGlobalFieldModal = ({ show, onHide, field, onSuccess }) => {
         label: formData.label.trim(),
         fieldName: formData.fieldName.trim(),
         fieldType: formData.fieldType,
-        roleRequired: formData.roleRequired || null,
+        roleRequired: null,
         options: formData.options || null
       };
 
@@ -103,7 +101,6 @@ const EditGlobalFieldModal = ({ show, onHide, field, onSuccess }) => {
       label: '',
       fieldName: '',
       fieldType: 'TEXT',
-      roleRequired: '',
       options: null
     });
     setErrors({});
@@ -191,26 +188,13 @@ const EditGlobalFieldModal = ({ show, onHide, field, onSuccess }) => {
             >
               <option value="TEXT">TEXT</option>
               <option value="PART">PART</option>
+              <option value="CHECK_BOX">CHECK_BOX</option>
               <option value="TOGGLE">TOGGLE</option>
-              <option value="SECTION_CONTROL_TOGGLE">SECTION_CONTROL_TOGGLE</option>
               <option value="VALUE_LIST">VALUE_LIST</option>
             </Form.Select>
             <Form.Control.Feedback type="invalid">
               {errors.fieldType}
             </Form.Control.Feedback>
-          </Form.Group>
-
-          <Form.Group className="mb-3">
-            <Form.Label className="fw-medium">Role Required</Form.Label>
-            <Form.Select
-              name="roleRequired"
-              value={formData.roleRequired || ''}
-              onChange={handleChange}
-            >
-              <option value="">None</option>
-              <option value="TRAINER">TRAINER</option>
-              <option value="TRAINEE">TRAINEE</option>
-            </Form.Select>
           </Form.Group>
         </Modal.Body>
         

@@ -118,6 +118,8 @@ const EditorWithMergeFields = forwardRef(({
   
   // Helper to check if field is PART
   const isPart = (f) => String(f.fieldType).toUpperCase() === 'PART';
+  const isCheckBox = (f) => String(f.fieldType).toUpperCase() === 'CHECK_BOX';
+  const isParentField = (f) => isPart(f) || isCheckBox(f);
 
   // Drag and drop handlers
   const onDragStart = (e, field) => {
@@ -550,8 +552,8 @@ const EditorWithMergeFields = forwardRef(({
     
     const type = String(fieldType || '').toUpperCase();
     
-    if (type === 'PART') {
-      // PART: underscores, capitalized first letter, not start with "section"
+    if (type === 'PART' || type === 'CHECK_BOX') {
+      // PART/CHECK_BOX: underscores, capitalized first letter, not start with "section"
       const partRegex = /^[A-Z][A-Za-z0-9_]*$/;
       if (!partRegex.test(fieldName)) {
         return {
@@ -2286,8 +2288,8 @@ const EditorWithMergeFields = forwardRef(({
                     required
                   >
                     <option value="TEXT">TEXT</option>
-                    <option value="IMAGE">IMAGE</option>
                     <option value="PART">PART</option>
+                    <option value="CHECK_BOX">CHECK_BOX</option>
                     <option value="TOGGLE">TOGGLE</option>
                     <option value="SECTION_CONTROL_TOGGLE">SECTION_CONTROL_TOGGLE</option>
                     <option value="SIGNATURE_DRAW">SIGNATURE_DRAW</option>
@@ -2475,8 +2477,8 @@ const EditorWithMergeFields = forwardRef(({
                       required
                     >
                       <option value="TEXT">TEXT</option>
-                      <option value="IMAGE">IMAGE</option>
                       <option value="PART">PART</option>
+                      <option value="CHECK_BOX">CHECK_BOX</option>
                       <option value="TOGGLE">TOGGLE</option>
                       <option value="SECTION_CONTROL_TOGGLE">SECTION_CONTROL_TOGGLE</option>
                       <option value="SIGNATURE_DRAW">SIGNATURE_DRAW</option>

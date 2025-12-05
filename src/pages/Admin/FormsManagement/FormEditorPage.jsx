@@ -40,6 +40,7 @@ const FormEditorPage = () => {
 
   const [initialSections, setInitialSections] = useState(null);
   const [isUpdateRejected, setIsUpdateRejected] = useState(false);
+  const [isEditDraft, setIsEditDraft] = useState(false); // ← Track Edit Draft flow
 
   // Helper function to clear currentTemplateId from localStorage
   const clearCurrentTemplateId = () => {
@@ -66,14 +67,16 @@ const FormEditorPage = () => {
   useEffect(() => {
     // Cleanup function runs when component unmounts
     return () => {
-      // Only clear if we're actually leaving the editor page
-      // Check if we're navigating away by checking if location will change
-      // But since we can't predict future location, we'll clear on unmount
-      // This handles: browser back button, direct navigation, programmatic navigation
-      console.log('🔙 FormEditorPage unmounting - clearing currentTemplateId');
-      clearCurrentTemplateId();
+      // Only clear if we're NOT in Edit Draft flow
+      // Edit Draft flow should preserve currentTemplateId for proper update operations
+      if (!isEditDraft) {
+        console.log('🔙 FormEditorPage unmounting - clearing currentTemplateId');
+        clearCurrentTemplateId();
+      } else {
+        console.log('🔙 FormEditorPage unmounting - preserving currentTemplateId (Edit Draft flow)');
+      }
     };
-  }, []); // Only run once on mount
+  }, [isEditDraft]); // Re-run cleanup if isEditDraft changes
 
   // Get data from navigation state
   useEffect(() => {
@@ -87,6 +90,7 @@ const FormEditorPage = () => {
           templateInfo: initialTemplateInfo,
           initialSections: sectionsFromState, // ← Get initialSections from navigation state
           isUpdateRejected: updateRejectedFlag,
+          isEditDraft: editDraftFlag, // ← Flag to indicate Edit Draft flow
           templateId
         } = location.state;
         
@@ -148,11 +152,37 @@ const FormEditorPage = () => {
             finalContent = initialTemplateInfo?.templateConfig || initialTemplateInfo?.templateContent || '';
           }
           
+          // Handle Edit Draft flow: Sync currentTemplateId from navigation state
+          if (editDraftFlag && initialTemplateInfo?.id) {
+            console.log('📝 Edit Draft flow - Syncing currentTemplateId from navigation state:', initialTemplateInfo.id);
+            setIsEditDraft(true); // ← Set flag to prevent cleanup from clearing currentTemplateId
+            const freshMeta = readTemplateMetaFromStorage();
+            const updatedMeta = {
+              ...freshMeta,
+              id: initialTemplateInfo.id,
+              currentTemplateId: initialTemplateInfo.currentTemplateId || initialTemplateInfo.id,
+              name: initialTemplateInfo.name || freshMeta.name,
+              description: initialTemplateInfo.description || freshMeta.description,
+              departmentId: initialTemplateInfo.departmentId || freshMeta.departmentId
+            };
+            localStorage.setItem('templateInfo', JSON.stringify(updatedMeta));
+            localStorage.setItem('currentTemplateId', initialTemplateInfo.currentTemplateId || initialTemplateInfo.id);
+            console.log('✅ Synced currentTemplateId for Edit Draft flow:', updatedMeta.currentTemplateId);
+            
+            // Update templateInfo state with synced data
+            setTemplateInfo(updatedMeta);
+          } else {
+            setIsEditDraft(false); // ← Reset flag for other flows
+          }
+          
           setIsUpdateRejected(false);
           setContent(finalContent);
           setFileName(initialFileName || 'Untitled Document');
           setImportType(initialImportType || '');
-          setTemplateInfo(initialTemplateInfo || null);
+          if (!editDraftFlag || !initialTemplateInfo?.id) {
+            // Only set templateInfo from state if not Edit Draft (Edit Draft already set above)
+            setTemplateInfo(initialTemplateInfo || null);
+          }
           if (sectionsFromState && Array.isArray(sectionsFromState)) {
             setInitialSections(sectionsFromState);
           }
@@ -500,6 +530,7 @@ const FormEditorPage = () => {
               showImportInfo={!!importType}
               importType={importType}
               initialSections={initialSections}
+              isUpdateRejected={isUpdateRejected}
               onHasUnsavedChangesChange={setHasUnsavedChanges}
               onDraftSaved={async (draftUrl) => {
                 // CRITICAL: Check if we're in Submit flow using sessionStorage

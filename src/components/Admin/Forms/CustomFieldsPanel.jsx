@@ -28,7 +28,8 @@ const CustomFieldsPanel = ({
   initialSections = null, // ← NEW prop to restore sections from draft
   readOnly = false,
   className = "",
-  onSubmittingChange // Callback to notify parent about submit state
+  onSubmittingChange, // Callback to notify parent about submit state
+  isUpdateRejected = false // ← NEW prop to indicate Update Rejected Template flow
 }) => {
   const navigate = useNavigate();
   const [sections, setSections] = useState([]);
@@ -558,20 +559,22 @@ const CustomFieldsPanel = ({
         allFields: fromFields.map((f, i) => ({ idx: i, label: f.label || f.fieldName, type: f.fieldType, parent: f.parentTempId }))
       });
       
-      // Check if it's a PART field - need to move children too
+      // Check if it's a PART or CHECK_BOX field - need to move children too
       const isPart = String(fieldToMove.fieldType || '').toUpperCase() === 'PART';
-      const partTempId = isPart ? (fieldToMove.tempId || `${fieldToMove.fieldName}-parent`) : null;
+      const isCheckBox = String(fieldToMove.fieldType || '').toUpperCase() === 'CHECK_BOX';
+      const isParentField = isPart || isCheckBox;
+      const partTempId = isParentField ? (fieldToMove.tempId || `${fieldToMove.fieldName}-parent`) : null;
       
-      // Collect all fields to move (PART + children if applicable, or just the field if it's a child)
+      // Collect all fields to move (PART/CHECK_BOX + children if applicable, or just the field if it's a child)
       const fieldsToMove = [fieldToMove];
       const indicesToRemove = new Set([fromFieldIndex]);
       
-      if (isPart && partTempId) {
-        // Find all children of this PART field and collect their indices
-        // Only include children that come AFTER the PART field in the array
+      if (isParentField && partTempId) {
+        // Find all children of this PART/CHECK_BOX field and collect their indices
+        // Only include children that come AFTER the PART/CHECK_BOX field in the array
         fromFields.forEach((f, idx) => {
-          // Only add children that belong to this PART field (by parentTempId)
-          // and make sure we don't add the PART field itself again
+          // Only add children that belong to this PART/CHECK_BOX field (by parentTempId)
+          // and make sure we don't add the PART/CHECK_BOX field itself again
           if (f.parentTempId === partTempId && idx !== fromFieldIndex) {
             console.log('  ➕ Adding child:', { idx, label: f.label || f.fieldName, parentTempId: f.parentTempId });
             fieldsToMove.push(f);
@@ -744,13 +747,11 @@ const CustomFieldsPanel = ({
     const section = sections[editingSectionIndex];
     if (!section) return;
     
-    // Confirm before removing
-    if (window.confirm(`Are you sure you want to remove section "${section.label}"? This action cannot be undone.`)) {
-      removeSection(editingSectionIndex);
-      setShowSectionModal(false);
-      setEditingSectionIndex(null);
-      toast.success('Section removed successfully');
-    }
+    // Remove section directly
+    removeSection(editingSectionIndex);
+    setShowSectionModal(false);
+    setEditingSectionIndex(null);
+    toast.success(`Section "${section.label}" removed successfully`);
   };
 
   // Load roles and filter to TRAINER/TRAINEE when opening section modal
@@ -801,8 +802,8 @@ const CustomFieldsPanel = ({
     
     const type = String(fieldType || '').toUpperCase();
     
-    if (type === 'PART') {
-      // PART: underscores, capitalized first letter, not start with "section"
+    if (type === 'PART' || type === 'CHECK_BOX') {
+      // PART/CHECK_BOX: underscores, capitalized first letter, not start with "section"
       const partRegex = /^[A-Z][A-Za-z0-9_]*$/;
       if (!partRegex.test(fieldName)) {
         return {
@@ -966,11 +967,13 @@ const CustomFieldsPanel = ({
   const handleSubmitTemplate = async () => {
     try {
       setIsSubmitting(true);
-      const meta = readTemplateMetaFromStorage();
       
       // Get documentKey for logging
       const documentKey = getDocumentKey ? getDocumentKey() : null;
       console.log('🔑 DocumentKey:', documentKey);
+      
+      // Read initial meta for templateContent (file import URL)
+      const meta = readTemplateMetaFromStorage();
       
       // Step: ForceSave → Backend Callback → Polling → Get S3 URL for templateConfig
       let templateConfigUrl = null;
@@ -1114,14 +1117,28 @@ const CustomFieldsPanel = ({
       //   }
       // }
       
-      // Check if this is a create version flow (has originalTemplateId) or update draft (has currentTemplateId)
-      const originalTemplateId = meta.originalTemplateId;
-      const currentTemplateId = meta.currentTemplateId || localStorage.getItem('currentTemplateId');
+      // OPTION B: Read FRESH from localStorage BEFORE checking (similar to Save Draft)
+      // This ensures we get the latest values, especially if they were set/updated after component mount
+      const freshMeta = readTemplateMetaFromStorage();
+      const originalTemplateId = freshMeta.originalTemplateId;
+      const currentTemplateId = freshMeta.currentTemplateId || 
+                               freshMeta.id || 
+                               localStorage.getItem('currentTemplateId');
+      
+      console.log('🔍 Option B: Checking flow type (read FRESH):');
+      console.log('  🏷️ isUpdateRejected:', isUpdateRejected);
+      console.log('  📦 freshMeta.originalTemplateId:', originalTemplateId);
+      console.log('  📦 freshMeta.currentTemplateId:', freshMeta.currentTemplateId);
+      console.log('  📦 freshMeta.id:', freshMeta.id);
+      console.log('  📦 localStorage.getItem("currentTemplateId"):', localStorage.getItem('currentTemplateId'));
+      console.log('  ✅ Final originalTemplateId:', originalTemplateId);
+      console.log('  ✅ Final currentTemplateId:', currentTemplateId);
       
       // Load existing fields if updating draft (to convert parentTempId → parentId)
+      // Only load if we're updating draft (has currentTemplateId, not creating new version)
       let existingFields = null;
-      if (currentTemplateId && !originalTemplateId) {
-        // Only load existing fields when updating draft (not creating new version or new template)
+      if (currentTemplateId && !originalTemplateId && !isUpdateRejected) {
+        // Only load existing fields when updating draft (not creating new version or new template or updating rejected)
         try {
           console.log('📥 Loading existing draft fields for parentId conversion (Submit)...');
           const existingDraftResponse = await templateAPI.getTemplateById(currentTemplateId);
@@ -1223,9 +1240,41 @@ const CustomFieldsPanel = ({
         console.warn('⚠️ No templateConfigUrl available - skipping field validation');
       }
       
-      if (originalTemplateId) {
-        // CREATE NEW VERSION from published template
-        console.log('🔄 Creating new version from published template:', originalTemplateId);
+      // OPTION B LOGIC: Check in priority order
+      // 1. isUpdateRejected → PUT /templates/update-rejected/{id}
+      // 2. originalTemplateId → POST /templates/create-version
+      // 3. currentTemplateId → PUT /templates/update-draft/{id}
+      // 4. None → POST /templates (create new)
+      
+      if (isUpdateRejected && currentTemplateId) {
+        // PRIORITY 1: Update Rejected Template
+        console.log('📝 [OPTION B] Updating existing rejected template:', currentTemplateId);
+        // Create a payload without the status field for the update-rejected endpoint
+        const { status: removedStatus, ...payloadWithoutStatus } = payload; // Destructure to omit status
+        const res = await apiClient.put(`/templates/update-rejected/${currentTemplateId}`, {
+          ...payloadWithoutStatus,
+          id: currentTemplateId,
+          // The status is managed by the backend for rejected templates, so it's not sent from frontend.
+        });
+        toast.success('Template submitted successfully');
+        console.log('✅ Rejected template updated and submitted:', res?.data ?? res);
+        
+        // Clear currentTemplateId after successful submit
+        const updatedMeta = {
+          ...freshMeta,
+          currentTemplateId: null
+        };
+        localStorage.setItem('templateInfo', JSON.stringify(updatedMeta));
+        localStorage.removeItem('currentTemplateId');
+        console.log('🗑️ Cleared currentTemplateId after submit');
+        
+        // Navigate back to forms list after successful submit
+        setTimeout(() => {
+          navigate(ROUTES.TEMPLATES);
+        }, 1500);
+      } else if (originalTemplateId) {
+        // PRIORITY 2: Create New Version from published template
+        console.log('🔄 [OPTION B] Creating new version from published template:', originalTemplateId);
         const versionPayload = {
           originalTemplateId: originalTemplateId,
           ...payload
@@ -1238,7 +1287,7 @@ const CustomFieldsPanel = ({
           
           // Clear originalTemplateId after successful submit
           const updatedMeta = {
-            ...meta,
+            ...freshMeta,
             originalTemplateId: null
           };
           localStorage.setItem('templateInfo', JSON.stringify(updatedMeta));
@@ -1282,7 +1331,7 @@ const CustomFieldsPanel = ({
               
               // Clear originalTemplateId after successful submit
               const updatedMeta = {
-                ...meta,
+                ...freshMeta,
                 originalTemplateId: null
               };
               localStorage.setItem('templateInfo', JSON.stringify(updatedMeta));
@@ -1302,46 +1351,37 @@ const CustomFieldsPanel = ({
             throw versionError;
           }
         }
+      } else if (currentTemplateId) {
+        // PRIORITY 3: Update Draft
+        console.log('📝 [OPTION B] Updating existing draft:', currentTemplateId);
+        const res = await apiClient.put(`/templates/update-draft/${currentTemplateId}`, payload);
+        toast.success('Template submitted successfully');
+        console.log('✅ Draft updated and submitted:', res?.data ?? res);
+        
+        // Clear currentTemplateId after successful submit
+        const updatedMeta = {
+          ...freshMeta,
+          currentTemplateId: null
+        };
+        localStorage.setItem('templateInfo', JSON.stringify(updatedMeta));
+        localStorage.removeItem('currentTemplateId');
+        console.log('🗑️ Cleared currentTemplateId after submit');
+        
+        // Navigate back to forms list after successful submit
+        setTimeout(() => {
+          navigate(ROUTES.TEMPLATES);
+        }, 1500);
       } else {
-        // Use currentTemplateId already checked above
-        if (currentTemplateId) {
-          // UPDATE existing rejected template (submit)
-          console.log('📝 Updating existing rejected template:', currentTemplateId);
-          // Create a payload without the status field for the update-rejected endpoint
-          const { status: removedStatus, ...payloadWithoutStatus } = payload; // Destructure to omit status
-          const res = await apiClient.put(`/templates/update-rejected/${currentTemplateId}`, {
-            ...payloadWithoutStatus,
-            id: currentTemplateId,
-            // The status is managed by the backend for rejected templates, so it's not sent from frontend.
-          });
-          toast.success('Template submitted successfully');
-          console.log('✅ Rejected template updated and submitted:', res?.data ?? res);
-          
-          // Clear currentTemplateId after successful submit
-          const updatedMeta = {
-            ...meta,
-            currentTemplateId: null
-          };
-          localStorage.setItem('templateInfo', JSON.stringify(updatedMeta));
-          localStorage.removeItem('currentTemplateId');
-          console.log('🗑️ Cleared currentTemplateId after submit');
-          
-          // Navigate back to forms list after successful submit
-          setTimeout(() => {
-            navigate(ROUTES.TEMPLATES);
-          }, 1500);
-        } else {
-          // CREATE new template
-          console.log('➕ Creating new template');
-      const res = await apiClient.post('/templates', payload);
-      toast.success('Template submitted successfully');
-      console.log('✅ Backend response:', res?.data ?? res);
-          
-          // Navigate back to forms list after successful submit
-          setTimeout(() => {
-            navigate(ROUTES.TEMPLATES);
-          }, 1500);
-        }
+        // PRIORITY 4: Create New Template
+        console.log('➕ [OPTION B] Creating new template');
+        const res = await apiClient.post('/templates', payload);
+        toast.success('Template submitted successfully');
+        console.log('✅ Backend response:', res?.data ?? res);
+        
+        // Navigate back to forms list after successful submit
+        setTimeout(() => {
+          navigate(ROUTES.TEMPLATES);
+        }, 1500);
       }
     } catch (err) {
       console.error('❌ Submit template failed:', err);
@@ -1361,9 +1401,11 @@ const CustomFieldsPanel = ({
         // {#condition}{/condition}  {^condition}{/condition}
         return `{#${name}}{/` + name + `} {^${name}}{/` + name + `}`;
       case 'PART':
-        // {#condition} {test_field} {/condition}
-        return `{#${name}} {test_field} {/${name}}`;
-      case 'IMAGE':
+        // {#condition} {/condition}
+        return `{#${name}} {/${name}}`;
+      case 'CHECK_BOX':
+        // {#condition} {/condition}
+        return `{#${name}} {/${name}}`;
       case 'SIGNATURE_DRAW':
       case 'SIGNATURE_IMAGE':
       case 'FINAL_SCORE_TEXT':
@@ -1371,7 +1413,7 @@ const CustomFieldsPanel = ({
       case 'VALUE_LIST':
       case 'TEXT':
       default:
-        // text : {field_name} (IMAGE is also treated as TEXT - URL link)
+        // text : {field_name}
         return `{${name}}`;
     }
   };
@@ -1382,16 +1424,23 @@ const CustomFieldsPanel = ({
   const [activePartSectionIndex, setActivePartSectionIndex] = useState(null);
   // index kept out to avoid unused variable; we don't need the field index currently
   const [partSubFieldName, setPartSubFieldName] = useState('');
-  const [partSubFieldType, setPartSubFieldType] = useState('TEXT'); // TEXT | TOGGLE | IMAGE
   const [partSubFieldLabel, setPartSubFieldLabel] = useState('');
   // displayOrder is auto-assigned based on creation order
   const [partSubFieldRoleRequired, setPartSubFieldRoleRequired] = useState('TRAINER');
+
+  // Insert CheckBox Field modal state (similar to PART, but only TEXT sub-fields)
+  const [showCheckBoxFieldModal, setShowCheckBoxFieldModal] = useState(false);
+  const [activeCheckBoxField, setActiveCheckBoxField] = useState(null); // the CHECK_BOX field object
+  const [activeCheckBoxSectionIndex, setActiveCheckBoxSectionIndex] = useState(null);
+  const [checkBoxSubFieldName, setCheckBoxSubFieldName] = useState('');
+  const [checkBoxSubFieldLabel, setCheckBoxSubFieldLabel] = useState('');
+  // displayOrder is auto-assigned based on creation order
+  const [checkBoxSubFieldRoleRequired, setCheckBoxSubFieldRoleRequired] = useState('TRAINER');
 
   const openInsertPartField = (sectionIndex, fieldIndex, partField) => {
     setActivePartSectionIndex(sectionIndex);
     setActivePartField(partField);
     setPartSubFieldName('');
-    setPartSubFieldType('TEXT');
     setPartSubFieldLabel('');
     // order auto
     setPartSubFieldRoleRequired('TRAINER');
@@ -1422,7 +1471,7 @@ const CustomFieldsPanel = ({
     const newSubField = {
       label: partSubFieldLabel,
       fieldName: partSubFieldName,
-      fieldType: partSubFieldType,
+      fieldType: 'TEXT', // PART sub-fields are always TEXT
       roleRequired: partSubFieldRoleRequired,
       parentTempId: activePartField?.tempId || activePartField?.fieldName || null
     };
@@ -1435,15 +1484,8 @@ const CustomFieldsPanel = ({
       onAddField(flattened);
       }, 0);
     }
-    // Build inner template based on selected type (TEXT/TOGGLE/IMAGE)
-    let inner = `{${partSubFieldName}}`;
-    const typeUpper = String(partSubFieldType).toUpperCase();
-    if (typeUpper === 'TOGGLE') {
-      inner = `{#${partSubFieldName}}{/${partSubFieldName}} {^${partSubFieldName}}{/${partSubFieldName}}`;
-    } else if (typeUpper === 'IMAGE') {
-      // Image placeholder behaves like text token in template
-      inner = `{${partSubFieldName}}`;
-    }
+    // Build inner template - PART sub-fields are always TEXT
+    const inner = `{${partSubFieldName}}`;
     // Insert only the inner field so it goes inside the existing part block
     const template = ` ${inner}`;
     // Defer insertion to next tick to avoid parent state updates during render
@@ -1452,10 +1494,71 @@ const CustomFieldsPanel = ({
     setActivePartField(null);
     setActivePartSectionIndex(null);
     setPartSubFieldName('');
-    setPartSubFieldType('TEXT');
     setPartSubFieldLabel('');
     // order auto
     setPartSubFieldRoleRequired('TRAINER');
+  };
+
+  const openInsertCheckBoxField = (sectionIndex, fieldIndex, checkBoxField) => {
+    setActiveCheckBoxSectionIndex(sectionIndex);
+    setActiveCheckBoxField(checkBoxField);
+    setCheckBoxSubFieldName('');
+    setCheckBoxSubFieldLabel('');
+    // order auto
+    setCheckBoxSubFieldRoleRequired('TRAINER');
+    setShowCheckBoxFieldModal(true);
+  };
+
+  const handleInsertCheckBoxField = () => {
+    const snake = /^[a-z][a-z0-9_]*$/;
+    if (!checkBoxSubFieldLabel || !checkBoxSubFieldName || !snake.test(checkBoxSubFieldName)) {
+      toast.warning('Please enter label and snake_case field name, e.g., focus_item');
+      return;
+    }
+    const checkBoxName = activeCheckBoxField?.fieldName;
+    if (!checkBoxName) {
+      toast.error('Invalid CHECK_BOX field');
+      return;
+    }
+    // ensure section context
+    if (activeCheckBoxSectionIndex === null || activeCheckBoxSectionIndex < 0 || activeCheckBoxSectionIndex >= sections.length) {
+      toast.error('Invalid section');
+      return;
+    }
+    const sectionFields = sections[activeCheckBoxSectionIndex].fields || [];
+    if (sectionFields.some((f) => f.fieldName === checkBoxSubFieldName)) {
+      toast.warning('Field name must be unique within section');
+      return;
+    }
+    const newSubField = {
+      label: checkBoxSubFieldLabel,
+      fieldName: checkBoxSubFieldName,
+      fieldType: 'TEXT', // CHECK_BOX only supports TEXT sub-fields
+      roleRequired: checkBoxSubFieldRoleRequired,
+      parentTempId: activeCheckBoxField?.tempId || activeCheckBoxField?.fieldName || null
+    };
+    const nextSections = [...sections];
+    nextSections[activeCheckBoxSectionIndex].fields = [...sectionFields, newSubField];
+    setSections(nextSections);
+    if (onAddField) {
+      const flattened = nextSections.flatMap((s) => s.fields || []);
+      setTimeout(() => {
+      onAddField(flattened);
+      }, 0);
+    }
+    // Build inner template - CHECK_BOX sub-fields are always TEXT
+    const inner = `{${checkBoxSubFieldName}}`;
+    // Insert only the inner field so it goes inside the existing checkbox block
+    const template = ` ${inner}`;
+    // Defer insertion to next tick to avoid parent state updates during render
+    setTimeout(() => onInsertField(template), 0);
+    setShowCheckBoxFieldModal(false);
+    setActiveCheckBoxField(null);
+    setActiveCheckBoxSectionIndex(null);
+    setCheckBoxSubFieldName('');
+    setCheckBoxSubFieldLabel('');
+    // order auto
+    setCheckBoxSubFieldRoleRequired('TRAINER');
   };
   
   // Determine current section being edited for field type filtering
@@ -1468,8 +1571,8 @@ const CustomFieldsPanel = ({
   const allFieldTypeOptions = [
     { value: 'TEXT', label: 'TEXT' },
     { value: 'TOGGLE', label: 'TOGGLE' },
-    { value: 'IMAGE', label: 'IMAGE' },
     { value: 'PART', label: 'PART' },
+    { value: 'CHECK_BOX', label: 'CHECK_BOX' },
     { value: 'SIGNATURE_DRAW', label: 'SIGNATURE_DRAW' },
     { value: 'SIGNATURE_IMAGE', label: 'SIGNATURE_IMAGE' },
     { value: 'FINAL_SCORE_TEXT', label: 'FINAL_SCORE_TEXT' },
@@ -1782,10 +1885,12 @@ const CustomFieldsPanel = ({
 
                         const renderRow = (field, realIndex) => {
                           const isPart = String(field.fieldType).toUpperCase() === 'PART';
+                          const isCheckBox = String(field.fieldType).toUpperCase() === 'CHECK_BOX';
+                          const isParentField = isPart || isCheckBox;
                           return (
                           <div
                             key={`${sIdx}-${realIndex}`}
-                            className={`p-2 p-md-2 rounded border mb-2 mb-md-2 draggable-item custom-field-item ${isPart ? 'bg-part part-card' : 'bg-white child-row'} ${dragState.sectionIndex !== null && dragState.targetSectionIndex === sIdx && dragState.overIndex === realIndex ? 'border-primary' : ''} ${dragState.sectionIndex !== null && dragState.targetSectionIndex === sIdx && dragState.overIndex === realIndex && dragState.position === 'above' ? 'drop-target-above' : ''} ${dragState.sectionIndex !== null && dragState.targetSectionIndex === sIdx && dragState.overIndex === realIndex && dragState.position === 'below' ? 'drop-target-below' : ''} ${dragState.sectionIndex === sIdx && dragState.fromIndex === realIndex ? 'dragging' : ''}`}
+                            className={`p-2 p-md-2 rounded border mb-2 mb-md-2 draggable-item custom-field-item ${isParentField ? 'bg-part part-card' : 'bg-white child-row'} ${dragState.sectionIndex !== null && dragState.targetSectionIndex === sIdx && dragState.overIndex === realIndex ? 'border-primary' : ''} ${dragState.sectionIndex !== null && dragState.targetSectionIndex === sIdx && dragState.overIndex === realIndex && dragState.position === 'above' ? 'drop-target-above' : ''} ${dragState.sectionIndex !== null && dragState.targetSectionIndex === sIdx && dragState.overIndex === realIndex && dragState.position === 'below' ? 'drop-target-below' : ''} ${dragState.sectionIndex === sIdx && dragState.fromIndex === realIndex ? 'dragging' : ''}`}
                             draggable
                             style={{ display: 'block', visibility: 'visible', opacity: 1, cursor: 'grab' }}
                             onDragStart={(e) => {
@@ -1841,6 +1946,7 @@ const CustomFieldsPanel = ({
                                     {field.label}
                                   </span>
                                   {isPart && (<span className="badge part-badge flex-shrink-0">PART</span>)}
+                                  {isCheckBox && (<span className="badge part-badge flex-shrink-0">CHECK_BOX</span>)}
                                 </div>
                                 <small className="text-muted d-block" style={{ fontSize: '0.7rem', wordBreak: 'break-word', overflow: 'hidden', textOverflow: 'ellipsis' }} title={`${field.fieldName} (${field.fieldType})${field.roleRequired ? ` - ${field.roleRequired}` : ''}`}>
                                   {field.fieldName} ({field.fieldType}){field.roleRequired ? ` - ${field.roleRequired}` : ''}
@@ -1906,9 +2012,23 @@ const CustomFieldsPanel = ({
                                   <span className="d-inline d-sm-none">Add to PART</span>
                                 </Button>
                               )}
+                              {String(field.fieldType).toUpperCase() === 'CHECK_BOX' && (
+                                <Button
+                                  variant="outline-primary"
+                                  size="sm"
+                                  className="mt-0 text-primary border-primary"
+                                  onClick={() => openInsertCheckBoxField(sIdx, realIndex, field)}
+                                  disabled={readOnly}
+                                  style={{ fontSize: '0.75rem', padding: '0.375rem 0.5rem' }}
+                                >
+                                  <ArrowDown className="me-1" size={12} />
+                                  <span className="d-none d-sm-inline">Add Field to CHECK_BOX</span>
+                                  <span className="d-inline d-sm-none">Add to CHECK_BOX</span>
+                                </Button>
+                              )}
                             </div>
 
-                            {String(field.fieldType).toUpperCase() === 'PART' && (
+                            {(String(field.fieldType).toUpperCase() === 'PART' || String(field.fieldType).toUpperCase() === 'CHECK_BOX') && (
                               (() => {
                                 const pid = parentIdOf(field);
                                 const children = allSorted.filter((f) => f.parentTempId === pid);
@@ -2263,6 +2383,11 @@ const CustomFieldsPanel = ({
           <Form>
             <Row className="g-3">
               <Col md={12}>
+                <Alert variant="light" className="py-2">
+                  Editing field in section: <strong>{editingSectionIndex !== null ? sections[editingSectionIndex]?.label : 'N/A'}</strong>
+                </Alert>
+              </Col>
+              <Col md={12}>
                 <Form.Group>
                   <Form.Label className="text-primary-custom">Label <span className="text-danger">*</span></Form.Label>
                   <Form.Control
@@ -2274,6 +2399,32 @@ const CustomFieldsPanel = ({
                   />
                   <Form.Text className="text-muted">
                     The question or label displayed to the user (e.g., "Crew Communication").
+                  </Form.Text>
+                </Form.Group>
+              </Col>
+              <Col md={12}>
+                <Form.Group>
+                  <Form.Label className="text-primary-custom">Field Name <span className="text-danger">*</span></Form.Label>
+                  <Form.Control
+                    type="text"
+                    placeholder={
+                      newField.fieldType === 'PART' || newField.fieldType === 'CHECK_BOX'
+                        ? 'e.g., Assessment_Items' 
+                        : newField.fieldType === 'TOGGLE'
+                        ? 'e.g., isGroundCourse'
+                        : 'e.g., crew_communication'
+                    }
+                    value={newField.fieldName}
+                    onChange={(e) => setNewField(prev => ({ ...prev, fieldName: e.target.value }))}
+                    required
+                  />
+                  <Form.Text className="text-muted">
+                    {newField.fieldType === 'PART' || newField.fieldType === 'CHECK_BOX'
+                      ? 'The tag name should use underscores, should not start with the word "section" and the first letter always have to be capitalized. (e.g., Assessment_Items).'
+                      : newField.fieldType === 'TOGGLE'
+                      ? 'The tag name should use camelCase (e.g., isGroundCourse).'
+                      : 'The variable name used in the docxtemplate (e.g., {crew_communication}). Must be unique within a template.'
+                    }
                   </Form.Text>
                 </Form.Group>
               </Col>
@@ -2316,32 +2467,6 @@ const CustomFieldsPanel = ({
                   />
                   <Form.Text className="text-muted">
                     Automatically set from section's "Edit By" value.
-                  </Form.Text>
-                </Form.Group>
-              </Col>
-              <Col md={12}>
-                <Form.Group>
-                  <Form.Label className="text-primary-custom">Field Name <span className="text-danger">*</span></Form.Label>
-                  <Form.Control
-                    type="text"
-                    placeholder={
-                      newField.fieldType === 'PART' 
-                        ? 'e.g., Assessment_Items' 
-                        : newField.fieldType === 'TOGGLE'
-                        ? 'e.g., isGroundCourse'
-                        : 'e.g., crew_communication'
-                    }
-                    value={newField.fieldName}
-                    onChange={(e) => setNewField(prev => ({ ...prev, fieldName: e.target.value }))}
-                    required
-                  />
-                  <Form.Text className="text-muted">
-                    {newField.fieldType === 'PART' 
-                      ? 'The tag name should use underscores, should not start with the word "section" and the first letter always have to be capitalized. (e.g., Assessment_Items).'
-                      : newField.fieldType === 'TOGGLE'
-                      ? 'The tag name should use camelCase (e.g., isGroundCourse).'
-                      : 'The variable name used in the docxtemplate (e.g., {crew_communication}). Must be unique within a template.'
-                    }
                   </Form.Text>
                 </Form.Group>
               </Col>
@@ -2454,7 +2579,7 @@ const CustomFieldsPanel = ({
                   />
                 </Form.Group>
               </Col>
-              <Col md={8}>
+              <Col md={12}>
                 <Form.Group>
                   <Form.Label className="text-primary-custom">Field Name <span className="text-danger">*</span></Form.Label>
                   <Form.Control
@@ -2463,20 +2588,7 @@ const CustomFieldsPanel = ({
                     value={partSubFieldName}
                     onChange={(e) => setPartSubFieldName(e.target.value)}
                   />
-                  <Form.Text className="text-muted">snake_case only</Form.Text>
-                </Form.Group>
-              </Col>
-              <Col md={4}>
-                <Form.Group>
-                  <Form.Label className="text-primary-custom">Type</Form.Label>
-                  <Form.Select
-                    value={partSubFieldType}
-                    onChange={(e) => setPartSubFieldType(e.target.value)}
-                  >
-                    <option value="TEXT">TEXT</option>
-                    <option value="TOGGLE">TOGGLE</option>
-                    <option value="IMAGE">IMAGE</option>
-                  </Form.Select>
+                  <Form.Text className="text-muted">snake_case only (Type is always TEXT for PART sub-fields)</Form.Text>
                 </Form.Group>
               </Col>
               <Col md={6}>
@@ -2503,6 +2615,71 @@ const CustomFieldsPanel = ({
             Cancel
           </Button>
           <Button variant="primary" onClick={handleInsertPartField}>
+            Insert
+          </Button>
+        </Modal.Footer>
+      </Modal>
+
+      {/* Insert CheckBox Sub Field Modal */}
+      <Modal show={showCheckBoxFieldModal} onHide={() => setShowCheckBoxFieldModal(false)}>
+        <Modal.Header closeButton>
+          <Modal.Title>Insert CheckBox Field</Modal.Title>
+        </Modal.Header>
+        <Modal.Body>
+          <Form>
+            <Row className="g-3">
+              <Col md={12}>
+                <Alert variant="light" className="py-2">
+                  Insert field into CHECK_BOX: <strong>{activeCheckBoxField?.label} ({activeCheckBoxField?.fieldName})</strong>
+                </Alert>
+              </Col>
+              <Col md={12}>
+                <Form.Group>
+                  <Form.Label className="text-primary-custom">Label <span className="text-danger">*</span></Form.Label>
+                  <Form.Control
+                    type="text"
+                    placeholder="e.g., Focus Item"
+                    value={checkBoxSubFieldLabel}
+                    onChange={(e) => setCheckBoxSubFieldLabel(e.target.value)}
+                  />
+                </Form.Group>
+              </Col>
+              <Col md={12}>
+                <Form.Group>
+                  <Form.Label className="text-primary-custom">Field Name <span className="text-danger">*</span></Form.Label>
+                  <Form.Control
+                    type="text"
+                    placeholder="e.g., focus_item"
+                    value={checkBoxSubFieldName}
+                    onChange={(e) => setCheckBoxSubFieldName(e.target.value)}
+                  />
+                  <Form.Text className="text-muted">snake_case only (Type is always TEXT for CHECK_BOX sub-fields)</Form.Text>
+                </Form.Group>
+              </Col>
+              <Col md={6}>
+                <Form.Group>
+                  <Form.Label className="text-primary-custom">Role Required</Form.Label>
+                  <Form.Select
+                    value={checkBoxSubFieldRoleRequired}
+                    onChange={(e) => setCheckBoxSubFieldRoleRequired(e.target.value)}
+                  >
+                    {availableRoles.map((r) => (
+                      <option key={r} value={r}>{r}</option>
+                    ))}
+                  </Form.Select>
+                </Form.Group>
+              </Col>
+              <Col md={12}>
+                <Form.Text className="text-muted">Display order is assigned automatically by creation order.</Form.Text>
+              </Col>
+            </Row>
+          </Form>
+        </Modal.Body>
+        <Modal.Footer>
+          <Button variant="outline-secondary" onClick={() => setShowCheckBoxFieldModal(false)}>
+            Cancel
+          </Button>
+          <Button variant="primary" onClick={handleInsertCheckBoxField}>
             Insert
           </Button>
         </Modal.Footer>

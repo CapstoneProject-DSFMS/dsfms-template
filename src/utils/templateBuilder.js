@@ -1,7 +1,7 @@
 // Utility helpers to build template payload for backend
 
 // Map frontend field types to backend-accepted field types
-// Backend accepts: TEXT, IMAGE, TOGGLE, PART, SECTION_CONTROL_TOGGLE, SIGNATURE_DRAW, SIGNATURE_IMG, FINAL_SCORE_TEXT, FINAL_SCORE_NUM, VALUE_LIST
+// Backend accepts: TEXT, TOGGLE, PART, CHECK_BOX, SECTION_CONTROL_TOGGLE, SIGNATURE_DRAW, SIGNATURE_IMG, FINAL_SCORE_TEXT, FINAL_SCORE_NUM, VALUE_LIST
 function mapFieldTypeToBackend(fieldType) {
   const typeUpper = String(fieldType || '').toUpperCase();
   
@@ -13,9 +13,9 @@ function mapFieldTypeToBackend(fieldType) {
   // Backend-accepted types (return as-is)
   const acceptedTypes = [
     'TEXT',
-    'IMAGE',
     'TOGGLE',
     'PART',
+    'CHECK_BOX',
     'SECTION_CONTROL_TOGGLE',
     'SIGNATURE_DRAW',
     'SIGNATURE_IMG', 
@@ -74,16 +74,17 @@ export function readTemplateMetaFromStorage() {
 }
 
 export function buildTemplatePayload(meta, sections, existingFields = null) {
-  // Build map: tempId → id (UUID) for PART fields from existing draft (when updating)
+  // Build map: tempId → id (UUID) for PART and CHECK_BOX fields from existing draft (when updating)
   // Format: { "apk-parent": "f6249b29-f13f-4095-a807-6de328cf7554", ... }
   const tempIdToUuidMap = {};
   if (existingFields && Array.isArray(existingFields)) {
     console.log(`📋 Existing fields count: ${existingFields.length}`);
     existingFields.forEach(field => {
-      if (field.fieldType === 'PART' && field.id && field.fieldName) {
+      const fieldTypeUpper = String(field.fieldType || '').toUpperCase();
+      if ((fieldTypeUpper === 'PART' || fieldTypeUpper === 'CHECK_BOX') && field.id && field.fieldName) {
         const tempId = `${field.fieldName}-parent`;
         tempIdToUuidMap[tempId] = field.id;
-        console.log(`🔗 Mapped PART field: tempId="${tempId}" → id="${field.id}"`);
+        console.log(`🔗 Mapped ${fieldTypeUpper} field: tempId="${tempId}" → id="${field.id}"`);
       }
     });
     // Debug: Log all child fields with parentId
@@ -98,10 +99,11 @@ export function buildTemplatePayload(meta, sections, existingFields = null) {
 
   const normalizedSections = (sections || []).map((section, sIdx) => {
     const rawFields = section.fields || [];
-    // Ensure PART fields have a stable tempId and children reference that tempId
+    // Ensure PART and CHECK_BOX fields have a stable tempId and children reference that tempId
     const partIdMap = {};
     for (const f of rawFields) {
-      if (String(f.fieldType || '').toUpperCase() === 'PART') {
+      const fieldTypeUpper = String(f.fieldType || '').toUpperCase();
+      if (fieldTypeUpper === 'PART' || fieldTypeUpper === 'CHECK_BOX') {
         // Normalize: use fieldName or name
         const name = f.fieldName || f.name || '';
         const ensuredTempId = f.tempId || (name ? `${name}-parent` : undefined);
@@ -109,7 +111,7 @@ export function buildTemplatePayload(meta, sections, existingFields = null) {
       }
     }
 
-    // Normalize children to point to PART tempIds when they referenced fieldName
+    // Normalize children to point to PART/CHECK_BOX tempIds when they referenced fieldName
     const normalized = rawFields.map((f) => {
       const parent = f.parentTempId;
       if (parent && partIdMap[parent]) {
@@ -118,7 +120,7 @@ export function buildTemplatePayload(meta, sections, existingFields = null) {
       return f;
     });
 
-    // Compute visual order as rendered in UI: top-level by array order, then PART children right after their PART
+    // Compute visual order as rendered in UI: top-level by array order, then PART/CHECK_BOX children right after their parent
     const indexed = normalized.map((f, i) => ({ ...f, __idx: i }));
     const topLevel = indexed
       .filter((f) => !f.parentTempId)
@@ -127,7 +129,8 @@ export function buildTemplatePayload(meta, sections, existingFields = null) {
     const inVisualOrder = [];
     for (const top of topLevel) {
       inVisualOrder.push(top);
-      const pid = (String(top.fieldType || '').toUpperCase() === 'PART')
+      const fieldTypeUpper = String(top.fieldType || '').toUpperCase();
+      const pid = (fieldTypeUpper === 'PART' || fieldTypeUpper === 'CHECK_BOX')
         ? (top.tempId || partIdMap[top.fieldName || top.name || ''] || ((top.fieldName || top.name) ? `${top.fieldName || top.name}-parent` : undefined))
         : null;
       if (pid) {
@@ -214,21 +217,21 @@ export function buildTemplatePayload(meta, sections, existingFields = null) {
       if (isSignature) {
         base.roleRequired = f.roleRequired || 'TRAINER';
       }
-      if (fieldTypeUpper === 'PART') {
-        // ensure PART tempId exists and is stable
+      if (fieldTypeUpper === 'PART' || fieldTypeUpper === 'CHECK_BOX') {
+        // ensure PART/CHECK_BOX tempId exists and is stable
         const partName = fieldName || '';
         base.tempId = f.tempId || (partName ? `${partName}-parent` : undefined);
         
-        // When updating draft: add id (UUID) for PART field so backend can match with child fields' parentId
+        // When updating draft: add id (UUID) for PART/CHECK_BOX field so backend can match with child fields' parentId
         if (existingFields) {
           const existingPartField = existingFields.find(
-            ef => ef.fieldType === 'PART' && 
+            ef => (ef.fieldType === 'PART' || ef.fieldType === 'CHECK_BOX') && 
                   (ef.fieldName === fieldName || ef.fieldName === f.name) &&
                   ef.id
           );
           if (existingPartField && existingPartField.id) {
             base.id = existingPartField.id;
-            console.log(`🔗 Added id="${base.id}" for PART field "${fieldName}" (for update)`);
+            console.log(`🔗 Added id="${base.id}" for ${fieldTypeUpper} field "${fieldName}" (for update)`);
           }
         }
       }
@@ -299,8 +302,8 @@ export function convertBackendToFrontendSections(backendSections) {
   }
 
   return backendSections.map((section) => {
-    // Build map: parentId (UUID) → tempId (string) for PART fields
-    const partFields = (section.fields || []).filter(f => f.fieldType === 'PART');
+    // Build map: parentId (UUID) → tempId (string) for PART and CHECK_BOX fields
+    const partFields = (section.fields || []).filter(f => f.fieldType === 'PART' || f.fieldType === 'CHECK_BOX');
     const partIdMap = {}; // Map: { parentId (UUID): tempId (string) }
     
     partFields.forEach(partField => {
@@ -330,16 +333,18 @@ export function convertBackendToFrontendSections(backendSections) {
       
       // Convert parentId (UUID) → parentTempId (string)
       if (field.parentId) {
-        // Find PART field with id = field.parentId
+        // Find PART or CHECK_BOX field with id = field.parentId
         const parentField = section.fields.find(f => f.id === field.parentId);
-        if (parentField && parentField.fieldType === 'PART') {
+        const parentFieldTypeUpper = String(parentField?.fieldType || '').toUpperCase();
+        if (parentField && (parentFieldTypeUpper === 'PART' || parentFieldTypeUpper === 'CHECK_BOX')) {
           // Generate tempId from fieldName
           frontendField.parentTempId = `${parentField.fieldName}-parent`;
         }
       }
       
-      // Add tempId for PART fields
-      if (field.fieldType === 'PART') {
+      // Add tempId for PART and CHECK_BOX fields
+      const fieldTypeUpper = String(field.fieldType || '').toUpperCase();
+      if (fieldTypeUpper === 'PART' || fieldTypeUpper === 'CHECK_BOX') {
         frontendField.tempId = `${field.fieldName}-parent`;
       }
       
@@ -421,8 +426,8 @@ export function convertExtractFieldsToFrontendSections(extractResponse) {
         option: null
       };
       
-      // Handle PART fields - ensure tempId exists
-      if (frontendFieldType === 'PART') {
+      // Handle PART and CHECK_BOX fields - ensure tempId exists
+      if (frontendFieldType === 'PART' || frontendFieldType === 'CHECK_BOX') {
         frontendField.tempId = field.tempId || (frontendField.fieldName ? `${frontendField.fieldName}-parent` : null);
       }
       
@@ -439,15 +444,15 @@ export function convertExtractFieldsToFrontendSections(extractResponse) {
     });
     
     // Group fields by parentTempId to maintain hierarchy
-    // PART fields first, then their children
-    const partFields = frontendFields.filter(f => f.fieldType === 'PART');
+    // PART and CHECK_BOX fields first, then their children
+    const partFields = frontendFields.filter(f => f.fieldType === 'PART' || f.fieldType === 'CHECK_BOX');
     const childFields = frontendFields.filter(f => f.parentTempId);
-    const topLevelFields = frontendFields.filter(f => !f.parentTempId && f.fieldType !== 'PART');
+    const topLevelFields = frontendFields.filter(f => !f.parentTempId && f.fieldType !== 'PART' && f.fieldType !== 'CHECK_BOX');
     
-    // Build ordered fields: PART fields with their children, then top-level fields
+    // Build ordered fields: PART/CHECK_BOX fields with their children, then top-level fields
     const orderedFields = [];
     
-    // Add PART fields with their children
+    // Add PART and CHECK_BOX fields with their children
     partFields.forEach(partField => {
       orderedFields.push(partField);
       const children = childFields.filter(c => c.parentTempId === partField.tempId);
