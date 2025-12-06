@@ -7,10 +7,12 @@ import {
   Button,
   Spinner,
 } from "react-bootstrap";
-import { useNavigate, useLocation } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import { useAuth } from "../../hooks/useAuth";
+import { useFirstAccessibleRoute } from "../../hooks/useFirstAccessibleRoute";
 import { toast } from "react-toastify";
 import ForgotPasswordModal from "../../components/Common/ForgotPasswordModal";
+import { ROUTES } from "../../constants/routes";
 
 function Login() {
   const [email, setEmail] = useState("");
@@ -20,19 +22,20 @@ function Login() {
   const [showForgotPasswordModal, setShowForgotPasswordModal] = useState(false);
 
   const navigate = useNavigate();
-  const location = useLocation();
   const { login, isAuthenticated, isLoading } = useAuth();
+  const { firstRoute, isLoading: isRouteLoading } = useFirstAccessibleRoute();
 
-  // Redirect if already authenticated
+  // Redirect if already authenticated (after login or page refresh)
   useEffect(() => {
-    if (isAuthenticated) {
-      // Always navigate to /dashboard to trigger RoleBasedRedirect
-      // This ensures the user is redirected to the correct page based on their role
-      // instead of being redirected to a previous user's route
-      // /dashboard is a common route that works for all roles
-      navigate("/dashboard", { replace: true });
+    // Only navigate if authenticated, route is ready, and not already on the correct route
+    if (isAuthenticated && !isLoading && !isRouteLoading && firstRoute && firstRoute !== ROUTES.DASHBOARD) {
+      const currentPath = window.location.pathname;
+      // Only navigate if not already on the target route (avoid unnecessary navigation)
+      if (currentPath !== firstRoute && !currentPath.startsWith('/login')) {
+        navigate(firstRoute, { replace: true });
+      }
     }
-  }, [isAuthenticated, navigate]);
+  }, [isAuthenticated, isLoading, isRouteLoading, firstRoute, navigate]);
 
   // Show loading while checking authentication
   if (isLoading) {
@@ -58,15 +61,40 @@ function Login() {
       const result = await login({ email, password });
       
       if (result.success) {
-        // Always navigate to /dashboard to trigger RoleBasedRedirect
-        // This ensures the user is redirected to the correct page based on their role
-        // instead of being redirected to a previous user's route (from location.state)
-        // /dashboard is a common route that works for all roles, RoleBasedRedirect will handle the redirect
-        navigate("/dashboard", { replace: true });
+        // After successful login, wait for user state and permissions to update
+        // The useEffect hook above will automatically handle navigation when firstRoute is ready
+        // If after 800ms the route is still not ready (unlikely), use role-based fallback
+        setTimeout(() => {
+          // Double-check if navigation already happened via useEffect
+          const currentPath = window.location.pathname;
+          if (currentPath === '/login' || currentPath === '/') {
+            // Navigation hasn't happened yet, use role-based fallback
+            const loginUserRole = result.user?.role || result.role?.name;
+            const normalizedRole = typeof loginUserRole === 'string' 
+              ? loginUserRole.toUpperCase().replace(/\s+/g, '_')
+              : null;
+            
+            if (normalizedRole === 'TRAINEE') {
+              navigate('/trainee/dashboard', { replace: true });
+            } else if (normalizedRole === 'ACADEMIC_DEPARTMENT' || normalizedRole === 'ACADEMIC_DEPT') {
+              navigate('/academic/dashboard', { replace: true });
+            } else if (normalizedRole === 'ADMINISTRATOR' || normalizedRole === 'ADMIN') {
+              navigate(ROUTES.MAIN_MENU, { replace: true });
+            } else if (normalizedRole === 'TRAINER') {
+              // Trainer doesn't have a dashboard, use first available route
+              navigate(ROUTES.ASSESSMENTS_UPCOMING, { replace: true });
+            } else if (normalizedRole === 'DEPARTMENT_HEAD') {
+              navigate('/department-head/dashboard', { replace: true });
+            } else {
+              // Last resort: try main menu
+              navigate(ROUTES.MAIN_MENU, { replace: true });
+            }
+          }
+        }, 800);
       } else {
         toast.error(result.error || "Email or password is incorrect. Please try again.");
       }
-    } catch (err) {
+    } catch {
       toast.error("Login failed. Please try again.");
     } finally {
       setSubmitting(false);

@@ -8,7 +8,7 @@ const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'https://dsfms.id.vn';
 // Create axios instance with default config
 const apiClient = axios.create({
   baseURL: API_BASE_URL,
-  timeout: 10000,
+  timeout: 20000, // Increased timeout to 20 seconds
   headers: {
     'Content-Type': 'application/json',
   },
@@ -17,7 +17,7 @@ const apiClient = axios.create({
 // Create public API client (no authentication required)
 const publicApiClient = axios.create({
   baseURL: API_BASE_URL,
-  timeout: 10000,
+  timeout: 20000, // Increased timeout to 20 seconds
   headers: {
     'Content-Type': 'application/json',
   },
@@ -35,7 +35,7 @@ const isTokenExpired = (token) => {
     const payload = JSON.parse(atob(token.split('.')[1]));
     const currentTime = Date.now() / 1000;
     return payload.exp < currentTime;
-  } catch (error) {
+  } catch {
     return true; // If can't decode, consider expired
   }
 };
@@ -47,7 +47,7 @@ const isTokenExpiringSoon = (token) => {
     const currentTime = Date.now() / 1000;
     const timeUntilExpiry = payload.exp - currentTime;
     return timeUntilExpiry < 300; // 5 minutes
-  } catch (error) {
+  } catch {
     return true; // If can't decode, consider expiring soon
   }
 };
@@ -100,6 +100,21 @@ apiClient.interceptors.request.use(
           dataType: typeof config.data,
           dataIsArray: Array.isArray(config.data),
           dataStringified: JSON.stringify(config.data),
+          headers: {
+            'Content-Type': config.headers['Content-Type'],
+            Authorization: config.headers.Authorization ? 'Bearer [TOKEN]' : 'No token'
+          }
+        });
+      }
+      
+      // Debug log for department update requests
+      if (config.url?.includes('/departments/') && config.method === 'put') {
+        console.log('🔍 Department Update Request (Interceptor):', {
+          url: config.url,
+          method: config.method,
+          baseURL: config.baseURL,
+          fullURL: `${config.baseURL}${config.url}`,
+          data: config.data,
           headers: {
             'Content-Type': config.headers['Content-Type'],
             Authorization: config.headers.Authorization ? 'Bearer [TOKEN]' : 'No token'

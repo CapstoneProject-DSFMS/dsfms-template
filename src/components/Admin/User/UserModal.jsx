@@ -2,7 +2,6 @@ import React, { useState, useEffect } from 'react';
 import { Modal, Form, Button, Row, Col } from 'react-bootstrap';
 import { X, Save, Eye } from 'react-bootstrap-icons';
 import { toast } from 'react-toastify';
-import { departmentAPI } from '../../../api/department';
 import { roleAPI } from '../../../api/role';
 import { userAPI } from '../../../api/user';
 
@@ -28,30 +27,8 @@ const UserModal = ({ show, user, mode, onSave, onClose }) => {
   });
   const [errors, setErrors] = useState({});
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [departments, setDepartments] = useState([]);
-  const [departmentsLoading, setDepartmentsLoading] = useState(false);
   const [roles, setRoles] = useState([]);
   const [rolesLoading, setRolesLoading] = useState(false);
-  const [existingDepartmentHeads, setExistingDepartmentHeads] = useState([]);
-
-  // Fetch departments from public API (no permission required)
-  const fetchDepartments = async () => {
-    setDepartmentsLoading(true);
-    try {
-      const departmentsData = await departmentAPI.getPublicDepartments();
-      
-      // Transform to simple array of department names
-      const departmentNames = departmentsData.map(dept => dept.name);
-      setDepartments(departmentNames);
-    } catch (error) {
-      console.error('Error fetching departments:', error);
-      toast.error('Failed to load departments');
-      // Fallback to empty array
-      setDepartments([]);
-    } finally {
-      setDepartmentsLoading(false);
-    }
-  };
 
   // Fetch roles from public API (no permission required)
   const fetchRoles = async () => {
@@ -83,27 +60,11 @@ const UserModal = ({ show, user, mode, onSave, onClose }) => {
     'Vietnam', 'Yemen'
   ];
 
-  // Fetch existing department heads - use public departments API
-  const fetchExistingDepartmentHeads = async () => {
-    try {
-      // Use public departments API to get all departments
-      const departmentsData = await departmentAPI.getPublicDepartments();
-      
-      // Note: Public API may not include headUser info, so we'll use empty array
-      // If headUser info is needed, it should be added to public API response
-      setExistingDepartmentHeads([]);
-    } catch (error) {
-      console.error('Error fetching departments with heads:', error);
-      setExistingDepartmentHeads([]);
-    }
-  };
 
-  // Fetch departments and roles when modal opens
+  // Fetch roles when modal opens
   useEffect(() => {
     if (show) {
-      fetchDepartments();
       fetchRoles();
-      fetchExistingDepartmentHeads();
     }
   }, [show]);
 
@@ -192,32 +153,7 @@ const UserModal = ({ show, user, mode, onSave, onClose }) => {
       newErrors.role = 'Role is required';
     }
 
-    // Department head validation
-    if (formData.role === 'DEPARTMENT_HEAD') {
-      // Department is optional (nullable) for department heads
-      // Only validate if department is provided
-      if (formData.department && formData.department.trim()) {
-        // Check if this department already has a head (excluding current user in edit mode)
-        const existingHead = existingDepartmentHeads.find(dept => {
-          // From departments API, department name is in dept.name
-          const deptName = dept.name;
-          const selectedDeptName = formData.department;
-          const headUserId = dept.headUser?.id;
-          
-          const isSameDepartment = deptName && selectedDeptName && 
-                 deptName.toLowerCase() === selectedDeptName.toLowerCase();
-          const isNotCurrentUser = mode !== 'edit' || headUserId !== user?.id;
-          
-          return isSameDepartment && isNotCurrentUser;
-        });
-        
-        if (existingHead) {
-          const headName = `${existingHead.headUser?.firstName || ''} ${existingHead.headUser?.lastName || ''}`.trim();
-          newErrors.department = `Department "${formData.department}" already has a head: ${headName}`;
-        }
-      }
-      // If department is empty/null, that's fine - allow nullable
-    }
+    // Department head validation - department is optional (nullable)
 
     // Role-specific validation
     if (formData.role === 'TRAINER') {
@@ -325,28 +261,7 @@ const UserModal = ({ show, user, mode, onSave, onClose }) => {
             newErrors.department = 'Department is not allowed for Trainer role';
           }
         }
-        // Real-time validation for department head
-        else if (formData.role === 'DEPARTMENT_HEAD') {
-          // Department is optional (nullable) - only validate if value is provided
-          if (value && value.trim()) {
-            const existingHead = existingDepartmentHeads.find(dept => {
-              // From departments API, department name is in dept.name
-              const deptName = dept.name;
-              const selectedDeptName = value;
-              const headUserId = dept.headUser?.id;
-              
-              return deptName && selectedDeptName && 
-                     deptName.toLowerCase() === selectedDeptName.toLowerCase() && 
-                     (mode !== 'edit' || headUserId !== user?.id);
-            });
-            
-            if (existingHead) {
-              const headName = `${existingHead.headUser?.firstName || ''} ${existingHead.headUser?.lastName || ''}`.trim();
-              newErrors.department = `Department "${value}" already has a head: ${headName}`;
-            }
-          }
-          // If value is empty, clear any previous errors (allow nullable)
-        }
+        // Department head - department is optional (nullable)
       }
       
       // Clear department when role changes to TRAINER (not allowed)
@@ -581,23 +496,18 @@ const UserModal = ({ show, user, mode, onSave, onClose }) => {
                   <Form.Label className="text-primary-custom fw-semibold">
                     Department
                   </Form.Label>
-                  <Form.Select
+                  <Form.Control
+                    type="text"
                     value={formData.department}
                     onChange={(e) => handleInputChange('department', e.target.value)}
                     isInvalid={!!errors.department}
-                    disabled={isReadOnly || departmentsLoading}
+                    readOnly={isReadOnly}
+                    placeholder="Enter department name (optional)"
                     style={{
                       borderColor: errors.department ? '#dc3545' : 'var(--bs-primary)',
                       borderWidth: '2px'
                     }}
-                  >
-                    <option value="">
-                      {departmentsLoading ? 'Loading departments...' : 'Select a department'}
-                    </option>
-                    {departments.map(dept => (
-                      <option key={dept} value={dept}>{dept}</option>
-                    ))}
-                  </Form.Select>
+                  />
                   <Form.Control.Feedback type="invalid">
                     {errors.department}
                   </Form.Control.Feedback>

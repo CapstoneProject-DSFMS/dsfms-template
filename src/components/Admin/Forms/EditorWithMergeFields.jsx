@@ -118,6 +118,8 @@ const EditorWithMergeFields = forwardRef(({
   
   // Helper to check if field is PART
   const isPart = (f) => String(f.fieldType).toUpperCase() === 'PART';
+  const isCheckBox = (f) => String(f.fieldType).toUpperCase() === 'CHECK_BOX';
+  const isParentField = (f) => isPart(f) || isCheckBox(f);
 
   // Drag and drop handlers
   const onDragStart = (e, field) => {
@@ -550,8 +552,8 @@ const EditorWithMergeFields = forwardRef(({
     
     const type = String(fieldType || '').toUpperCase();
     
-    if (type === 'PART') {
-      // PART: underscores, capitalized first letter, not start with "section"
+    if (type === 'PART' || type === 'CHECK_BOX') {
+      // PART/CHECK_BOX: underscores, capitalized first letter, not start with "section"
       const partRegex = /^[A-Z][A-Za-z0-9_]*$/;
       if (!partRegex.test(fieldName)) {
         return {
@@ -935,19 +937,27 @@ const EditorWithMergeFields = forwardRef(({
 
       console.log('📤 Submitting template to backend...');
 
-      // Validate FINAL_SCORE_TEXT and FINAL_SCORE_NUM (must have exactly 1 of each)
+      // Validate FINAL_SCORE_TEXT and FINAL_SCORE_NUM
       const allFields = sections.flatMap(s => s.fields || []);
       const finalScoreTextFields = allFields.filter(f => f.fieldType === 'FINAL_SCORE_TEXT');
       const finalScoreNumFields = allFields.filter(f => f.fieldType === 'FINAL_SCORE_NUM');
 
-      if (finalScoreTextFields.length !== 1) {
-        toast.error(`Template must have exactly 1 FINAL_SCORE_TEXT field. Found: ${finalScoreTextFields.length}`);
+      // Must have at least 1 of either field
+      if (finalScoreTextFields.length === 0 && finalScoreNumFields.length === 0) {
+        toast.error('Template must have at least 1 FINAL_SCORE_TEXT or FINAL_SCORE_NUM field (or both)');
         setIsSubmitting(false);
         return;
       }
 
-      if (finalScoreNumFields.length !== 1) {
-        toast.error(`Template must have exactly 1 FINAL_SCORE_NUM field. Found: ${finalScoreNumFields.length}`);
+      // Cannot have more than 1 of each type
+      if (finalScoreTextFields.length > 1) {
+        toast.error(`Template must have at most 1 FINAL_SCORE_TEXT field. Found: ${finalScoreTextFields.length}`);
+        setIsSubmitting(false);
+        return;
+      }
+
+      if (finalScoreNumFields.length > 1) {
+        toast.error(`Template must have at most 1 FINAL_SCORE_NUM field. Found: ${finalScoreNumFields.length}`);
         setIsSubmitting(false);
         return;
       }
@@ -2278,8 +2288,8 @@ const EditorWithMergeFields = forwardRef(({
                     required
                   >
                     <option value="TEXT">TEXT</option>
-                    <option value="IMAGE">IMAGE</option>
                     <option value="PART">PART</option>
+                    <option value="CHECK_BOX">CHECK_BOX</option>
                     <option value="TOGGLE">TOGGLE</option>
                     <option value="SECTION_CONTROL_TOGGLE">SECTION_CONTROL_TOGGLE</option>
                     <option value="SIGNATURE_DRAW">SIGNATURE_DRAW</option>
@@ -2467,8 +2477,8 @@ const EditorWithMergeFields = forwardRef(({
                       required
                     >
                       <option value="TEXT">TEXT</option>
-                      <option value="IMAGE">IMAGE</option>
                       <option value="PART">PART</option>
+                      <option value="CHECK_BOX">CHECK_BOX</option>
                       <option value="TOGGLE">TOGGLE</option>
                       <option value="SECTION_CONTROL_TOGGLE">SECTION_CONTROL_TOGGLE</option>
                       <option value="SIGNATURE_DRAW">SIGNATURE_DRAW</option>

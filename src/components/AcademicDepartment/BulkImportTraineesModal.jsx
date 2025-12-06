@@ -1,8 +1,10 @@
 import React, { useState, useRef } from 'react';
 import { Modal, Button, Table, Card, Alert, Form, Badge } from 'react-bootstrap';
-import { X, Upload, FileEarmarkExcel, CheckCircle, XCircle, Download, Search } from 'react-bootstrap-icons';
+import { X, Upload, FileEarmarkExcel, CheckCircle, XCircle, Download } from 'react-bootstrap-icons';
 import * as XLSX from 'xlsx';
 import traineeAPI from '../../api/trainee';
+import { PermissionWrapper } from '../../components/Common'; // Assuming this path, common for components
+import { PERMISSION_IDS } from '../../constants/permissionIds'; // Add this
 
 const BulkImportTraineesModal = ({ show, onClose, onImport, loading = false }) => {
   const [dragActive, setDragActive] = useState(false);
@@ -129,6 +131,9 @@ const BulkImportTraineesModal = ({ show, onClose, onImport, loading = false }) =
 
         setPreviewData(validatedIdentifiers);
         setValidationErrors([]);
+        
+        // Auto-lookup trainees after parsing file
+        performLookup(validatedIdentifiers);
 
       } catch (error) {
         setErrors(['Failed to parse Excel file. Please check the file format.']);
@@ -137,110 +142,102 @@ const BulkImportTraineesModal = ({ show, onClose, onImport, loading = false }) =
     reader.readAsArrayBuffer(file);
   };
 
-  const handleLookupTrainees = async () => {
-    const validIdentifiers = previewData.filter(item => !item.hasError);
+  // Perform lookup for trainees
+  const performLookup = async (identifiersToLookup) => {
+    const validIdentifiers = identifiersToLookup.filter(item => !item.hasError);
     
     if (validIdentifiers.length === 0) {
-      setErrors(['No valid identifiers to lookup']);
-      return;
+      return; // No valid identifiers to lookup
     }
 
     setIsLookingUp(true);
     setErrors([]);
 
     try {
-      // Prepare identifiers for API call - try different formats
+      // Prepare identifiers for API call
       const identifiers = validIdentifiers.map(item => ({
         eid: item.eid,
         email: item.email
       }));
 
-      console.log('Sending lookup request with identifiers:', identifiers);
-
       // Call lookup API
       const response = await traineeAPI.lookupTrainees(identifiers);
-      console.log('Lookup response:', response);
-      console.log('Found users:', response.foundUsers);
-      console.log('Not found:', response.notFoundIdentifiers);
+      console.log('Lookup API response:', response);
       
-      // Debug: Check structure of found users
-      if (response.foundUsers && response.foundUsers.length > 0) {
-        console.log('🔍 First found user structure:', response.foundUsers[0]);
-        console.log('🔍 All found user IDs:', response.foundUsers.map(u => ({ id: u.id, eid: u.eid, email: u.email })));
-      }
+      // Extract data from response (response structure: { message: "...", data: { foundUsers: [...], notFoundIdentifiers: [...] } })
+      // API function returns response.data from axios, so response = { message: "...", data: { foundUsers: [...], notFoundIdentifiers: [...] } }
+      const responseData = response.data || response;
+      console.log('Response data extracted:', responseData);
       
-      // Filter found users to only include exact matches with uploaded identifiers
-      const exactMatches = (response.foundUsers || []).filter(trainee => {
-        return identifiers.some(id => 
-          id.eid === trainee.eid && id.email === trainee.email
-        );
-      });
-      
-      // Find identifiers that were not found
-      const notFoundIdentifiers = identifiers.filter(id => 
-        !exactMatches.some(trainee => 
-          trainee.eid === id.eid && trainee.email === id.email
-        )
-      );
-      
-      // Validate that exact matches have proper UUIDs
-      const validatedMatches = exactMatches.map(trainee => {
-        console.log('🔍 Validating trainee:', {
-          id: trainee.id,
-          eid: trainee.eid,
-          email: trainee.email,
-          firstName: trainee.firstName,
-          lastName: trainee.lastName
-        });
-        
-        if (!trainee.id || typeof trainee.id !== 'string' || trainee.id.length < 10) {
-          throw new Error(`Trainee ${trainee.eid} has invalid UUID: ${trainee.id}`);
-        }
-        
-        if (!trainee.firstName || !trainee.lastName) {
-          throw new Error(`Trainee ${trainee.eid} has missing name fields`);
-        }
-        
-        return trainee;
-      });
-      
-      const validatedResponse = {
-        foundUsers: validatedMatches,
-        notFoundIdentifiers: notFoundIdentifiers,
-        uploadedIdentifiers: identifiers
-      };
-      
-      console.log('Exact matches found:', validatedMatches);
+      const foundUsers = responseData.foundUsers || [];
+      const notFoundIdentifiers = responseData.notFoundIdentifiers || [];
+      console.log('Found users:', foundUsers);
       console.log('Not found identifiers:', notFoundIdentifiers);
       
-      setLookupResults(validatedResponse);
+      // Create a map of found users
+      const foundUsersMap = {};
+      foundUsers.forEach(trainee => {
+        const key = `${trainee.eid}:${trainee.email}`;
+        foundUsersMap[key] = trainee;
+        console.log(`Mapped trainee: ${key}`, trainee);
+      });
+      console.log('Found users map:', foundUsersMap);
       
-      // Initialize selected trainees with exact matches only
-      setSelectedTrainees(validatedMatches);
-      console.log('Set selected trainees (exact matches only):', validatedMatches);
+      // Update preview data with lookup results
+      const updatedPreviewData = identifiersToLookup.map(item => {
+        const key = `${item.eid}:${item.email}`;
+        const foundUser = foundUsersMap[key];
+        console.log(`Checking item ${key}:`, { item, foundUser, key });
+        
+        if (item.hasError) {
+          return item; // Keep existing errors
+        }
+        
+        if (foundUser) {
+          // Store matched user data in preview
+          console.log(`✅ Matched: ${key}`);
+          return {
+            ...item,
+            matchedUser: foundUser,
+            isMatched: true,
+            errors: []
+          };
+        } else {
+          // Trainee not found in system
+          console.log(`❌ Not found: ${key}`);
+          return {
+            ...item,
+            isMatched: false,
+            errors: ['Trainee not found in system']
+          };
+        }
+      });
+      console.log('Updated preview data:', updatedPreviewData);
+      
+      setPreviewData(updatedPreviewData);
+      
+      // Pre-select all matched trainees
+      const matchedTrainees = updatedPreviewData
+        .filter(item => item.matchedUser)
+        .map(item => item.matchedUser);
+      setSelectedTrainees(matchedTrainees);
+      
+      // Set lookup results for summary
+      const notFoundCount = updatedPreviewData.filter(item => !item.isMatched && !item.hasError).length;
+      setLookupResults({
+        foundUsers: matchedTrainees,
+        notFoundIdentifiers: updatedPreviewData
+          .filter(item => !item.isMatched && !item.hasError)
+          .map(item => ({ eid: item.eid, email: item.email })),
+        uploadedIdentifiers: identifiers,
+        hasErrors: notFoundCount > 0
+      });
       
     } catch (error) {
       console.error('Lookup error:', error);
-      console.error('Error response:', error.response?.data);
       setErrors([error.response?.data?.message || error.message || 'Failed to lookup trainees. Please try again.']);
     } finally {
       setIsLookingUp(false);
-    }
-  };
-
-  const handleSelectTrainee = (trainee, isSelected) => {
-    if (isSelected) {
-      setSelectedTrainees(prev => [...prev, trainee]);
-    } else {
-      setSelectedTrainees(prev => prev.filter(t => t.id !== trainee.id));
-    }
-  };
-
-  const handleSelectAllTrainees = (isSelected) => {
-    if (isSelected) {
-      setSelectedTrainees(lookupResults?.foundUsers || []);
-    } else {
-      setSelectedTrainees([]);
     }
   };
 
@@ -421,162 +418,35 @@ const BulkImportTraineesModal = ({ show, onClose, onImport, loading = false }) =
                     </tr>
                   </thead>
                   <tbody>
-                    {previewData.map((item) => (
-                      <tr key={item.id} className={item.hasError ? 'table-danger' : ''}>
-                        <td>{item.rowNumber || item.id}</td>
-                        <td>{item.eid || '-'}</td>
-                        <td>{item.email || '-'}</td>
-                        <td className="text-center">
-                          {getStatusIcon(item.hasError ? 'invalid' : 'valid')}
-                        </td>
-                        <td>
-                          {item.errors.length > 0 && (
-                            <small className="text-danger">
-                              {item.errors.length > 1 ? `${item.errors[0]} (+${item.errors.length - 1} more)` : item.errors[0]}
-                            </small>
-                          )}
-                        </td>
-                      </tr>
-                    ))}
+                    {previewData.map((item) => {
+                      const isMatched = item.isMatched === true && !item.hasError;
+                      const hasError = item.hasError || (item.errors && item.errors.length > 0);
+                      
+                      return (
+                        <tr key={item.id} className={hasError ? 'table-danger' : (isMatched ? 'table-success' : '')}>
+                          <td>{item.rowNumber || item.id}</td>
+                          <td>{item.eid || '-'}</td>
+                          <td>{item.email || '-'}</td>
+                          <td className="text-center">
+                            {getStatusIcon(isMatched ? 'valid' : 'invalid')}
+                          </td>
+                          <td>
+                            {item.errors && item.errors.length > 0 && (
+                              <small className="text-danger">
+                                {item.errors.length > 1 ? `${item.errors[0]} (+${item.errors.length - 1} more)` : item.errors[0]}
+                              </small>
+                            )}
+                          </td>
+                        </tr>
+                      );
+                    })}
                   </tbody>
                 </Table>
               </div>
             </Card.Body>
-            <Card.Footer className="bg-light">
-              <Button
-                variant="primary"
-                onClick={handleLookupTrainees}
-                disabled={isLookingUp || previewData.filter(t => !t.hasError).length === 0}
-                className="d-flex align-items-center"
-              >
-                {isLookingUp ? (
-                  <>
-                    <span 
-                      className="spinner-border me-2" 
-                      role="status" 
-                      aria-hidden="true"
-                      style={{ 
-                        width: '1rem', 
-                        height: '1rem',
-                        borderWidth: '0.15em'
-                      }}
-                    ></span>
-                    Looking up...
-                  </>
-                ) : (
-                  <>
-                    <Search className="me-2" size={16} />
-                    Lookup Existing Trainees ({previewData.filter(t => !t.hasError).length} valid)
-                  </>
-                )}
-              </Button>
-            </Card.Footer>
           </Card>
         )}
 
-        {/* Lookup Results - Only show matched trainees from Excel */}
-        {lookupResults && (
-          <Card>
-            <Card.Header className="bg-light">
-              <h6 className="mb-0">
-                Matched Trainees from Excel
-                <span className="ms-2">
-                  <CheckCircle className="text-success me-1" size={16} />
-                  {lookupResults.foundUsers?.length || 0} matched
-                  <XCircle className="text-danger ms-2 me-1" size={16} />
-                  {lookupResults.notFoundIdentifiers?.length || 0} not found
-                </span>
-              </h6>
-            </Card.Header>
-            <Card.Body className="p-0">
-              {lookupResults.foundUsers?.length > 0 ? (
-                <div style={{ maxHeight: '300px', overflowY: 'auto' }}>
-                  <Table hover className="mb-0">
-                    <thead className="bg-light sticky-top">
-                      <tr>
-                        <th>
-                          <Form.Check
-                            type="checkbox"
-                            checked={selectedTrainees.length === (lookupResults.foundUsers?.length || 0) && (lookupResults.foundUsers?.length || 0) > 0}
-                            onChange={(e) => handleSelectAllTrainees(e.target.checked)}
-                          />
-                        </th>
-                        <th>EID</th>
-                        <th>Name</th>
-                        <th>Email</th>
-                        <th>Phone</th>
-                        <th>Status</th>
-                        <th>Matched From Excel</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {lookupResults.foundUsers?.map((trainee) => {
-                        // Find the original identifier from Excel that matched this trainee
-                        const matchedIdentifier = lookupResults.uploadedIdentifiers?.find(
-                          id => id.eid === trainee.eid && id.email === trainee.email
-                        );
-                        
-                        // Only show if there's an exact match
-                        if (!matchedIdentifier) {
-                          return null;
-                        }
-                        
-                        return (
-                          <tr key={trainee.id} className={selectedTrainees.some(t => t.id === trainee.id) ? 'table-success' : ''}>
-                            <td>
-                              <Form.Check
-                                type="checkbox"
-                                checked={selectedTrainees.some(t => t.id === trainee.id)}
-                                onChange={(e) => handleSelectTrainee(trainee, e.target.checked)}
-                              />
-                            </td>
-                            <td>{trainee.eid}</td>
-                            <td>{trainee.firstName} {trainee.lastName}</td>
-                            <td>{trainee.email}</td>
-                            <td>{trainee.phoneNumber}</td>
-                            <td>
-                              <Badge bg={trainee.status === 'ACTIVE' ? 'success' : 'secondary'}>
-                                {trainee.status}
-                              </Badge>
-                            </td>
-                            <td>
-                              <Badge bg="success">
-                                ✓ Exact Match
-                              </Badge>
-                            </td>
-                          </tr>
-                        );
-                      }).filter(Boolean)}
-                    </tbody>
-                  </Table>
-                </div>
-              ) : (
-                <div className="p-4 text-center">
-                  <XCircle size={48} className="text-muted mb-3" />
-                  <h6 className="text-muted">No matching trainees found</h6>
-                  <p className="text-muted mb-0">
-                    None of the uploaded identifiers match existing trainees with TRAINEE role in the system.
-                  </p>
-                </div>
-              )}
-            </Card.Body>
-            {lookupResults.notFoundIdentifiers?.length > 0 && (
-              <Card.Footer className="bg-warning bg-opacity-10">
-                <Alert variant="warning" className="mb-0">
-                  <strong>Identifiers Not Found in System ({lookupResults.notFoundIdentifiers.length}):</strong>
-                  <p className="mb-2 mt-2">These identifiers from your Excel file do not exist in the system:</p>
-                  <ul className="mb-0">
-                    {lookupResults.notFoundIdentifiers.map((identifier, index) => (
-                      <li key={index}>
-                        <strong>{identifier.eid}</strong> - {identifier.email}
-                      </li>
-                    ))}
-                  </ul>
-                </Alert>
-              </Card.Footer>
-            )}
-          </Card>
-        )}
       </Modal.Body>
 
       <Modal.Footer className="border-0 p-4">
@@ -586,23 +456,28 @@ const BulkImportTraineesModal = ({ show, onClose, onImport, loading = false }) =
         </Button>
         
         {lookupResults && lookupResults.foundUsers?.length > 0 && selectedTrainees.length > 0 && (
-          <Button
-            variant="primary"
-            onClick={handleImportSelected}
-            disabled={loading}
+          <PermissionWrapper
+            permission={PERMISSION_IDS.BULK_ENROLL_TRAINEES}
+            fallback={null}
           >
-            {loading ? (
-              <>
-                <span className="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
-                Importing...
-              </>
-            ) : (
-              <>
-                <Upload className="me-2" size={16} />
-                Import Selected ({selectedTrainees.length} matched trainees)
-              </>
-            )}
-          </Button>
+            <Button
+              variant="primary"
+              onClick={handleImportSelected}
+              disabled={loading}
+            >
+              {loading ? (
+                <>
+                  <span className="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
+                  Importing...
+                </>
+              ) : (
+                <>
+                  <Upload className="me-2" size={16} />
+                  Import Selected ({selectedTrainees.length} matched trainees)
+                </>
+              )}
+            </Button>
+          </PermissionWrapper>
         )}
       </Modal.Footer>
     </Modal>

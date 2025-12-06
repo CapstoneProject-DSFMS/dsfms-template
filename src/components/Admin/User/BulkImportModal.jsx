@@ -3,6 +3,7 @@ import { Modal, Button, Table, Row, Col, Card, OverlayTrigger, Tooltip, Alert } 
 import { X, Upload, FileEarmarkExcel, CheckCircle, XCircle, Pencil, Trash, Download } from 'react-bootstrap-icons';
 import * as XLSX from 'xlsx';
 import { userAPI } from '../../../api/user.js';
+import { roleAPI } from '../../../api/role.js';
 
 const BulkImportModal = ({ show, onClose, onImport, loading = false }) => {
   const [dragActive, setDragActive] = useState(false);
@@ -33,7 +34,6 @@ const BulkImportModal = ({ show, onClose, onImport, loading = false }) => {
     'avatar_url',
     'gender',
     'role',
-    'department',
     'certification_number',
     'specialization',
     'years_of_experience',
@@ -373,7 +373,6 @@ const BulkImportModal = ({ show, onClose, onImport, loading = false }) => {
         '', // avatar_url (optional)
         'FEMALE', // gender (M/F or MALE/FEMALE)
         'TRAINER', // role (must match system role name)
-        '', // department (TRAINER should keep this empty)
         'CERT555', // certification_number
         'Cabin Safety', // specialization
         '7', // years_of_experience
@@ -474,13 +473,47 @@ const BulkImportModal = ({ show, onClose, onImport, loading = false }) => {
           raw: false
         });
 
-        if (jsonData.length < 2) {
-          setErrors(['File must contain at least a header row and one data row']);
+        // Filter out completely empty rows (rows where all cells are empty/null/undefined)
+        const nonEmptyRows = jsonData.filter(row => {
+          if (!row || row.length === 0) return false;
+          // Check if row has at least one non-empty cell
+          return row.some(cell => cell !== null && cell !== undefined && cell !== '' && String(cell).trim() !== '');
+        });
+
+        console.log('📊 File parsing results:', {
+          totalRowsParsed: jsonData.length,
+          nonEmptyRowsFound: nonEmptyRows.length,
+          firstRow: jsonData[0],
+          sampleRows: jsonData.slice(0, 3)
+        });
+
+        if (nonEmptyRows.length < 2) {
+          setErrors(['File must contain at least a header row and one data row. Please check if your file has empty rows or formatting issues.']);
+          console.error('❌ File validation failed:', {
+            totalRows: jsonData.length,
+            nonEmptyRows: nonEmptyRows.length,
+            firstFewRows: jsonData.slice(0, 3),
+            allRows: jsonData
+          });
           return;
         }
 
-        const headers = jsonData[0].map(h => h ? h.toString().trim().toLowerCase().replace(/\s+/g, '_') : '');
-        const dataRows = jsonData.slice(1);
+        const headers = nonEmptyRows[0].map(h => h ? h.toString().trim().toLowerCase().replace(/\s+/g, '_') : '');
+        const dataRows = nonEmptyRows.slice(1).filter(row => {
+          // Filter out data rows that are completely empty
+          return row.some(cell => cell !== null && cell !== undefined && cell !== '' && String(cell).trim() !== '');
+        });
+
+        // Check again after filtering data rows
+        if (dataRows.length === 0) {
+          setErrors(['File must contain at least one data row with content. Please check if your data rows are empty or have formatting issues.']);
+          console.error('No valid data rows found after filtering:', {
+            totalRows: jsonData.length,
+            nonEmptyRows: nonEmptyRows.length,
+            dataRowsAfterFilter: dataRows.length
+          });
+          return;
+        }
 
         // Map Excel headers to our field names
         const headerMapping = {
@@ -504,10 +537,6 @@ const BulkImportModal = ({ show, onClose, onImport, loading = false }) => {
           'phone number': 'phone_number',
           'phone': 'phone_number',
           'role': 'role',
-          'department': 'department',
-          'dept': 'department',
-          'dept_id': 'department',
-          'department_id': 'department',
           'certification_number': 'certification_number',
           'certificationnumber': 'certification_number',
           'certification number': 'certification_number',
@@ -670,11 +699,6 @@ const BulkImportModal = ({ show, onClose, onImport, loading = false }) => {
               hasError = true;
               rowErrors.push('Trainer requires years of experience');
             }
-            // Department is NOT allowed for Trainer - validate that it's empty
-            if (userData.department && userData.department.trim() !== '' && userData.department.trim() !== '-') {
-              hasError = true;
-              rowErrors.push('Department is not allowed for Trainer role');
-            }
           } else if (actualRoleName === 'TRAINEE') {
             // Trainee requires date of birth, training batch, passport number, and nation
             if (!userData.date_of_birth || userData.date_of_birth.trim() === '') {
@@ -769,25 +793,6 @@ const BulkImportModal = ({ show, onClose, onImport, loading = false }) => {
         }
       };
 
-      // Handle department based on role
-      // TRAINER: Department is NOT allowed - do not include departmentId
-      // DEPARTMENT_HEAD: Department is optional (nullable) - include departmentId only if provided
-      if (actualRoleName === 'DEPARTMENT_HEAD') {
-        // DEPARTMENT_HEAD can have department (nullable)
-        if (user.department && user.department.trim() !== '' && user.department.trim() !== '-') {
-          // If department is provided, find department ID from departments list
-          // Note: user.department might be name or ID, need to find matching department
-          // For now, assuming it's provided as ID or we need to lookup by name
-          userData.departmentId = user.department;
-        } else {
-          // Department is optional - send null explicitly
-          userData.departmentId = null;
-        }
-      }
-      // For other roles (except TRAINER), add department if provided
-      else if (actualRoleName !== 'TRAINER' && user.department && user.department.trim() !== '' && user.department.trim() !== '-') {
-        userData.departmentId = user.department;
-      }
       // TRAINER: Explicitly do NOT add departmentId field
 
       // Add role-specific profiles based on actual role name
@@ -988,7 +993,6 @@ const BulkImportModal = ({ show, onClose, onImport, loading = false }) => {
                       <th style={{ minWidth: '120px' }}>LAST NAME</th>
                       <th style={{ minWidth: '200px' }}>EMAIL</th>
                       <th style={{ minWidth: '120px' }}>ROLE</th>
-                      <th style={{ minWidth: '100px' }}>DEPARTMENT</th>
                       <th style={{ minWidth: '150px' }}>PHONE NUMBER</th>
                       <th style={{ minWidth: '100px' }}>GENDER</th>
                       <th style={{ minWidth: '150px' }}>CERTIFICATION</th>
@@ -1012,7 +1016,6 @@ const BulkImportModal = ({ show, onClose, onImport, loading = false }) => {
                         <td>{user.last_name || '-'}</td>
                         <td>{user.email || '-'}</td>
                         <td>{user.role || '-'}</td>
-                        <td>{user.department || '-'}</td>
                         <td>{user.phone_number || '-'}</td>
                         <td>
                           {user.gender ? (

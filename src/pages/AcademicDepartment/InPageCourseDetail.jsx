@@ -4,6 +4,11 @@ import { Plus, Upload, Pencil, ArrowLeft, People, Calendar, GeoAlt, FileText, Aw
 import { useNavigate, useParams, useLocation } from 'react-router-dom';
 import { toast } from 'react-toastify';
 import { ROUTES } from '../../constants/routes';
+import { PermissionWrapper } from '../../components/Common';
+import { PERMISSION_IDS } from '../../constants/permissionIds';
+import { useAuth } from '../../hooks/useAuth';
+import { usePermissions } from '../../hooks/usePermissions';
+import { isDepartmentHead } from '../../utils/sidebarUtils';
 import courseAPI from '../../api/course';
 import subjectAPI from '../../api/subject';
 import SubjectTable from '../../components/AcademicDepartment/SubjectTable';
@@ -15,11 +20,21 @@ import DisableSubjectModal from '../../components/AcademicDepartment/DisableSubj
 import AssessmentEventsList from '../../components/AcademicDepartment/AssessmentEventsList';
 import AssessmentEventDetailModal from '../../components/AcademicDepartment/AssessmentEventDetailModal';
 import DeleteBatchEnrollmentsModal from '../../components/AcademicDepartment/DeleteBatchEnrollmentsModal';
+import AddTrainerModal from '../../components/AcademicDepartment/AddTrainerModal';
+import RemoveTrainerModal from '../../components/AcademicDepartment/RemoveTrainerModal';
 
-const InPageCourseDetail = ({ course, department }) => {
+const InPageCourseDetail = ({ course, department } = {}) => {
   const navigate = useNavigate();
-  const { courseId } = useParams();
+  const { courseId, traineeId } = useParams();
   const location = useLocation();
+  const { user } = useAuth();
+  const { hasPermission } = usePermissions();
+  
+  // Check if this is trainee view or academic view
+  const isTraineeView = traineeId !== undefined;
+  
+  // Check if user is Department Head
+  const isDeptHead = isDepartmentHead(user);
   
   // Modal states
   const [showAddSubject, setShowAddSubject] = useState(false);
@@ -31,6 +46,10 @@ const InPageCourseDetail = ({ course, department }) => {
   const [showAssessmentEventDetail, setShowAssessmentEventDetail] = useState(false);
   const [selectedAssessmentEvent, setSelectedAssessmentEvent] = useState(null);
   const [showDeleteBatchEnrollments, setShowDeleteBatchEnrollments] = useState(false);
+  const [showAddTrainer, setShowAddTrainer] = useState(false);
+  const [showRemoveTrainer, setShowRemoveTrainer] = useState(false);
+  const [selectedTrainerToRemove, setSelectedTrainerToRemove] = useState(null);
+  const [isAddingTrainer, setIsAddingTrainer] = useState(false);
   
   // Course details state
   const [courseDetails, setCourseDetails] = useState(null);
@@ -100,7 +119,8 @@ const InPageCourseDetail = ({ course, department }) => {
           department: response.department,
           subjectCount: response.subjectCount || 0,
           traineeCount: response.traineeCount || 0,
-          trainerCount: response.trainerCount || 0
+          trainerCount: response.trainerCount || 0,
+          instructors: response.instructors || [] // Add instructors from API
         };
         
         setCourseDetails(transformedCourseDetails);
@@ -135,7 +155,8 @@ const InPageCourseDetail = ({ course, department }) => {
             department: course.department || department,
             subjectCount: course.subjectCount || 0,
             traineeCount: course.traineeCount || 0,
-            trainerCount: course.trainerCount || 0
+            trainerCount: course.trainerCount || 0,
+            instructors: course.instructors || [] // Add instructors from fallback
           };
           setCourseDetails(fallbackCourseDetails);
           setSubjects([]); // Subjects not available from course prop
@@ -152,15 +173,19 @@ const InPageCourseDetail = ({ course, department }) => {
     if (courseId) {
       loadCourseDetails();
     }
-  }, [courseId, course, department]);
+  }, [courseId]);
   
   const handleBack = () => {
-    // Navigate back to department details using the correct route
-    if (department?.id) {
-      navigate(`/academic/course/${department.id}`); // Keep old route for now (academic-specific)
+    // If this is trainee view, navigate back to enrolled courses
+    if (isTraineeView) {
+      navigate(ROUTES.COURSES_ENROLLED);
     } else {
-      // Fallback to department list if no department info
-      navigate('/academic/departments'); // Keep old route for now (academic-specific)
+      // Navigate back to department details for academic view
+      if (department?.id) {
+        navigate(`/academic/course/${department.id}`);
+      } else {
+        navigate('/academic/departments');
+      }
     }
   };
 
@@ -187,7 +212,7 @@ const InPageCourseDetail = ({ course, department }) => {
           <p className="text-muted">The requested course could not be loaded.</p>
           <Button variant="primary" onClick={handleBack}>
             <ArrowLeft className="me-2" />
-            Back to Department
+            {isTraineeView ? 'Back to Enrolled Courses' : 'Back to Department'}
           </Button>
         </div>
       </Container>
@@ -217,21 +242,17 @@ const InPageCourseDetail = ({ course, department }) => {
     setIsDisabling(true);
     try {
       // Call API to archive subject
-      const response = await subjectAPI.archiveSubject(selectedSubject.id);
+      await subjectAPI.archiveSubject(selectedSubject.id);
       
-      // Show success toast with message from backend
-      const successMessage = response?.message || response?.data?.message || `Successfully archived subject "${selectedSubject.name}"`;
-      toast.success(successMessage, {
+      // Show success toast
+      toast.success(`Successfully archived subject "${selectedSubject.name}"`, {
         autoClose: 3000,
         position: "top-right",
         icon: false
       });
       
-      // Reload course details to get updated subjects
-      const courseResponse = await courseAPI.getCourseById(courseId);
-      if (courseResponse.subjects && Array.isArray(courseResponse.subjects)) {
-        setSubjects(filterArchivedSubjects(courseResponse.subjects));
-      }
+      // OPTIMIZED: Remove subject from state directly instead of refetching entire course
+      setSubjects(prev => prev.filter(s => s.id !== selectedSubject.id));
       
       // Close modal
       setShowDisableSubject(false);
@@ -250,14 +271,15 @@ const InPageCourseDetail = ({ course, department }) => {
   };
 
   const handleEnrollTrainees = () => {
-    navigate(`/academic/course/${course.id}/enroll-trainees`); // Keep old route for now (academic-specific)
+    navigate(`/academic/course/${courseDetails?.id}/enroll-trainees`); // Keep old route for now (academic-specific)
   };
 
   // Modal handlers
   const handleAddSubject = async () => {
     try {
-      // Subjects are already created inside AddSubjectModal.
-      // Only refresh the course details to include the newly added subject.
+      // OPTIMIZED: Reload subjects from database after adding new subject
+      // AddSubjectModal will call this callback after successful creation
+      // We need to refetch subjects to get the newly added subject
       const response = await courseAPI.getCourseById(courseId);
       if (response.subjects && Array.isArray(response.subjects)) {
         setSubjects(filterArchivedSubjects(response.subjects));
@@ -276,7 +298,7 @@ const InPageCourseDetail = ({ course, department }) => {
     // Call bulk import API and return response
     const result = await subjectAPI.bulkImportSubjects(subjectsData);
     
-    // Reload course details to get updated subjects
+    // OPTIMIZED: Reload subjects to include newly imported subjects
     const response = await courseAPI.getCourseById(courseId);
     if (response.subjects && Array.isArray(response.subjects)) {
       setSubjects(filterArchivedSubjects(response.subjects));
@@ -293,33 +315,105 @@ const InPageCourseDetail = ({ course, department }) => {
       // Call API to update course
       await courseAPI.updateCourse(courseId, updatedCourseData);
       
-      // Reload course details to get updated data
-      const response = await courseAPI.getCourseById(courseId);
-      const transformedCourseDetails = {
-        id: response.id || courseId,
-        name: response.name,
-        code: response.code,
-        description: response.description,
-        maxTrainees: response.maxNumTrainee,
-        maxNumTrainee: response.maxNumTrainee,
-        venue: response.venue,
-        note: response.note,
-        passScore: response.passScore,
-        startDate: response.startDate ? new Date(response.startDate).toISOString().split('T')[0] : '',
-        endDate: response.endDate ? new Date(response.endDate).toISOString().split('T')[0] : '',
-        level: response.level,
-        status: response.status,
-        department: response.department,
-        subjectCount: response.subjectCount || 0,
-        traineeCount: response.traineeCount || 0,
-        trainerCount: response.trainerCount || 0,
-        subjects: response.subjects || []
-      };
-      setCourseDetails(transformedCourseDetails);
+      // OPTIMIZED: Update course details directly from form data instead of full refetch
+      setCourseDetails(prev => ({
+        ...prev,
+        ...updatedCourseData,
+        id: prev.id,
+        subjectCount: prev.subjectCount,
+        traineeCount: prev.traineeCount,
+        trainerCount: prev.trainerCount,
+        subjects: prev.subjects
+      }));
       
       setShowEditCourse(false);
-      } catch {
+    } catch (error) {
       // Handle error - could show toast notification
+      console.error('Error updating course:', error);
+    }
+  };
+
+  const handleAddTrainer = async (trainerData) => {
+    try {
+      setIsAddingTrainer(true);
+      
+      // Call API to assign trainer to course
+      // POST {{baseUrl}}/courses/{courseId}/trainers
+      await courseAPI.assignTrainerToCourse(courseId, trainerData);
+      
+      toast.success('Trainer assigned successfully!', {
+        autoClose: 3000,
+        position: "top-right"
+      });
+      
+      setShowAddTrainer(false);
+      
+      // Reload course details to get updated instructors list
+      const response = await courseAPI.getCourseById(courseId);
+      if (response) {
+        setCourseDetails(prev => ({
+          ...prev,
+          instructors: response.instructors || []
+        }));
+      }
+    } catch (error) {
+      const errorMessage = error?.response?.data?.message || error?.message || 'Failed to assign trainer';
+      toast.error(`Error: ${errorMessage}`, {
+        autoClose: 4000,
+        position: "top-right",
+        icon: false
+      });
+      console.error('Error assigning trainer:', error);
+    } finally {
+      setIsAddingTrainer(false);
+    }
+  };
+
+  const handleRemoveTrainer = async (trainerId) => {
+    if (!trainerId) return;
+    
+    // Find trainer object for modal
+    const trainer = courseDetails?.instructors?.find(instr => instr.id === trainerId);
+    setSelectedTrainerToRemove(trainer);
+    setShowRemoveTrainer(true);
+  };
+
+  const handleConfirmRemoveTrainer = async (trainerId) => {
+    try {
+      setIsAddingTrainer(true);
+      
+      // Call API to remove trainer from course
+      // DELETE {{baseUrl}}/courses/{courseId}/trainers/{trainerId}
+      await courseAPI.removeTrainerFromCourse(courseId, trainerId);
+      
+      toast.success('Trainer removed successfully!', {
+        autoClose: 3000,
+        position: "top-right"
+      });
+      
+      // Update instructors list by removing the trainer
+      setCourseDetails(prev => ({
+        ...prev,
+        instructors: (prev.instructors || []).filter(instr => instr.id !== trainerId),
+        trainerCount: Math.max(0, (prev.trainerCount || 0) - 1)
+      }));
+      
+      setShowRemoveTrainer(false);
+      setSelectedTrainerToRemove(null);
+    } catch (error) {
+      // Extract error message from API response
+      const errorMessage = error?.response?.data?.message || error?.message || 'Failed to remove trainer';
+      
+      // Show error toast
+      toast.error(`Error: ${errorMessage}`, {
+        autoClose: 4000,
+        position: "top-right",
+        icon: false
+      });
+      
+      console.error('Error removing trainer:', error);
+    } finally {
+      setIsAddingTrainer(false);
     }
   };
 
@@ -338,7 +432,7 @@ const InPageCourseDetail = ({ course, department }) => {
         </Button>
         <div>
           <h4 className="mb-0 text-primary">
-            <strong>{course.name}</strong> — {course.code}
+            <strong>{courseDetails?.name || 'Loading...'}</strong> — {courseDetails?.code || ''}
           </h4>
           <small className="text-muted">Course Details</small>
         </div>
@@ -348,30 +442,55 @@ const InPageCourseDetail = ({ course, department }) => {
       <div className="d-flex justify-content-between align-items-center mb-2">
         {/* Left Group - Enroll Trainees */}
         <div className="d-flex">
-          <Button size="sm" variant="primary" onClick={handleEnrollTrainees}>
-            <People size={14} className="me-1" /> Enroll Trainees
-          </Button>
+          <PermissionWrapper 
+            permission={PERMISSION_IDS.ENROLL_SINGLE_TRAINEE}
+            fallback={null}
+          >
+            <Button size="sm" variant="primary" onClick={handleEnrollTrainees}>
+              <People size={14} className="me-1" /> Enroll Trainees
+            </Button>
+          </PermissionWrapper>
         </div>
 
         {/* Right Group - Subject Management & Edit Course */}
         <div className="d-flex gap-2">
-          <Button size="sm" variant="outline-secondary" onClick={() => setShowEditCourse(true)}>
-            <Pencil size={14} className="me-1" /> Edit Course
-          </Button>
-          <div className="vr" style={{ height: '24px', margin: '0 8px' }}></div>
-          <Button size="sm" variant="primary" onClick={() => setShowAddSubject(true)}>
-            <Plus size={14} className="me-1" /> Add Subject
-          </Button>
-          <Button size="sm" variant="outline-primary" onClick={() => setShowBulkImport(true)}>
-            <Upload size={14} className="me-1" /> Import Bulk Subjects
-          </Button>
-          <Button 
-            size="sm" 
-            variant="outline-danger" 
-            onClick={() => setShowDeleteBatchEnrollments(true)}
+          <PermissionWrapper 
+            permission={PERMISSION_IDS.UPDATE_COURSE}
+            fallback={null}
           >
-            <Trash size={14} className="me-1" /> Delete All Subject Enrollments In Course by BatchCode
-          </Button>
+            <Button size="sm" variant="outline-secondary" onClick={() => setShowEditCourse(true)}>
+              <Pencil size={14} className="me-1" /> Edit Course
+            </Button>
+          </PermissionWrapper>
+          <div className="vr" style={{ height: '24px', margin: '0 8px' }}></div>
+          <PermissionWrapper 
+            permission={PERMISSION_IDS.CREATE_SUBJECT}
+            fallback={null}
+          >
+            <Button size="sm" variant="primary" onClick={() => setShowAddSubject(true)}>
+              <Plus size={14} className="me-1" /> Add Subject
+            </Button>
+          </PermissionWrapper>
+          <PermissionWrapper 
+            permission={PERMISSION_IDS.CREATE_BULK_SUBJECTS}
+            fallback={null}
+          >
+            <Button size="sm" variant="outline-primary" onClick={() => setShowBulkImport(true)}>
+              <Upload size={14} className="me-1" /> Import Bulk Subjects
+            </Button>
+          </PermissionWrapper>
+          <PermissionWrapper 
+            permission={PERMISSION_IDS.REMOVE_TRAINEE_FROM_ENROLLMENT}
+            fallback={null}
+          >
+            <Button 
+              size="sm" 
+              variant="outline-danger" 
+              onClick={() => setShowDeleteBatchEnrollments(true)}
+            >
+              <Trash size={14} className="me-1" /> Delete All Subject Enrollments In Course by BatchCode
+            </Button>
+          </PermissionWrapper>
         </div>
       </div>
 
@@ -414,40 +533,63 @@ const InPageCourseDetail = ({ course, department }) => {
                   Subjects
                 </Nav.Link>
               </Nav.Item>
-              <Nav.Item>
-                <Nav.Link 
-                  eventKey="trainees" 
-                  className="d-flex align-items-center"
-                  style={{ 
-                    border: 'none',
-                    backgroundColor: 'transparent',
-                    color: '#ffffff',
-                    fontWeight: activeTab === 'trainees' ? '600' : '400',
-                    opacity: activeTab === 'trainees' ? '1' : '0.7',
-                    borderRadius: '4px 4px 0 0'
-                  }}
-                >
-                  <People className="me-2" size={16} />
-                  Trainees Roster
-                </Nav.Link>
-              </Nav.Item>
-              <Nav.Item>
-                <Nav.Link 
-                  eventKey="assessment-events" 
-                  className="d-flex align-items-center"
-                  style={{ 
-                    border: 'none',
-                    backgroundColor: 'transparent',
-                    color: '#ffffff',
-                    fontWeight: activeTab === 'assessment-events' ? '600' : '400',
-                    opacity: activeTab === 'assessment-events' ? '1' : '0.7',
-                    borderRadius: '4px 4px 0 0'
-                  }}
-                >
-                  <CalendarEvent className="me-2" size={16} />
-                  All Related Assessment Events
-                </Nav.Link>
-              </Nav.Item>
+              {hasPermission(PERMISSION_IDS.ENROLL_SINGLE_TRAINEE) && (
+                <Nav.Item>
+                  <Nav.Link 
+                    eventKey="trainees" 
+                    className="d-flex align-items-center"
+                    style={{ 
+                      border: 'none',
+                      backgroundColor: 'transparent',
+                      color: '#ffffff',
+                      fontWeight: activeTab === 'trainees' ? '600' : '400',
+                      opacity: activeTab === 'trainees' ? '1' : '0.7',
+                      borderRadius: '4px 4px 0 0'
+                    }}
+                  >
+                    <People className="me-2" size={16} />
+                    Trainees Roster
+                  </Nav.Link>
+                </Nav.Item>
+              )}
+              {hasPermission(PERMISSION_IDS.ASSIGN_TRAINERS) && (
+                <Nav.Item>
+                  <Nav.Link 
+                    eventKey="assign-trainer" 
+                    className="d-flex align-items-center"
+                    style={{ 
+                      border: 'none',
+                      backgroundColor: 'transparent',
+                      color: '#ffffff',
+                      fontWeight: activeTab === 'assign-trainer' ? '600' : '400',
+                      opacity: activeTab === 'assign-trainer' ? '1' : '0.7',
+                      borderRadius: '4px 4px 0 0'
+                    }}
+                  >
+                    <PersonCheck className="me-2" size={16} />
+                    Assign Trainer
+                  </Nav.Link>
+                </Nav.Item>
+              )}
+              {!isTraineeView && !isDeptHead && (
+                <Nav.Item>
+                  <Nav.Link 
+                    eventKey="assessment-events" 
+                    className="d-flex align-items-center"
+                    style={{ 
+                      border: 'none',
+                      backgroundColor: 'transparent',
+                      color: '#ffffff',
+                      fontWeight: activeTab === 'assessment-events' ? '600' : '400',
+                      opacity: activeTab === 'assessment-events' ? '1' : '0.7',
+                      borderRadius: '4px 4px 0 0'
+                    }}
+                  >
+                    <CalendarEvent className="me-2" size={16} />
+                    All Related Assessment Events
+                  </Nav.Link>
+                </Nav.Item>
+              )}
             </Nav>
           </Card.Header>
           
@@ -613,24 +755,118 @@ const InPageCourseDetail = ({ course, department }) => {
               </Tab.Pane>
 
               {/* Trainees Tab */}
-              <Tab.Pane eventKey="trainees" style={{ height: '100%' }}>
-                <EnrolledTraineesTable 
-                  courseId={courseId}
-                  loading={false}
-                  title="Trainees Roster"
-                />
+              {hasPermission(PERMISSION_IDS.ENROLL_SINGLE_TRAINEE) && (
+                <Tab.Pane eventKey="trainees" style={{ height: '100%' }}>
+                  <EnrolledTraineesTable 
+                    courseId={courseId}
+                    loading={false}
+                    title="Trainees Roster"
+                  />
+                </Tab.Pane>
+              )}
+
+              {/* Assign Trainer Tab */}
+              {hasPermission(PERMISSION_IDS.ASSIGN_TRAINERS) && (
+                <Tab.Pane eventKey="assign-trainer" style={{ height: '100%' }}>
+                <div className="p-4">
+                  <div className="d-flex justify-content-between align-items-center mb-4">
+                    <h6 style={{ 
+                      color: '#1b3c53', 
+                      fontWeight: '800', 
+                      fontSize: '1.3rem',
+                      letterSpacing: '0.5px',
+                      textTransform: 'uppercase',
+                      borderBottom: '2px solid #d2c1b6',
+                      paddingBottom: '0.5rem',
+                      margin: 0
+                    }}>
+                      Assign Trainer to Course
+                    </h6>
+                    <Button 
+                      variant="primary" 
+                      size="sm"
+                      onClick={() => setShowAddTrainer(true)}
+                    >
+                      <Plus size={16} className="me-2" />
+                      Add Trainer
+                    </Button>
+                  </div>
+
+                  {/* Trainers Table */}
+                  {courseDetails?.instructors && courseDetails.instructors.length > 0 ? (
+                    <div className="table-responsive">
+                      <table className="table table-hover table-sm">
+                        <thead className="table-light">
+                          <tr>
+                            <th style={{ width: '5%' }}>#</th>
+                            <th style={{ width: '15%' }}>EID</th>
+                            <th style={{ width: '20%' }}>Name</th>
+                            <th style={{ width: '25%' }}>Email</th>
+                            <th style={{ width: '15%' }}>Phone</th>
+                            <th style={{ width: '15%' }}>Role</th>
+                            <th style={{ width: '5%', textAlign: 'center' }}>Action</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {courseDetails.instructors.map((trainer, index) => (
+                            <tr key={trainer.id}>
+                              <td>{index + 1}</td>
+                              <td>
+                                <Badge bg="info">{trainer.eid}</Badge>
+                              </td>
+                              <td>
+                                <strong>{trainer.firstName} {trainer.middleName} {trainer.lastName}</strong>
+                              </td>
+                              <td>{trainer.email}</td>
+                              <td>{trainer.phoneNumber}</td>
+                              <td>
+                                {trainer.roleInCourse && trainer.roleInCourse.length > 0 ? (
+                                  trainer.roleInCourse.map(role => (
+                                    <Badge key={role} bg="success" className="me-1">
+                                      {role}
+                                    </Badge>
+                                  ))
+                                ) : (
+                                  <span className="text-muted">-</span>
+                                )}
+                              </td>
+                              <td style={{ textAlign: 'center' }}>
+                                <Button
+                                  variant="danger"
+                                  size="sm"
+                                  onClick={() => handleRemoveTrainer(trainer.id)}
+                                  disabled={isAddingTrainer}
+                                  title="Remove trainer from course"
+                                >
+                                  <Trash size={14} />
+                                </Button>
+                              </td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  ) : (
+                    <div className="alert alert-info">
+                      No trainers assigned yet. Click "Add Trainer" button to assign a trainer to this course.
+                    </div>
+                  )}
+                </div>
               </Tab.Pane>
+              )}
 
               {/* Assessment Events Tab */}
-              <Tab.Pane eventKey="assessment-events" style={{ height: '100%' }}>
-                <AssessmentEventsList
-                  courseId={courseId}
-                  onView={(event) => {
-                    setSelectedAssessmentEvent(event);
-                    setShowAssessmentEventDetail(true);
-                  }}
-                />
-              </Tab.Pane>
+              {!isTraineeView && !isDeptHead && (
+                <Tab.Pane eventKey="assessment-events" style={{ height: '100%' }}>
+                  <AssessmentEventsList
+                    courseId={courseId}
+                    onView={(event) => {
+                      setSelectedAssessmentEvent(event);
+                      setShowAssessmentEventDetail(true);
+                    }}
+                  />
+                </Tab.Pane>
+              )}
             </Tab.Content>
           </Card.Body>
         </Tab.Container>
@@ -642,6 +878,8 @@ const InPageCourseDetail = ({ course, department }) => {
         onClose={() => setShowAddSubject(false)}
         onSave={handleAddSubject}
         courseId={courseId}
+        courseStartDate={courseDetails?.startDate}
+        courseEndDate={courseDetails?.endDate}
       />
 
       <BulkImportSubjectsModal
@@ -649,6 +887,8 @@ const InPageCourseDetail = ({ course, department }) => {
         onClose={() => setShowBulkImport(false)}
         onImport={handleBulkImportSubjects}
         courseId={courseId}
+        courseStartDate={courseDetails?.startDate}
+        courseEndDate={courseDetails?.endDate}
       />
 
       <EditCourseModal
@@ -656,6 +896,25 @@ const InPageCourseDetail = ({ course, department }) => {
         onClose={() => setShowEditCourse(false)}
         onSave={handleEditCourse}
         course={courseDetails || course}
+      />
+
+      <AddTrainerModal
+        show={showAddTrainer}
+        onClose={() => setShowAddTrainer(false)}
+        onSave={handleAddTrainer}
+        loading={isAddingTrainer}
+        courseId={courseId}
+      />
+
+      <RemoveTrainerModal
+        show={showRemoveTrainer}
+        onClose={() => {
+          setShowRemoveTrainer(false);
+          setSelectedTrainerToRemove(null);
+        }}
+        onConfirm={handleConfirmRemoveTrainer}
+        trainer={selectedTrainerToRemove}
+        loading={isAddingTrainer}
       />
 
       <DisableSubjectModal

@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { Container, Row, Col, Button, Card, Alert } from 'react-bootstrap';
-import { ArrowLeft, FileEarmarkPdf } from 'react-bootstrap-icons';
+import { ArrowLeft, FileEarmarkPdf, CheckCircle, XCircle } from 'react-bootstrap-icons';
 import { useParams, useNavigate } from 'react-router-dom';
 import { PermissionWrapper } from '../../components/Common';
 import { PERMISSION_IDS } from '../../constants/permissionIds';
@@ -26,7 +26,6 @@ const TemplateDetailPage = () => {
   const [showRejectModal, setShowRejectModal] = useState(false);
   const [rejectComment, setRejectComment] = useState('');
   const [reviewing, setReviewing] = useState(false);
-  const [exportingPDF, setExportingPDF] = useState(false);
 
   const loadTemplateDetail = useCallback(async () => {
     if (!templateId) {
@@ -95,71 +94,70 @@ const TemplateDetailPage = () => {
     loadTemplateDetail();
   }, [loadTemplateDetail]);
 
-  // Load PDF when preview tab is active
+  // Load PDF when tab changes to preview
   useEffect(() => {
-    const loadPDF = async () => {
-      if (activeTab === 'preview' && template?.formId && template?.templateContent) {
+    if (activeTab === 'preview' && template?.id && !pdfUrl) {
+      const loadPreviewPDF = async () => {
+        if (!template?.id) {
+          toast.warning('Template ID is not available');
+          return;
+        }
+
         try {
           setLoadingPDF(true);
-          const pdfBlob = await templateAPI.getTemplatePDF(template.formId);
-          const url = URL.createObjectURL(pdfBlob);
-          setPdfUrl(url);
+          const templateId = template.id;
+          
+          console.log('Loading PDF config with ID:', templateId);
+          
+          // Get PDF blob from API
+          const pdfBlob = await templateAPI.getTemplatePdfConfig(templateId);
+          
+          console.log('PDF Blob received:', pdfBlob);
+          console.log('PDF Blob type:', pdfBlob.type);
+          console.log('PDF Blob size:', pdfBlob.size);
+          
+          // Create object URL from blob (this is required for iframe to display PDF)
+          const pdfObjectUrl = URL.createObjectURL(pdfBlob);
+          console.log('Created object URL:', pdfObjectUrl);
+          
+          setPdfUrl(pdfObjectUrl);
         } catch (error) {
-          console.error('Error loading PDF:', error);
-          setPdfUrl(null);
+          console.error('Error loading PDF preview:', error);
           toast.error('Failed to load PDF preview');
         } finally {
           setLoadingPDF(false);
         }
-      } else {
-        // Clean up PDF URL when tab changes
-        setPdfUrl(prevUrl => {
-          if (prevUrl) {
-            URL.revokeObjectURL(prevUrl);
-          }
-          return null;
-        });
+      };
+
+      loadPreviewPDF();
+    }
+  }, [activeTab, template?.id, pdfUrl]);
+
+  // Clean up PDF URL when component unmounts
+  useEffect(() => {
+    return () => {
+      if (pdfUrl) {
+        URL.revokeObjectURL(pdfUrl);
       }
     };
-
-    loadPDF();
-
-    // Cleanup function
-    return () => {
-      setPdfUrl(prevUrl => {
-        if (prevUrl) {
-          URL.revokeObjectURL(prevUrl);
-        }
-        return null;
-      });
-    };
-  }, [activeTab, template?.formId, template?.templateContent]);
+  }, [pdfUrl]);
 
 
   const handleExportPDF = async () => {
-    if (!template?.formId && !template?.id) {
-      toast.warning('Template ID is not available');
+    if (!template?.formId) {
+      toast.warning('Template form ID is not available');
       return;
     }
 
     try {
-      setExportingPDF(true);
-      const templateFormId = template.formId || template.id;
-      
-      // Call API to get PDF blob - this takes time because:
-      // 1. Network request to server (network latency)
-      // 2. Server needs to process/generate the PDF (server processing time)
-      // 3. Download the PDF blob from server (file size dependent)
-      const pdfBlob = await templateAPI.getTemplatePDF(templateFormId);
+      // Call API to get PDF blob
+      const pdfBlob = await templateAPI.getTemplatePDF(template.formId);
       
       // Create download link
       const url = URL.createObjectURL(pdfBlob);
       const link = document.createElement('a');
       link.href = url;
-      
-      // Use template name for filename
-      const fileName = `${template.name || 'template'}.pdf`;
-      link.download = fileName;
+      link.download = `${template.name || 'template'}.pdf`;
       
       document.body.appendChild(link);
       link.click();
@@ -167,25 +165,15 @@ const TemplateDetailPage = () => {
       
       // Clean up
       URL.revokeObjectURL(url);
+      toast.success('PDF downloaded successfully');
     } catch (error) {
       console.error('Error downloading PDF:', error);
-      toast.error(error.response?.data?.message || 'Failed to download template PDF');
-    } finally {
-      setExportingPDF(false);
+      toast.error(error.response?.data?.message || 'Failed to download PDF');
     }
   };
 
   const handleBackToList = () => {
     navigate(ROUTES.TEMPLATES);
-  };
-
-  const handleViewTemplateConfig = () => {
-    if (template?.templateConfig) {
-      // Open template config in new tab
-      window.open(template.templateConfig, '_blank', 'noopener,noreferrer');
-    } else {
-      toast.warning('Template config is not available');
-    }
   };
 
   const handleApprove = async () => {
@@ -317,30 +305,53 @@ const TemplateDetailPage = () => {
                 <p className="text-muted mb-0">{template.description}</p>
               </div>
             </div>
-            <PermissionWrapper 
-              permissions={[PERMISSION_IDS.VIEW_ALL_TEMPLATES]}
-              fallback={null}
-            >
-              <Button
-                variant="primary"
-                size="sm"
-                onClick={handleExportPDF}
-                className="d-flex align-items-center"
-                disabled={exportingPDF}
+            <div className="d-flex align-items-center gap-2">
+              <PermissionWrapper
+                permission={PERMISSION_IDS.APPROVE_DENY_TEMPLATE}
+                fallback={null}
               >
-                {exportingPDF ? (
-                  <>
-                    <span className="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
-                    Exporting...
-                  </>
-                ) : (
-                  <>
-                <FileEarmarkPdf className="me-1" size={16} />
-                Export PDF
-                  </>
-                )}
-              </Button>
-            </PermissionWrapper>
+                <Button
+                  variant="success"
+                  size="sm"
+                  onClick={handleOpenApproveModal}
+                  className="d-flex align-items-center"
+                  disabled={template?.status !== 'PENDING' || reviewing}
+                >
+                  <CheckCircle className="me-2" size={16} />
+                  Approve
+                </Button>
+              </PermissionWrapper>
+              <PermissionWrapper
+                permission={PERMISSION_IDS.APPROVE_DENY_TEMPLATE}
+                fallback={null}
+              >
+                <Button
+                  variant="danger"
+                  size="sm"
+                  onClick={handleOpenRejectModal}
+                  className="d-flex align-items-center"
+                  disabled={template?.status !== 'PENDING' || reviewing}
+                >
+                  <XCircle className="me-2" size={16} />
+                  Reject
+                </Button>
+              </PermissionWrapper>
+              <PermissionWrapper
+                permission={PERMISSION_IDS.DOWNLOAD_TEMPLATE_AS_PDF}
+                fallback={null}
+              >
+                <Button
+                  variant="primary"
+                  size="sm"
+                  onClick={handleExportPDF}
+                  className="d-flex align-items-center"
+                  disabled={!template?.formId}
+                >
+                  <FileEarmarkPdf className="me-1" size={16} />
+                  Download PDF
+                </Button>
+              </PermissionWrapper>
+            </div>
           </div>
         </Col>
       </Row>
@@ -383,10 +394,6 @@ const TemplateDetailPage = () => {
                   template={template}
                   pdfUrl={pdfUrl}
                   loadingPDF={loadingPDF}
-                  onViewTemplateConfig={handleViewTemplateConfig}
-                  onOpenApproveModal={handleOpenApproveModal}
-                  onOpenRejectModal={handleOpenRejectModal}
-                  reviewing={reviewing}
                 />
               )}
 

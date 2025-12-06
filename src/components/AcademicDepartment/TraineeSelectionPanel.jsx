@@ -1,7 +1,10 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Card, Form, Button, Badge, Dropdown, Spinner } from 'react-bootstrap';
 import { Search, Plus, X, ChevronDown, People, CheckCircle } from 'react-bootstrap-icons';
+import { PermissionWrapper } from '../Common';
+import { PERMISSION_IDS } from '../../constants/permissionIds';
 import traineeAPI from '../../api/trainee';
+import './TraineeSelectionPanel.css';  // ← ADD CUSTOM CSS
 
 const TraineeSelectionPanel = ({ selectedTrainees, onSelectionChange }) => {
   const [searchTerm, setSearchTerm] = useState('');
@@ -38,47 +41,49 @@ const TraineeSelectionPanel = ({ selectedTrainees, onSelectionChange }) => {
     setLoadingTrainees(true);
     setError(null);
     try {
-      
       const response = await traineeAPI.getTraineesForEnrollment();
       
- 
-      // Handle public API response format: { data: [...], totalItems: ... }
+      // Handle different response formats:
+      // Format 1: { message: "...", data: { trainees: [...] } } (wrapped)
+      // Format 2: { trainees: [...], totalItems: ... }
+      // Format 3: Direct array [...]
       let traineesData = [];
-      if (response && response.data) {
-        if (response.data.users && Array.isArray(response.data.users)) {
-          // Old format: { data: { users: [...] } }
-          traineesData = response.data.users;
-        } else if (response.data.data && Array.isArray(response.data.data)) {
-          // New format: { data: [...] }
-          traineesData = response.data.data;
-        } else if (Array.isArray(response.data)) {
-          // Direct array format
-          traineesData = response.data;
-        }
+      
+      if (response?.data?.trainees && Array.isArray(response.data.trainees)) {
+        // Wrapped format: { data: { trainees: [...] } }
+        traineesData = response.data.trainees;
+      } else if (response?.trainees && Array.isArray(response.trainees)) {
+        // Format: { trainees: [...] }
+        traineesData = response.trainees;
+      } else if (Array.isArray(response)) {
+        // Direct array format
+        traineesData = response;
       }
       
       // Transform API data to match component format
-      // Public API returns: { id, eid, fullName, email, departmentId, departmentName, avatarUrl }
+      // API returns: { id, eid, firstName, middleName, lastName, email, avatarUrl, departmentId, department: { id, name } }
       const transformedTrainees = traineesData.map(trainee => {
-        // Handle both old format (firstName, lastName) and new format (fullName)
-        let name = trainee.fullName || '';
-        let firstName = trainee.firstName || '';
-        let lastName = trainee.lastName || '';
+        // Combine firstName, middleName, lastName into full name
+        const nameParts = [
+          trainee.firstName,
+          trainee.middleName,
+          trainee.lastName
+        ].filter(Boolean); // Remove null/undefined/empty strings
         
-        if (!name && (firstName || lastName)) {
-          name = `${firstName} ${lastName}`.trim();
-        }
+        const name = nameParts.length > 0 
+          ? nameParts.join(' ').trim()
+          : trainee.eid; // Fallback to eid if no name
         
         return {
           id: trainee.id,
           eid: trainee.eid,
-          name: name || trainee.eid, // Fallback to eid if no name
-          firstName: firstName,
-          lastName: lastName,
+          name: name,
+          firstName: trainee.firstName || '',
+          lastName: trainee.lastName || '',
           email: trainee.email,
           status: trainee.status || 'ACTIVE', // Default to ACTIVE if not provided
           departmentId: trainee.departmentId,
-          departmentName: trainee.departmentName
+          departmentName: trainee.department?.name || ''
         };
       });
       
@@ -123,16 +128,16 @@ const TraineeSelectionPanel = ({ selectedTrainees, onSelectionChange }) => {
   
 
   return (
-    <Card className="d-flex flex-column h-100" style={{ border: '1px solid #e9ecef', boxShadow: '0 4px 12px rgba(0,0,0,0.15)', overflow: 'hidden', marginBottom: '2rem' }}>
-      <Card.Header className="bg-gradient-primary-custom text-white border-0">
+    <Card className="trainee-selection-card">
+      <Card.Header className="bg-gradient-primary-custom text-white border-0 trainee-card-header">
         <div className="d-flex justify-content-between align-items-center">
           <h6 className="mb-0 text-white">Add Trainees</h6>
         </div>
       </Card.Header>
-      <Card.Body className="p-0 d-flex flex-column" style={{ height: '500px' }}>
+      <Card.Body className="trainee-card-body p-0">
 
         {/* Available Trainees - Top Section */}
-        <div className="flex-shrink-0" style={{ position: 'relative', paddingBottom: '1rem' }} ref={dropdownRef}>
+        <div className="trainee-available-section" ref={dropdownRef}>
           {/* Search Bar */}
           <div className="p-2 border-bottom">
             <Form.Control
@@ -209,7 +214,12 @@ const TraineeSelectionPanel = ({ selectedTrainees, onSelectionChange }) => {
                         transition: 'all 0.3s ease',
                         opacity: isSelected ? 0.6 : 1
                       }}
-                      onClick={() => !isSelected && handleAddTrainee(trainee)}
+                      onClick={() => {
+                        if (!isSelected) {
+                          // Permission check is handled at parent level
+                          handleAddTrainee(trainee);
+                        }
+                      }}
                     >
                       <div style={{ minWidth: 0, overflow: 'hidden', flex: 1 }}>
                         <div className="fw-semibold text-truncate" title={trainee.name}>{trainee.name}</div>
@@ -229,17 +239,18 @@ const TraineeSelectionPanel = ({ selectedTrainees, onSelectionChange }) => {
         </div>
 
         {/* Selected Trainees - Main Focus at Bottom */}
-        <div className="border-top flex-grow-1 d-flex flex-column" style={{ minHeight: 0, marginTop: '1rem' }}>
-          <div className="p-2 bg-gradient-primary-custom text-white border-bottom">
+        <div className="trainee-selected-section">
+          <div className="trainee-selected-header">
             <small className="text-white fw-semibold">Selected Trainees ({selectedTrainees.length})</small>
           </div>
-          <div style={{ overflowY: 'auto', flex: 1, minHeight: 0 }}>
+          <div className="trainee-selected-list">
             {selectedTrainees.length === 0 ? (
               <div className="p-3 text-center text-muted">
                 <p className="mb-0">No trainees selected</p>
               </div>
             ) : (
-              selectedTrainees.map(trainee => {
+              <div style={{ display: 'flex', flexDirection: 'column', width: '100%' }}>
+                {selectedTrainees.map(trainee => {
                 const isJustAdded = justAddedTraineeId === trainee.id;
                 return (
                   <div 
@@ -249,7 +260,8 @@ const TraineeSelectionPanel = ({ selectedTrainees, onSelectionChange }) => {
                       minWidth: 0,
                       backgroundColor: isJustAdded ? 'rgba(40, 167, 69, 0.1)' : 'transparent',
                       animation: isJustAdded ? 'slideInRight 0.5s ease-out, highlightPulse 0.5s ease-out' : 'none',
-                      transition: 'background-color 0.3s ease'
+                      transition: 'background-color 0.3s ease',
+                      flexShrink: 0
                     }}
                   >
                     <div style={{ minWidth: 0, overflow: 'hidden', flex: 1 }}>
@@ -266,7 +278,8 @@ const TraineeSelectionPanel = ({ selectedTrainees, onSelectionChange }) => {
                     </Button>
                   </div>
                 );
-              })
+              })}
+              </div>
             )}
           </div>
         </div>

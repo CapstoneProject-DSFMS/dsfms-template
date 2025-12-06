@@ -13,24 +13,19 @@ import { ROUTES } from '../constants/routes';
  */
 export const useFirstAccessibleRoute = (fallbackPath = ROUTES.DASHBOARD) => {
   const { user, userPermissions, isLoading } = useAuth();
-  const { hasPermission, hasAnyPermission } = usePermissions();
+  const { hasPermission } = usePermissions();
 
-  // Calculate first accessible route
   const firstRoute = useMemo(() => {
-    // If still loading, return fallback (will be recalculated when permissions load)
     if (isLoading || !user || !userPermissions || userPermissions.length === 0) {
       return fallbackPath;
     }
 
-    // Get first accessible route
     return getFirstAccessibleRoute(
       user,
-      userPermissions,
       hasPermission,
-      hasAnyPermission,
       fallbackPath
     );
-  }, [user, userPermissions, hasPermission, hasAnyPermission, isLoading, fallbackPath]);
+  }, [user, userPermissions, hasPermission, isLoading, fallbackPath]);
 
   return {
     firstRoute,

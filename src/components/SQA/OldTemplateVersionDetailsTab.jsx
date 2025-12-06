@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Row, Col, Badge, Alert, Card, Button } from 'react-bootstrap';
-import { Clock, CheckCircle, Calendar, Person, FileEarmarkPdf, Download } from 'react-bootstrap-icons';
+import { Clock, CheckCircle, Calendar, Person, Download } from 'react-bootstrap-icons';
 import templateAPI from '../../api/template';
 import { toast } from 'react-toastify';
 
@@ -98,31 +98,6 @@ const OldTemplateVersionDetailsTab = ({ template }) => {
     }
   };
 
-  const handleExportPDF = async () => {
-    if (!oldVersion?.formId && !oldVersion?.id) {
-      toast.warning('Template ID is not available');
-      return;
-    }
-
-    try {
-      const templateFormId = oldVersion.formId || oldVersion.id;
-      const pdfBlob = await templateAPI.getTemplatePDF(templateFormId);
-      
-      const url = URL.createObjectURL(pdfBlob);
-      const link = document.createElement('a');
-      link.href = url;
-      link.download = `${oldVersion.name || 'template'}.pdf`;
-      
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
-      
-      URL.revokeObjectURL(url);
-    } catch (error) {
-      console.error('Error downloading PDF:', error);
-      toast.error(error.response?.data?.message || 'Failed to download template PDF');
-    }
-  };
 
   if (loading) {
     return (
@@ -166,15 +141,6 @@ const OldTemplateVersionDetailsTab = ({ template }) => {
         >
           <Download className="me-2" size={16} />
           View Template Config
-        </Button>
-        <Button
-          variant="primary"
-          size="sm"
-          onClick={handleExportPDF}
-          className="d-flex align-items-center"
-        >
-          <FileEarmarkPdf className="me-2" size={16} />
-          Export PDF
         </Button>
       </div>
 

@@ -15,7 +15,10 @@ const transformDepartmentData = (departmentsData) => {
       id: dept.headUser.id,
       name: dept.headUser.name || dept.headUser.email,
       email: dept.headUser.email,
-      role: dept.headUser.role
+      role: dept.headUser.role,
+      lastName: dept.headUser.lastName,
+      middleName: dept.headUser.middleName,
+      firstName: dept.headUser.firstName
     } : null,
     status: dept.isActive === true ? 'ACTIVE' : 'INACTIVE',
     coursesCount: dept.courseCount || dept.coursesCount || 0,
@@ -27,7 +30,7 @@ const transformDepartmentData = (departmentsData) => {
   }));
 };
 
-const useDepartmentManagement = (shouldLoad = true) => {
+const useDepartmentManagement = (shouldLoad = true, mode = 'all') => {
   const [departments, setDepartments] = useState([]);
   const [filteredDepartments, setFilteredDepartments] = useState([]);
   const [loading, setLoading] = useState(false);
@@ -43,7 +46,6 @@ const useDepartmentManagement = (shouldLoad = true) => {
   // Load departments from API
   useEffect(() => {
     if (!shouldLoad) {
-      // console.log('🔍 useDepartmentManagement - Skipping department load for non-ACADEMIC_DEPARTMENT role'); // Commented out to reduce console noise
       return;
     }
 
@@ -51,17 +53,34 @@ const useDepartmentManagement = (shouldLoad = true) => {
       setLoading(true);
       setError(null);
       try {
-        const response = await departmentAPI.getDepartments();
-        const departmentsData = response.departments || [];
+        let departmentsData;
+        
+        if (mode === 'my') {
+          // Get current user's department (single object)
+          const myDepartment = await departmentAPI.getMyDepartment();
+          // API returns { message: "...", data: { id, name, ... } }
+          // Transform single object to array format
+          departmentsData = myDepartment && Object.keys(myDepartment).length > 0 ? [myDepartment] : [];
+        } else {
+          // Get all departments (array)
+          departmentsData = await departmentAPI.getDepartments();
+        }
+        
+        // Ensure departmentsData is an array before transforming
+        if (!Array.isArray(departmentsData)) {
+          console.error('Expected array but got:', typeof departmentsData, departmentsData);
+          departmentsData = [];
+        }
         
         // Transform API data to match expected format
         const transformedDepartments = transformDepartmentData(departmentsData);
         
-        
         setDepartments(transformedDepartments);
       } catch (err) {
         console.error('Error loading departments:', err);
-        setError('Failed to load departments');
+        // Provide more detailed error message
+        const errorMessage = err?.response?.data?.message || err?.message || 'Failed to load departments';
+        setError(errorMessage);
         setDepartments([]);
       } finally {
         setLoading(false);
@@ -69,7 +88,7 @@ const useDepartmentManagement = (shouldLoad = true) => {
     };
 
     loadDepartments();
-  }, [shouldLoad]);
+  }, [shouldLoad, mode]);
 
   // Filter and search departments
   useEffect(() => {
@@ -126,8 +145,7 @@ const useDepartmentManagement = (shouldLoad = true) => {
       const response = await departmentAPI.createDepartment(departmentData);
       
       // Reload departments to get the latest data
-      const updatedResponse = await departmentAPI.getDepartments();
-      const departmentsData = updatedResponse.departments || [];
+      const departmentsData = await departmentAPI.getDepartments();
       
       const transformedDepartments = transformDepartmentData(departmentsData);
       
@@ -149,8 +167,7 @@ const useDepartmentManagement = (shouldLoad = true) => {
       const response = await departmentAPI.updateDepartment(id, departmentData);
       
       // Reload departments to get the latest data
-      const updatedResponse = await departmentAPI.getDepartments();
-      const departmentsData = updatedResponse.departments || [];
+      const departmentsData = await departmentAPI.getDepartments();
       
       const transformedDepartments = transformDepartmentData(departmentsData);
       
@@ -172,8 +189,7 @@ const useDepartmentManagement = (shouldLoad = true) => {
       await departmentAPI.deleteDepartment(id);
       
       // Reload departments to get the latest data
-      const updatedResponse = await departmentAPI.getDepartments();
-      const departmentsData = updatedResponse.departments || [];
+      const departmentsData = await departmentAPI.getDepartments();
       
       const transformedDepartments = transformDepartmentData(departmentsData);
       
@@ -194,8 +210,7 @@ const useDepartmentManagement = (shouldLoad = true) => {
       await departmentAPI.toggleDepartmentStatus(id);
       
       // Reload departments to get the latest data
-      const updatedResponse = await departmentAPI.getDepartments();
-      const departmentsData = updatedResponse.departments || [];
+      const departmentsData = await departmentAPI.getDepartments();
       
       const transformedDepartments = transformDepartmentData(departmentsData);
       
@@ -216,8 +231,7 @@ const useDepartmentManagement = (shouldLoad = true) => {
       await departmentAPI.disableDepartment(id);
       
       // Reload departments to get the latest data
-      const updatedResponse = await departmentAPI.getDepartments();
-      const departmentsData = updatedResponse.departments || [];
+      const departmentsData = await departmentAPI.getDepartments();
       
       const transformedDepartments = transformDepartmentData(departmentsData);
       
@@ -238,8 +252,7 @@ const useDepartmentManagement = (shouldLoad = true) => {
       await departmentAPI.enableDepartment(id);
       
       // Reload departments to get the latest data
-      const updatedResponse = await departmentAPI.getDepartments();
-      const departmentsData = updatedResponse.departments || [];
+      const departmentsData = await departmentAPI.getDepartments();
       
       const transformedDepartments = transformDepartmentData(departmentsData);
       
@@ -261,8 +274,7 @@ const useDepartmentManagement = (shouldLoad = true) => {
       await departmentAPI.bulkDeleteDepartments(ids);
       
       // Reload departments to get the latest data
-      const updatedResponse = await departmentAPI.getDepartments();
-      const departmentsData = updatedResponse.departments || [];
+      const departmentsData = await departmentAPI.getDepartments();
       
       const transformedDepartments = transformDepartmentData(departmentsData);
       
@@ -284,8 +296,7 @@ const useDepartmentManagement = (shouldLoad = true) => {
       await departmentAPI.bulkToggleStatus(ids, status);
       
       // Reload departments to get the latest data
-      const updatedResponse = await departmentAPI.getDepartments();
-      const departmentsData = updatedResponse.departments || [];
+      const departmentsData = await departmentAPI.getDepartments();
       
       const transformedDepartments = transformDepartmentData(departmentsData);
       
@@ -348,8 +359,7 @@ const useDepartmentManagement = (shouldLoad = true) => {
     setLoading(true);
     setError(null);
     try {
-      const response = await departmentAPI.getDepartments();
-      const departmentsData = response.departments || [];
+      const departmentsData = await departmentAPI.getDepartments();
       const transformedDepartments = transformDepartmentData(departmentsData);
       setDepartments(transformedDepartments);
     } catch (err) {

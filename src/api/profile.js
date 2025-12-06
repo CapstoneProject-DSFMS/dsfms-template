@@ -5,7 +5,6 @@ const profileAPI = {
   getProfile: async () => {
     try {
       const response = await apiClient.get('/profile');
-      // Handle response format: { message, data } or direct data
       if (response.data && response.data.data) {
         return response.data.data;
       }
@@ -16,52 +15,54 @@ const profileAPI = {
     }
   },
 
-  // Update avatar (sends avatar string to PUT /profile)
-  updateAvatar: async (avatarString, currentProfileData) => {
+  // Update avatar
+  updateAvatar: async (file) => {
     try {
-      // Get current profile data first
-      const currentProfile = currentProfileData || await profileAPI.getProfile();
+      const formData = new FormData();
+      formData.append('avatar', file);
       
-      // Update only the avatar field while keeping other data
-      const updateData = {
-        ...currentProfile,
-        avatarUrl: avatarString // Backend expects 'avatarUrl' not 'avatar'
-      };
-      
-      // Ensure required string fields are not null/undefined
-      if (!updateData.address) updateData.address = '';
-      if (!updateData.phoneNumber) updateData.phoneNumber = '';
-      if (!updateData.avatarUrl) updateData.avatarUrl = '';
-      if (!updateData.firstName) updateData.firstName = '';
-      if (!updateData.lastName) updateData.lastName = '';
-      if (!updateData.middleName) updateData.middleName = '';
-      
-      // Remove any undefined or null values that might cause validation issues
-      Object.keys(updateData).forEach(key => {
-        if (updateData[key] === undefined || updateData[key] === null) {
-          delete updateData[key];
+      const response = await apiClient.put('/profile', formData, {
+        headers: {
+          'Content-Type': 'multipart/form-data'
         }
       });
       
-      const response = await apiClient.put('/profile', updateData);
-      // Handle response format: { message, data } or direct data
       if (response.data && response.data.data) {
         return response.data.data;
       }
-      return response.data; // Expect updated profile
+      return response.data;
     } catch (error) {
       console.error('Error updating avatar:', error);
       throw error;
     }
   },
 
-  // Update user profile
-  updateProfile: async (profileData) => {
+  // Update profile
+  updateProfile: async (data) => {
     try {
-      console.log('updateProfile - sending data:', profileData);
-      const response = await apiClient.put('/profile', profileData);
+      const formData = new FormData();
+      
+      if (data instanceof File) {
+        // If data is a file, treat it as avatar
+        formData.append('avatar', data);
+      } else if (typeof data === 'object' && data !== null) {
+        // Send profile data fields
+        Object.keys(data).forEach(key => {
+          const value = data[key];
+          if (value !== null && value !== undefined) {
+            formData.append(key, value);
+          }
+        });
+      }
+      
+      console.log('updateProfile - sending FormData with keys:', Array.from(formData.keys()));
+      const response = await apiClient.put('/profile', formData, {
+        headers: {
+          'Content-Type': 'multipart/form-data'
+        }
+      });
       console.log('updateProfile - response:', response.data);
-      // Handle response format: { message, data } or direct data
+      
       if (response.data && response.data.data) {
         return response.data.data;
       }
@@ -79,13 +80,32 @@ const profileAPI = {
   // Reset password
   resetPassword: async (passwordData) => {
     try {
-      const response = await apiClient.put('/profile/password', passwordData);
+      const response = await apiClient.put('/profile/reset-password', passwordData);
       return response.data;
     } catch (error) {
       console.error('Error resetting password:', error);
+      throw error;
+    }
+  },
+
+  // Update signature
+  updateSignature: async (signatureImageUrl) => {
+    try {
+      // Send signature URL to API endpoint
+      const apiResponse = await apiClient.put('/profile/signature', {
+        signatureImageUrl: signatureImageUrl
+      });
+      
+      if (apiResponse.data && apiResponse.data.data) {
+        return apiResponse.data.data;
+      }
+      return apiResponse.data;
+    } catch (error) {
+      console.error('Error updating signature:', error);
       throw error;
     }
   }
 };
 
 export default profileAPI;
+

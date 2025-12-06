@@ -9,6 +9,7 @@ import AddTemplateContentButton from '../../../components/Admin/Forms/AddTemplat
 import { PermissionWrapper } from '../../../components/Common';
 import { PERMISSION_IDS } from '../../../constants/permissionIds';
 import { departmentAPI } from '../../../api/department';
+import templateAPI from '../../../api/template';
 import { readTemplateMetaFromStorage } from '../../../utils/templateBuilder';
 
 const FormEditorPage = () => {
@@ -38,60 +39,176 @@ const FormEditorPage = () => {
   }, [hasUnsavedChanges]);
 
   const [initialSections, setInitialSections] = useState(null);
+  const [isUpdateRejected, setIsUpdateRejected] = useState(false);
+  const [isEditDraft, setIsEditDraft] = useState(false); // ← Track Edit Draft flow
+
+  // Helper function to clear currentTemplateId from localStorage
+  const clearCurrentTemplateId = () => {
+    try {
+      // Remove standalone currentTemplateId key
+      localStorage.removeItem('currentTemplateId');
+      
+      // Also clear from templateInfo object
+      const meta = readTemplateMetaFromStorage();
+      if (meta.currentTemplateId) {
+        const updatedMeta = {
+          ...meta,
+          currentTemplateId: null
+        };
+        localStorage.setItem('templateInfo', JSON.stringify(updatedMeta));
+        console.log('🗑️ Cleared currentTemplateId from localStorage');
+      }
+    } catch (error) {
+      console.error('Error clearing currentTemplateId:', error);
+    }
+  };
+
+  // Clear currentTemplateId when component unmounts (handles browser back button and any navigation away)
+  useEffect(() => {
+    // Cleanup function runs when component unmounts
+    return () => {
+      // Only clear if we're NOT in Edit Draft flow
+      // Edit Draft flow should preserve currentTemplateId for proper update operations
+      if (!isEditDraft) {
+        console.log('🔙 FormEditorPage unmounting - clearing currentTemplateId');
+        clearCurrentTemplateId();
+      } else {
+        console.log('🔙 FormEditorPage unmounting - preserving currentTemplateId (Edit Draft flow)');
+      }
+    };
+  }, [isEditDraft]); // Re-run cleanup if isEditDraft changes
 
   // Get data from navigation state
   useEffect(() => {
-    if (location.state) {
-      const { 
-        content: initialContent, 
-        documentUrl: initialDocumentUrl,
-        fileName: initialFileName, 
-        importType: initialImportType,
-        templateInfo: initialTemplateInfo,
-        initialSections: sectionsFromState // ← Get initialSections from navigation state
-      } = location.state;
-      
-      // For "File with fields" or "Create Version": Use editorDocumentUrl if available (from import), otherwise use documentUrl/content
-      // This is the file to load in OnlyOffice editor (not templateContent)
-      let finalContent = initialDocumentUrl || initialContent || '';
-      if (initialTemplateInfo?.editorDocumentUrl) {
-        finalContent = initialTemplateInfo.editorDocumentUrl;
-      }
-      // For "Create Version": Use templateConfig or templateContent
-      if (initialImportType === 'Create Version' && !finalContent) {
-        finalContent = initialTemplateInfo?.templateConfig || initialTemplateInfo?.templateContent || '';
-      }
-      
-      setContent(finalContent);
-      setFileName(initialFileName || 'Untitled Document');
-      setImportType(initialImportType || '');
-      setTemplateInfo(initialTemplateInfo || null);
-      
-      // Set initialSections to pass down to OnlyOfficeFormEditor
-      if (sectionsFromState && Array.isArray(sectionsFromState)) {
-        setInitialSections(sectionsFromState);
-        console.log('📥 FormEditorPage received initialSections:', sectionsFromState);
-      }
-      
-      // Initialize edit form with template info
-      if (initialTemplateInfo) {
-        setEditTemplateInfo({
-          name: initialTemplateInfo.name || '',
-          description: initialTemplateInfo.description || '',
-          departmentId: initialTemplateInfo.departmentId || ''
+    const processState = async () => {
+      if (location.state) {
+        const { 
+          content: initialContent, 
+          documentUrl: initialDocumentUrl,
+          fileName: initialFileName, 
+          importType: initialImportType,
+          templateInfo: initialTemplateInfo,
+          initialSections: sectionsFromState, // ← Get initialSections from navigation state
+          isUpdateRejected: updateRejectedFlag,
+          isEditDraft: editDraftFlag, // ← Flag to indicate Edit Draft flow
+          templateId
+        } = location.state;
+        
+        // Handle Update Rejected Template flow FIRST to fetch fresh data
+        if (updateRejectedFlag && templateId) {
+          setIsUpdateRejected(true);
+          try {
+            console.log(`🔄 Update Rejected Template flow - Fetching data for templateId: ${templateId}`);
+            const response = await templateAPI.getTemplateById(templateId);
+            const templateData = response?.data?.template || response?.data?.data?.template || response?.data;
+
+            if (!templateData) {
+              toast.error('Failed to load rejected template data.');
+              navigate(ROUTES.TEMPLATES); // Go back if we can't load data
+              return;
+            }
+
+            const editorUrl = templateData.templateConfig || templateData.templateContent || '';
+            const freshMeta = {
+              currentTemplateId: templateData.id,
+              originalTemplateId: null,
+              name: templateData.name,
+              description: templateData.description,
+              departmentId: templateData.departmentId,
+              templateContent: templateData.templateContent,
+              templateConfig: templateData.templateConfig,
+              editorDocumentUrl: editorUrl,
+            };
+
+            localStorage.setItem('templateInfo', JSON.stringify(freshMeta));
+            localStorage.setItem('currentTemplateId', templateData.id);
+            console.log('✅ Fresh metadata for rejected template saved to localStorage:', freshMeta);
+
+            // Update component state with fresh data
+            setContent(editorUrl);
+            setFileName(freshMeta.name);
+            setImportType('Update Rejected Template');
+            setTemplateInfo(freshMeta);
+            setEditTemplateInfo({
+              name: freshMeta.name,
+              description: freshMeta.description,
+              departmentId: freshMeta.departmentId,
+            });
+            if (templateData.sections && Array.isArray(templateData.sections)) {
+              setInitialSections(templateData.sections);
+            }
+          } catch (error) {
+            console.error('Error handling update rejected flow:', error);
+            toast.error('An error occurred while loading the rejected template.');
+            navigate(ROUTES.TEMPLATES);
+          }
+        } else {
+          // Normal flow for other import types
+          let finalContent = initialDocumentUrl || initialContent || '';
+          if (initialTemplateInfo?.editorDocumentUrl) {
+            finalContent = initialTemplateInfo.editorDocumentUrl;
+          }
+          if (initialImportType === 'Create Version' && !finalContent) {
+            finalContent = initialTemplateInfo?.templateConfig || initialTemplateInfo?.templateContent || '';
+          }
+          
+          // Handle Edit Draft flow: Sync currentTemplateId from navigation state
+          if (editDraftFlag && initialTemplateInfo?.id) {
+            console.log('📝 Edit Draft flow - Syncing currentTemplateId from navigation state:', initialTemplateInfo.id);
+            setIsEditDraft(true); // ← Set flag to prevent cleanup from clearing currentTemplateId
+            const freshMeta = readTemplateMetaFromStorage();
+            const updatedMeta = {
+              ...freshMeta,
+              id: initialTemplateInfo.id,
+              currentTemplateId: initialTemplateInfo.currentTemplateId || initialTemplateInfo.id,
+              name: initialTemplateInfo.name || freshMeta.name,
+              description: initialTemplateInfo.description || freshMeta.description,
+              departmentId: initialTemplateInfo.departmentId || freshMeta.departmentId
+            };
+            localStorage.setItem('templateInfo', JSON.stringify(updatedMeta));
+            localStorage.setItem('currentTemplateId', initialTemplateInfo.currentTemplateId || initialTemplateInfo.id);
+            console.log('✅ Synced currentTemplateId for Edit Draft flow:', updatedMeta.currentTemplateId);
+            
+            // Update templateInfo state with synced data
+            setTemplateInfo(updatedMeta);
+          } else {
+            setIsEditDraft(false); // ← Reset flag for other flows
+          }
+          
+          setIsUpdateRejected(false);
+          setContent(finalContent);
+          setFileName(initialFileName || 'Untitled Document');
+          setImportType(initialImportType || '');
+          if (!editDraftFlag || !initialTemplateInfo?.id) {
+            // Only set templateInfo from state if not Edit Draft (Edit Draft already set above)
+            setTemplateInfo(initialTemplateInfo || null);
+          }
+          if (sectionsFromState && Array.isArray(sectionsFromState)) {
+            setInitialSections(sectionsFromState);
+          }
+          if (initialTemplateInfo) {
+            setEditTemplateInfo({
+              name: initialTemplateInfo.name || '',
+              description: initialTemplateInfo.description || '',
+              departmentId: initialTemplateInfo.departmentId || ''
+            });
+          }
+        }
+
+        console.log('📄 FormEditorPage received:', { 
+          documentUrl: initialDocumentUrl, 
+          content: initialContent, 
+          fileName: initialFileName,
+          templateInfo: initialTemplateInfo,
+          initialSections: sectionsFromState,
+          isUpdateRejected: updateRejectedFlag,
+          templateId
         });
       }
-      
-      console.log('📄 FormEditorPage received:', { 
-        documentUrl: initialDocumentUrl, 
-        content: initialContent, 
-        fileName: initialFileName,
-        templateInfo: initialTemplateInfo,
-        initialSections: sectionsFromState,
-        finalContent: finalContent
-      });
-    }
-  }, [location.state]);
+    };
+
+    processState();
+  }, [location.state, navigate]);
 
   // Load departments when edit modal opens
   useEffect(() => {
@@ -174,6 +291,8 @@ const FormEditorPage = () => {
       setShowDiscardModal(true);
     } else {
       console.log('✅ No unsaved changes, navigating back');
+      // Clear currentTemplateId before navigating away
+      clearCurrentTemplateId();
       navigate(ROUTES.TEMPLATES);
     }
   };
@@ -181,6 +300,8 @@ const FormEditorPage = () => {
   const handleConfirmDiscard = () => {
     setShowDiscardModal(false);
     setHasUnsavedChanges(false);
+    // Clear currentTemplateId before navigating away
+    clearCurrentTemplateId();
     navigate(ROUTES.TEMPLATES);
   };
 
@@ -325,44 +446,47 @@ const FormEditorPage = () => {
                     }}
                   />
                 )}
-                <Button
-                  variant="outline-light"
-                  size="sm"
-                  onClick={handleSaveDraft}
-                  disabled={isSavingDraft}
-                  className="d-flex align-items-center gap-2"
-                  style={{
-                    borderWidth: '2px',
-                    fontWeight: '500',
-                    backgroundColor: 'rgba(255, 255, 255, 0.1)',
-                    backdropFilter: 'blur(4px)',
-                    whiteSpace: 'nowrap'
-                  }}
-                  onMouseEnter={(e) => {
-                    if (!isSavingDraft) {
-                      e.currentTarget.style.backgroundColor = 'rgba(255, 255, 255, 0.2)';
-                      e.currentTarget.style.borderColor = '#fff';
-                    }
-                  }}
-                  onMouseLeave={(e) => {
-                    if (!isSavingDraft) {
-                      e.currentTarget.style.backgroundColor = 'rgba(255, 255, 255, 0.1)';
-                      e.currentTarget.style.borderColor = '#fff';
-                    }
-                  }}
-                >
-                  {isSavingDraft ? (
-                    <>
-                      <Spinner animation="border" size="sm" variant="light" style={{ width: '14px', height: '14px' }} />
-                      <span>Saving...</span>
-                    </>
-                  ) : (
-                    <>
-                      <Save size={16} />
-                      <span>Save Draft</span>
-                    </>
-                  )}
-                </Button>
+                {/* Hide Save Draft button when updating rejected template */}
+                {!isUpdateRejected && (
+                  <Button
+                    variant="outline-light"
+                    size="sm"
+                    onClick={handleSaveDraft}
+                    disabled={isSavingDraft}
+                    className="d-flex align-items-center gap-2"
+                    style={{
+                      borderWidth: '2px',
+                      fontWeight: '500',
+                      backgroundColor: 'rgba(255, 255, 255, 0.1)',
+                      backdropFilter: 'blur(4px)',
+                      whiteSpace: 'nowrap'
+                    }}
+                    onMouseEnter={(e) => {
+                      if (!isSavingDraft) {
+                        e.currentTarget.style.backgroundColor = 'rgba(255, 255, 255, 0.2)';
+                        e.currentTarget.style.borderColor = '#fff';
+                      }
+                    }}
+                    onMouseLeave={(e) => {
+                      if (!isSavingDraft) {
+                        e.currentTarget.style.backgroundColor = 'rgba(255, 255, 255, 0.1)';
+                        e.currentTarget.style.borderColor = '#fff';
+                      }
+                    }}
+                  >
+                    {isSavingDraft ? (
+                      <>
+                        <Spinner animation="border" size="sm" variant="light" style={{ width: '14px', height: '14px' }} />
+                        <span>Saving...</span>
+                      </>
+                    ) : (
+                      <>
+                        <Save size={16} />
+                        <span>Save Draft</span>
+                      </>
+                    )}
+                  </Button>
+                )}
                 <Button
                   variant="outline-light"
                   size="sm"
@@ -406,6 +530,7 @@ const FormEditorPage = () => {
               showImportInfo={!!importType}
               importType={importType}
               initialSections={initialSections}
+              isUpdateRejected={isUpdateRejected}
               onHasUnsavedChangesChange={setHasUnsavedChanges}
               onDraftSaved={async (draftUrl) => {
                 // CRITICAL: Check if we're in Submit flow using sessionStorage

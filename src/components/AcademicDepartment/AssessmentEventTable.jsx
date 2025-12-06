@@ -1,8 +1,10 @@
 import React from 'react';
 import { Table, Badge } from 'react-bootstrap';
 import { Eye, Pencil, ThreeDotsVertical } from 'react-bootstrap-icons';
-import { LoadingSkeleton, SortIcon, PortalUnifiedDropdown } from '../Common';
+import { LoadingSkeleton, SortIcon, PortalUnifiedDropdown, PermissionWrapper } from '../Common';
+import { PERMISSION_IDS } from '../../constants/permissionIds';
 import useTableSort from '../../hooks/useTableSort';
+import '../../styles/scrollable-table.css';
 
 const AssessmentEventTable = ({
   assessmentEvents = [],
@@ -138,9 +140,9 @@ const AssessmentEventTable = ({
   };
 
   return (
-    <div className="table-responsive">
+    <div className="scrollable-table-container">
       <Table hover striped bordered className="mb-0">
-        <thead>
+        <thead className="sticky-header">
           <tr>
             <SortableHeader columnKey="name">Name</SortableHeader>
             <SortableHeader columnKey="subject">Subject</SortableHeader>
@@ -148,7 +150,7 @@ const AssessmentEventTable = ({
             <SortableHeader columnKey="occurrenceDate">Occurrence Date</SortableHeader>
             <SortableHeader columnKey="status">Status</SortableHeader>
             <th 
-              className="fw-semibold text-center"
+              className="fw-semibold text-center sticky-header"
               style={{ 
                 backgroundColor: 'var(--bs-primary)',
                 color: 'white',
@@ -191,29 +193,36 @@ const AssessmentEventTable = ({
                 </Badge>
               </td>
               <td className="align-middle text-center">
-                <PortalUnifiedDropdown
-                  align="end"
-                  className="table-dropdown"
-                  placement="bottom-end"
-                  trigger={{
-                    variant: 'link',
-                    className: 'btn btn-link p-0 text-primary-custom',
-                    style: { border: 'none', background: 'transparent' },
-                    children: <ThreeDotsVertical size={16} />
-                  }}
-                  items={[
-                    {
-                      label: 'View Details',
-                      icon: <Eye />,
-                      onClick: () => onView && onView(event.originalEvent || event)
-                    },
-                    {
-                      label: 'Update',
-                      icon: <Pencil />,
-                      onClick: () => onUpdate && onUpdate(event.originalEvent || event)
-                    }
-                  ]}
-                />
+                <PermissionWrapper 
+                  permissions={[PERMISSION_IDS.VIEW_ASSESSMENT_DETAILS, PERMISSION_IDS.UPDATE_ASSESSMENT_EVENT]}
+                  fallback={null}
+                >
+                  <PortalUnifiedDropdown
+                    align="end"
+                    className="table-dropdown"
+                    placement="bottom-end"
+                    trigger={{
+                      variant: 'link',
+                      className: 'btn btn-link p-0 text-primary-custom',
+                      style: { border: 'none', background: 'transparent' },
+                      children: <ThreeDotsVertical size={16} />
+                    }}
+                    items={[
+                      {
+                        label: 'View Details',
+                        icon: <Eye />,
+                        onClick: () => onView && onView(event.originalEvent || event),
+                        permission: PERMISSION_IDS.VIEW_ASSESSMENT_DETAILS
+                      },
+                      {
+                        label: 'Update',
+                        icon: <Pencil />,
+                        onClick: () => onUpdate && onUpdate(event.originalEvent || event),
+                        permission: PERMISSION_IDS.UPDATE_ASSESSMENT_EVENT
+                      }
+                    ]}
+                  />
+                </PermissionWrapper>
               </td>
             </tr>
           ))}

@@ -1,99 +1,158 @@
-import React, { useState, useEffect } from 'react';
-import { Table, Badge, Spinner, Card } from 'react-bootstrap';
-import { Pen, ThreeDotsVertical } from 'react-bootstrap-icons';
-import { useNavigate } from 'react-router-dom';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
+import { Container, Card, Nav, Tab, Table, Badge, Spinner, Alert, Button, Form, Modal } from 'react-bootstrap';
+import { Pen, Book, FileText, ExclamationTriangle, Save } from 'react-bootstrap-icons';
+import { useAuth } from '../../hooks/useAuth';
 import { toast } from 'react-toastify';
-import { LoadingSkeleton } from '../Common';
-import PortalUnifiedDropdown from '../Common/PortalUnifiedDropdown';
+import subjectAPI from '../../api/subject';
+import assessmentAPI from '../../api/assessment';
+import courseAPI from '../../api/course';
+import uploadAPI from '../../api/upload';
+import SignaturePad from '../Profile/SignaturePad';
 import SortableHeader from './SortableHeader';
 import useTableSort from '../../hooks/useTableSort';
 import '../../styles/scrollable-table.css';
 
-// Add custom CSS to remove table borders
-const signatureTableStyles = `
-  .signature-required-table-no-borders .table,
-  .signature-required-table-no-borders .table td,
-  .signature-required-table-no-borders .table th,
-  .signature-required-table-no-borders .table tbody tr,
-  .signature-required-table-no-borders .table thead tr {
-    border: none !important;
-    border-top: none !important;
-    border-bottom: none !important;
-    border-left: none !important;
-    border-right: none !important;
-  }
-  .signature-required-table-no-borders .table tbody tr {
-    border-bottom: 1px solid #f0f0f0 !important;
-  }
-  .signature-required-table-no-borders .table tbody tr:last-child {
-    border-bottom: none !important;
-  }
-`;
-
-// Inject the styles
-if (typeof document !== 'undefined') {
-  const styleSheet = document.createElement('style');
-  styleSheet.type = 'text/css';
-  styleSheet.innerText = signatureTableStyles;
-  document.head.appendChild(styleSheet);
-}
-
 const TraineeSignatureRequiredList = ({ traineeId }) => {
-  const navigate = useNavigate();
-  const [signatureRequired, setSignatureRequired] = useState([]);
+  const { user } = useAuth();
+  const [assessments, setAssessments] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+  const [activeTab, setActiveTab] = useState('course');
+  const [signingAssessmentId, setSigningAssessmentId] = useState(null); // Track which assessment is being signed
+  const [signaturePadModalOpen, setSignaturePadModalOpen] = useState(false); // Control signature pad modal
+  const [signatureDataUrl, setSignatureDataUrl] = useState(null); // Store signature data
+  const [uploadingSignature, setUploadingSignature] = useState(false); // Track upload progress
 
-  const { sortedData: sortedSignatureRequired, sortConfig: signatureSortConfig, handleSort: handleSignatureSort } = useTableSort(signatureRequired);
+  const { sortedData, sortConfig, handleSort } = useTableSort(assessments);
 
-  useEffect(() => {
-    loadSignatureRequired();
-  }, [traineeId]);
-
-  const loadSignatureRequired = async () => {
+  const loadAssessments = useCallback(async () => {
     try {
       setLoading(true);
-      
-      // Mock data for signature required
-      const mockSignatureRequired = [
-        {
-          id: '1',
-          name: 'Safety Training Acknowledgment',
-          course: 'Safety Procedures Training',
-          subject: 'Basic Safety Protocols',
-          dueDate: '2024-01-25T23:59:59.000Z',
-          status: 'PENDING'
-        },
-        {
-          id: '2',
-          name: 'Equipment Usage Agreement',
-          course: 'Equipment Handling Course',
-          subject: 'Heavy Machinery Operation',
-          dueDate: '2024-01-30T23:59:59.000Z',
-          status: 'PENDING'
-        },
-        {
-          id: '3',
-          name: 'Confidentiality Agreement',
-          course: 'Company Policies Training',
-          subject: 'Data Protection Guidelines',
-          dueDate: '2024-02-05T23:59:59.000Z',
-          status: 'COMPLETED'
-        }
-      ];
+      setError(null);
 
-      // Simulate API delay
-      await new Promise(resolve => setTimeout(resolve, 300));
-      setSignatureRequired(mockSignatureRequired);
-    } catch (error) {
-      console.error('Error loading signature required:', error);
-      toast.error('Failed to load signature requirements');
+      // Load courses map first
+      const coursesMapData = {};
+      try {
+        const coursesResponse = await courseAPI.getCourses();
+        // Handle different response structures: { courses: [...] }, { data: [...] }, or direct array
+        let courses = [];
+        if (Array.isArray(coursesResponse)) {
+          courses = coursesResponse;
+        } else if (coursesResponse?.courses && Array.isArray(coursesResponse.courses)) {
+          courses = coursesResponse.courses;
+        } else if (coursesResponse?.data && Array.isArray(coursesResponse.data)) {
+          courses = coursesResponse.data;
+        }
+        
+        // Only iterate if courses is actually an array
+        if (Array.isArray(courses)) {
+          courses.forEach(course => {
+            if (course?.id) {
+              coursesMapData[course.id] = course.name || course.code || 'Unknown Course';
+            }
+          });
+        } else {
+          console.warn('Courses response is not an array:', coursesResponse);
+        }
+      } catch (err) {
+        console.error('Error loading courses map:', err);
+        // Continue without course names if API fails
+      }
+
+      // Get all courses/subjects for the trainee
+      const response = await subjectAPI.getTraineeCourseSubjects(user?.id || traineeId);
+      const courseData = response?.courses || [];
+
+      if (!Array.isArray(courseData) || courseData.length === 0) {
+        setAssessments([]);
+        setLoading(false);
+        return;
+      }
+
+      // Fetch assessments for all courses or subjects based on active tab
+      const allAssessments = [];
+      // Filter for SIGNATURE_PENDING and READY_TO_SUBMIT statuses
+      const allowedStatuses = ['SIGNATURE_PENDING', 'READY_TO_SUBMIT'];
+
+      if (activeTab === 'course') {
+        // Fetch assessments for all courses
+        for (const item of courseData) {
+          const course = item.course;
+          if (course?.id) {
+            try {
+              const assessmentResponse = await assessmentAPI.getCourseAssessments(course.id);
+              const courseAssessments = assessmentResponse?.assessments || [];
+              
+              // Filter SIGNATURE_PENDING and READY_TO_SUBMIT assessments and add course info
+              courseAssessments
+                .filter(assessment => allowedStatuses.includes(assessment.status))
+                .forEach(assessment => {
+                  allAssessments.push({
+                    ...assessment,
+                    courseId: course.id,
+                    courseName: coursesMapData[course.id] || course.name || course.code || 'Unknown Course'
+                  });
+                });
+            } catch (err) {
+              console.error(`Error loading assessments for course ${course.id}:`, err);
+              // Continue with other courses
+            }
+          }
+        }
+      } else {
+        // Fetch assessments for all subjects
+        for (const item of courseData) {
+          const subjects = item.subjects || [];
+          for (const subject of subjects) {
+            if (subject?.id) {
+              try {
+                const assessmentResponse = await assessmentAPI.getSubjectAssessments(subject.id);
+                const subjectAssessments = assessmentResponse?.assessments || [];
+                
+                // Filter SIGNATURE_PENDING and READY_TO_SUBMIT assessments and add course info
+                subjectAssessments
+                  .filter(assessment => allowedStatuses.includes(assessment.status))
+                  .forEach(assessment => {
+                    const courseId = assessment.courseId || item.course?.id;
+                    allAssessments.push({
+                      ...assessment,
+                      courseId: courseId,
+                      courseName: coursesMapData[courseId] || item.course?.name || item.course?.code || 'Unknown Course'
+                    });
+                  });
+              } catch (err) {
+                console.error(`Error loading assessments for subject ${subject.id}:`, err);
+                // Continue with other subjects
+              }
+            }
+          }
+        }
+      }
+
+      setAssessments(allAssessments);
+    } catch (err) {
+      console.error('Error loading assessments:', err);
+      setError(err.message || 'Failed to load assessments');
+      toast.error('Failed to load signature required assessments');
+      setAssessments([]);
     } finally {
       setLoading(false);
     }
+  }, [user?.id, traineeId, activeTab]);
+
+  useEffect(() => {
+    if (user?.id || traineeId) {
+      loadAssessments();
+    }
+  }, [user?.id, traineeId, activeTab, loadAssessments]);
+
+  const handleTabChange = (key) => {
+    setActiveTab(key);
   };
 
   const getStatusBadge = (status) => {
     const statusConfig = {
+      'SIGNATURE_PENDING': { variant: 'warning', text: 'Signature Pending' },
       'PENDING': { variant: 'warning', text: 'Pending' },
       'COMPLETED': { variant: 'success', text: 'Completed' },
       'OVERDUE': { variant: 'danger', text: 'Overdue' }
@@ -108,120 +167,320 @@ const TraineeSignatureRequiredList = ({ traineeId }) => {
     );
   };
 
-  const handleSignaturePad = (documentId) => {
-    if (traineeId) {
-      navigate(`/trainee/${traineeId}/signature-pad/${documentId}`);
-    } else {
-      toast.error('Unable to open signature pad: Trainee ID not found');
+  const handleSign = (assessmentId) => {
+    // Open signature pad modal (not calling old API)
+    setSigningAssessmentId(assessmentId);
+    setSignaturePadModalOpen(true);
+    setSignatureDataUrl(null); // Reset signature
+  };
+
+  const handleSignatureChange = (dataUrl) => {
+    // Callback from SignaturePad when user draws signature
+    setSignatureDataUrl(dataUrl);
+  };
+
+  // Resize signature to 400x200 with transparent background (same size as pad)
+  const resizeSignature = (originalDataUrl) => {
+    return new Promise((resolve) => {
+      const img = new Image();
+      img.onload = () => {
+        const canvas = document.createElement('canvas');
+        canvas.width = 400;
+        canvas.height = 200;
+        const ctx = canvas.getContext('2d');
+        
+        // Clear canvas to ensure transparent background
+        ctx.clearRect(0, 0, 400, 200);
+        
+        // Draw the signature image (preserves transparency from original)
+        ctx.drawImage(img, 0, 0, 400, 200);
+        resolve(canvas.toDataURL('image/png'));
+      };
+      img.src = originalDataUrl;
+    });
+  };
+
+  const handleConfirmSignature = async () => {
+    if (!signatureDataUrl || !signingAssessmentId) {
+      toast.error('Please draw your signature first');
+      return;
     }
+
+    setUploadingSignature(true);
+
+    try {
+      // Resize signature to 400x200
+      const resizedDataUrl = await resizeSignature(signatureDataUrl);
+
+      // Step 1: Convert signature data URL to blob
+      const response = await fetch(resizedDataUrl);
+      const blob = await response.blob();
+      const file = new File([blob], `signature-${Date.now()}.png`, { type: 'image/png' });
+
+      // Step 2: Upload signature image to S3
+      const uploadResponse = await uploadAPI.uploadImage(file, 'signature');
+      
+      // Get URL from response
+      let signatureUrl = '';
+      if (typeof uploadResponse === 'string') {
+        signatureUrl = uploadResponse;
+      } else if (uploadResponse?.url) {
+        signatureUrl = uploadResponse.url;
+      } else if (uploadResponse?.data?.[0]?.url) {
+        signatureUrl = uploadResponse.data[0].url;
+      }
+
+      if (!signatureUrl) {
+        throw new Error('Failed to get signature URL from upload response');
+      }
+
+      console.log('✅ Signature uploaded to S3:', signatureUrl);
+
+      // Step 3: Call confirm-participation API with traineeSignatureUrl
+      const confirmResponse = await assessmentAPI.confirmParticipation(signingAssessmentId, {
+        traineeSignatureUrl: signatureUrl
+      });
+
+      const successMessage = confirmResponse?.message || 'Signature submitted successfully';
+      toast.success(successMessage);
+
+      // Close modal and refresh
+      setSignaturePadModalOpen(false);
+      setSigningAssessmentId(null);
+      setSignatureDataUrl(null);
+
+      // Reload data
+      setTimeout(() => {
+        loadAssessments();
+      }, 500);
+    } catch (err) {
+      console.error('Error submitting signature:', err);
+      const errorMessage = err.response?.data?.message || err.message || 'Failed to submit signature';
+      toast.error(errorMessage);
+    } finally {
+      setUploadingSignature(false);
+    }
+  };
+
+  const handleCloseSignaturePad = () => {
+    setSignaturePadModalOpen(false);
+    setSigningAssessmentId(null);
+    setSignatureDataUrl(null);
   };
 
   if (loading) {
     return (
-      <div className="text-center py-4">
-        <LoadingSkeleton count={5} />
-      </div>
+      <Container fluid className="py-4">
+        <Card className="shadow-sm">
+          <Card.Body className="text-center py-4">
+            <Spinner animation="border" variant="primary" size="sm" />
+            <p className="text-muted mt-2 mb-0">Loading signature required assessments...</p>
+          </Card.Body>
+        </Card>
+      </Container>
     );
   }
 
-  if (signatureRequired.length === 0) {
+  if (error) {
     return (
-      <div className="text-center py-4">
-        <Pen size={32} className="text-muted mb-2" />
-        <p className="text-muted mb-0">No signature requirements</p>
-      </div>
+      <Container fluid className="py-4">
+        <Card className="shadow-sm border-danger">
+          <Card.Body>
+            <Alert variant="danger" className="mb-0">
+              <ExclamationTriangle size={16} className="me-2" />
+              {error}
+            </Alert>
+          </Card.Body>
+        </Card>
+      </Container>
     );
   }
 
   return (
-    <div className="scrollable-table-container admin-table signature-required-table-no-borders">
-      <Table hover className="mb-0 table-hover" borderless>
-        <thead className="table-light">
-          <tr>
-            <th className="text-start">
-              <SortableHeader 
-                title="Document" 
-                sortKey="name" 
-                sortConfig={signatureSortConfig} 
-                onSort={handleSignatureSort} 
-              />
-            </th>
-            <th className="text-start">
-              <SortableHeader 
-                title="Course" 
-                sortKey="course" 
-                sortConfig={signatureSortConfig} 
-                onSort={handleSignatureSort} 
-              />
-            </th>
-            <th className="text-start">
-              <SortableHeader 
-                title="Subject" 
-                sortKey="subject" 
-                sortConfig={signatureSortConfig} 
-                onSort={handleSignatureSort} 
-              />
-            </th>
-            <th className="text-start">
-              <SortableHeader 
-                title="Due Date" 
-                sortKey="dueDate" 
-                sortConfig={signatureSortConfig} 
-                onSort={handleSignatureSort} 
-              />
-            </th>
-            <th className="text-start">
-              <SortableHeader 
-                title="Status" 
-                sortKey="status" 
-                sortConfig={signatureSortConfig} 
-                onSort={handleSignatureSort} 
-              />
-            </th>
-            <th className="text-start">Actions</th>
-          </tr>
-        </thead>
-        <tbody>
-          {sortedSignatureRequired.map((item) => (
-            <tr key={item.id}>
-              <td>
-                <div className="fw-semibold">{item.name}</div>
-              </td>
-              <td>
-                <div className="fw-semibold">{item.course}</div>
-              </td>
-              <td>
-                <div className="fw-semibold">{item.subject}</div>
-              </td>
-              <td>
-                {new Date(item.dueDate).toLocaleDateString()}
-              </td>
-              <td>{getStatusBadge(item.status)}</td>
-              <td>
-                <PortalUnifiedDropdown
-                  align="end"
-                  className="table-dropdown"
-                  placement="bottom-end"
-                  trigger={{
-                    variant: 'link',
-                    className: 'btn btn-link p-0 text-primary-custom',
-                    style: { border: 'none', background: 'transparent' },
-                    children: <ThreeDotsVertical size={16} />
+    <Container fluid className="py-4">
+      <Card className="border-0 shadow-sm">
+        <Tab.Container activeKey={activeTab} onSelect={handleTabChange}>
+          {/* Tab Header */}
+          <Card.Header className="border-bottom py-2 bg-primary">
+            <Nav variant="tabs" className="border-0">
+              <Nav.Item>
+                <Nav.Link 
+                  eventKey="course"
+                  className="d-flex align-items-center"
+                  style={{ 
+                    border: 'none',
+                    backgroundColor: 'transparent',
+                    color: '#ffffff',
+                    fontWeight: activeTab === 'course' ? '600' : '400',
+                    opacity: activeTab === 'course' ? '1' : '0.7',
+                    borderRadius: '4px 4px 0 0'
                   }}
-                  items={[
-                    {
-                      label: 'Sign Document',
-                      icon: <Pen />,
-                      onClick: () => handleSignaturePad(item.id)
-                    }
-                  ]}
+                >
+                  <Book className="me-2" size={16} />
+                  Course
+                </Nav.Link>
+              </Nav.Item>
+              <Nav.Item>
+                <Nav.Link 
+                  eventKey="subject"
+                  className="d-flex align-items-center"
+                  style={{ 
+                    border: 'none',
+                    backgroundColor: 'transparent',
+                    color: '#ffffff',
+                    fontWeight: activeTab === 'subject' ? '600' : '400',
+                    opacity: activeTab === 'subject' ? '1' : '0.7',
+                    borderRadius: '4px 4px 0 0'
+                  }}
+                >
+                  <FileText className="me-2" size={16} />
+                  Subject
+                </Nav.Link>
+              </Nav.Item>
+            </Nav>
+          </Card.Header>
+
+          <Card.Body className="p-4">
+            {assessments.length === 0 ? (
+              <div className="text-center py-5">
+                <Pen size={48} className="text-muted mb-3" />
+                <p className="text-muted mb-0">No signature required assessments</p>
+              </div>
+            ) : (
+              <div className="scrollable-table-container admin-table">
+                <Table hover className="mb-0 table-mobile-responsive" style={{ fontSize: '0.875rem' }}>
+                  <thead className="sticky-header">
+                    <tr>
+                      <th className="border-neutral-200 text-primary-custom fw-semibold">
+                        <SortableHeader 
+                          title="Assessment Name" 
+                          sortKey="name" 
+                          sortConfig={sortConfig} 
+                          onSort={handleSort} 
+                        />
+                      </th>
+                      <th className="border-neutral-200 text-primary-custom fw-semibold">
+                        <SortableHeader 
+                          title="Course Name" 
+                          sortKey="courseName" 
+                          sortConfig={sortConfig} 
+                          onSort={handleSort} 
+                        />
+                      </th>
+                      <th className="border-neutral-200 text-primary-custom fw-semibold">
+                        <SortableHeader 
+                          title="Date" 
+                          sortKey="occuranceDate" 
+                          sortConfig={sortConfig} 
+                          onSort={handleSort} 
+                        />
+                      </th>
+                      <th className="border-neutral-200 text-primary-custom fw-semibold text-center">Sign</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {sortedData.map((assessment, index) => (
+                      <tr 
+                        key={assessment.id}
+                        className={`${index % 2 === 0 ? 'bg-white' : 'bg-neutral-50'} transition-all`}
+                        style={{
+                          transition: 'background-color 0.2s ease'
+                        }}
+                        onMouseEnter={(e) => {
+                          e.currentTarget.style.backgroundColor = 'var(--bs-neutral-100)';
+                        }}
+                        onMouseLeave={(e) => {
+                          e.currentTarget.style.backgroundColor = index % 2 === 0 ? 'white' : 'var(--bs-neutral-50)';
+                        }}
+                      >
+                        <td className="border-neutral-200 align-middle">
+                          <div className="fw-medium text-dark">{assessment.name}</div>
+                        </td>
+                        <td className="border-neutral-200 align-middle">
+                          <div className="fw-medium text-dark">{assessment.courseName}</div>
+                        </td>
+                        <td className="border-neutral-200 align-middle">
+                          <div className="text-dark">
+                            {assessment.occuranceDate ? new Date(assessment.occuranceDate).toLocaleDateString('en-US', { year: 'numeric', month: '2-digit', day: '2-digit' }) : '-'}
+                          </div>
+                        </td>
+                        <td className="border-neutral-200 align-middle text-center">
+                          <Form.Check
+                            type="checkbox"
+                            checked={assessment.status === 'READY_TO_SUBMIT' || signingAssessmentId === assessment.id}
+                            disabled={assessment.status === 'READY_TO_SUBMIT' || signingAssessmentId === assessment.id}
+                            onChange={() => {
+                              if (assessment.status === 'SIGNATURE_PENDING') {
+                                handleSign(assessment.id);
+                              }
+                            }}
+                            style={{
+                              cursor: assessment.status === 'SIGNATURE_PENDING' ? 'pointer' : 'not-allowed'
+                            }}
+                          />
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </Table>
+              </div>
+            )}
+          </Card.Body>
+        </Tab.Container>
+      </Card>
+
+      {/* Signature Pad Modal */}
+      <Modal show={signaturePadModalOpen} onHide={handleCloseSignaturePad} size="lg" centered>
+        <Modal.Header closeButton>
+          <Modal.Title>Draw Your Signature</Modal.Title>
+        </Modal.Header>
+        <Modal.Body className="text-center py-4">
+          <p className="text-muted mb-3">
+            Please draw your signature in the box below using your mouse or touch device.
+          </p>
+          <div className="d-flex justify-content-center mb-3">
+            <SignaturePad
+              onSignatureChange={handleSignatureChange}
+              width={400}
+              height={200}
+            />
+          </div>
+        </Modal.Body>
+        <Modal.Footer>
+          <Button
+            variant="outline-secondary"
+            onClick={handleCloseSignaturePad}
+            disabled={uploadingSignature}
+          >
+            Cancel
+          </Button>
+          <Button
+            variant="primary"
+            onClick={handleConfirmSignature}
+            disabled={!signatureDataUrl || uploadingSignature}
+          >
+            {uploadingSignature ? (
+              <>
+                <Spinner
+                  as="span"
+                  animation="border"
+                  size="sm"
+                  role="status"
+                  aria-hidden="true"
+                  className="me-2"
                 />
-              </td>
-            </tr>
-          ))}
-        </tbody>
-      </Table>
-    </div>
+                Uploading...
+              </>
+            ) : (
+              <>
+                <Save size={16} className="me-2" />
+                Submit Signature
+              </>
+            )}
+          </Button>
+        </Modal.Footer>
+      </Modal>
+    </Container>
   );
 };
 

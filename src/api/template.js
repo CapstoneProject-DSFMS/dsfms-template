@@ -37,6 +37,16 @@ const templateAPI = {
     }
   },
 
+  // Get my templates (templates created by current user)
+  getMyTemplates: async () => {
+    try {
+      const response = await apiClient.get('/templates');
+      return response.data;
+    } catch (error) {
+      throw error;
+    }
+  },
+
   // Create new template
   createTemplate: async (templateData) => {
     try {
@@ -67,11 +77,33 @@ const templateAPI = {
     }
   },
 
+  // Delete draft template
+  deleteDraft: async (draftId) => {
+    try {
+      const response = await apiClient.delete(`/templates/draft/${draftId}`);
+      return response.data;
+    } catch (error) {
+      throw error;
+    }
+  },
+
   // Get template PDF preview
   getTemplatePDF: async (templateFormId) => {
     try {
       const response = await apiClient.get(`/templates/pdf/${templateFormId}`, {
         responseType: 'blob' // Important: get PDF as blob
+      });
+      return response.data;
+    } catch (error) {
+      throw error;
+    }
+  },
+
+  // Get template PDF config (for rendering PDF preview)
+  getTemplatePdfConfig: async (templateId) => {
+    try {
+      const response = await apiClient.get(`/templates/pdf-config/${templateId}`, {
+        responseType: 'blob' // Important: get PDF as blob, not text
       });
       return response.data;
     } catch (error) {
@@ -106,6 +138,18 @@ const templateAPI = {
   createVersion: async (versionData) => {
     try {
       const response = await apiClient.post('/templates/create-version', versionData);
+      return response.data;
+    } catch (error) {
+      throw error;
+    }
+  },
+
+  // Disable template
+  disableTemplate: async (templateId) => {
+    try {
+      const response = await apiClient.patch(`/templates/${templateId}/status`, {
+        status: 'DISABLE'
+      });
       return response.data;
     } catch (error) {
       throw error;

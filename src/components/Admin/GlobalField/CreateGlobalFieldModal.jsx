@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { Modal, Form, Button, Row, Col } from 'react-bootstrap';
+import { Plus, X } from 'react-bootstrap-icons';
 import { toast } from 'react-toastify';
 import { globalFieldAPI } from '../../../api';
 
@@ -8,10 +9,11 @@ const CreateGlobalFieldModal = ({ show, onHide, onSuccess }) => {
     label: '',
     fieldName: '',
     fieldType: 'TEXT',
-    roleRequired: '',
     options: null
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [valueListOptions, setValueListOptions] = useState([]);
+  const [newOptionInput, setNewOptionInput] = useState('');
 
   const validateFieldName = (fieldName, fieldType) => {
     if (!fieldName) return { valid: false, message: 'Field name is required' };
@@ -20,8 +22,8 @@ const CreateGlobalFieldModal = ({ show, onHide, onSuccess }) => {
     
     // For global fields, we'll use snake_case as default (like TEXT type)
     // Similar to "Add New Field" logic but simplified for global fields
-    if (type === 'PART') {
-      // PART: underscores, capitalized first letter, not start with "section"
+    if (type === 'PART' || type === 'CHECK_BOX') {
+      // PART/CHECK_BOX: underscores, capitalized first letter, not start with "section"
       const partRegex = /^[A-Z][A-Za-z0-9_]*$/;
       if (!partRegex.test(fieldName)) {
         return {
@@ -60,9 +62,17 @@ const CreateGlobalFieldModal = ({ show, onHide, onSuccess }) => {
   };
 
   const handleSaveField = async () => {
-    if (!formData.label || !formData.fieldName || !formData.roleRequired) {
+    if (!formData.label || !formData.fieldName) {
       toast.warning('Please fill in all required fields');
       return;
+    }
+
+    // Validate VALUE_LIST option if fieldType is VALUE_LIST
+    if (formData.fieldType === 'VALUE_LIST') {
+      if (!valueListOptions || valueListOptions.length === 0) {
+        toast.warning('Please add at least one option for VALUE_LIST field');
+        return;
+      }
     }
 
     // Validate fieldName format based on fieldType
@@ -75,12 +85,18 @@ const CreateGlobalFieldModal = ({ show, onHide, onSuccess }) => {
     try {
       setIsSubmitting(true);
 
+      // Prepare options for VALUE_LIST
+      let options = null;
+      if (formData.fieldType === 'VALUE_LIST' && valueListOptions.length > 0) {
+        options = { items: valueListOptions };
+      }
+
       const payload = {
         label: formData.label.trim(),
         fieldName: formData.fieldName.trim(),
         fieldType: formData.fieldType,
-        roleRequired: formData.roleRequired || null,
-        options: formData.options || null
+        roleRequired: null,
+        options: options
       };
 
       await globalFieldAPI.createGlobalField(payload);
@@ -106,9 +122,10 @@ const CreateGlobalFieldModal = ({ show, onHide, onSuccess }) => {
       label: '',
       fieldName: '',
       fieldType: 'TEXT',
-      roleRequired: '',
       options: null
     });
+    setValueListOptions([]);
+    setNewOptionInput('');
     onHide();
   };
 
@@ -145,7 +162,7 @@ const CreateGlobalFieldModal = ({ show, onHide, onSuccess }) => {
                 <Form.Control
                   type="text"
                   placeholder={
-                    formData.fieldType === 'PART' 
+                    formData.fieldType === 'PART' || formData.fieldType === 'CHECK_BOX'
                       ? 'e.g., Assessment_Items' 
                       : formData.fieldType === 'TOGGLE'
                       ? 'e.g., isGroundCourse'
@@ -156,7 +173,7 @@ const CreateGlobalFieldModal = ({ show, onHide, onSuccess }) => {
                   required
                 />
                 <Form.Text className="text-muted">
-                  {formData.fieldType === 'PART' 
+                  {formData.fieldType === 'PART' || formData.fieldType === 'CHECK_BOX'
                     ? 'The tag name should use underscores, should not start with the word "section" and the first letter always have to be capitalized. (e.g., Assessment_Items).'
                     : formData.fieldType === 'TOGGLE'
                     ? 'The tag name should use camelCase (e.g., isGroundCourse).'
@@ -165,36 +182,102 @@ const CreateGlobalFieldModal = ({ show, onHide, onSuccess }) => {
                 </Form.Text>
               </Form.Group>
             </Col>
-            <Col md={6}>
+            <Col md={12}>
               <Form.Group>
                 <Form.Label className="text-primary-custom">Field Type <span className="text-danger">*</span></Form.Label>
                 <Form.Select
                   value={formData.fieldType}
-                  onChange={(e) => setFormData(prev => ({ ...prev, fieldType: e.target.value }))}
+                  onChange={(e) => {
+                    const newType = e.target.value;
+                    setFormData(prev => ({ ...prev, fieldType: newType, options: null }));
+                    // Reset options array when changing field type
+                    if (newType !== 'VALUE_LIST') {
+                      setValueListOptions([]);
+                      setNewOptionInput('');
+                    }
+                  }}
                   required
                 >
                   <option value="TEXT">TEXT</option>
                   <option value="PART">PART</option>
+                  <option value="CHECK_BOX">CHECK_BOX</option>
                   <option value="TOGGLE">TOGGLE</option>
-                  <option value="SECTION_CONTROL_TOGGLE">SECTION_CONTROL_TOGGLE</option>
                   <option value="VALUE_LIST">VALUE_LIST</option>
                 </Form.Select>
               </Form.Group>
             </Col>
-            <Col md={6}>
-              <Form.Group>
-                <Form.Label className="text-primary-custom">Role Required <span className="text-danger">*</span></Form.Label>
-                <Form.Select
-                  value={formData.roleRequired}
-                  onChange={(e) => setFormData(prev => ({ ...prev, roleRequired: e.target.value }))}
-                  required
-                >
-                  <option value="">Select role</option>
-                  <option value="TRAINER">TRAINER</option>
-                  <option value="TRAINEE">TRAINEE</option>
-                </Form.Select>
-              </Form.Group>
-            </Col>
+            {/* VALUE_LIST Options Field */}
+            {formData.fieldType === 'VALUE_LIST' && (
+              <Col md={12}>
+                <Form.Group>
+                  <Form.Label className="text-primary-custom">Options <span className="text-danger">*</span></Form.Label>
+                  <div className="d-flex gap-2 mb-2">
+                    <Form.Control
+                      type="text"
+                      placeholder="Enter option value (e.g., Pass, Fail)"
+                      value={newOptionInput}
+                      onChange={(e) => setNewOptionInput(e.target.value)}
+                      onKeyPress={(e) => {
+                        if (e.key === 'Enter') {
+                          e.preventDefault();
+                          const trimmedValue = newOptionInput.trim();
+                          if (trimmedValue) {
+                            // Check for duplicate
+                            if (valueListOptions.includes(trimmedValue)) {
+                              toast.warning('This option already exists. Please enter a different value.');
+                              return;
+                            }
+                            setValueListOptions(prev => [...prev, trimmedValue]);
+                            setNewOptionInput('');
+                          }
+                        }
+                      }}
+                    />
+                    <Button
+                      variant="outline-primary"
+                      size="sm"
+                      onClick={() => {
+                        const trimmedValue = newOptionInput.trim();
+                        if (trimmedValue) {
+                          // Check for duplicate
+                          if (valueListOptions.includes(trimmedValue)) {
+                            toast.warning('This option already exists. Please enter a different value.');
+                            return;
+                          }
+                          setValueListOptions(prev => [...prev, trimmedValue]);
+                          setNewOptionInput('');
+                        }
+                      }}
+                      disabled={!newOptionInput.trim()}
+                    >
+                      <Plus size={14} />
+                    </Button>
+                  </div>
+                  {valueListOptions.length > 0 && (
+                    <div className="d-flex flex-column gap-2 mb-2" style={{ maxHeight: '200px', overflowY: 'auto' }}>
+                      {valueListOptions.map((option, idx) => (
+                        <div key={idx} className="d-flex align-items-center gap-2 p-2 border rounded">
+                          <span className="flex-grow-1">{option}</span>
+                          <Button
+                            variant="outline-danger"
+                            size="sm"
+                            onClick={() => {
+                              setValueListOptions(prev => prev.filter((_, i) => i !== idx));
+                            }}
+                            style={{ padding: '0.25rem 0.4rem' }}
+                          >
+                            <X size={12} />
+                          </Button>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                  <Form.Text className="text-muted">
+                    Add options one by one.
+                  </Form.Text>
+                </Form.Group>
+              </Col>
+            )}
           </Row>
         </Form>
       </Modal.Body>

@@ -1,17 +1,21 @@
 import React, { useState, useEffect } from 'react';
 import { Container, Card, Table, Spinner, Alert, Button } from 'react-bootstrap';
-import { useParams, useLocation, useNavigate } from 'react-router-dom';
+import { useParams, useLocation, useNavigate, useSearchParams } from 'react-router-dom';
 import { ROUTES } from '../../constants/routes';
 import { ArrowLeft } from 'react-bootstrap-icons';
 import { assessmentAPI } from '../../api';
 import { toast } from 'react-toastify';
+import { PDFModal } from '../../components/Common';
 
 const statusDisplayMap = {
   NOT_STARTED: { variant: 'secondary', text: 'Not Started' },
   ON_GOING: { variant: 'info', text: 'On Going' },
   APPROVED: { variant: 'success', text: 'Approved' },
   COMPLETED: { variant: 'success', text: 'Completed' },
-  PENDING: { variant: 'warning', text: 'Pending' }
+  PENDING: { variant: 'warning', text: 'Pending' },
+  DRAFT: { variant: 'primary', text: 'Draft' },
+  SUBMITTED: { variant: 'dark', text: 'Submitted' },
+  CANCELLED: { variant: 'danger', text: 'Cancelled' }
 };
 
 const getStatusBadge = (status) => {
@@ -32,12 +36,15 @@ const AssessmentAssignmentsPage = () => {
   const { entityType, entityId } = useParams();
   const location = useLocation();
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const [state, setState] = useState({
     loading: true,
     error: null,
     info: location.state || null,
     assessments: []
   });
+  const [showPDFModal, setShowPDFModal] = useState(false);
+  const [selectedPDFUrl, setSelectedPDFUrl] = useState(null);
 
   const isValidType = entityType === 'course' || entityType === 'subject';
 
@@ -52,19 +59,78 @@ const AssessmentAssignmentsPage = () => {
         return;
       }
 
-      try {
-        setState((prev) => ({ ...prev, loading: true, error: null }));
-        const response =
-          entityType === 'course'
-            ? await assessmentAPI.getCourseAssessments(entityId)
-            : await assessmentAPI.getSubjectAssessments(entityId);
-
+      // Check if we have data from location.state (from Access button)
+      if (location.state?.assessments && location.state?.eventInfo) {
         setState({
           loading: false,
           error: null,
-          assessments: response?.assessments || [],
-          info: response?.courseInfo || response?.subjectInfo || location.state || null
+          assessments: location.state.assessments || [],
+          info: {
+            name: location.state.eventInfo?.entityInfo?.name || location.state.name,
+            code: location.state.eventInfo?.entityInfo?.code || location.state.code
+          }
         });
+        return;
+      }
+
+      // If no state data (F5 or direct navigation), use new API
+      // Get templateId and occuranceDate from URL query params (set when navigating from Access button)
+      const templateId = searchParams.get('templateId');
+      const occuranceDate = searchParams.get('occuranceDate');
+      
+      if (!templateId || !occuranceDate) {
+        // Missing required params - show error message
+        setState({
+          loading: false,
+          error: 'Please access this page through the "Access" button from the assessment list.',
+          assessments: [],
+          info: location.state || null
+        });
+        return;
+      }
+
+      try {
+        setState((prev) => ({ ...prev, loading: true, error: null }));
+        
+        let response;
+        const requestBody = {
+          courseId: entityType === 'course' ? entityId : undefined,
+          subjectId: entityType === 'subject' ? entityId : undefined,
+          templateId: templateId,
+          occuranceDate: occuranceDate
+        };
+
+        // Remove undefined properties
+        Object.keys(requestBody).forEach(key => 
+          requestBody[key] === undefined && delete requestBody[key]
+        );
+
+        // Call new API with all required params
+        if (entityType === 'course') {
+          response = await assessmentAPI.getCourseEvents(requestBody);
+        } else {
+          response = await assessmentAPI.getSubjectEvents(requestBody);
+        }
+
+        if (response?.assessments && response?.eventInfo) {
+          setState({
+            loading: false,
+            error: null,
+            assessments: response.assessments || [],
+            info: {
+              name: response.eventInfo?.entityInfo?.name || response.eventInfo?.name,
+              code: response.eventInfo?.entityInfo?.code || ''
+            }
+          });
+        } else {
+          // If API doesn't return expected data structure, show empty state
+          setState({
+            loading: false,
+            error: null,
+            assessments: [],
+            info: location.state || null
+          });
+        }
       } catch (err) {
         console.error('Error loading assessments:', err);
         toast.error('Failed to load assessments');
@@ -77,7 +143,7 @@ const AssessmentAssignmentsPage = () => {
     };
 
     fetchDetails();
-  }, [entityType, entityId, isValidType, location.state]);
+  }, [entityType, entityId, isValidType, location.state, navigate, searchParams]);
 
   if (!isValidType) {
     return (
@@ -88,8 +154,20 @@ const AssessmentAssignmentsPage = () => {
   }
 
   const handleAssessTrainee = (record) => {
-    if (record.status !== 'ON_GOING') return;
+    // Exclude these statuses: NOT_STARTED, SUBMITTED, APPROVED, CANCELLED
+    const excludedStatuses = ['NOT_STARTED', 'SUBMITTED', 'APPROVED', 'CANCELLED'];
+    if (excludedStatuses.includes(record.status)) return;
     navigate(ROUTES.ASSESSMENTS_SECTIONS(record.id));
+  };
+
+  const handleViewPDF = (pdfUrl) => {
+    setSelectedPDFUrl(pdfUrl);
+    setShowPDFModal(true);
+  };
+
+  const handleClosePDFModal = () => {
+    setShowPDFModal(false);
+    setSelectedPDFUrl(null);
   };
 
   return (
@@ -135,8 +213,9 @@ const AssessmentAssignmentsPage = () => {
                   <tr>
                     <th>Assessment</th>
                     <th>Trainee</th>
-                    <th>Date & Time</th>
+                    <th>Date</th>
                     <th>Status</th>
+                    <th>Score</th>
                     <th>Result</th>
                     <th>PDF</th>
                     <th className="text-center">Action</th>
@@ -156,31 +235,39 @@ const AssessmentAssignmentsPage = () => {
                         </td>
                         <td>
                           <div>{formatted.date}</div>
-                          <small className="text-muted">{formatted.time}</small>
                         </td>
                         <td>{getStatusBadge(item.status)}</td>
-                        <td>{item.resultText || item.resultScore || '—'}</td>
+                        <td>{item.resultScore !== null && item.resultScore !== undefined ? item.resultScore : '—'}</td>
+                        <td>{item.resultText || '—'}</td>
                             <td>
                               {item.pdfUrl ? (
-                                <a href={item.pdfUrl} target="_blank" rel="noreferrer">
+                                <Button
+                                  variant="primary"
+                                  size="sm"
+                                  onClick={() => handleViewPDF(item.pdfUrl)}
+                                >
                                   View
-                                </a>
+                                </Button>
                               ) : (
                                 <span className="text-muted">—</span>
                               )}
                             </td>
                             <td className="text-center">
-                              {item.status === 'ON_GOING' ? (
-                                <Button
-                                  size="sm"
-                                  variant="primary"
-                                  onClick={() => handleAssessTrainee(item)}
-                                >
-                                  Assess
-                                </Button>
-                              ) : (
-                                <span className="text-muted">—</span>
-                              )}
+                              {(() => {
+                                const excludedStatuses = ['NOT_STARTED', 'SUBMITTED', 'APPROVED', 'CANCELLED'];
+                                const canAssess = !excludedStatuses.includes(item.status);
+                                return canAssess ? (
+                                  <Button
+                                    size="sm"
+                                    variant="primary"
+                                    onClick={() => handleAssessTrainee(item)}
+                                  >
+                                    Assess
+                                  </Button>
+                                ) : (
+                                  <span className="text-muted">—</span>
+                                );
+                              })()}
                             </td>
                       </tr>
                     );
@@ -191,6 +278,14 @@ const AssessmentAssignmentsPage = () => {
           )}
         </Card.Body>
       </Card>
+
+      {/* PDF Modal */}
+      <PDFModal
+        show={showPDFModal}
+        onHide={handleClosePDFModal}
+        pdfUrl={selectedPDFUrl}
+        title="Assessment PDF"
+      />
     </Container>
   );
 };

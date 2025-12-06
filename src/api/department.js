@@ -22,7 +22,9 @@ export const departmentAPI = {
           ...params
         }
       });
-      return response.data;
+      // Handle response format: { message: "...", data: { departments: [...], totalItems: ... } }
+      const departments = response.data?.data?.departments || response.data?.departments || [];
+      return departments;
     } catch (error) {
       console.error('Error fetching departments:', error);
       throw error;
@@ -37,9 +39,22 @@ export const departmentAPI = {
           includeDeleted: true,
         }
       });
-      return response.data;
+      // Handle response format: { message: "...", data: { id, name, courses, ... } }
+      return response.data?.data || response.data || {};
     } catch (error) {
       console.error('Error fetching department:', error);
+      throw error;
+    }
+  },
+
+  // Get current user's department (for department heads)
+  getMyDepartment: async () => {
+    try {
+      const response = await apiClient.get('/departments/me');
+      // Handle response format: { message: "...", data: { id, name, courses, ... } }
+      return response.data?.data || response.data || {};
+    } catch (error) {
+      console.error('Error fetching my department:', error);
       throw error;
     }
   },

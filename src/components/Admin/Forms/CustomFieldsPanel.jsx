@@ -11,6 +11,7 @@ import apiClient from '../../../api/config.js';
 import { API_CONFIG } from '../../../config/api.js';
 import { uploadAPI } from '../../../api/upload.js';
 import templateAPI from '../../../api/template';
+import { PermissionWrapper } from '../../Common';
 
 const CustomFieldsPanel = ({ 
   customFields = [], 
@@ -27,7 +28,8 @@ const CustomFieldsPanel = ({
   initialSections = null, // ← NEW prop to restore sections from draft
   readOnly = false,
   className = "",
-  onSubmittingChange // Callback to notify parent about submit state
+  onSubmittingChange, // Callback to notify parent about submit state
+  isUpdateRejected = false // ← NEW prop to indicate Update Rejected Template flow
 }) => {
   const navigate = useNavigate();
   const [sections, setSections] = useState([]);
@@ -111,9 +113,18 @@ const CustomFieldsPanel = ({
           const section = sections[sectionIndex];
           const sectionFields = section.fields || [];
           
-          // Check if fieldName already exists
-          if (sectionFields.some(f => f.fieldName === fieldData.fieldName)) {
-            toast.warning(`Field "${fieldData.fieldName}" already exists in this section`);
+          // Check if fieldName already exists in the entire template (exclude sub-fields of PART/CHECK_BOX)
+          // Flatten all fields from all sections
+          const allFields = sections.flatMap((section) => section.fields || []);
+          
+          // Filter to exclude sub-fields (those with parentTempId or parentId)
+          const topLevelFields = allFields.filter(field => !field.parentTempId && !field.parentId);
+          
+          // Check if fieldData is a sub-field (if so, skip duplicate check)
+          const isSubField = fieldData.parentTempId || fieldData.parentId;
+          
+          if (!isSubField && topLevelFields.some(f => f.fieldName === fieldData.fieldName)) {
+            toast.warning(`Field "${fieldData.fieldName}" already exists in the template`);
             return false; // Return false to indicate failure
           }
 
@@ -557,20 +568,22 @@ const CustomFieldsPanel = ({
         allFields: fromFields.map((f, i) => ({ idx: i, label: f.label || f.fieldName, type: f.fieldType, parent: f.parentTempId }))
       });
       
-      // Check if it's a PART field - need to move children too
+      // Check if it's a PART or CHECK_BOX field - need to move children too
       const isPart = String(fieldToMove.fieldType || '').toUpperCase() === 'PART';
-      const partTempId = isPart ? (fieldToMove.tempId || `${fieldToMove.fieldName}-parent`) : null;
+      const isCheckBox = String(fieldToMove.fieldType || '').toUpperCase() === 'CHECK_BOX';
+      const isParentField = isPart || isCheckBox;
+      const partTempId = isParentField ? (fieldToMove.tempId || `${fieldToMove.fieldName}-parent`) : null;
       
-      // Collect all fields to move (PART + children if applicable, or just the field if it's a child)
+      // Collect all fields to move (PART/CHECK_BOX + children if applicable, or just the field if it's a child)
       const fieldsToMove = [fieldToMove];
       const indicesToRemove = new Set([fromFieldIndex]);
       
-      if (isPart && partTempId) {
-        // Find all children of this PART field and collect their indices
-        // Only include children that come AFTER the PART field in the array
+      if (isParentField && partTempId) {
+        // Find all children of this PART/CHECK_BOX field and collect their indices
+        // Only include children that come AFTER the PART/CHECK_BOX field in the array
         fromFields.forEach((f, idx) => {
-          // Only add children that belong to this PART field (by parentTempId)
-          // and make sure we don't add the PART field itself again
+          // Only add children that belong to this PART/CHECK_BOX field (by parentTempId)
+          // and make sure we don't add the PART/CHECK_BOX field itself again
           if (f.parentTempId === partTempId && idx !== fromFieldIndex) {
             console.log('  ➕ Adding child:', { idx, label: f.label || f.fieldName, parentTempId: f.parentTempId });
             fieldsToMove.push(f);
@@ -743,13 +756,11 @@ const CustomFieldsPanel = ({
     const section = sections[editingSectionIndex];
     if (!section) return;
     
-    // Confirm before removing
-    if (window.confirm(`Are you sure you want to remove section "${section.label}"? This action cannot be undone.`)) {
-      removeSection(editingSectionIndex);
-      setShowSectionModal(false);
-      setEditingSectionIndex(null);
-      toast.success('Section removed successfully');
-    }
+    // Remove section directly
+    removeSection(editingSectionIndex);
+    setShowSectionModal(false);
+    setEditingSectionIndex(null);
+    toast.success(`Section "${section.label}" removed successfully`);
   };
 
   // Load roles and filter to TRAINER/TRAINEE when opening section modal
@@ -800,8 +811,8 @@ const CustomFieldsPanel = ({
     
     const type = String(fieldType || '').toUpperCase();
     
-    if (type === 'PART') {
-      // PART: underscores, capitalized first letter, not start with "section"
+    if (type === 'PART' || type === 'CHECK_BOX') {
+      // PART/CHECK_BOX: underscores, capitalized first letter, not start with "section"
       const partRegex = /^[A-Z][A-Za-z0-9_]*$/;
       if (!partRegex.test(fieldName)) {
         return {
@@ -874,28 +885,62 @@ const CustomFieldsPanel = ({
       return;
     }
 
-    // Check if fieldName already exists within the section (exclude current field if editing)
-    const sectionFields = sections[editingSectionIndex].fields || [];
-    const existingFields = editingFieldIndex !== null 
-      ? sectionFields.filter((_, index) => index !== editingFieldIndex)
-      : sectionFields;
+    // Check if fieldName already exists in the entire template (exclude current field if editing, exclude sub-fields of PART/CHECK_BOX)
+    // Flatten all fields from all sections
+    const allFields = sections.flatMap((section, sIdx) => 
+      (section.fields || []).map((field, fIdx) => ({ ...field, sectionIndex: sIdx, fieldIndex: fIdx }))
+    );
     
-    if (existingFields.some(field => field.fieldName === fieldToSave.fieldName)) {
-      toast.warning('Field name must be unique');
+    // Filter to exclude current field if editing, and exclude sub-fields (those with parentTempId or parentId)
+    const existingFields = allFields.filter(field => {
+      // Exclude current field being edited
+      if (editingFieldIndex !== null && 
+          field.sectionIndex === editingSectionIndex && 
+          field.fieldIndex === editingFieldIndex) {
+        return false;
+      }
+      // Exclude sub-fields of PART/CHECK_BOX (they can have duplicate names as they're nested)
+      if (field.parentTempId || field.parentId) {
+        return false;
+      }
+      return true;
+    });
+    
+    // Check if fieldToSave is a sub-field (if so, skip duplicate check)
+    const isSubField = fieldToSave.parentTempId || fieldToSave.parentId;
+    
+    if (!isSubField && existingFields.some(field => field.fieldName === fieldToSave.fieldName)) {
+      toast.warning(`Field name "${fieldToSave.fieldName}" already exists in the template`);
       return;
     }
+
+    // Auto-set roleRequired from section's editBy for sub-fields (PART/CHECK_BOX sub-fields)
+    if (isSubField) {
+      const section = sections[editingSectionIndex];
+      fieldToSave.roleRequired = section?.editBy || 'TRAINER';
+    }
+
+    // Get the current section's fields
+    const currentSection = sections[editingSectionIndex];
+    const sectionFields = currentSection?.fields || [];
 
     const nextSections = [...sections];
     if (editingFieldIndex !== null) {
       // Update existing field in the selected section
-      nextSections[editingSectionIndex].fields = [
-        ...sectionFields.slice(0, editingFieldIndex),
-        fieldToSave,
-        ...sectionFields.slice(editingFieldIndex + 1)
-      ];
+      nextSections[editingSectionIndex] = {
+        ...currentSection,
+        fields: [
+          ...sectionFields.slice(0, editingFieldIndex),
+          fieldToSave,
+          ...sectionFields.slice(editingFieldIndex + 1)
+        ]
+      };
     } else {
       // Add new field in the selected section (no displayOrder; computed on submit)
-      nextSections[editingSectionIndex].fields = [...sectionFields, fieldToSave];
+      nextSections[editingSectionIndex] = {
+        ...currentSection,
+        fields: [...sectionFields, fieldToSave]
+      };
     }
 
     setSections(nextSections);
@@ -965,11 +1010,13 @@ const CustomFieldsPanel = ({
   const handleSubmitTemplate = async () => {
     try {
       setIsSubmitting(true);
-      const meta = readTemplateMetaFromStorage();
       
       // Get documentKey for logging
       const documentKey = getDocumentKey ? getDocumentKey() : null;
       console.log('🔑 DocumentKey:', documentKey);
+      
+      // Read initial meta for templateContent (file import URL)
+      const meta = readTemplateMetaFromStorage();
       
       // Step: ForceSave → Backend Callback → Polling → Get S3 URL for templateConfig
       let templateConfigUrl = null;
@@ -1027,19 +1074,50 @@ const CustomFieldsPanel = ({
       
       console.log('📤 Submitting template to backend...');
       
-      // Validate FINAL_SCORE_TEXT and FINAL_SCORE_NUM (must have exactly 1 of each)
+      // Validate FINAL_SCORE_TEXT and FINAL_SCORE_NUM
       const allFields = sections.flatMap(s => s.fields || []);
       const finalScoreTextFields = allFields.filter(f => f.fieldType === 'FINAL_SCORE_TEXT');
       const finalScoreNumFields = allFields.filter(f => f.fieldType === 'FINAL_SCORE_NUM');
       
-      if (finalScoreTextFields.length !== 1) {
-        toast.error(`Template must have exactly 1 FINAL_SCORE_TEXT field. Found: ${finalScoreTextFields.length}`);
+      // Must have at least 1 of either field
+      if (finalScoreTextFields.length === 0 && finalScoreNumFields.length === 0) {
+        toast.error('Template must have at least 1 FINAL_SCORE_TEXT or FINAL_SCORE_NUM field (or both)');
         setIsSubmitting(false);
         return;
       }
       
-      if (finalScoreNumFields.length !== 1) {
-        toast.error(`Template must have exactly 1 FINAL_SCORE_NUM field. Found: ${finalScoreNumFields.length}`);
+      // Cannot have more than 1 of each type
+      if (finalScoreTextFields.length > 1) {
+        toast.error(`Template must have at most 1 FINAL_SCORE_TEXT field. Found: ${finalScoreTextFields.length}`);
+        setIsSubmitting(false);
+        return;
+      }
+      
+      if (finalScoreNumFields.length > 1) {
+        toast.error(`Template must have at most 1 FINAL_SCORE_NUM field. Found: ${finalScoreNumFields.length}`);
+        setIsSubmitting(false);
+        return;
+      }
+
+      // Validate signatures based on roles
+      // 1. Trainer can have one or more signature fields of either type (IMAGE or DRAW)
+      const trainerSignatureFields = allFields.filter(f =>
+        (f.fieldType === 'SIGNATURE_IMAGE' || f.fieldType === 'SIGNATURE_DRAW') &&
+        f.roleRequired === 'TRAINER'
+      );
+      if (trainerSignatureFields.length === 0) { // Changed condition: check for at least one
+        toast.error('Template must have at least one signature field (IMAGE or DRAW) for the TRAINER role.'); // Updated error message
+        setIsSubmitting(false);
+        return;
+      }
+
+      // 2. Trainee must have exactly one signature field of type DRAW
+      const traineeSignatureFields = allFields.filter(f => 
+        f.fieldType === 'SIGNATURE_DRAW' && 
+        f.roleRequired === 'TRAINEE'
+      );
+      if (traineeSignatureFields.length !== 1) {
+        toast.error('Template must have exactly one SIGNATURE_DRAW field for the TRAINEE role.');
         setIsSubmitting(false);
         return;
       }
@@ -1048,47 +1126,62 @@ const CustomFieldsPanel = ({
       const finalScoreTestFields = allFields.filter(f => f.fieldType === 'FINAL_SCORE_TEST');
       const hasFinalScoreNum = finalScoreNumFields.length > 0;
       const hasFinalScoreText = finalScoreTextFields.length > 0;
-      const hasBoth = hasFinalScoreNum && hasFinalScoreText;
+      // const hasBoth = hasFinalScoreNum && hasFinalScoreText;
 
-      for (const testField of finalScoreTestFields) {
-        // If both FINAL_SCORE_NUM and FINAL_SCORE_TEXT exist, options are not required
-        if (hasBoth) {
-          // Options not required - skip validation
-          continue;
-        }
+      // TODO: Uncomment this validation when FINAL_SCORE_TEXT options UI is implemented
+      // for (const testField of finalScoreTestFields) {
+      //   // If both FINAL_SCORE_NUM and FINAL_SCORE_TEXT exist, options are not required
+      //   if (hasBoth) {
+      //     // Options not required - skip validation
+      //     continue;
+      //   }
 
-        // If only FINAL_SCORE_TEXT exists (no FINAL_SCORE_NUM), options are required
-        if (hasFinalScoreText && !hasFinalScoreNum) {
-          if (!testField.option || !testField.option.trim()) {
-            toast.error(`FINAL_SCORE_TEST field "${testField.label || testField.fieldName || testField.name}" requires options when only FINAL_SCORE_TEXT exists. Please provide options in JSON format: {"items": ["value1", "value2", ...]}`);
-            setIsSubmitting(false);
-            return;
-          }
+      //   // If only FINAL_SCORE_TEXT exists (no FINAL_SCORE_NUM), options are required
+      //   if (hasFinalScoreText && !hasFinalScoreNum) {
+      //     if (!testField.option || !testField.option.trim()) {
+      //       toast.error(`FINAL_SCORE_TEST field "${testField.label || testField.fieldName || testField.name}" requires options when only FINAL_SCORE_TEXT exists. Please provide options in JSON format: {"items": ["value1", "value2", ...]}`);
+      //       setIsSubmitting(false);
+      //       return;
+      //     }
 
-          // Validate options format
-          try {
-            const parsed = JSON.parse(testField.option);
-            if (!parsed.items || !Array.isArray(parsed.items) || parsed.items.length === 0) {
-              toast.error(`FINAL_SCORE_TEST field "${testField.label || testField.fieldName || testField.name}" options must be a JSON object with a non-empty "items" array. Example: {"items": ["value1", "value2"]}`);
-              setIsSubmitting(false);
-              return;
-            }
-          } catch {
-            toast.error(`FINAL_SCORE_TEST field "${testField.label || testField.fieldName || testField.name}" has invalid JSON format for options. Example: {"items": ["value1", "value2"]}`);
-            setIsSubmitting(false);
-            return;
-          }
-        }
-      }
+      //     // Validate options format
+      //     try {
+      //       const parsed = JSON.parse(testField.option);
+      //       if (!parsed.items || !Array.isArray(parsed.items) || parsed.items.length === 0) {
+      //         toast.error(`FINAL_SCORE_TEST field "${testField.label || testField.fieldName || testField.name}" options must be a JSON object with a non-empty "items" array. Example: {"items": ["value1", "value2"]}`);
+      //         setIsSubmitting(false);
+      //         return;
+      //       }
+      //     } catch {
+      //       toast.error(`FINAL_SCORE_TEST field "${testField.label || testField.fieldName || testField.name}" has invalid JSON format for options. Example: {"items": ["value1", "value2"]}`);
+      //       setIsSubmitting(false);
+      //       return;
+      //     }
+      //   }
+      // }
       
-      // Check if this is a create version flow (has originalTemplateId) or update draft (has currentTemplateId)
-      const originalTemplateId = meta.originalTemplateId;
-      const currentTemplateId = meta.currentTemplateId || localStorage.getItem('currentTemplateId');
+      // OPTION B: Read FRESH from localStorage BEFORE checking (similar to Save Draft)
+      // This ensures we get the latest values, especially if they were set/updated after component mount
+      const freshMeta = readTemplateMetaFromStorage();
+      const originalTemplateId = freshMeta.originalTemplateId;
+      const currentTemplateId = freshMeta.currentTemplateId || 
+                               freshMeta.id || 
+                               localStorage.getItem('currentTemplateId');
+      
+      console.log('🔍 Option B: Checking flow type (read FRESH):');
+      console.log('  🏷️ isUpdateRejected:', isUpdateRejected);
+      console.log('  📦 freshMeta.originalTemplateId:', originalTemplateId);
+      console.log('  📦 freshMeta.currentTemplateId:', freshMeta.currentTemplateId);
+      console.log('  📦 freshMeta.id:', freshMeta.id);
+      console.log('  📦 localStorage.getItem("currentTemplateId"):', localStorage.getItem('currentTemplateId'));
+      console.log('  ✅ Final originalTemplateId:', originalTemplateId);
+      console.log('  ✅ Final currentTemplateId:', currentTemplateId);
       
       // Load existing fields if updating draft (to convert parentTempId → parentId)
+      // Only load if we're updating draft (has currentTemplateId, not creating new version)
       let existingFields = null;
-      if (currentTemplateId && !originalTemplateId) {
-        // Only load existing fields when updating draft (not creating new version or new template)
+      if (currentTemplateId && !originalTemplateId && !isUpdateRejected) {
+        // Only load existing fields when updating draft (not creating new version or new template or updating rejected)
         try {
           console.log('📥 Loading existing draft fields for parentId conversion (Submit)...');
           const existingDraftResponse = await templateAPI.getTemplateById(currentTemplateId);
@@ -1190,9 +1283,41 @@ const CustomFieldsPanel = ({
         console.warn('⚠️ No templateConfigUrl available - skipping field validation');
       }
       
-      if (originalTemplateId) {
-        // CREATE NEW VERSION from published template
-        console.log('🔄 Creating new version from published template:', originalTemplateId);
+      // OPTION B LOGIC: Check in priority order
+      // 1. isUpdateRejected → PUT /templates/update-rejected/{id}
+      // 2. originalTemplateId → POST /templates/create-version
+      // 3. currentTemplateId → PUT /templates/update-draft/{id}
+      // 4. None → POST /templates (create new)
+      
+      if (isUpdateRejected && currentTemplateId) {
+        // PRIORITY 1: Update Rejected Template
+        console.log('📝 [OPTION B] Updating existing rejected template:', currentTemplateId);
+        // Create a payload without the status field for the update-rejected endpoint
+        const { status: removedStatus, ...payloadWithoutStatus } = payload; // Destructure to omit status
+        const res = await apiClient.put(`/templates/update-rejected/${currentTemplateId}`, {
+          ...payloadWithoutStatus,
+          id: currentTemplateId,
+          // The status is managed by the backend for rejected templates, so it's not sent from frontend.
+        });
+        toast.success('Template submitted successfully');
+        console.log('✅ Rejected template updated and submitted:', res?.data ?? res);
+        
+        // Clear currentTemplateId after successful submit
+        const updatedMeta = {
+          ...freshMeta,
+          currentTemplateId: null
+        };
+        localStorage.setItem('templateInfo', JSON.stringify(updatedMeta));
+        localStorage.removeItem('currentTemplateId');
+        console.log('🗑️ Cleared currentTemplateId after submit');
+        
+        // Navigate back to forms list after successful submit
+        setTimeout(() => {
+          navigate(ROUTES.TEMPLATES);
+        }, 1500);
+      } else if (originalTemplateId) {
+        // PRIORITY 2: Create New Version from published template
+        console.log('🔄 [OPTION B] Creating new version from published template:', originalTemplateId);
         const versionPayload = {
           originalTemplateId: originalTemplateId,
           ...payload
@@ -1205,7 +1330,7 @@ const CustomFieldsPanel = ({
           
           // Clear originalTemplateId after successful submit
           const updatedMeta = {
-            ...meta,
+            ...freshMeta,
             originalTemplateId: null
           };
           localStorage.setItem('templateInfo', JSON.stringify(updatedMeta));
@@ -1249,7 +1374,7 @@ const CustomFieldsPanel = ({
               
               // Clear originalTemplateId after successful submit
               const updatedMeta = {
-                ...meta,
+                ...freshMeta,
                 originalTemplateId: null
               };
               localStorage.setItem('templateInfo', JSON.stringify(updatedMeta));
@@ -1269,44 +1394,37 @@ const CustomFieldsPanel = ({
             throw versionError;
           }
         }
+      } else if (currentTemplateId) {
+        // PRIORITY 3: Update Draft
+        console.log('📝 [OPTION B] Updating existing draft:', currentTemplateId);
+        const res = await apiClient.put(`/templates/update-draft/${currentTemplateId}`, payload);
+        toast.success('Template submitted successfully');
+        console.log('✅ Draft updated and submitted:', res?.data ?? res);
+        
+        // Clear currentTemplateId after successful submit
+        const updatedMeta = {
+          ...freshMeta,
+          currentTemplateId: null
+        };
+        localStorage.setItem('templateInfo', JSON.stringify(updatedMeta));
+        localStorage.removeItem('currentTemplateId');
+        console.log('🗑️ Cleared currentTemplateId after submit');
+        
+        // Navigate back to forms list after successful submit
+        setTimeout(() => {
+          navigate(ROUTES.TEMPLATES);
+        }, 1500);
       } else {
-        // Use currentTemplateId already checked above
-        if (currentTemplateId) {
-          // UPDATE existing draft to PENDING (submit)
-          console.log('📝 Updating existing draft to PENDING:', currentTemplateId);
-          const res = await apiClient.put(`/templates/update-draft/${currentTemplateId}`, {
-            ...payload,
-            id: currentTemplateId,
-            status: 'PENDING'
-          });
-          toast.success('Template submitted successfully');
-          console.log('✅ Template updated and submitted:', res?.data ?? res);
-          
-          // Clear currentTemplateId after successful submit
-          const updatedMeta = {
-            ...meta,
-            currentTemplateId: null
-          };
-          localStorage.setItem('templateInfo', JSON.stringify(updatedMeta));
-          localStorage.removeItem('currentTemplateId');
-          console.log('🗑️ Cleared currentTemplateId after submit');
-          
-          // Navigate back to forms list after successful submit
-          setTimeout(() => {
-            navigate(ROUTES.TEMPLATES);
-          }, 1500);
-        } else {
-          // CREATE new template
-          console.log('➕ Creating new template');
-      const res = await apiClient.post('/templates', payload);
-      toast.success('Template submitted successfully');
-      console.log('✅ Backend response:', res?.data ?? res);
-          
-          // Navigate back to forms list after successful submit
-          setTimeout(() => {
-            navigate(ROUTES.TEMPLATES);
-          }, 1500);
-        }
+        // PRIORITY 4: Create New Template
+        console.log('➕ [OPTION B] Creating new template');
+        const res = await apiClient.post('/templates', payload);
+        toast.success('Template submitted successfully');
+        console.log('✅ Backend response:', res?.data ?? res);
+        
+        // Navigate back to forms list after successful submit
+        setTimeout(() => {
+          navigate(ROUTES.TEMPLATES);
+        }, 1500);
       }
     } catch (err) {
       console.error('❌ Submit template failed:', err);
@@ -1326,9 +1444,11 @@ const CustomFieldsPanel = ({
         // {#condition}{/condition}  {^condition}{/condition}
         return `{#${name}}{/` + name + `} {^${name}}{/` + name + `}`;
       case 'PART':
-        // {#condition} {test_field} {/condition}
-        return `{#${name}} {test_field} {/${name}}`;
-      case 'IMAGE':
+        // {#condition} {/condition}
+        return `{#${name}} {/${name}}`;
+      case 'CHECK_BOX':
+        // {#condition} {/condition}
+        return `{#${name}} {/${name}}`;
       case 'SIGNATURE_DRAW':
       case 'SIGNATURE_IMAGE':
       case 'FINAL_SCORE_TEXT':
@@ -1336,7 +1456,7 @@ const CustomFieldsPanel = ({
       case 'VALUE_LIST':
       case 'TEXT':
       default:
-        // text : {field_name} (IMAGE is also treated as TEXT - URL link)
+        // text : {field_name}
         return `{${name}}`;
     }
   };
@@ -1347,16 +1467,23 @@ const CustomFieldsPanel = ({
   const [activePartSectionIndex, setActivePartSectionIndex] = useState(null);
   // index kept out to avoid unused variable; we don't need the field index currently
   const [partSubFieldName, setPartSubFieldName] = useState('');
-  const [partSubFieldType, setPartSubFieldType] = useState('TEXT'); // TEXT | TOGGLE | IMAGE
   const [partSubFieldLabel, setPartSubFieldLabel] = useState('');
   // displayOrder is auto-assigned based on creation order
   const [partSubFieldRoleRequired, setPartSubFieldRoleRequired] = useState('TRAINER');
+
+  // Insert CheckBox Field modal state (similar to PART, but only TEXT sub-fields)
+  const [showCheckBoxFieldModal, setShowCheckBoxFieldModal] = useState(false);
+  const [activeCheckBoxField, setActiveCheckBoxField] = useState(null); // the CHECK_BOX field object
+  const [activeCheckBoxSectionIndex, setActiveCheckBoxSectionIndex] = useState(null);
+  const [checkBoxSubFieldName, setCheckBoxSubFieldName] = useState('');
+  const [checkBoxSubFieldLabel, setCheckBoxSubFieldLabel] = useState('');
+  // displayOrder is auto-assigned based on creation order
+  const [checkBoxSubFieldRoleRequired, setCheckBoxSubFieldRoleRequired] = useState('TRAINER');
 
   const openInsertPartField = (sectionIndex, fieldIndex, partField) => {
     setActivePartSectionIndex(sectionIndex);
     setActivePartField(partField);
     setPartSubFieldName('');
-    setPartSubFieldType('TEXT');
     setPartSubFieldLabel('');
     // order auto
     setPartSubFieldRoleRequired('TRAINER');
@@ -1380,15 +1507,25 @@ const CustomFieldsPanel = ({
       return;
     }
     const sectionFields = sections[activePartSectionIndex].fields || [];
-    if (sectionFields.some((f) => f.fieldName === partSubFieldName)) {
-      toast.warning('Field name must be unique within section');
+    const parentTempId = activePartField?.tempId || activePartField?.fieldName || null;
+    
+    // Check duplicate only within the same PART parent (sub-fields of other PARTs can have the same name)
+    const sameParentFields = sectionFields.filter(f => 
+      (f.parentTempId || f.parentId) === parentTempId
+    );
+    if (sameParentFields.some((f) => f.fieldName === partSubFieldName)) {
+      toast.warning(`Field name "${partSubFieldName}" already exists in this PART`);
       return;
     }
+    // Auto-set roleRequired from section's editBy
+    const section = sections[activePartSectionIndex];
+    const roleRequired = section?.editBy || 'TRAINER';
+    
     const newSubField = {
       label: partSubFieldLabel,
       fieldName: partSubFieldName,
-      fieldType: partSubFieldType,
-      roleRequired: partSubFieldRoleRequired,
+      fieldType: 'TEXT', // PART sub-fields are always TEXT
+      roleRequired: roleRequired, // Auto-set from section's editBy
       parentTempId: activePartField?.tempId || activePartField?.fieldName || null
     };
     const nextSections = [...sections];
@@ -1400,15 +1537,8 @@ const CustomFieldsPanel = ({
       onAddField(flattened);
       }, 0);
     }
-    // Build inner template based on selected type (TEXT/TOGGLE/IMAGE)
-    let inner = `{${partSubFieldName}}`;
-    const typeUpper = String(partSubFieldType).toUpperCase();
-    if (typeUpper === 'TOGGLE') {
-      inner = `{#${partSubFieldName}}{/${partSubFieldName}} {^${partSubFieldName}}{/${partSubFieldName}}`;
-    } else if (typeUpper === 'IMAGE') {
-      // Image placeholder behaves like text token in template
-      inner = `{${partSubFieldName}}`;
-    }
+    // Build inner template - PART sub-fields are always TEXT
+    const inner = `{${partSubFieldName}}`;
     // Insert only the inner field so it goes inside the existing part block
     const template = ` ${inner}`;
     // Defer insertion to next tick to avoid parent state updates during render
@@ -1417,11 +1547,107 @@ const CustomFieldsPanel = ({
     setActivePartField(null);
     setActivePartSectionIndex(null);
     setPartSubFieldName('');
-    setPartSubFieldType('TEXT');
     setPartSubFieldLabel('');
     // order auto
     setPartSubFieldRoleRequired('TRAINER');
   };
+
+  const openInsertCheckBoxField = (sectionIndex, fieldIndex, checkBoxField) => {
+    setActiveCheckBoxSectionIndex(sectionIndex);
+    setActiveCheckBoxField(checkBoxField);
+    setCheckBoxSubFieldName('');
+    setCheckBoxSubFieldLabel('');
+    // order auto
+    setCheckBoxSubFieldRoleRequired('TRAINER');
+    setShowCheckBoxFieldModal(true);
+  };
+
+  const handleInsertCheckBoxField = () => {
+    const snake = /^[a-z][a-z0-9_]*$/;
+    if (!checkBoxSubFieldLabel || !checkBoxSubFieldName || !snake.test(checkBoxSubFieldName)) {
+      toast.warning('Please enter label and snake_case field name, e.g., focus_item');
+      return;
+    }
+    const checkBoxName = activeCheckBoxField?.fieldName;
+    if (!checkBoxName) {
+      toast.error('Invalid CHECK_BOX field');
+      return;
+    }
+    // ensure section context
+    if (activeCheckBoxSectionIndex === null || activeCheckBoxSectionIndex < 0 || activeCheckBoxSectionIndex >= sections.length) {
+      toast.error('Invalid section');
+      return;
+    }
+    const sectionFields = sections[activeCheckBoxSectionIndex].fields || [];
+    const parentTempId = activeCheckBoxField?.tempId || activeCheckBoxField?.fieldName || null;
+    
+    // Check duplicate only within the same CHECK_BOX parent (sub-fields of other CHECK_BOXes can have the same name)
+    const sameParentFields = sectionFields.filter(f => 
+      (f.parentTempId || f.parentId) === parentTempId
+    );
+    if (sameParentFields.some((f) => f.fieldName === checkBoxSubFieldName)) {
+      toast.warning(`Field name "${checkBoxSubFieldName}" already exists in this CHECK_BOX`);
+      return;
+    }
+    // Auto-set roleRequired from section's editBy
+    const section = sections[activeCheckBoxSectionIndex];
+    const roleRequired = section?.editBy || 'TRAINER';
+    
+    const newSubField = {
+      label: checkBoxSubFieldLabel,
+      fieldName: checkBoxSubFieldName,
+      fieldType: 'TEXT', // CHECK_BOX only supports TEXT sub-fields
+      roleRequired: roleRequired, // Auto-set from section's editBy
+      parentTempId: activeCheckBoxField?.tempId || activeCheckBoxField?.fieldName || null
+    };
+    const nextSections = [...sections];
+    nextSections[activeCheckBoxSectionIndex].fields = [...sectionFields, newSubField];
+    setSections(nextSections);
+    if (onAddField) {
+      const flattened = nextSections.flatMap((s) => s.fields || []);
+      setTimeout(() => {
+      onAddField(flattened);
+      }, 0);
+    }
+    // Build inner template - CHECK_BOX sub-fields are always TEXT
+    const inner = `{${checkBoxSubFieldName}}`;
+    // Insert only the inner field so it goes inside the existing checkbox block
+    const template = ` ${inner}`;
+    // Defer insertion to next tick to avoid parent state updates during render
+    setTimeout(() => onInsertField(template), 0);
+    setShowCheckBoxFieldModal(false);
+    setActiveCheckBoxField(null);
+    setActiveCheckBoxSectionIndex(null);
+    setCheckBoxSubFieldName('');
+    setCheckBoxSubFieldLabel('');
+    // order auto
+    setCheckBoxSubFieldRoleRequired('TRAINER');
+  };
+  
+  // Determine current section being edited for field type filtering
+  const currentSectionForField = editingSectionIndex !== null && editingSectionIndex < sections.length
+    ? sections[editingSectionIndex]
+    : null;
+  
+  const isTraineeSectionForField = currentSectionForField?.editBy === 'TRAINEE';
+
+  const allFieldTypeOptions = [
+    { value: 'TEXT', label: 'TEXT' },
+    { value: 'TOGGLE', label: 'TOGGLE' },
+    { value: 'PART', label: 'PART' },
+    { value: 'CHECK_BOX', label: 'CHECK_BOX' },
+    { value: 'SIGNATURE_DRAW', label: 'SIGNATURE_DRAW' },
+    { value: 'SIGNATURE_IMAGE', label: 'SIGNATURE_IMAGE' },
+    { value: 'FINAL_SCORE_TEXT', label: 'FINAL_SCORE_TEXT' },
+    { value: 'FINAL_SCORE_NUM', label: 'FINAL_SCORE_NUM' },
+    { value: 'VALUE_LIST', label: 'VALUE_LIST' },
+  ];
+
+  const traineeBlockedTypes = ['SIGNATURE_IMAGE', 'FINAL_SCORE_NUM', 'FINAL_SCORE_TEXT'];
+
+  const availableFieldTypeOptions = isTraineeSectionForField
+    ? allFieldTypeOptions.filter(option => !traineeBlockedTypes.includes(option.value))
+    : allFieldTypeOptions;
 
   return (
     <>
@@ -1480,18 +1706,18 @@ const CustomFieldsPanel = ({
       <div className={`p-2 p-md-3 bg-light custom-fields-panel ${className}`} style={{ height: '100%', display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
       <div className="d-flex justify-content-between align-items-center mb-2 mb-md-3 flex-wrap gap-2 flex-shrink-0">
         <h6 className="mb-0 text-muted custom-fields-title" style={{ fontSize: '0.95rem' }}>Available Custom Fields</h6>
-        <Button
-          variant="outline-primary"
-          size="sm"
-          onClick={handleAddSection}
-          disabled={readOnly}
-          className="custom-fields-add-section-btn"
-          style={{ whiteSpace: 'nowrap', flexShrink: 0 }}
-        >
-          <Plus className="me-1" size={14} />
-          <span className="d-none d-sm-inline">Add Section</span>
-          <span className="d-inline d-sm-none">Section</span>
-        </Button>
+          <Button
+            variant="outline-primary"
+            size="sm"
+            onClick={handleAddSection}
+            disabled={readOnly}
+            className="custom-fields-add-section-btn"
+            style={{ whiteSpace: 'nowrap', flexShrink: 0 }}
+          >
+            <Plus className="me-1" size={14} />
+            <span className="d-none d-sm-inline">Add Section</span>
+            <span className="d-inline d-sm-none">Section</span>
+          </Button>
       </div>
       
       <div className="flex-grow-1 custom-fields-content" style={{ overflowY: 'auto', overflowX: 'hidden', minHeight: '0', flex: '1 1 auto' }}>
@@ -1561,6 +1787,14 @@ const CustomFieldsPanel = ({
                       if (readOnly || dragState.sectionIndex === null) return;
                       if (dragState.sectionIndex === sIdx) return; // Same section - no need to handle
                       if (!collapsedSections[sIdx]) return; // Only handle when collapsed
+
+                      // NEW: Check if source and target sections have matching editBy roles
+                      const sourceSection = sections[dragState.sectionIndex];
+                      const targetSection = sections[sIdx];
+                      if (sourceSection.editBy !== targetSection.editBy) {
+                          // If roles don't match, do not allow drag over visual feedback
+                          return; 
+                      }
                       
                       e.preventDefault();
                       e.stopPropagation();
@@ -1580,6 +1814,15 @@ const CustomFieldsPanel = ({
                       if (readOnly || dragState.sectionIndex === null || dragState.fromIndex === null) return;
                       if (dragState.sectionIndex === sIdx) return; // Same section - handled elsewhere
                       if (!collapsedSections[sIdx]) return; // Only handle when collapsed
+
+                      // NEW: Check if source and target sections have matching editBy roles
+                      const sourceSection = sections[dragState.sectionIndex];
+                      const targetSection = sections[sIdx];
+                      if (sourceSection.editBy !== targetSection.editBy) {
+                          toast.warning('Cannot move fields between sections with different "Edit By" roles.');
+                          setDragState({ sectionIndex: null, fromIndex: null, overIndex: null, position: 'above', targetSectionIndex: null });
+                          return; // Do not proceed with the drop
+                      }
                       
                       e.preventDefault();
                       e.stopPropagation();
@@ -1639,6 +1882,14 @@ const CustomFieldsPanel = ({
                       // Allow dropping fields from other sections into empty section body
                       if (readOnly || dragState.sectionIndex === null) return;
                       if (dragState.sectionIndex === sIdx) return; // Same section - handled by field onDragOver
+
+                      // NEW: Check if source and target sections have matching editBy roles
+                      const sourceSection = sections[dragState.sectionIndex];
+                      const targetSection = sections[sIdx];
+                      if (sourceSection.editBy !== targetSection.editBy) {
+                          // If roles don't match, do not allow drag over visual feedback
+                          return;
+                      }
                       
                       e.preventDefault();
                       e.stopPropagation();
@@ -1657,6 +1908,15 @@ const CustomFieldsPanel = ({
                       // Handle drop into empty section body or at the end of section
                       if (readOnly || dragState.sectionIndex === null || dragState.fromIndex === null) return;
                       if (dragState.sectionIndex === sIdx) return; // Same section - handled by field onDrop
+
+                      // NEW: Check if source and target sections have matching editBy roles
+                      const sourceSection = sections[dragState.sectionIndex];
+                      const targetSection = sections[sIdx];
+                      if (sourceSection.editBy !== targetSection.editBy) {
+                          toast.warning('Cannot move fields between sections with different "Edit By" roles.');
+                          setDragState({ sectionIndex: null, fromIndex: null, overIndex: null, position: 'above', targetSectionIndex: null });
+                          return; // Do not proceed with the drop
+                      }
                       
                       e.preventDefault();
                       e.stopPropagation();
@@ -1688,10 +1948,12 @@ const CustomFieldsPanel = ({
 
                         const renderRow = (field, realIndex) => {
                           const isPart = String(field.fieldType).toUpperCase() === 'PART';
+                          const isCheckBox = String(field.fieldType).toUpperCase() === 'CHECK_BOX';
+                          const isParentField = isPart || isCheckBox;
                           return (
                           <div
                             key={`${sIdx}-${realIndex}`}
-                            className={`p-2 p-md-2 rounded border mb-2 mb-md-2 draggable-item custom-field-item ${isPart ? 'bg-part part-card' : 'bg-white child-row'} ${dragState.sectionIndex !== null && dragState.targetSectionIndex === sIdx && dragState.overIndex === realIndex ? 'border-primary' : ''} ${dragState.sectionIndex !== null && dragState.targetSectionIndex === sIdx && dragState.overIndex === realIndex && dragState.position === 'above' ? 'drop-target-above' : ''} ${dragState.sectionIndex !== null && dragState.targetSectionIndex === sIdx && dragState.overIndex === realIndex && dragState.position === 'below' ? 'drop-target-below' : ''} ${dragState.sectionIndex === sIdx && dragState.fromIndex === realIndex ? 'dragging' : ''}`}
+                            className={`p-2 p-md-2 rounded border mb-2 mb-md-2 draggable-item custom-field-item ${isParentField ? 'bg-part part-card' : 'bg-white child-row'} ${dragState.sectionIndex !== null && dragState.targetSectionIndex === sIdx && dragState.overIndex === realIndex ? 'border-primary' : ''} ${dragState.sectionIndex !== null && dragState.targetSectionIndex === sIdx && dragState.overIndex === realIndex && dragState.position === 'above' ? 'drop-target-above' : ''} ${dragState.sectionIndex !== null && dragState.targetSectionIndex === sIdx && dragState.overIndex === realIndex && dragState.position === 'below' ? 'drop-target-below' : ''} ${dragState.sectionIndex === sIdx && dragState.fromIndex === realIndex ? 'dragging' : ''}`}
                             draggable
                             style={{ display: 'block', visibility: 'visible', opacity: 1, cursor: 'grab' }}
                             onDragStart={(e) => {
@@ -1747,6 +2009,7 @@ const CustomFieldsPanel = ({
                                     {field.label}
                                   </span>
                                   {isPart && (<span className="badge part-badge flex-shrink-0">PART</span>)}
+                                  {isCheckBox && (<span className="badge part-badge flex-shrink-0">CHECK_BOX</span>)}
                                 </div>
                                 <small className="text-muted d-block" style={{ fontSize: '0.7rem', wordBreak: 'break-word', overflow: 'hidden', textOverflow: 'ellipsis' }} title={`${field.fieldName} (${field.fieldType})${field.roleRequired ? ` - ${field.roleRequired}` : ''}`}>
                                   {field.fieldName} ({field.fieldType}){field.roleRequired ? ` - ${field.roleRequired}` : ''}
@@ -1812,9 +2075,23 @@ const CustomFieldsPanel = ({
                                   <span className="d-inline d-sm-none">Add to PART</span>
                                 </Button>
                               )}
+                              {String(field.fieldType).toUpperCase() === 'CHECK_BOX' && (
+                                <Button
+                                  variant="outline-primary"
+                                  size="sm"
+                                  className="mt-0 text-primary border-primary"
+                                  onClick={() => openInsertCheckBoxField(sIdx, realIndex, field)}
+                                  disabled={readOnly}
+                                  style={{ fontSize: '0.75rem', padding: '0.375rem 0.5rem' }}
+                                >
+                                  <ArrowDown className="me-1" size={12} />
+                                  <span className="d-none d-sm-inline">Add Field to CHECK_BOX</span>
+                                  <span className="d-inline d-sm-none">Add to CHECK_BOX</span>
+                                </Button>
+                              )}
                             </div>
 
-                            {String(field.fieldType).toUpperCase() === 'PART' && (
+                            {(String(field.fieldType).toUpperCase() === 'PART' || String(field.fieldType).toUpperCase() === 'CHECK_BOX') && (
                               (() => {
                                 const pid = parentIdOf(field);
                                 const children = allSorted.filter((f) => f.parentTempId === pid);
@@ -1865,26 +2142,26 @@ const CustomFieldsPanel = ({
           <strong>Tip:</strong> <span className="d-none d-sm-inline">Create sections first, then add fields inside each section.</span>
           <span className="d-inline d-sm-none">Create sections, then add fields.</span>
         </Alert>
-        <Button 
-          variant="primary" 
-          size="sm" 
-          onClick={handleSubmitTemplate} 
-          disabled={isSubmitting}
-          className="custom-fields-submit-btn flex-shrink-0"
-          style={{ whiteSpace: 'nowrap', fontSize: '0.8rem', padding: '0.375rem 0.75rem' }}
-        >
-          {isSubmitting ? (
-            <>
-              <Spinner animation="border" size="sm" variant="light" style={{ width: '14px', height: '14px' }} />
-              <span>Submitting...</span>
-            </>
-          ) : (
-            <>
-              <span className="d-none d-sm-inline">Submit Template</span>
-              <span className="d-inline d-sm-none">Submit</span>
-            </>
-          )}
-        </Button>
+          <Button 
+            variant="primary" 
+            size="sm" 
+            onClick={handleSubmitTemplate} 
+            disabled={isSubmitting}
+            className="custom-fields-submit-btn flex-shrink-0"
+            style={{ whiteSpace: 'nowrap', fontSize: '0.8rem', padding: '0.375rem 0.75rem' }}
+          >
+            {isSubmitting ? (
+              <>
+                <Spinner animation="border" size="sm" variant="light" style={{ width: '14px', height: '14px' }} />
+                <span>Submitting...</span>
+              </>
+            ) : (
+              <>
+                <span className="d-none d-sm-inline">Submit Template</span>
+                <span className="d-inline d-sm-none">Submit</span>
+              </>
+            )}
+          </Button>
       </div>
 
       {/* Add/Edit Section Modal */}
@@ -2053,16 +2330,9 @@ const CustomFieldsPanel = ({
                     }}
                     required
                   >
-                    <option value="TEXT">TEXT</option>
-                    <option value="IMAGE">IMAGE</option>
-                    <option value="PART">PART</option>
-                    <option value="TOGGLE">TOGGLE</option>
-                    <option value="SECTION_CONTROL_TOGGLE">SECTION_CONTROL_TOGGLE</option>
-                    <option value="SIGNATURE_DRAW">SIGNATURE_DRAW</option>
-                    <option value="SIGNATURE_IMAGE">SIGNATURE_IMAGE</option>
-                    <option value="FINAL_SCORE_TEXT">FINAL_SCORE_TEXT</option>
-                    <option value="FINAL_SCORE_NUM">FINAL_SCORE_NUM</option>
-                    <option value="VALUE_LIST">VALUE_LIST</option>
+                    {availableFieldTypeOptions.map(option => (
+                      <option key={option.value} value={option.value}>{option.label}</option>
+                    ))}
                   </Form.Select>
                 </Form.Group>
               </Col>
@@ -2176,6 +2446,11 @@ const CustomFieldsPanel = ({
           <Form>
             <Row className="g-3">
               <Col md={12}>
+                <Alert variant="light" className="py-2">
+                  Editing field in section: <strong>{editingSectionIndex !== null ? sections[editingSectionIndex]?.label : 'N/A'}</strong>
+                </Alert>
+              </Col>
+              <Col md={12}>
                 <Form.Group>
                   <Form.Label className="text-primary-custom">Label <span className="text-danger">*</span></Form.Label>
                   <Form.Control
@@ -2187,6 +2462,32 @@ const CustomFieldsPanel = ({
                   />
                   <Form.Text className="text-muted">
                     The question or label displayed to the user (e.g., "Crew Communication").
+                  </Form.Text>
+                </Form.Group>
+              </Col>
+              <Col md={12}>
+                <Form.Group>
+                  <Form.Label className="text-primary-custom">Field Name <span className="text-danger">*</span></Form.Label>
+                  <Form.Control
+                    type="text"
+                    placeholder={
+                      newField.fieldType === 'PART' || newField.fieldType === 'CHECK_BOX'
+                        ? 'e.g., Assessment_Items' 
+                        : newField.fieldType === 'TOGGLE'
+                        ? 'e.g., isGroundCourse'
+                        : 'e.g., crew_communication'
+                    }
+                    value={newField.fieldName}
+                    onChange={(e) => setNewField(prev => ({ ...prev, fieldName: e.target.value }))}
+                    required
+                  />
+                  <Form.Text className="text-muted">
+                    {newField.fieldType === 'PART' || newField.fieldType === 'CHECK_BOX'
+                      ? 'The tag name should use underscores, should not start with the word "section" and the first letter always have to be capitalized. (e.g., Assessment_Items).'
+                      : newField.fieldType === 'TOGGLE'
+                      ? 'The tag name should use camelCase (e.g., isGroundCourse).'
+                      : 'The variable name used in the docxtemplate (e.g., {crew_communication}). Must be unique within a template.'
+                    }
                   </Form.Text>
                 </Form.Group>
               </Col>
@@ -2210,61 +2511,31 @@ const CustomFieldsPanel = ({
                     }}
                     required
                   >
-                    <option value="TEXT">TEXT</option>
-                    <option value="IMAGE">IMAGE</option>
-                    <option value="PART">PART</option>
-                    <option value="TOGGLE">TOGGLE</option>
-                    <option value="SECTION_CONTROL_TOGGLE">SECTION_CONTROL_TOGGLE</option>
-                    <option value="SIGNATURE_DRAW">SIGNATURE_DRAW</option>
-                    <option value="SIGNATURE_IMAGE">SIGNATURE_IMAGE</option>
-                    <option value="FINAL_SCORE_TEXT">FINAL_SCORE_TEXT</option>
-                    <option value="FINAL_SCORE_NUM">FINAL_SCORE_NUM</option>
-                    <option value="VALUE_LIST">VALUE_LIST</option>
+                    {availableFieldTypeOptions.map(option => (
+                      <option key={option.value} value={option.value}>{option.label}</option>
+                    ))}
                   </Form.Select>
                 </Form.Group>
               </Col>
-              <Col md={6}>
-                <Form.Group>
-                  <Form.Label className="text-primary-custom">Role Required <span className="text-danger">*</span></Form.Label>
-                  <Form.Control
-                    type="text"
-                    value={editingSectionIndex !== null ? (sections[editingSectionIndex]?.editBy || 'TRAINER') : 'TRAINER'}
-                    readOnly
-                    disabled
-                    style={{ backgroundColor: '#e9ecef', cursor: 'not-allowed' }}
-                    required
-                  />
-                  <Form.Text className="text-muted">
-                    Automatically set from section's "Edit By" value.
-                  </Form.Text>
-                </Form.Group>
-              </Col>
-              <Col md={12}>
-                <Form.Group>
-                  <Form.Label className="text-primary-custom">Field Name <span className="text-danger">*</span></Form.Label>
-                  <Form.Control
-                    type="text"
-                    placeholder={
-                      newField.fieldType === 'PART' 
-                        ? 'e.g., Assessment_Items' 
-                        : newField.fieldType === 'TOGGLE'
-                        ? 'e.g., isGroundCourse'
-                        : 'e.g., crew_communication'
-                    }
-                    value={newField.fieldName}
-                    onChange={(e) => setNewField(prev => ({ ...prev, fieldName: e.target.value }))}
-                    required
-                  />
-                  <Form.Text className="text-muted">
-                    {newField.fieldType === 'PART' 
-                      ? 'The tag name should use underscores, should not start with the word "section" and the first letter always have to be capitalized. (e.g., Assessment_Items).'
-                      : newField.fieldType === 'TOGGLE'
-                      ? 'The tag name should use camelCase (e.g., isGroundCourse).'
-                      : 'The variable name used in the docxtemplate (e.g., {crew_communication}). Must be unique within a template.'
-                    }
-                  </Form.Text>
-                </Form.Group>
-              </Col>
+              {/* Hide Role Required for sub-fields of PART/CHECK_BOX */}
+              {!(newField.parentTempId || newField.parentId) && (
+                <Col md={6}>
+                  <Form.Group>
+                    <Form.Label className="text-primary-custom">Role Required <span className="text-danger">*</span></Form.Label>
+                    <Form.Control
+                      type="text"
+                      value={editingSectionIndex !== null ? (sections[editingSectionIndex]?.editBy || 'TRAINER') : 'TRAINER'}
+                      readOnly
+                      disabled
+                      style={{ backgroundColor: '#e9ecef', cursor: 'not-allowed' }}
+                      required
+                    />
+                    <Form.Text className="text-muted">
+                      Automatically set from section's "Edit By" value.
+                    </Form.Text>
+                  </Form.Group>
+                </Col>
+              )}
               {/* VALUE_LIST Options Field */}
               {newField.fieldType === 'VALUE_LIST' && (
                 <Col md={12}>
@@ -2374,7 +2645,7 @@ const CustomFieldsPanel = ({
                   />
                 </Form.Group>
               </Col>
-              <Col md={8}>
+              <Col md={12}>
                 <Form.Group>
                   <Form.Label className="text-primary-custom">Field Name <span className="text-danger">*</span></Form.Label>
                   <Form.Control
@@ -2383,33 +2654,7 @@ const CustomFieldsPanel = ({
                     value={partSubFieldName}
                     onChange={(e) => setPartSubFieldName(e.target.value)}
                   />
-                  <Form.Text className="text-muted">snake_case only</Form.Text>
-                </Form.Group>
-              </Col>
-              <Col md={4}>
-                <Form.Group>
-                  <Form.Label className="text-primary-custom">Type</Form.Label>
-                  <Form.Select
-                    value={partSubFieldType}
-                    onChange={(e) => setPartSubFieldType(e.target.value)}
-                  >
-                    <option value="TEXT">TEXT</option>
-                    <option value="TOGGLE">TOGGLE</option>
-                    <option value="IMAGE">IMAGE</option>
-                  </Form.Select>
-                </Form.Group>
-              </Col>
-              <Col md={6}>
-                <Form.Group>
-                  <Form.Label className="text-primary-custom">Role Required</Form.Label>
-                  <Form.Select
-                    value={partSubFieldRoleRequired}
-                    onChange={(e) => setPartSubFieldRoleRequired(e.target.value)}
-                  >
-                    {availableRoles.map((r) => (
-                      <option key={r} value={r}>{r}</option>
-                    ))}
-                  </Form.Select>
+                  <Form.Text className="text-muted">snake_case only (Type is always TEXT for PART sub-fields)</Form.Text>
                 </Form.Group>
               </Col>
               <Col md={12}>
@@ -2423,6 +2668,58 @@ const CustomFieldsPanel = ({
             Cancel
           </Button>
           <Button variant="primary" onClick={handleInsertPartField}>
+            Insert
+          </Button>
+        </Modal.Footer>
+      </Modal>
+
+      {/* Insert CheckBox Sub Field Modal */}
+      <Modal show={showCheckBoxFieldModal} onHide={() => setShowCheckBoxFieldModal(false)}>
+        <Modal.Header closeButton>
+          <Modal.Title>Insert CheckBox Field</Modal.Title>
+        </Modal.Header>
+        <Modal.Body>
+          <Form>
+            <Row className="g-3">
+              <Col md={12}>
+                <Alert variant="light" className="py-2">
+                  Insert field into CHECK_BOX: <strong>{activeCheckBoxField?.label} ({activeCheckBoxField?.fieldName})</strong>
+                </Alert>
+              </Col>
+              <Col md={12}>
+                <Form.Group>
+                  <Form.Label className="text-primary-custom">Label <span className="text-danger">*</span></Form.Label>
+                  <Form.Control
+                    type="text"
+                    placeholder="e.g., Focus Item"
+                    value={checkBoxSubFieldLabel}
+                    onChange={(e) => setCheckBoxSubFieldLabel(e.target.value)}
+                  />
+                </Form.Group>
+              </Col>
+              <Col md={12}>
+                <Form.Group>
+                  <Form.Label className="text-primary-custom">Field Name <span className="text-danger">*</span></Form.Label>
+                  <Form.Control
+                    type="text"
+                    placeholder="e.g., focus_item"
+                    value={checkBoxSubFieldName}
+                    onChange={(e) => setCheckBoxSubFieldName(e.target.value)}
+                  />
+                  <Form.Text className="text-muted">snake_case only (Type is always TEXT for CHECK_BOX sub-fields)</Form.Text>
+                </Form.Group>
+              </Col>
+              <Col md={12}>
+                <Form.Text className="text-muted">Display order is assigned automatically by creation order.</Form.Text>
+              </Col>
+            </Row>
+          </Form>
+        </Modal.Body>
+        <Modal.Footer>
+          <Button variant="outline-secondary" onClick={() => setShowCheckBoxFieldModal(false)}>
+            Cancel
+          </Button>
+          <Button variant="primary" onClick={handleInsertCheckBoxField}>
             Insert
           </Button>
         </Modal.Footer>

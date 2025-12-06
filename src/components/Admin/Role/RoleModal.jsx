@@ -8,7 +8,7 @@ const RoleModal = ({ show, role, mode, onSave, onClose }) => {
   const [formData, setFormData] = useState({
     name: '',
     description: '',
-    permissionIds: []
+    permissionGroupCodes: []
   });
   const [errors, setErrors] = useState({});
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -28,10 +28,10 @@ const RoleModal = ({ show, role, mode, onSave, onClose }) => {
     
     const featureGroups = {};
     
-    // Group permissions by module
+    // Group permissions by featureGroup (module)
     allPermissions.forEach(permission => {
-      const moduleId = permission.module;
-      const moduleName = permission.viewModule || `${permission.module} Management`;
+      const moduleId = permission.module || permission.viewModule;
+      const moduleName = permission.viewModule || permission.module || 'Other';
       
       if (!featureGroups[moduleId]) {
         featureGroups[moduleId] = {
@@ -42,9 +42,8 @@ const RoleModal = ({ show, role, mode, onSave, onClose }) => {
         };
       }
       
-      // Extract permission ID - support multiple formats
-      // From useAllPermissions, permissions are created with id: permission.permissionId
-      const permissionId = permission.id || permission.permissionId;
+      // Extract permission ID - use code as ID
+      const permissionId = permission.code || permission.id;
       
       if (!permissionId) {
         return; // Skip permissions without ID
@@ -52,11 +51,10 @@ const RoleModal = ({ show, role, mode, onSave, onClose }) => {
       
       featureGroups[moduleId].permissions.push({
         id: permissionId,
-        title: permission.viewName || permission.name,
+        code: permission.code,
+        title: permission.viewName || permission.name, // Only show name, not code
         description: permission.description || '',
-        isActive: permission.isActive,
-        method: permission.method,
-        path: permission.path
+        isActive: permission.isActive !== false
       });
     });
 
@@ -70,12 +68,20 @@ const RoleModal = ({ show, role, mode, onSave, onClose }) => {
     
     if (mode === 'view' && role?.permissions) {
       // View mode: only show permissions assigned to the role
-      const assignedPermissionIds = role.permissions.map(p => p.id || p);
+      // Handle both direct ID strings and objects with id/code properties
+      const assignedPermissionIds = role.permissions.map(p => {
+        if (typeof p === 'string') return p;
+        if (p.id) return p.id;
+        if (p.code) return p.code;
+        return p;
+      });
+      
+      console.log('🔍 View Mode - Assigned IDs:', assignedPermissionIds);
       
       return allGroups.map(group => ({
         ...group,
         permissions: group.permissions.filter(permission => 
-          assignedPermissionIds.includes(permission.id)
+          assignedPermissionIds.includes(permission.id) || assignedPermissionIds.includes(permission.code)
         )
       })).filter(group => group.permissions.length > 0);
     }
@@ -87,22 +93,26 @@ const RoleModal = ({ show, role, mode, onSave, onClose }) => {
   useEffect(() => {
     if (role && mode !== 'add') {
       // For both view and edit mode, use the role's assigned permissions
-      const rolePermissions = role.permissions ? role.permissions.map(p => p.id || p) : [];
+      // Handle both direct code strings and objects with code/id properties
+      const rolePermissions = role.permissions ? role.permissions.map(p => {
+        if (typeof p === 'string') return p;
+        return p.code || p.id || p;
+      }) : [];
       
       setFormData({
         name: role.name || '',
         description: role.description || '',
-        permissionIds: rolePermissions
+        permissionGroupCodes: rolePermissions
       });
     } else if (mode === 'add') {
       setFormData({
         name: '',
         description: '',
-        permissionIds: []
+        permissionGroupCodes: []
       });
     }
     setErrors({});
-  }, [role, mode, show]);
+  }, [role, mode, show, allPermissions]);
 
   // Fetch all permissions when modal opens
   useEffect(() => {
@@ -145,8 +155,8 @@ const RoleModal = ({ show, role, mode, onSave, onClose }) => {
       newErrors.name = 'Role name cannot contain special characters';
     }
 
-    if (formData.permissionIds.length === 0) {
-      newErrors.permissionIds = 'At least one permission is required';
+    if (formData.permissionGroupCodes.length === 0) {
+      newErrors.permissionGroupCodes = 'At least one permission is required';
     }
 
     setErrors(newErrors);
@@ -192,23 +202,23 @@ const RoleModal = ({ show, role, mode, onSave, onClose }) => {
     }
     
     setFormData(prev => {
-      const currentIds = prev.permissionIds || [];
+      const currentIds = prev.permissionGroupCodes || [];
       // Use strict comparison and handle type coercion
       const isSelected = currentIds.some(id => String(id) === String(permissionId));
       
       return {
         ...prev,
-        permissionIds: isSelected
+        permissionGroupCodes: isSelected
           ? currentIds.filter(p => String(p) !== String(permissionId))
           : [...currentIds, permissionId]
       };
     });
     
     // Clear error when permissions are selected
-    if (errors.permissionIds) {
+    if (errors.permissionGroupCodes) {
       setErrors(prev => ({
         ...prev,
-        permissionIds: ''
+        permissionGroupCodes: ''
       }));
     }
   };
@@ -343,8 +353,8 @@ const RoleModal = ({ show, role, mode, onSave, onClose }) => {
                 <Form.Label className="text-primary-custom fw-semibold fs-5 mb-3">
                   Permissions *
                 </Form.Label>
-                {errors.permissionIds && (
-                  <div className="text-danger small mb-2">{errors.permissionIds}</div>
+                {errors.permissionGroupCodes && (
+                  <div className="text-danger small mb-2">{errors.permissionGroupCodes}</div>
                 )}
                 
                 {permissionsError && (
@@ -354,7 +364,7 @@ const RoleModal = ({ show, role, mode, onSave, onClose }) => {
                 )}
                 
                 <div className="border rounded p-4 bg-light" style={{ 
-                  maxHeight: '300px', 
+                  maxHeight: '450px', 
                   overflowY: 'auto',
                   borderColor: 'var(--bs-primary)',
                   borderWidth: '2px'
@@ -423,7 +433,7 @@ const RoleModal = ({ show, role, mode, onSave, onClose }) => {
                                               type="checkbox"
                                               className="form-check-input"
                                               id={`permission-${permissionId}`}
-                                              checked={formData.permissionIds.some(id => String(id) === String(permissionId))}
+                                              checked={formData.permissionGroupCodes.some(id => String(id) === String(permissionId))}
                                               onChange={(e) => {
                                                 e.stopPropagation();
                                                 if (!isReadOnly && permissionId) {
@@ -449,7 +459,7 @@ const RoleModal = ({ show, role, mode, onSave, onClose }) => {
                                               {permission.description}
                                             </small>
                                           </div>
-                                          {!isReadOnly && formData.permissionIds.some(id => String(id) === String(permissionId)) && (
+                                          {!isReadOnly && formData.permissionGroupCodes.some(id => String(id) === String(permissionId)) && (
                                             <Badge bg="primary" className="ms-2">
                                               Selected
                                             </Badge>
@@ -474,7 +484,7 @@ const RoleModal = ({ show, role, mode, onSave, onClose }) => {
                 
                 <div className="mt-2">
                   <small className="text-muted">
-                    {formData.permissionIds.length} of {permissionGroups.reduce((total, group) => total + group.permissions.length, 0)} permissions assigned
+                    {formData.permissionGroupCodes.length} of {permissionGroups.reduce((total, group) => total + group.permissions.length, 0)} permissions assigned
                   </small>
                 </div>
               </Form.Group>
@@ -493,7 +503,7 @@ const RoleModal = ({ show, role, mode, onSave, onClose }) => {
                     </div>
                     <div className="col-md-6">
                       <small className="text-muted">Total Permissions:</small>
-                      <div className="fw-medium">{formData.permissionIds.length}</div>
+                      <div className="fw-medium">{formData.permissionGroupCodes.length}</div>
                     </div>
                   </div>
                 </div>

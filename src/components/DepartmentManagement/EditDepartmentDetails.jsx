@@ -22,6 +22,7 @@ const transformDepartmentData = (response) => {
 const EditDepartmentDetails = ({ department, onUpdate }) => {
   const [formData, setFormData] = useState({
     name: department.name || '',
+    code: department.code || '',
     description: department.description || '',
     headUserId: department.headUserId || ''
   });
@@ -31,14 +32,13 @@ const EditDepartmentDetails = ({ department, onUpdate }) => {
   useEffect(() => {
     const loadDepartmentHeads = async () => {
       try {
-        // Try to use public departments API first, then fallback to getDepartmentHeads if needed
-        // Note: Public API may not have department heads info, so we'll use empty array
-        // If department heads info is needed, it should be added to public API response
-        setAvailableUsers([]);
+        // Call API to get all department heads
+        const response = await departmentAPI.getDepartmentHeads();
+        const heads = response?.users || response?.data?.users || [];
+        setAvailableUsers(heads);
       } catch (error) {
         console.error('Error loading department heads:', error);
         toast.error('Failed to load department heads');
-        // Fallback to empty array if API fails
         setAvailableUsers([]);
       }
     };
@@ -62,6 +62,12 @@ const EditDepartmentDetails = ({ department, onUpdate }) => {
       // Validate form data
       if (!formData.name || formData.name.trim() === '') {
         toast.error('Department name is required');
+        setLoading(false);
+        return;
+      }
+
+      if (!formData.code || formData.code.trim() === '') {
+        toast.error('Department code is required');
         setLoading(false);
         return;
       }
@@ -126,6 +132,24 @@ const EditDepartmentDetails = ({ department, onUpdate }) => {
         <Row>
           <Col md={12}>
             <div className="mb-3">
+              <label htmlFor="code" className="form-label">Department Code</label>
+              <input
+                type="text"
+                className="form-control"
+                id="code"
+                name="code"
+                value={formData.code}
+                onChange={handleInputChange}
+                placeholder="e.g., CCT"
+                required
+              />
+            </div>
+          </Col>
+        </Row>
+
+        <Row>
+          <Col md={12}>
+            <div className="mb-3">
               <label htmlFor="headUserId" className="form-label">Department Head</label>
               <select
                 className="form-select"
@@ -137,7 +161,7 @@ const EditDepartmentDetails = ({ department, onUpdate }) => {
                 <option value="">Select Department Head</option>
                 {Array.isArray(availableUsers) && availableUsers.map(user => (
                   <option key={user.id} value={user.id}>
-                    [{user.eid}] - {user.firstName} {user.lastName}
+                    [{user.eid}] - {user.lastName}{user.middleName ? ' ' + user.middleName : ''} {user.firstName}
                   </option>
                 ))}
               </select>

@@ -84,6 +84,36 @@ export const uploadAPI = {
       console.error('❌ Error uploading from URL:', error);
       throw error;
     }
+  },
+
+  // Upload image file to S3
+  uploadImage: async (file, imageType) => {
+    try {
+      const formData = new FormData();
+      formData.append('files', file);
+      
+      const response = await apiClient.post(`/media/images/upload/${imageType}`, formData, {
+        headers: {
+          'Content-Type': 'multipart/form-data'
+        }
+      });
+      
+      // Handle different response formats
+      if (response.data && response.data.data && response.data.data.length > 0) {
+        return response.data.data[0].url;
+      } else if (response.data && response.data.url) {
+        return response.data.url;
+      } else if (response.data && response.data.fileUrl) {
+        return response.data.fileUrl;
+      } else if (response.data && response.data.path) {
+        return response.data.path;
+      } else {
+        throw new Error('Invalid response format from upload image API');
+      }
+    } catch (error) {
+      console.error('❌ Error uploading image:', error);
+      throw error;
+    }
   }
 };
 

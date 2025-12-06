@@ -78,7 +78,7 @@ const assessmentAPI = {
   },
 
   /**
-   * Get assessments by course
+   * Get assessments by course (OLD API - deprecated)
    * @param {string} courseId
    * @param {Object} params
    */
@@ -95,7 +95,7 @@ const assessmentAPI = {
   },
 
   /**
-   * Get assessments by subject
+   * Get assessments by subject (OLD API - deprecated)
    * @param {string} subjectId
    * @param {Object} params
    */
@@ -107,6 +107,36 @@ const assessmentAPI = {
       return response.data;
     } catch (error) {
       console.error('Error fetching subject assessments:', error);
+      throw error;
+    }
+  },
+
+  /**
+   * Get assessment events by course (NEW API)
+   * @param {Object} data - { courseId, templateId, occuranceDate }
+   * @returns {Promise} Assessment events response
+   */
+  getCourseEvents: async (data = {}) => {
+    try {
+      const response = await apiClient.post('/assessments/events/course', data);
+      return response.data;
+    } catch (error) {
+      console.error('Error fetching course assessment events:', error);
+      throw error;
+    }
+  },
+
+  /**
+   * Get assessment events by subject (NEW API)
+   * @param {Object} data - { subjectId, templateId, occuranceDate }
+   * @returns {Promise} Assessment events response
+   */
+  getSubjectEvents: async (data = {}) => {
+    try {
+      const response = await apiClient.post('/assessments/events/subject', data);
+      return response.data;
+    } catch (error) {
+      console.error('Error fetching subject assessment events:', error);
       throw error;
     }
   },
@@ -151,6 +181,121 @@ const assessmentAPI = {
       return response.data;
     } catch (error) {
       console.error('Error fetching assessment section fields:', error);
+      throw error;
+    }
+  },
+
+  /**
+   * Confirm participation in an assessment
+   * @param {string} assessmentId
+   * @param {Object} data - Optional data like { traineeSignatureUrl: "..." }
+   * @returns {Promise} Confirm participation response
+   */
+  confirmParticipation: async (assessmentId, data = {}) => {
+    try {
+      const response = await apiClient.put(`/assessments/${assessmentId}/confirm-participation`, data);
+      return response.data;
+    } catch (error) {
+      console.error('Error confirming participation:', error);
+      throw error;
+    }
+  },
+
+  /**
+   * Save assessment section field values
+   * @param {Object} data - { assessmentSectionId, values: [{ assessmentValueId, answerValue }] }
+   * @returns {Promise} Save response
+   */
+  saveSectionValues: async (data) => {
+    try {
+      const response = await apiClient.post('/assessments/sections/save-values', data);
+      return response.data;
+    } catch (error) {
+      console.error('Error saving section values:', error);
+      throw error;
+    }
+  },
+
+  /**
+   * Update assessment section field values
+   * @param {Object} data - { assessmentSectionId, values: [{ assessmentValueId, answerValue }] }
+   * @returns {Promise} Update response
+   */
+  updateSectionValues: async (data) => {
+    try {
+      const response = await apiClient.put('/assessments/sections/update-values', data);
+      return response.data;
+    } catch (error) {
+      console.error('Error updating section values:', error);
+      throw error;
+    }
+  },
+
+  /**
+   * Update trainee lock status for an assessment
+   * @param {string} assessmentId - Assessment ID
+   * @param {boolean} isTraineeLocked - Lock status
+   * @returns {Promise} Update response
+   */
+  updateTraineeLock: async (assessmentId, isTraineeLocked) => {
+    try {
+      const response = await apiClient.put(`/assessments/${assessmentId}/trainee-lock`, {
+        isTraineeLocked
+      });
+      return response.data;
+    } catch (error) {
+      console.error('Error updating trainee lock:', error);
+      throw error;
+    }
+  },
+
+  /**
+   * Submit an assessment
+   * @param {string} assessmentId - Assessment ID
+   * @returns {Promise} Submit response
+   */
+  submitAssessment: async (assessmentId) => {
+    try {
+      const response = await apiClient.post(`/assessments/${assessmentId}/submit`);
+      return response.data;
+    } catch (error) {
+      console.error('Error submitting assessment:', error);
+      throw error;
+    }
+  },
+
+  /**
+   * Get assessments by department
+   * @param {Object} params - Query parameters (page, limit, etc.)
+   * @returns {Promise} Department assessments response
+   */
+  getDepartmentAssessments: async (params = {}) => {
+    try {
+      const response = await apiClient.get('/assessments/department', { params });
+      return response.data;
+    } catch (error) {
+      console.error('Error fetching department assessments:', error);
+      throw error;
+    }
+  },
+
+  /**
+   * Approve or reject an assessment
+   * @param {string} assessmentId - Assessment ID
+   * @param {string} action - 'APPROVED' or 'REJECTED'
+   * @param {string} comment - Optional comment (required for REJECTED)
+   * @returns {Promise} Approve/reject response
+   */
+  approveRejectAssessment: async (assessmentId, action, comment = '') => {
+    try {
+      const body = { action };
+      if (action === 'REJECTED' && comment) {
+        body.comment = comment;
+      }
+      const response = await apiClient.put(`/assessments/${assessmentId}/approve-reject`, body);
+      return response.data;
+    } catch (error) {
+      console.error('Error approving/rejecting assessment:', error);
       throw error;
     }
   },

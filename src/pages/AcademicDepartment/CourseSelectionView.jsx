@@ -1,20 +1,47 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import { Container, Row, Col, Card, Button, Badge, Spinner } from 'react-bootstrap';
-import { 
-  Book, 
+import {
+  Book,
   Building,
   ArrowRight
 } from 'react-bootstrap-icons';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../hooks/useAuth';
+import { usePermissions } from '../../hooks/usePermissions';
 import useDepartmentManagement from '../../hooks/useDepartmentManagement';
+import { PermissionWrapper } from '../../components/Common'; // Add this
+import { PERMISSION_IDS } from '../../constants/permissionIds'; // Add this
 // Note: /academic/course/:departmentId is an academic-specific route, keeping as is
 import '../../styles/academic-department.css';
-
 const CourseSelectionView = () => {
   const { user } = useAuth();
+  const { hasPermission } = usePermissions();
   const navigate = useNavigate();
-  const { departments, loading: departmentsLoading, error } = useDepartmentManagement();
+  
+  // Determine mode based on permissions
+  const departmentMode = useMemo(() => {
+    const hasViewAll = hasPermission(PERMISSION_IDS.VIEW_ALL_DEPARTMENTS);
+    const hasUpdate = hasPermission(PERMISSION_IDS.UPDATE_DEPARTMENT);
+    const hasViewDetail = hasPermission(PERMISSION_IDS.VIEW_DEPARTMENT_DETAILS);
+    
+    // Case 1: Academic Department (VIEW_ALL without UPDATE)
+    if (hasViewAll && !hasUpdate) {
+      return 'all';
+    }
+    
+    // Case 2: My Department (ONLY VIEW_DETAIL, no VIEW_ALL)
+    if (hasViewDetail && !hasViewAll) {
+      return 'my';
+    }
+    
+    // Default: try 'all' if has VIEW_ALL
+    return hasViewAll ? 'all' : null;
+  }, [hasPermission]);
+  
+  const { departments, loading: departmentsLoading, error } = useDepartmentManagement(
+    departmentMode !== null,
+    departmentMode || 'all'
+  );
 
   // Filter active departments
   const activeDepartments = departments.filter(dept => dept.status === 'ACTIVE');
@@ -48,7 +75,7 @@ const CourseSelectionView = () => {
             </Col>
           ) : error ? (
             <Col className="text-center py-5">
-              <p className="text-danger">Error loading departments: {error.message}</p>
+              <p className="text-danger">Error loading departments: {typeof error === 'string' ? error : error?.message || 'Unknown error'}</p>
             </Col>
           ) : (
             activeDepartments.map((department) => (
@@ -73,15 +100,19 @@ const CourseSelectionView = () => {
                       {department.description || <span className="text-muted fst-italic">No description available</span>}
                     </div>
                     
-                    <Button 
-                      variant="outline-primary" 
-                      className="w-100"
-                      onClick={() => handleDepartmentSelect(department.id)}
-                    >
-                      View Details
-                      <ArrowRight size={16} className="ms-2" />
-                    </Button>
-                  </Card.Body>
+                                        <PermissionWrapper
+                                          permission={PERMISSION_IDS.VIEW_COURSE_DETAILS}
+                                          fallback={null}
+                                        >
+                                          <Button
+                                            variant="outline-primary"
+                                            className="w-100"
+                                            onClick={() => handleDepartmentSelect(department.id)}
+                                          >
+                                            View Details
+                                            <ArrowRight size={16} className="ms-2" />
+                                          </Button>
+                                        </PermissionWrapper>                  </Card.Body>
                 </Card>
               </Col>
             ))

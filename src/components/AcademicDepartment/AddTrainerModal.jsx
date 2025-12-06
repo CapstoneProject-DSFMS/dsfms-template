@@ -1,9 +1,9 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { Modal, Button, Form, Alert, Row, Col, Spinner, Dropdown } from 'react-bootstrap';
 import { X, Plus } from 'react-bootstrap-icons';
-import { userAPI } from '../../api/user';
+import courseAPI from '../../api/course';
 
-const AddTrainerModal = ({ show, onClose, onSave, loading = false }) => {
+const AddTrainerModal = ({ show, onClose, onSave, loading = false, courseId = null }) => {
   const [formData, setFormData] = useState({
     trainer_user_id: '',
     role_in_subject: 'EXAMINER'
@@ -13,31 +13,36 @@ const AddTrainerModal = ({ show, onClose, onSave, loading = false }) => {
   const [loadingTrainers, setLoadingTrainers] = useState(false);
 
   // Load trainers from API
-  const loadTrainers = async () => {
+  const loadTrainers = useCallback(async () => {
     setLoadingTrainers(true);
     try {
-      const response = await userAPI.getTrainers();
-      
-      // Handle different response formats
       let trainersList = [];
       
-      if (response) {
-        // Format 1: { data: [...] }
-        if (response.data && Array.isArray(response.data)) {
-          trainersList = response.data;
+      try {
+        const response = await courseAPI.getActiveTrainers();
+        
+        // Handle different response formats from active trainers API
+        if (response) {
+          // Format 1: { data: [...] }
+          if (response.data && Array.isArray(response.data)) {
+            trainersList = response.data;
+          }
+          // Format 2: { trainers: [...] }
+          else if (response.trainers && Array.isArray(response.trainers)) {
+            trainersList = response.trainers;
+          }
+          // Format 3: { data: { trainers: [...] } }
+          else if (response.data && response.data.trainers && Array.isArray(response.data.trainers)) {
+            trainersList = response.data.trainers;
+          }
+          // Format 4: Direct array
+          else if (Array.isArray(response)) {
+            trainersList = response;
+          }
         }
-        // Format 2: { users: [...] }
-        else if (response.users && Array.isArray(response.users)) {
-          trainersList = response.users;
-        }
-        // Format 3: { data: { users: [...] } }
-        else if (response.data && response.data.users && Array.isArray(response.data.users)) {
-          trainersList = response.data.users;
-        }
-        // Format 4: Direct array
-        else if (Array.isArray(response)) {
-          trainersList = response;
-        }
+      } catch (apiError) {
+        console.error('Error loading active trainers:', apiError);
+        trainersList = [];
       }
       
       setTrainers(Array.isArray(trainersList) ? trainersList : []);
@@ -47,7 +52,7 @@ const AddTrainerModal = ({ show, onClose, onSave, loading = false }) => {
     } finally {
       setLoadingTrainers(false);
     }
-  };
+  }, []); // Removed courseId dependency since API no longer needs it
 
   useEffect(() => {
     if (show) {
@@ -60,15 +65,7 @@ const AddTrainerModal = ({ show, onClose, onSave, loading = false }) => {
       // Load trainers when modal opens
       loadTrainers();
     }
-  }, [show]);
-
-  const handleInputChange = (e) => {
-    const { name, value } = e.target;
-    setFormData(prev => ({
-      ...prev,
-      [name]: value
-    }));
-  };
+  }, [show, loadTrainers]); // Removed courseId dependency since API no longer needs it
 
   const validateForm = () => {
     const newErrors = [];
@@ -93,9 +90,16 @@ const AddTrainerModal = ({ show, onClose, onSave, loading = false }) => {
     }
     
     try {
-      await onSave(formData);
+      // Transform snake_case to camelCase for API
+      const apiData = {
+        trainerUserId: formData.trainer_user_id,
+        roleInSubject: formData.role_in_subject
+      };
+      await onSave(apiData);
       handleClose();
     } catch (error) {
+      // Error is handled by parent component via onSave callback
+      console.error('Error saving trainer:', error);
     }
   };
 
@@ -155,7 +159,9 @@ const AddTrainerModal = ({ show, onClose, onSave, loading = false }) => {
                     <span className="flex-grow-1 text-truncate" style={{ minWidth: 0, overflow: 'hidden' }}>
                       {formData.trainer_user_id
                         ? trainers.find(t => t.id === formData.trainer_user_id)
-                          ? `${trainers.find(t => t.id === formData.trainer_user_id).firstName} ${trainers.find(t => t.id === formData.trainer_user_id).lastName} - ${trainers.find(t => t.id === formData.trainer_user_id).department?.name || 'General'}`
+                          ? trainers.find(t => t.id === formData.trainer_user_id).department?.name
+                            ? `${trainers.find(t => t.id === formData.trainer_user_id).firstName} ${trainers.find(t => t.id === formData.trainer_user_id).lastName} - ${trainers.find(t => t.id === formData.trainer_user_id).department.name}`
+                            : `${trainers.find(t => t.id === formData.trainer_user_id).firstName} ${trainers.find(t => t.id === formData.trainer_user_id).lastName}`
                           : 'Choose a trainer...'
                         : loadingTrainers
                           ? 'Loading trainers...'
@@ -208,7 +214,7 @@ const AddTrainerModal = ({ show, onClose, onSave, loading = false }) => {
                           key={trainer.id}
                           eventKey={trainer.id}
                         >
-                          {trainer.firstName} {trainer.lastName} - {trainer.department?.name || 'General'}
+                          {trainer.firstName} {trainer.lastName}{trainer.department?.name ? ` - ${trainer.department.name}` : ''}
                         </Dropdown.Item>
                       ))
                     )}

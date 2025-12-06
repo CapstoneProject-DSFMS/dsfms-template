@@ -26,6 +26,7 @@ import AddTrainerModal from './AddTrainerModal';
 import AssessmentEventsList from './AssessmentEventsList';
 import AssessmentEventDetailModal from './AssessmentEventDetailModal';
 import subjectAPI from '../../api/subject';
+import '../../styles/scrollable-table.css';
 
 const SubjectDetailsView = ({ subjectId, courseId }) => {
   const navigate = useNavigate();
@@ -309,6 +310,26 @@ const SubjectDetailsView = ({ subjectId, courseId }) => {
             <p className="text-muted mb-0">Subject Code: {subject.code}</p>
           </div>
         </div>
+        <div className="d-flex gap-2"> {/* Added div for buttons */}
+          <PermissionWrapper
+            permission={PERMISSION_IDS.UPDATE_SUBJECT}
+            fallback={null}
+          >
+            <Button variant="primary" onClick={() => setShowEditSubject(true)} className="d-flex align-items-center" size="sm">
+              <Pencil size={16} className="me-1" />
+              Edit Subject
+            </Button>
+          </PermissionWrapper>
+          <PermissionWrapper
+            permission={PERMISSION_IDS.ARCHIVE_SUBJECT}
+            fallback={null}
+          >
+            <Button variant="outline-danger" onClick={() => setShowDisableSubject(true)} className="d-flex align-items-center" size="sm">
+              <Trash size={16} className="me-1" />
+              Archive Subject
+            </Button>
+          </PermissionWrapper>
+        </div>
       </div>
 
       {/* Tab Interface */}
@@ -369,29 +390,34 @@ const SubjectDetailsView = ({ subjectId, courseId }) => {
               </Nav.Item>
             </Nav>
             {activeTab === 'trainers' && (
-              <Button 
-                variant="light"
-                size="sm"
-                onClick={() => setShowAddTrainer(true)}
-                className="d-flex align-items-center"
-                style={{
-                  backgroundColor: '#ffffff',
-                  borderColor: '#dee2e6',
-                  color: '#000000',
-                  fontWeight: 500
-                }}
-                onMouseEnter={(e) => {
-                  e.currentTarget.style.backgroundColor = '#f8f9fa';
-                  e.currentTarget.style.borderColor = '#dee2e6';
-                }}
-                onMouseLeave={(e) => {
-                  e.currentTarget.style.backgroundColor = '#ffffff';
-                  e.currentTarget.style.borderColor = '#dee2e6';
-                }}
+              <PermissionWrapper 
+                permission={PERMISSION_IDS.ASSIGN_TRAINERS}
+                fallback={null}
               >
-                <Plus size={14} className="me-1" />
-                Add Trainer
-              </Button>
+                <Button 
+                  variant="light"
+                  size="sm"
+                  onClick={() => setShowAddTrainer(true)}
+                  className="d-flex align-items-center"
+                  style={{
+                    backgroundColor: '#ffffff',
+                    borderColor: '#dee2e6',
+                    color: '#000000',
+                    fontWeight: 500
+                  }}
+                  onMouseEnter={(e) => {
+                    e.currentTarget.style.backgroundColor = '#f8f9fa';
+                    e.currentTarget.style.borderColor = '#dee2e6';
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.backgroundColor = '#ffffff';
+                    e.currentTarget.style.borderColor = '#dee2e6';
+                  }}
+                >
+                  <Plus size={14} className="me-1" />
+                  Add Trainer
+                </Button>
+              </PermissionWrapper>
             )}
           </Card.Header>
           
@@ -429,52 +455,118 @@ const SubjectDetailsView = ({ subjectId, courseId }) => {
 
               {/* Trainers Tab */}
               <Tab.Pane eventKey="trainers">
-                <Table hover>
-                  <thead>
-                    <tr>
-                      <th style={{ backgroundColor: 'var(--bs-primary)', color: 'white', borderColor: 'var(--bs-primary)' }}>EID</th>
-                      <th style={{ backgroundColor: 'var(--bs-primary)', color: 'white', borderColor: 'var(--bs-primary)' }}>Name</th>
-                      <th style={{ backgroundColor: 'var(--bs-primary)', color: 'white', borderColor: 'var(--bs-primary)' }}>Role</th>
-                      <th style={{ backgroundColor: 'var(--bs-primary)', color: 'white', borderColor: 'var(--bs-primary)' }}>Assigned Date</th>
-                      <th style={{ backgroundColor: 'var(--bs-primary)', color: 'white', borderColor: 'var(--bs-primary)' }}>Actions</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {sortedData.map((trainer) => {
-                      const roleInfo = formatRoleDisplay(trainer.role);
-                      return (
-                        <tr key={trainer.id}>
-                          <td>
-                            <Badge bg="secondary" className="text-white">
-                              {trainer.eid}
-                            </Badge>
-                          </td>
-                          <td>{trainer.name}</td>
-                          <td>
-                            <Badge bg={roleInfo.variant}>
-                              {roleInfo.text}
-                            </Badge>
-                          </td>
-                          <td>
-                            {trainer.assignedAt && !isNaN(new Date(trainer.assignedAt).getTime()) 
-                              ? new Date(trainer.assignedAt).toLocaleDateString() 
-                              : 'N/A'}
-                          </td>
-                          <td>
-                            <TrainerActions
-                              trainer={trainer}
-                              onEdit={() => {
-                                setSelectedTrainer(trainer);
-                                setShowEditTrainer(true);
-                              }}
-                              onDelete={handleRemoveTrainer}
-                            />
-                          </td>
-                        </tr>
-                      );
-                    })}
-                  </tbody>
-                </Table>
+                <div className="scrollable-table-container admin-table trainer-table-scroll">
+                  <Table hover className="mb-0" style={{ fontSize: '0.875rem' }}>
+                    <thead className="sticky-header">
+                      <tr>
+                        <th 
+                          className="fw-semibold"
+                          style={{
+                            backgroundColor: 'var(--bs-primary)',
+                            color: 'white',
+                            borderColor: 'var(--bs-primary)',
+                            borderLeft: 'none',
+                            borderRight: 'none'
+                          }}
+                        >
+                          EID
+                        </th>
+                        <th 
+                          className="fw-semibold"
+                          style={{
+                            backgroundColor: 'var(--bs-primary)',
+                            color: 'white',
+                            borderColor: 'var(--bs-primary)',
+                            borderLeft: 'none',
+                            borderRight: 'none'
+                          }}
+                        >
+                          Name
+                        </th>
+                        <th 
+                          className="fw-semibold"
+                          style={{
+                            backgroundColor: 'var(--bs-primary)',
+                            color: 'white',
+                            borderColor: 'var(--bs-primary)',
+                            borderLeft: 'none',
+                            borderRight: 'none'
+                          }}
+                        >
+                          Role
+                        </th>
+                        <th 
+                          className="fw-semibold text-center"
+                          style={{
+                            backgroundColor: 'var(--bs-primary)',
+                            color: 'white',
+                            borderColor: 'var(--bs-primary)',
+                            borderLeft: 'none',
+                            borderRight: 'none'
+                          }}
+                        >
+                          Actions
+                        </th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {sortedData.map((trainer, index) => {
+                        const roleInfo = formatRoleDisplay(trainer.role);
+                        return (
+                          <tr 
+                            key={trainer.id}
+                            className={`${index % 2 === 0 ? 'bg-white' : 'bg-neutral-50'} transition-all`}
+                            style={{
+                              transition: 'background-color 0.2s ease'
+                            }}
+                            onMouseEnter={(e) => {
+                              e.currentTarget.style.backgroundColor = 'var(--bs-neutral-100)';
+                            }}
+                            onMouseLeave={(e) => {
+                              e.currentTarget.style.backgroundColor = index % 2 === 0 ? 'white' : 'var(--bs-neutral-50)';
+                            }}
+                          >
+                            <td 
+                              className="align-middle"
+                              style={{ borderLeft: 'none', borderRight: 'none' }}
+                            >
+                              <Badge bg="secondary" className="text-white">
+                                {trainer.eid}
+                              </Badge>
+                            </td>
+                            <td 
+                              className="align-middle"
+                              style={{ borderLeft: 'none', borderRight: 'none' }}
+                            >
+                              <span className="fw-medium text-dark">{trainer.name}</span>
+                            </td>
+                            <td 
+                              className="align-middle"
+                              style={{ borderLeft: 'none', borderRight: 'none' }}
+                            >
+                              <Badge bg={roleInfo.variant}>
+                                {roleInfo.text}
+                              </Badge>
+                            </td>
+                            <td 
+                              className="align-middle text-center"
+                              style={{ borderLeft: 'none', borderRight: 'none' }}
+                            >
+                              <TrainerActions
+                                trainer={trainer}
+                                onEdit={() => {
+                                  setSelectedTrainer(trainer);
+                                  setShowEditTrainer(true);
+                                }}
+                                onDelete={handleRemoveTrainer}
+                              />
+                            </td>
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </Table>
+                </div>
               </Tab.Pane>
 
               {/* Assessment Events Tab */}
@@ -516,6 +608,7 @@ const SubjectDetailsView = ({ subjectId, courseId }) => {
         onClose={() => setShowAddTrainer(false)}
         onSave={handleAddTrainer}
         loading={isAddingTrainer}
+        courseId={courseId}
       />
 
       <EditTrainerModal

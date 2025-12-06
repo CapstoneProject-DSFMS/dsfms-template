@@ -1,0 +1,109 @@
+/* Trainee Selection Panel Styles */
+
+.trainee-selection-card {
+  border: 1px solid #e9ecef !important;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.15) !important;
+  margin-bottom: 2rem !important;
+  height: 100% !important;
+  display: flex !important;
+  flex-direction: column !important;
+  overflow: visible !important;
+  max-height: 500px !important;
+  position: relative !important;
+}
+
+.trainee-card-header {
+  flex-shrink: 0 !important;
+  flex-grow: 0 !important;
+}
+
+.trainee-card-body {
+  display: flex !important;
+  flex-direction: column !important;
+  min-height: 0 !important;
+  flex: 1 !important;
+  overflow: visible !important;
+  padding: 0 !important;
+  max-height: 500px !important;
+  position: relative !important;
+}
+
+.trainee-available-section {
+  flex-shrink: 0 !important;
+  flex-grow: 0 !important;
+  position: relative !important;
+  overflow: visible !important;
+  z-index: 1100 !important;
+}
+
+/* Allow absolute dropdown to NOT be clipped */
+.trainee-available-section > div[style*="position: absolute"] {
+  position: absolute !important;
+  max-height: 350px !important;
+  height: 350px !important;
+  overflow-y: auto !important;
+  overflow-x: hidden !important;
+  z-index: 2000 !important;
+  clip-path: none !important;
+  -webkit-clip-path: none !important;
+}
+
+.trainee-selected-section {
+  border-top: 1px solid #dee2e6 !important;
+  flex: 1 !important;
+  display: flex !important;
+  flex-direction: column !important;
+  min-height: 0 !important;
+  max-height: 100% !important;
+  overflow: hidden !important;
+}
+
+.trainee-selected-header {
+  padding: 0.5rem !important;
+  background-color: var(--bs-primary, #1b3c53) !important;
+  color: white !important;
+  flex-shrink: 0 !important;
+  flex-grow: 0 !important;
+  border-bottom: 1px solid #dee2e6 !important;
+  height: auto !important;
+}
+
+.trainee-selected-header .text-white {
+  color: white !important;
+}
+
+.trainee-selected-list {
+  overflow-y: scroll !important;
+  overflow-x: hidden !important;
+  flex: 1 !important;
+  min-height: 0 !important;
+  max-height: 100% !important;
+  display: flex !important;
+  flex-direction: column !important;
+}
+
+/* FORCE scroll on list items wrapper */
+.trainee-selected-list > div:not(:first-child) {
+  overflow-y: auto !important;
+  max-height: 100% !important;
+}
+
+/* Custom scrollbar */
+.trainee-selected-list::-webkit-scrollbar {
+  width: 8px !important;
+}
+
+.trainee-selected-list::-webkit-scrollbar-track {
+  background: #f1f1f1 !important;
+  border-radius: 4px !important;
+}
+
+.trainee-selected-list::-webkit-scrollbar-thumb {
+  background: #888 !important;
+  border-radius: 4px !important;
+}
+
+.trainee-selected-list::-webkit-scrollbar-thumb:hover {
+  background: #555 !important;
+}
+

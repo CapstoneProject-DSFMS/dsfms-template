@@ -194,24 +194,33 @@ const subjectAPI = {
         throw new Error('Trainer data is required and must be an object');
       }
 
-      if (!trainerData.trainer_user_id) {
-        throw new Error('trainer_user_id is required');
+      // Handle both snake_case and camelCase formats
+      const trainerUserId_snake = trainerData.trainer_user_id;
+      const trainerUserId_camel = trainerData.trainerUserId;
+      const roleInSubject_snake = trainerData.role_in_subject;
+      const roleInSubject_camel = trainerData.roleInSubject;
+
+      const finalTrainerId = trainerUserId_camel || trainerUserId_snake;
+      const finalRole = roleInSubject_camel || roleInSubject_snake;
+
+      if (!finalTrainerId) {
+        throw new Error('trainerUserId is required');
       }
 
-      if (!trainerData.role_in_subject) {
-        throw new Error('role_in_subject is required');
+      if (!finalRole) {
+        throw new Error('roleInSubject is required');
       }
 
       // Validate role value
       const validRoles = ['EXAMINER', 'ASSESSMENT_REVIEWER'];
-      if (!validRoles.includes(trainerData.role_in_subject)) {
-        throw new Error(`Invalid role_in_subject: ${trainerData.role_in_subject}. Must be one of: ${validRoles.join(', ')}`);
+      if (!validRoles.includes(finalRole)) {
+        throw new Error(`Invalid roleInSubject: ${finalRole}. Must be one of: ${validRoles.join(', ')}`);
       }
 
       // Backend expects camelCase: trainerUserId and roleInSubject
       // Create a clean plain object (no prototype methods)
-      const trainerUserId = String(trainerData.trainer_user_id).trim();
-      const roleInSubject = String(trainerData.role_in_subject).trim();
+      const trainerUserId = String(finalTrainerId).trim();
+      const roleInSubject = String(finalRole).trim();
 
       // Validate values before creating object
       if (!trainerUserId || trainerUserId === '') {
@@ -230,7 +239,7 @@ const subjectAPI = {
       };
 
       // Debug: Log request data before sending
-      if (process.env.NODE_ENV === 'development') {
+      if (import.meta.env.MODE === 'development') {
         console.log('📤 Add Trainer Request:', {
           url: `/subjects/${subjectId}/trainers`,
           method: 'POST',
@@ -254,7 +263,7 @@ const subjectAPI = {
       return response.data;
     } catch (error) {
       // Log detailed error for debugging
-      if (process.env.NODE_ENV === 'development') {
+      if (import.meta.env.MODE === 'development') {
         console.error('❌ Add Trainer Error:', {
           status: error.response?.status,
           statusText: error.response?.statusText,
@@ -322,6 +331,18 @@ const subjectAPI = {
       return response.data;
     } catch (error) {
       throw error.response?.data || error.message;
+    }
+  },
+
+  // Get course-subjects for trainee
+  getTraineeCourseSubjects: async (traineeId) => {
+    try {
+      const response = await apiClient.get(`/subjects/trainees/${traineeId}/course-subjects`);
+      // Handle nested data structure: { message: "...", data: { traineeId: "...", courses: [...] } }
+      // Return the inner data object so components can access courses directly
+      return response.data?.data || response.data;
+    } catch (error) {
+      throw error;
     }
   }
 };

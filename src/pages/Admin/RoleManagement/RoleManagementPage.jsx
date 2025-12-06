@@ -73,12 +73,14 @@ const RoleManagementPage = () => {
         {
           label: 'View Details',
           icon: <Eye />,
-          onClick: () => handleView(role)
+          onClick: () => handleView(role),
+          permission: PERMISSION_IDS.VIEW_ROLE_IN_DETAIL
         },
         {
           label: 'Edit Role',
           icon: <Pencil />,
-          onClick: () => handleEdit(role)
+          onClick: () => handleEdit(role),
+          permission: PERMISSION_IDS.UPDATE_ROLE
         },
         // Only show disable/enable option if role is not administrator
         ...(role.name.toUpperCase() !== 'ADMINISTRATOR' ? [
@@ -87,7 +89,8 @@ const RoleManagementPage = () => {
             label: role.status === 'Active' ? 'Disable Role' : 'Enable Role',
             icon: <PersonX />,
             className: role.status === 'Active' ? 'text-warning' : 'text-success',
-            onClick: () => handleDisableClick(role)
+            onClick: () => handleDisableClick(role),
+            permission: PERMISSION_IDS.DISABLE_ROLE
           }
         ] : [])
       ]}

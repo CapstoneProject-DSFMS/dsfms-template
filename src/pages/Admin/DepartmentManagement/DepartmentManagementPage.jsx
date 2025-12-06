@@ -11,12 +11,17 @@ import {
   DepartmentDetailsModal
 } from '../../../components/Admin/Department';
 import { SearchBar, PermissionWrapper } from '../../../components/Common';
+import { usePermissions } from '../../../hooks/usePermissions';
 import useDepartmentManagement from '../../../hooks/useDepartmentManagement';
+import { departmentAPI } from '../../../api/department';
 import { PERMISSION_IDS } from '../../../constants/permissionIds';
 import { ROUTES } from '../../../constants/routes';
 
 const DepartmentManagementPage = () => {
   const navigate = useNavigate();
+  const { hasPermission } = usePermissions();
+  const hasViewAll = hasPermission(PERMISSION_IDS.VIEW_ALL_DEPARTMENTS);
+  
   const {
     departments,
     loading,
@@ -27,8 +32,7 @@ const DepartmentManagementPage = () => {
     disableDepartment,
     enableDepartment,
     getAvailableUsers
-  } = useDepartmentManagement();
-
+  } = useDepartmentManagement(hasViewAll);
 
   // Modal states
   const [showModal, setShowModal] = useState(false);
@@ -36,12 +40,71 @@ const DepartmentManagementPage = () => {
   const [showDetailsModal, setShowDetailsModal] = useState(false);
   const [modalMode, setModalMode] = useState('add'); // 'add', 'edit', 'view'
   const [selectedDepartment, setSelectedDepartment] = useState(null);
+  const [departmentData, setDepartmentData] = useState([]);
+  const [pageLoading, setPageLoading] = useState(true);
+  
   // Checkbox filter states
   const [selectedTypes, setSelectedTypes] = useState([]);
   const [selectedStatuses, setSelectedStatuses] = useState([]);
   
   // Available users for department head selection
   const [availableUsers, setAvailableUsers] = useState([]);
+
+  // Load departments based on permission
+  useEffect(() => {
+    const loadDepartmentsData = async () => {
+      try {
+        setPageLoading(true);
+        let data;
+        
+        if (hasViewAll) {
+          // Admin: fetch all departments
+          data = await departmentAPI.getDepartments();
+        } else {
+          // Dept Head: fetch my department only, wrap in array for consistency
+          const myDept = await departmentAPI.getMyDepartment();
+          data = myDept ? [myDept] : [];
+        }
+        
+        // Transform data
+        const transformed = data.map(dept => ({
+          id: dept.id,
+          name: dept.name,
+          code: dept.code,
+          type: dept.code,
+          description: dept.description,
+          departmentHeadId: dept.headUserId,
+          departmentHead: dept.headUser ? {
+            id: dept.headUser.id,
+            name: dept.headUser.name || dept.headUser.email,
+            email: dept.headUser.email,
+            role: dept.headUser.role,
+            lastName: dept.headUser.lastName,
+            middleName: dept.headUser.middleName,
+            firstName: dept.headUser.firstName
+          } : null,
+          status: dept.isActive === true ? 'ACTIVE' : 'INACTIVE',
+          coursesCount: dept.courseCount || dept.coursesCount || 0,
+          traineesCount: dept.traineeCount || dept.traineesCount || 0,
+          trainersCount: dept.trainerCount || dept.trainersCount || 0,
+          createdAt: dept.createdAt,
+          updatedAt: dept.updatedAt,
+          deletedAt: dept.deletedAt,
+          courses: dept.courses || []
+        }));
+        
+        setDepartmentData(transformed);
+      } catch (error) {
+        console.error('Error loading departments:', error);
+        toast.error('Failed to load departments');
+        setDepartmentData([]);
+      } finally {
+        setPageLoading(false);
+      }
+    };
+
+    loadDepartmentsData();
+  }, [hasViewAll]);
 
   // Load available users for department head selection
   useEffect(() => {
@@ -56,7 +119,7 @@ const DepartmentManagementPage = () => {
     };
 
     loadAvailableUsers();
-  }, [getAvailableUsers]); // getAvailableUsers is now memoized with useCallback
+  }, [getAvailableUsers]);
 
   // Modal handlers
   const handleAddDepartment = () => {
@@ -181,18 +244,23 @@ const DepartmentManagementPage = () => {
   };
 
   // Get unique values for filters
-  const uniqueTypes = [...new Set(departments.map(dept => dept.type).filter(Boolean))];
+  const uniqueTypes = [...new Set(departmentData.map(dept => dept.type).filter(Boolean))];
   // Always show all status options, not just from data
   const uniqueStatuses = ['ACTIVE', 'INACTIVE'];
 
   // Apply checkbox filters
-  const filteredDepartments = departments.filter(dept => {
+  const filteredDepartments = departmentData.filter(dept => {
     // Type filter
     const typeMatch = selectedTypes.length === 0 || selectedTypes.includes(dept.type);
     // Status filter
     const statusMatch = selectedStatuses.length === 0 || selectedStatuses.includes(dept.status);
+    // Search filter
+    const searchMatch = !searchTerm || 
+      dept.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      dept.code.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      dept.description.toLowerCase().includes(searchTerm.toLowerCase());
     
-    return typeMatch && statusMatch;
+    return typeMatch && statusMatch && searchMatch;
   });
 
 
@@ -260,7 +328,7 @@ const DepartmentManagementPage = () => {
           <div className="position-relative mt-3">
             <DepartmentTable
               departments={filteredDepartments}
-              loading={loading}
+              loading={pageLoading || loading}
               onView={handleViewDepartment}
               onToggleStatus={handleToggleStatus}
             />

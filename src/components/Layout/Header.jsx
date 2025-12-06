@@ -155,9 +155,11 @@ const Header = ({ onToggleSidebar }) => {
       '/assessments/signature-required': 'Signature Required List',
       '/assessments/completion-required': 'Section Completion Required List',
       '/assessment-events': 'Assessment Event',
-      '/reports/create': 'Create Incident/Feedback Report',
-      '/reports/issues': 'Issue List',
-      '/reports/feedback': 'Feedback List',
+      '/reports': 'Incidents / Feedback Report',
+      '/reports/create': 'Issue Reporting',
+      '/reports/issues': 'Incidents / Feedback Report',
+      '/reports/feedback': 'Incidents / Feedback Report',
+      '/reports/:reportId': 'Report Details',
       '/configure-signature': 'Configure Signature',
       '/my-department-details': 'My Department Details',
       '/assessment-review-requests': 'Assessment Review Requests',
@@ -184,7 +186,7 @@ const Header = ({ onToggleSidebar }) => {
       '/trainee/signature-required': 'Signature Required List',
       '/trainee/completion-required': 'Section Completion Required List',
       '/trainee/your-assessments': 'Your Assessments',
-      '/trainee/create-incident-feedback-report': 'Create Incident/Feedback Report',
+      '/trainee/create-incident-feedback-report': 'Issue Reporting',
       '/trainee/assessment-pending/section-completion': 'Section Completion Required List',
       '/trainer': 'Trainer Dashboard',
       '/trainer/dashboard': 'Trainer Dashboard',
@@ -331,6 +333,16 @@ const Header = ({ onToggleSidebar }) => {
     // Check for new function-based assessment review requests detail (pattern: /assessment-review-requests/:requestId)
     if (path.match(/^\/assessment-review-requests\/[^/]+$/)) {
       return 'Assessment Review Request Details';
+    }
+    
+    // Check for report detail pages (pattern: /reports/:reportId)
+    if (path.match(/^\/reports\/[^/]+$/) && path !== '/reports' && path !== '/reports/create') {
+      return 'Report Details';
+    }
+    
+    // Check for template detail pages (pattern: /templates/:templateId)
+    if (path.match(/^\/templates\/[^/]+$/) && path !== '/templates' && !path.startsWith('/templates/editor') && !path.startsWith('/templates/drafts')) {
+      return 'Template Detail';
     }
     
     // Check for SQA template detail pages (pattern: /sqa/templates/:templateId)

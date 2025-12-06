@@ -5,6 +5,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { ROUTES } from '../../constants/routes';
 import SubjectList from '../../components/Trainer/CourseDetail/SubjectList';
 import TraineeList from '../../components/Trainer/CourseDetail/TraineeList';
+import courseAPI from '../../api/course';
 
 const CourseDetailPage = () => {
   const { courseId } = useParams();
@@ -16,34 +17,46 @@ const CourseDetailPage = () => {
 
   useEffect(() => {
     const fetchCourseDetails = async () => {
+      if (!courseId) {
+        setLoading(false);
+        return;
+      }
+
       try {
         setLoading(true);
-        // Simulate API call
-        await new Promise(resolve => setTimeout(resolve, 1000));
-        
-        // Mock course data
-        const mockCourse = {
-          id: courseId,
-          title: 'Aviation Safety Management',
-          code: 'ASM-101',
-          department: 'Aviation Department',
-          instructor: 'Dr. Smith',
-          startDate: '2024-01-15',
-          endDate: '2024-03-15',
-          status: 'active',
-          location: 'Training Room A',
-          schedule: 'Mon, Wed, Fri 09:00-12:00',
-          description: 'Comprehensive course covering aviation safety management systems, risk assessment, and regulatory compliance.',
-          maxEnrollment: 30,
-          currentEnrollment: 25,
-          completedSubjects: 8,
-          totalSubjects: 12
+        setError(null);
+
+        // Call API GET /courses/{courseId}
+        const courseData = await courseAPI.getCourseById(courseId);
+
+        if (!courseData) {
+          throw new Error('Course not found');
+        }
+
+        // Format date from ISO string to YYYY-MM-DD
+        const formatDate = (dateString) => {
+          if (!dateString) return null;
+          return new Date(dateString).toISOString().split('T')[0];
         };
-        
-        setCourse(mockCourse);
+
+        // Map API data to component format
+        const mappedCourse = {
+          id: courseData.id,
+          title: courseData.name || 'Unnamed Course',
+          code: courseData.code || 'N/A',
+          department: courseData.department?.name || 'N/A',
+          startDate: formatDate(courseData.startDate),
+          endDate: formatDate(courseData.endDate),
+          status: courseData.status?.toLowerCase() || 'active',
+          description: courseData.description || '',
+          venue: courseData.venue || 'N/A',
+          maxEnrollment: courseData.maxNumTrainee || 0
+        };
+
+        setCourse(mappedCourse);
       } catch (err) {
-        setError('Failed to load course details');
         console.error('Error fetching course:', err);
+        setError(err?.response?.data?.message || err?.message || 'Failed to load course details');
       } finally {
         setLoading(false);
       }

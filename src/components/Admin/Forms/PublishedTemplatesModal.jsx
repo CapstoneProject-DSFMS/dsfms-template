@@ -69,14 +69,20 @@ const PublishedTemplatesModal = ({ show, onHide }) => {
       // Convert backend sections to frontend format
       const frontendSections = convertBackendToFrontendSections(backendSections);
 
+      // Clear currentTemplateId and id before creating new version to prevent conflicts
+      localStorage.removeItem('currentTemplateId');
+      console.log('🗑️ Cleared currentTemplateId before creating new version');
+
       // Prepare template info for editor
       const editorTemplateInfo = {
+        id: null, // Clear id field to prevent using old draft ID
+        currentTemplateId: null, // Clear currentTemplateId (will be set after first save)
+        originalTemplateId: template.id, // Store original template ID for create-version API
         name: templateForm.name || template.name,
         description: templateForm.description || template.description,
         departmentId: templateForm.departmentId || template.departmentId,
         templateContent: templateForm.templateContent || '',
         templateConfig: templateForm.templateConfig || '',
-        originalTemplateId: template.id, // Store original template ID for create-version API
         importType: 'Create Version',
         createdAt: new Date().toISOString()
       };

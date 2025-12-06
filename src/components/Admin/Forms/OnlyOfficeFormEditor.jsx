@@ -16,6 +16,7 @@ const OnlyOfficeFormEditor = forwardRef(({
   importType = '', // Kept for backward compatibility, no longer used after removing EditorWithMergeFields
     className = '',
   initialSections = null, // ← NEW prop to restore sections from draft
+  isUpdateRejected = false, // ← NEW prop to indicate Update Rejected Template flow
   onHasUnsavedChangesChange,
   onDraftSaved,
 }, ref) => {
@@ -147,20 +148,24 @@ const OnlyOfficeFormEditor = forwardRef(({
         { label: "Template Name", variable: "{template_name}", fieldType: 'TEXT' }
     ]
 
-    // Load Global Mapped Fields from API
+    // Load Global Mapped Fields from API (POST /global-fields/detail)
     useEffect(() => {
         let isMounted = true
         const fetchGlobalFields = async () => {
             try {
                 setIsLoadingGlobalFields(true)
-                const response = await globalFieldAPI.getGlobalFields()
-                const fields = response?.data || response || []
+                const fields = await globalFieldAPI.getGlobalFieldsDetail()
+                // Response structure: { success: true, data: [...], message: "..." }
+                // getGlobalFieldsDetail already handles response.data?.data || response.data || []
                 if (isMounted) {
-                    setGlobalMappedFields(fields)
+                    setGlobalMappedFields(Array.isArray(fields) ? fields : [])
                 }
             } catch (error) {
                 console.error('Error loading global mapped fields:', error)
                 toast.error('Failed to load global mapped fields')
+                if (isMounted) {
+                    setGlobalMappedFields([])
+                }
             } finally {
                 if (isMounted) {
                     setIsLoadingGlobalFields(false)
@@ -195,8 +200,8 @@ const OnlyOfficeFormEditor = forwardRef(({
     }, [initialContent])
 
   // OnlyOffice Cloud Configuration - Updated URL and JWT Secret
-  // Cloud URL: https://c1e7e7aa.docs.onlyoffice.com
-    const ONLYOFFICE_SECRET = 'bd9aaaaddaf94061b51e976a8fd335ce'
+  // Cloud URL: https://d492cc7d.docs.onlyoffice.com
+    const ONLYOFFICE_SECRET = '06afd75229ef45e496e4107659a4db9e'
 
   // Generate JWT token for OnlyOffice Cloud - Hardcoded approach
   const generateJWTToken = async (payload) => {
@@ -1584,6 +1589,7 @@ console.log('🌐 Full S3 URL:', s3Url)
                 readOnly={readOnly}
                 className="h-100"
                 onSubmittingChange={setIsSubmitting}
+                isUpdateRejected={isUpdateRejected}
               />
             </div>
           </Col>
@@ -1630,24 +1636,52 @@ console.log('🌐 Full S3 URL:', s3Url)
                 border: '1px solid var(--bs-neutral-200)'
               }}
             >
-              <p className="mb-1 text-primary-custom" style={{ fontSize: '0.875rem', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+              <p className="mb-2 text-primary-custom" style={{ fontSize: '0.875rem', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.5px' }}>
                 Field to add:
               </p>
-              <p className="mb-0" style={{ fontSize: '1rem', fontWeight: 500, color: 'var(--bs-dark)' }}>
-                {selectedSystemField.label}
-              </p>
-              <code 
-                className="d-inline-block mt-1 px-2 py-1 rounded"
-                style={{ 
-                  fontSize: '0.875rem',
-                  backgroundColor: 'var(--bs-neutral-100)',
-                  color: 'var(--bs-primary)',
-                  border: '1px solid var(--bs-neutral-300)'
-                }}
-              >
-                {selectedSystemField.variable}
-              </code>
-    </div>
+              
+              {/* Label */}
+              <div className="mb-2">
+                <span style={{ fontSize: '0.875rem', color: 'var(--bs-secondary)', fontWeight: 500 }}>Label: </span>
+                <span style={{ fontSize: '1rem', fontWeight: 600, color: 'var(--bs-dark)' }}>
+                  {selectedSystemField.label}
+                </span>
+              </div>
+              
+              {/* Field Name */}
+              <div className="mb-2">
+                <span style={{ fontSize: '0.875rem', color: 'var(--bs-secondary)', fontWeight: 500 }}>Field Name: </span>
+                <code 
+                  className="d-inline-block px-2 py-1 rounded"
+                  style={{ 
+                    fontSize: '0.875rem',
+                    backgroundColor: 'var(--bs-neutral-100)',
+                    color: 'var(--bs-primary)',
+                    border: '1px solid var(--bs-neutral-300)',
+                    fontWeight: 500
+                  }}
+                >
+                  {selectedSystemField.variable.replace(/[{}]/g, '')}
+                </code>
+              </div>
+              
+              {/* Field Type */}
+              <div className="mb-0">
+                <span style={{ fontSize: '0.875rem', color: 'var(--bs-secondary)', fontWeight: 500 }}>Field Type: </span>
+                <span 
+                  className="badge"
+                  style={{ 
+                    fontSize: '0.875rem',
+                    backgroundColor: 'var(--bs-info)',
+                    color: 'white',
+                    fontWeight: 500,
+                    padding: '0.375rem 0.75rem'
+                  }}
+                >
+                  {selectedSystemField.fieldType || 'TEXT'}
+                </span>
+              </div>
+            </div>
           )}
           <p className="mb-3" style={{ fontSize: '0.95rem', color: 'var(--bs-dark)', fontWeight: 500 }}>
             Choose a section to add this field:

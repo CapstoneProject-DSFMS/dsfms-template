@@ -1,15 +1,16 @@
 import React, { useState } from 'react';
-import { Modal, Form, Button, Alert } from 'react-bootstrap';
+import { Modal, Form, Button } from 'react-bootstrap';
 import { Key, Eye, EyeSlash, X } from 'react-bootstrap-icons';
 
 const ResetPasswordModal = ({ show, onClose, onSave, loading = false }) => {
   const [passwordForm, setPasswordForm] = useState({
+    oldPassword: '',
     newPassword: '',
     confirmPassword: ''
   });
+  const [showOldPassword, setShowOldPassword] = useState(false);
   const [showNewPassword, setShowNewPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
-  const [alert, setAlert] = useState({ show: false, message: '', variant: 'success' });
 
   const handlePasswordChange = (e) => {
     const { name, value } = e.target;
@@ -17,71 +18,45 @@ const ResetPasswordModal = ({ show, onClose, onSave, loading = false }) => {
       ...prev,
       [name]: value
     }));
-    
-    // Clear alert when user starts typing
-    if (alert.show) {
-      setAlert({ show: false, message: '', variant: 'success' });
-    }
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     
     if (passwordForm.newPassword !== passwordForm.confirmPassword) {
-      setAlert({
-        show: true,
-        message: 'New password and confirm password do not match.',
-        variant: 'danger'
-      });
-      return;
+      throw new Error('New password and confirm password do not match.');
     }
 
     if (passwordForm.newPassword.length < 6) {
-      setAlert({
-        show: true,
-        message: 'New password must be at least 6 characters long.',
-        variant: 'danger'
-      });
-      return;
+      throw new Error('New password must be at least 6 characters long.');
     }
 
     try {
       await onSave(passwordForm);
       
-      setAlert({
-        show: true,
-        message: 'Password updated successfully!',
-        variant: 'success'
-      });
-      
       // Reset form after successful update
       setPasswordForm({
+        oldPassword: '',
         newPassword: '',
         confirmPassword: ''
       });
       
-      // Close modal after a short delay
-      setTimeout(() => {
-        onClose();
-        setAlert({ show: false, message: '', variant: 'success' });
-      }, 1500);
+      // Close modal immediately (toast will show success)
+      onClose();
       
     } catch (error) {
-      setAlert({
-        show: true,
-        message: 'Failed to update password. Please check your current password.',
-        variant: 'danger'
-      });
+      // Error is handled by toast in parent component
+      throw error;
     }
   };
 
   const handleClose = () => {
     // Reset form when closing
     setPasswordForm({
+      oldPassword: '',
       newPassword: '',
       confirmPassword: ''
     });
-    setAlert({ show: false, message: '', variant: 'success' });
     onClose();
   };
 
@@ -90,7 +65,7 @@ const ResetPasswordModal = ({ show, onClose, onSave, loading = false }) => {
       <Modal.Header className="bg-primary text-white">
         <Modal.Title className="d-flex align-items-center">
           <Key className="me-2" size={20} />
-          Reset Password
+          Change Password
         </Modal.Title>
         <Button
           variant="link"
@@ -103,13 +78,31 @@ const ResetPasswordModal = ({ show, onClose, onSave, loading = false }) => {
       </Modal.Header>
 
       <Modal.Body className="p-4">
-        {alert.show && (
-          <Alert variant={alert?.variant} className="mb-3">
-            {alert?.message}
-          </Alert>
-        )}
-
         <Form onSubmit={handleSubmit}>
+          <Form.Group className="mb-3">
+            <Form.Label className="fw-semibold">Current Password</Form.Label>
+            <div className="position-relative">
+              <Form.Control
+                type={showOldPassword ? 'text' : 'password'}
+                name="oldPassword"
+                value={passwordForm.oldPassword}
+                onChange={handlePasswordChange}
+                required
+                placeholder="Enter current password"
+              />
+              <Button
+                variant="outline-secondary"
+                size="sm"
+                className="position-absolute end-0 top-50 translate-middle-y border-0"
+                style={{ background: 'none', right: '8px' }}
+                onClick={() => setShowOldPassword(!showOldPassword)}
+                type="button"
+              >
+                {showOldPassword ? <EyeSlash size={16} /> : <Eye size={16} />}
+              </Button>
+            </div>
+          </Form.Group>
+
           <Form.Group className="mb-3">
             <Form.Label className="fw-semibold">New Password</Form.Label>
             <div className="position-relative">
@@ -176,7 +169,7 @@ const ResetPasswordModal = ({ show, onClose, onSave, loading = false }) => {
               {loading ? 'Updating...' : (
                 <>
                   <Key size={16} className="me-1" />
-                  Update Password
+                  Change Password
                 </>
               )}
             </Button>

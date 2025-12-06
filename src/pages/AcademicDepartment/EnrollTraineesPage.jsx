@@ -8,19 +8,19 @@ import SubjectSelectionPanel from '../../components/AcademicDepartment/SubjectSe
 import TraineeSelectionPanel from '../../components/AcademicDepartment/TraineeSelectionPanel';
 import BulkImportTraineesModal from '../../components/AcademicDepartment/BulkImportTraineesModal';
 import BatchCodeModal from '../../components/AcademicDepartment/BatchCodeModal';
+import courseAPI from '../../api/course';
 import subjectAPI from '../../api/subject';
+import { PermissionWrapper } from '../../components/Common'; // Add this
+import { PERMISSION_IDS } from '../../constants/permissionIds'; // Add this
 
 const EnrollTraineesPage = () => {
   const navigate = useNavigate();
   const { courseId } = useParams();
   
-  // Mock course data
-  const course = {
-    id: courseId,
-    name: 'Safety Procedures',
-    code: 'SAF001',
-    description: 'Basic safety procedures training course'
-  };
+  // State for course data
+  const [course, setCourse] = useState(null);
+  const [courseLoading, setCourseLoading] = useState(true);
+  const [courseSubjects, setCourseSubjects] = useState([]);
 
   const [selectedSubjects, setSelectedSubjects] = useState([]);
   const [selectedTrainees, setSelectedTrainees] = useState([]);
@@ -30,14 +30,25 @@ const EnrollTraineesPage = () => {
   const [enrollLoading, setEnrollLoading] = useState(false);
   const [subjectsMap, setSubjectsMap] = useState({}); // Map subjectId to subject name/code
 
-  // Load subjects to map IDs to names
+  // Load course data from API
   useEffect(() => {
-    const loadSubjects = async () => {
+    const loadCourseData = async () => {
       try {
-        const response = await subjectAPI.getSubjects();
-        if (response && response.subjects) {
+        setCourseLoading(true);
+        const response = await courseAPI.getCourseById(courseId);
+        setCourse(response);
+        
+        // Extract subjects from course response and set them
+        if (response.subjects && Array.isArray(response.subjects)) {
+          const activeSubjects = response.subjects.filter(subject => {
+            const status = subject?.status?.toUpperCase();
+            return status !== 'ARCHIVED' && !subject?.deletedAt;
+          });
+          setCourseSubjects(activeSubjects);
+          
+          // Create subjects map for reference
           const map = {};
-          response.subjects.forEach(subject => {
+          activeSubjects.forEach(subject => {
             map[subject.id] = {
               name: subject.name,
               code: subject.code
@@ -46,11 +57,75 @@ const EnrollTraineesPage = () => {
           setSubjectsMap(map);
         }
       } catch (error) {
-        // Silently fail - subjects map is optional for error display
+        console.error('Error loading course data:', error);
+        toast.error('Failed to load course data', {
+          autoClose: 3000,
+          position: "top-right"
+        });
+      } finally {
+        setCourseLoading(false);
       }
     };
-    loadSubjects();
-  }, []);
+
+    if (courseId) {
+      loadCourseData();
+    }
+  }, [courseId]);
+
+  // Optional: Keep this for backward compatibility if subjectsMap is used elsewhere
+  useEffect(() => {
+    // If subjects map wasn't set by course API, load from all subjects (fallback)
+    if (Object.keys(subjectsMap).length === 0 && !courseLoading) {
+      const loadSubjectsMap = async () => {
+        try {
+          const response = await subjectAPI.getSubjects();
+          if (response && response.subjects) {
+            const map = {};
+            response.subjects.forEach(subject => {
+              map[subject.id] = {
+                name: subject.name,
+                code: subject.code
+              };
+            });
+            setSubjectsMap(map);
+          }
+        } catch (error) {
+          // Silently fail - subjects map is optional for error display
+        }
+      };
+      loadSubjectsMap();
+    }
+  }, [courseLoading]);
+
+  // Show loading state while course is loading
+  if (courseLoading) {
+    return (
+      <Container className="py-4">
+        <div className="text-center">
+          <div className="spinner-border text-primary" role="status">
+            <span className="visually-hidden">Loading...</span>
+          </div>
+          <p className="mt-2 text-muted">Loading course details...</p>
+        </div>
+      </Container>
+    );
+  }
+
+  // Show error state if course couldn't be loaded
+  if (!course) {
+    return (
+      <Container className="py-4">
+        <div className="text-center text-muted">
+          <h4>Course not found</h4>
+          <p>The requested course could not be found.</p>
+          <Button variant="primary" onClick={() => navigate('/academic/departments')}>
+            <ArrowLeft className="me-2" />
+            Back to Departments
+          </Button>
+        </div>
+      </Container>
+    );
+  }
 
   const handleBack = () => {
     // Navigate back to course detail page
@@ -320,33 +395,42 @@ const EnrollTraineesPage = () => {
                   <p className="mb-0 text-muted">{course.description}</p>
                 </Col>
                 <Col md={4} className="text-end d-flex justify-content-end align-items-center gap-2">
-                  <Button 
-                    size="sm" 
-                    variant="primary"
-                    onClick={handleEnroll}
-                    disabled={selectedSubjects.length === 0 || selectedTrainees.length === 0 || enrollLoading}
-                    style={{ fontSize: '0.75rem', padding: '0.25rem 0.5rem' }}
-                  >
-                    {enrollLoading ? (
-                      <>
-                        <span className="spinner-border spinner-border-sm me-1" role="status" aria-hidden="true" style={{ width: '0.5rem', height: '0.5rem' }}></span>
-                        Enrolling...
-                      </>
-                    ) : (
-                      <>
-                        <Plus size={12} className="me-1" /> Enroll
-                      </>
-                    )}
-                  </Button>
-                  <Button 
-                    size="sm" 
-                    variant="outline-primary" 
-                    onClick={handleBulkImport}
-                    style={{ fontSize: '0.75rem', padding: '0.25rem 0.5rem' }}
-                  >
-                    <Upload size={12} className="me-1" /> Bulk Import Trainees
-                  </Button>
-                </Col>
+                                    <PermissionWrapper
+                                      permission={PERMISSION_IDS.BULK_ENROLL_TRAINEES}
+                                      fallback={null}
+                                    >
+                                      <Button
+                                        size="sm"
+                                        variant="primary"
+                                        onClick={handleEnroll}
+                                        disabled={selectedSubjects.length === 0 || selectedTrainees.length === 0 || enrollLoading}
+                                        style={{ fontSize: '0.75rem', padding: '0.25rem 0.5rem' }}
+                                      >
+                                        {enrollLoading ? (
+                                          <>
+                                            <span className="spinner-border spinner-border-sm me-1" role="status" aria-hidden="true" style={{ width: '0.5rem', height: '0.5rem' }}></span>
+                                            Enrolling...
+                                          </>
+                                        ) : (
+                                          <>
+                                            <Plus size={12} className="me-1" /> Enroll
+                                          </>
+                                        )}
+                                      </Button>
+                                    </PermissionWrapper>
+                                    <PermissionWrapper
+                                      permission={PERMISSION_IDS.BULK_ENROLL_TRAINEES}
+                                      fallback={null}
+                                    >
+                                      <Button
+                                        size="sm"
+                                        variant="outline-primary"
+                                        onClick={handleBulkImport}
+                                        style={{ fontSize: '0.75rem', padding: '0.25rem 0.5rem' }}
+                                      >
+                                        <Upload size={12} className="me-1" /> Bulk Import Trainees
+                                      </Button>
+                                    </PermissionWrapper>                </Col>
               </Row>
             </Card.Body>
           </Card>
@@ -361,13 +445,14 @@ const EnrollTraineesPage = () => {
               <SubjectSelectionPanel 
                 selectedSubjects={selectedSubjects}
                 onSelectionChange={setSelectedSubjects}
+                subjects={courseSubjects}
               />
             </div>
           </Col>
 
           {/* Panel 2: Trainee Selection */}
           <Col lg={6}>
-            <div style={{ height: '500px', position: 'relative', zIndex: 1, overflow: 'visible', marginBottom: '2rem' }}>
+            <div style={{ height: '500px', position: 'relative', zIndex: 1, overflow: 'hidden', marginBottom: '2rem' }}>
               <TraineeSelectionPanel 
                 selectedTrainees={selectedTrainees}
                 onSelectionChange={setSelectedTrainees}

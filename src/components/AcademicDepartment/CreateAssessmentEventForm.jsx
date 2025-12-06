@@ -111,8 +111,8 @@ const CreateAssessmentEventForm = ({ onSuccess }) => {
           coursesData = response.data.courses;
         }
         
-        // Filter active and planned courses
-        const filteredCourses = coursesData.filter(c => c.status === 'ACTIVE' || c.status === 'PLANNED');
+        // Filter courses with status PLANNED, ON_GOING, or FINISHED
+        const filteredCourses = coursesData.filter(c => c.status === 'PLANNED' || c.status === 'ON_GOING' || c.status === 'FINISHED');
         setCourses(filteredCourses);
         
         // Extract subjects from courses (if each course has subjects array)
@@ -135,8 +135,8 @@ const CreateAssessmentEventForm = ({ onSuccess }) => {
           index === self.findIndex(s => s.id === subject.id)
         );
         
-        // Filter active and ongoing subjects
-        const filteredSubjects = uniqueSubjects.filter(s => s.status === 'ON_GOING' || s.status === 'ACTIVE');
+        // Filter subjects with status PLANNED, ON_GOING, or FINISHED
+        const filteredSubjects = uniqueSubjects.filter(s => s.status === 'PLANNED' || s.status === 'ON_GOING' || s.status === 'FINISHED');
         setSubjects(filteredSubjects);
         
         // Reset course and subject selection when department changes
@@ -714,8 +714,8 @@ const CreateAssessmentEventForm = ({ onSuccess }) => {
         centered
         fullscreen="lg-down"
       >
-        <Modal.Header closeButton>
-          <Modal.Title>Template Preview</Modal.Title>
+        <Modal.Header closeButton className="bg-primary text-white border-0">
+          <Modal.Title className="text-white">Template Preview</Modal.Title>
         </Modal.Header>
         <Modal.Body style={{ padding: 0, height: '70vh', minHeight: '500px' }}>
           {loadingPDF ? (
@@ -729,7 +729,7 @@ const CreateAssessmentEventForm = ({ onSuccess }) => {
             </div>
           ) : pdfUrl ? (
             <iframe
-              src={pdfUrl}
+              src={`${pdfUrl}#toolbar=0`}
               style={{
                 width: '100%',
                 height: '100%',

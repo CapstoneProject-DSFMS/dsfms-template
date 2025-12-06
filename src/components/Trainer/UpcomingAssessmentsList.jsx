@@ -1,9 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { Table, Badge, Row, Col, Alert } from 'react-bootstrap';
-import { CalendarEvent, Clock, Person, Book, Eye, ThreeDotsVertical, JournalText } from 'react-bootstrap-icons';
+import { CalendarEvent, Clock, Person, Book, JournalText } from 'react-bootstrap-icons';
 import { useNavigate } from 'react-router-dom';
 import { ROUTES } from '../../constants/routes';
-import { LoadingSkeleton, SortIcon, PortalUnifiedDropdown, SearchBar } from '../Common';
+import { LoadingSkeleton, SortIcon, SearchBar } from '../Common';
 import TrainerFilterPanel from './TrainerFilterPanel';
 import useTableSort from '../../hooks/useTableSort';
 import assessmentAPI from '../../api/assessment';
@@ -28,12 +28,12 @@ const UpcomingAssessmentsList = () => {
         const response = await assessmentAPI.getUserEvents();
         
         if (response?.success && response?.data?.events) {
-          const allowedStatuses = new Set(['NOT_STARTED', 'ON_GOING']);
+          // No overall filter by allowedStatuses here, as per new requirement
+          // Filtering for assess button visibility will be done at the button level
 
           // Map API data to component format
           const mappedAssessments = response.data.events
-            .filter((event) => allowedStatuses.has(event.status))
-            .map((event) => {
+            .map((event, index) => {
             const occurrenceDate = new Date(event.occuranceDate);
             const dateStr = occurrenceDate.toLocaleDateString('en-US', { 
               year: 'numeric', 
@@ -48,8 +48,19 @@ const UpcomingAssessmentsList = () => {
 
             const entityType = event.entityInfo?.type || (event.subjectId ? 'subject' : 'course');
             
+            // Create unique key: prefer event.id, otherwise use combination of identifiers
+            // Include event.name to ensure uniqueness even if other fields are same
+            const fallbackKey = [
+              event.courseId || 'course',
+              event.subjectId || 'subject',
+              event.templateInfo?.id || 'template',
+              event.name || 'unnamed',
+              event.occuranceDate || new Date().toISOString(),
+              index // Last resort to ensure uniqueness
+            ].join('-');
+            
             return {
-              id: event.id || `${event.courseId}-${event.subjectId}-${event.occuranceDate}`,
+              id: event.id || fallbackKey,
               title: event.name,
               entityInfo: event.entityInfo,
               entityType: entityType,
@@ -65,7 +76,9 @@ const UpcomingAssessmentsList = () => {
               scheduledTime: timeStr,
               occurrenceDate: event.occuranceDate,
               status: event.status || 'NOT_STARTED',
-              templateInfo: event.templateInfo
+              templateInfo: event.templateInfo,
+              resultScore: event.resultScore || null, // Added as per request
+              resultText: event.resultText || null    // Added as per request
             };
           });
           
@@ -90,7 +103,10 @@ const UpcomingAssessmentsList = () => {
     ON_GOING: { variant: 'info', text: 'On Going' },
     APPROVED: { variant: 'success', text: 'Approved' },
     COMPLETED: { variant: 'success', text: 'Completed' },
-    PENDING: { variant: 'warning', text: 'Pending' }
+    PENDING: { variant: 'warning', text: 'Pending' },
+    DRAFT: { variant: 'primary', text: 'Draft' }, // Added DRAFT status
+    SUBMITTED: { variant: 'dark', text: 'Submitted' }, // Assuming SUBMITTED status
+    CANCELLED: { variant: 'danger', text: 'Cancelled' }, // Assuming CANCELLED status
   };
 
   const getStatusBadge = (status) => {
@@ -98,22 +114,61 @@ const UpcomingAssessmentsList = () => {
     return <Badge bg={config.variant}>{config.text}</Badge>;
   };
 
-  const handleViewAssignments = (assessment) => {
-    const targetType = entityFilter;
-    const identifier = assessment.entityId;
+  const handleAccess = async (assessment) => {
+    try {
+      setLoading(true);
 
-    if (!identifier) {
-      toast.error(`Missing ${targetType} identifier`);
-      return;
-    }
+      // Format date to YYYY-MM-DD
+      const dateStr = new Date(assessment.occurrenceDate).toISOString().split('T')[0];
 
-    navigate(ROUTES.ASSESSMENTS_ASSIGN(targetType, identifier), {
-      state: {
-        name: assessment.entityName,
-        code: assessment.entityCode,
-        template: assessment.templateInfo?.name
+      let response;
+      const requestBody = {
+        courseId: entityFilter === 'course' ? assessment.entityId : undefined,
+        subjectId: entityFilter === 'subject' ? assessment.entityId : undefined,
+        templateId: assessment.templateInfo?.id,
+        occuranceDate: dateStr
+      };
+
+      // Remove undefined properties
+      Object.keys(requestBody).forEach(key => 
+        requestBody[key] === undefined && delete requestBody[key]
+      );
+
+      // Call API based on entityFilter
+      if (entityFilter === 'course') {
+        response = await assessmentAPI.getCourseEvents(requestBody);
+      } else {
+        response = await assessmentAPI.getSubjectEvents(requestBody);
       }
-    });
+
+      if (response?.assessments && response?.eventInfo) {
+        // Format date to YYYY-MM-DD for query params
+        const dateStr = new Date(assessment.occurrenceDate).toISOString().split('T')[0];
+        
+        // Navigate with API response data in state AND query params for F5 support
+        const searchParams = new URLSearchParams({
+          templateId: assessment.templateInfo?.id || '',
+          occuranceDate: dateStr
+        });
+        
+        navigate(`${ROUTES.ASSESSMENTS_ASSIGN(entityFilter, assessment.entityId)}?${searchParams.toString()}`, {
+          state: {
+            name: response.eventInfo?.name || assessment.entityName,
+            code: response.eventInfo?.entityInfo?.code || assessment.entityCode,
+            template: response.eventInfo?.name || assessment.templateInfo?.name,
+            assessments: response.assessments, // Pass full assessment list from API
+            eventInfo: response.eventInfo // Pass event info
+          }
+        });
+      } else {
+        toast.error('Failed to access assessment');
+      }
+    } catch (err) {
+      console.error('Error accessing assessment:', err);
+      toast.error('Error accessing assessment');
+    } finally {
+      setLoading(false);
+    }
   };
 
   // Get unique statuses for filter
@@ -149,7 +204,7 @@ const UpcomingAssessmentsList = () => {
   const { sortedData, sortConfig, handleSort } = useTableSort(filteredAssessments);
 
   if (loading) {
-    return <LoadingSkeleton rows={5} columns={6} />;
+    return <LoadingSkeleton rows={5} columns={7} />;
   }
 
   if (error) {
@@ -232,6 +287,9 @@ const UpcomingAssessmentsList = () => {
     );
   };
 
+  // Define statuses that should NOT show the Assess button
+  const excludedStatusesForAssessButton = new Set(['NOT_STARTED', 'SUBMITTED', 'APPROVED', 'CANCELLED']);
+
   return (
     <div>
 
@@ -309,7 +367,7 @@ const UpcomingAssessmentsList = () => {
                   Trainees
                 </SortableHeader>
                 <SortableHeader columnKey="scheduledDate" className="show-mobile">
-                  Date & Time
+                  Date
                 </SortableHeader>
                 <SortableHeader columnKey="status" className="show-mobile">
                   Status
@@ -385,33 +443,21 @@ const UpcomingAssessmentsList = () => {
                       </div>
                     </td>
                     <td className="border-neutral-200 align-middle">
-                      <div>
-                        <div className="fw-medium">{assessment.scheduledDate}</div>
-                        <small className="text-muted">{assessment.scheduledTime}</small>
-                      </div>
+                      <div className="fw-medium">{assessment.scheduledDate}</div>
                     </td>
                     <td className="border-neutral-200 align-middle">
                       {getStatusBadge(assessment.status)}
                     </td>
                     <td className="border-neutral-200 align-middle text-center">
-                      <PortalUnifiedDropdown
-                        align="end"
-                        className="table-dropdown"
-                        placement="bottom-end"
-                        trigger={{
-                          variant: 'link',
-                          className: 'btn btn-link p-0 text-primary-custom',
-                          style: { border: 'none', background: 'transparent' },
-                          children: <ThreeDotsVertical size={16} />
-                        }}
-                        items={[
-                          {
-                            label: 'Assess',
-                            icon: <Eye />,
-                            onClick: () => handleViewAssignments(assessment)
-                          }
-                        ]}
-                      />
+                      {!excludedStatusesForAssessButton.has(assessment.status) && (
+                        <button
+                          className="btn btn-sm btn-primary"
+                          onClick={() => handleAccess(assessment)}
+                          disabled={loading}
+                        >
+                          {loading ? 'Processing...' : 'Access'}
+                        </button>
+                      )}
                     </td>
                   </tr>
                 ))

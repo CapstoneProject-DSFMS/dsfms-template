@@ -16,11 +16,16 @@ const UserRow = ({ user, index, onView, onEdit, onDisable }) => {
     return status === 'ACTIVE' ? '●' : '○';
   };
 
+  // Kiểm tra xem người dùng TRONG BẢNG có phải là ADMINISTRATOR hay không.
+  // Đây KHÔNG phải là kiểm tra vai trò của người dùng đang đăng nhập.
+  const isAdmin = user.role === 'ADMINISTRATOR';
+
   return (
     <tr 
-      className={`${index % 2 === 0 ? 'bg-white' : 'bg-neutral-50'} transition-all`}
+      className={`${index % 2 === 0 ? 'bg-white' : 'bg-neutral-50'} user-management-row`}
       style={{
-        transition: 'background-color 0.2s ease'
+        transition: 'background-color 0.2s ease',
+        willChange: 'background-color'
       }}
       onMouseEnter={(e) => {
         e.currentTarget.style.backgroundColor = 'var(--bs-neutral-100)';
@@ -108,7 +113,8 @@ const UserRow = ({ user, index, onView, onEdit, onDisable }) => {
                 label: 'Edit User',
                 icon: <Pencil />,
                 onClick: () => onEdit(user),
-                permission: PERMISSION_IDS.UPDATE_USER
+                permission: PERMISSION_IDS.UPDATE_USER,
+                disabled: isAdmin || user.status === 'DISABLED' // <-- Vô hiệu hóa nếu người dùng trong bảng là ADMINISTRATOR
               },
               { type: 'divider' },
               {
@@ -116,7 +122,8 @@ const UserRow = ({ user, index, onView, onEdit, onDisable }) => {
                 icon: <PersonX />,
                 className: 'text-danger',
                 onClick: () => onDisable(user),
-                permission: PERMISSION_IDS.UPDATE_USER
+                permission: PERMISSION_IDS.UPDATE_USER,
+                disabled: isAdmin // <-- Vô hiệu hóa nếu người dùng trong bảng là ADMINISTRATOR
               }
             ]}
           />

@@ -16,6 +16,7 @@ const ProfilePage = () => {
   const [showResetPasswordModal, setShowResetPasswordModal] = useState(false);
   const [profileData, setProfileData] = useState(null);
   const [profileLoading, setProfileLoading] = useState(true);
+  const [selectedAvatarFile, setSelectedAvatarFile] = useState(null);
   const refreshProfile = async () => {
     try {
       setProfileLoading(true);
@@ -38,32 +39,51 @@ const ProfilePage = () => {
     setLoading(true);
     
     try {
-      // Call API to update profile
-      const response = await profileAPI.updateProfile(personalInfo);
-      setProfileData(response);
-      toast.success('Personal information updated successfully!');
+      // If avatar file is selected, only send avatar
+      if (selectedAvatarFile) {
+        const response = await profileAPI.updateProfile(selectedAvatarFile);
+        setProfileData(response);
+        setSelectedAvatarFile(null);
+      } else {
+        // Otherwise send profile info normally
+        const response = await profileAPI.updateProfile(personalInfo);
+        setProfileData(response);
+      }
+      toast.success('Profile updated successfully!');
     } catch (error) {
       console.error('Error updating profile:', error);
-      toast.error('Failed to update personal information. Please try again.');
+      toast.error('Failed to update profile. Please try again.');
       throw error;
     } finally {
       setLoading(false);
     }
   };
 
+  const handleAvatarSelected = (file) => {
+    setSelectedAvatarFile(file);
+  };
+
   const handleResetPassword = async (passwordData) => {
     setLoading(true);
     
     try {
+      // Map password data to API format
+      const apiData = {
+        oldPassword: passwordData.oldPassword || '',
+        newPassword: passwordData.newPassword || '',
+        confirmNewPassword: passwordData.confirmPassword || ''
+      };
+      
       // Call reset password API
-      const response = await profileAPI.resetPassword(passwordData);
+      const response = await profileAPI.resetPassword(apiData);
       
       // Show success toast
       toast.success(response.message || 'Password updated successfully!');
     } catch (error) {
-      // Show error toast
-      toast.error(error.message || 'Failed to update password. Please check your current password.');
-      throw error; // Re-throw to let modal handle it
+      // Show error toast (handles both validation errors and API errors)
+      const errorMessage = error.message || error.response?.data?.message || 'Failed to update password. Please check your current password.';
+      toast.error(errorMessage);
+      throw error; // Re-throw to prevent modal from closing on error
     } finally {
       setLoading(false);
     }
@@ -107,8 +127,10 @@ const ProfilePage = () => {
             profileData={profileData}
             user={user}
             onResetPassword={() => setShowResetPasswordModal(true)}
-            onAvatarUpdated={refreshProfile}
+            onAvatarSelected={handleAvatarSelected}
             onConfigureSignature={handleConfigureSignature}
+            onSaveChanges={handleUpdatePersonalInfo}
+            loading={loading}
           />
         </Col>
 
@@ -117,7 +139,7 @@ const ProfilePage = () => {
           <PersonalInfoForm 
             profileData={profileData}
             user={user}
-            onUpdate={handleUpdatePersonalInfo}
+            onUpdate={null}
           />
         </Col>
       </Row>

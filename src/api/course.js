@@ -27,6 +27,10 @@ const courseAPI = {
   getCourseById: async (courseId) => {
     try {
       const response = await apiClient.get(`/courses/${courseId}`);
+      // Handle API response structure: { message: "...", data: {...} }
+      if (response.data && response.data.data) {
+        return response.data.data;
+      }
       return response.data;
     } catch (error) {
       console.error('Error fetching course:', error);
@@ -98,18 +102,41 @@ const courseAPI = {
   // Get department by ID
   getDepartmentById: async (departmentId) => {
     try {
-      const response = await apiClient.get(`/departments/${departmentId}`);
-      return response.data;
+      const response = await apiClient.get(`/departments/${departmentId}`, {
+        params: {
+          includeDeleted: true,
+        }
+      });
+      // Handle response format: { message: "...", data: { id, name, courses, ... } }
+      return response.data?.data || response.data || {};
     } catch (error) {
       console.error('Error fetching department by ID:', error);
       throw error;
     }
   },
 
-  // Get trainee enrollments
-  getTraineeEnrollments: async (traineeId) => {
-    const response = await apiClient.get(`/courses/trainees/${traineeId}/enrollments`);
-    return response.data;
+  // Get trainee enrollments for a specific course
+  getTraineeEnrollments: async (courseId, traineeId) => {
+    try {
+      const response = await apiClient.get(`/courses/${courseId}/trainees/${traineeId}/enrollments`);
+      return response.data;
+    } catch (error) {
+      console.error('Error fetching trainee enrollments:', error);
+      throw error;
+    }
+  },
+
+  // Get trainee enrollments with status filter
+  getTraineeEnrollmentsByStatus: async (traineeId, status = 'ENROLLED') => {
+    try {
+      const response = await apiClient.get(`/courses/trainees/${traineeId}/enrollments`, {
+        params: { status }
+      });
+      return response.data;
+    } catch (error) {
+      console.error('Error fetching trainee enrollments:', error);
+      throw error;
+    }
   },
 
   // Get enrolled trainees for a course
@@ -141,6 +168,41 @@ const courseAPI = {
       return response.data;
     } catch (error) {
       console.error('Error deleting batch enrollments:', error);
+      throw error;
+    }
+  },
+
+  // Get active trainers (replaced old getAvailableTrainersForCourse)
+  getActiveTrainers: async () => {
+    try {
+      const response = await apiClient.get(`/subjects/courses/active-trainers`);
+      return response.data;
+    } catch (error) {
+      console.error('Error fetching active trainers:', error);
+      throw error.response?.data || error.message;
+    }
+  },
+
+  // Assign trainer to course
+  // POST {{baseUrl}}/courses/{courseId}/trainers
+  assignTrainerToCourse: async (courseId, trainerData) => {
+    try {
+      const response = await apiClient.post(`/courses/${courseId}/trainers`, trainerData);
+      return response.data;
+    } catch (error) {
+      console.error('Error assigning trainer to course:', error);
+      throw error;
+    }
+  },
+
+  // Remove trainer from course
+  // DELETE {{baseUrl}}/courses/{courseId}/trainers/{trainerId}
+  removeTrainerFromCourse: async (courseId, trainerId) => {
+    try {
+      const response = await apiClient.delete(`/courses/${courseId}/trainers/${trainerId}`);
+      return response.data;
+    } catch (error) {
+      console.error('Error removing trainer from course:', error);
       throw error;
     }
   }

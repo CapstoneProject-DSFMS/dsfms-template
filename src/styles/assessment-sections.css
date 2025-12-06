@@ -107,6 +107,14 @@
   gap: 1.5rem;
 }
 
+/* Wrapper để chứa card và button absolute */
+.assessment-section-wrapper {
+  position: relative;
+  display: block;
+  width: 100%;
+  overflow: visible; /* Cho phép button absolute hiển thị */
+}
+
 .assessment-section-card {
   border: none;
   border-radius: 24px;
@@ -114,17 +122,35 @@
   box-shadow: inset 0 0 0 2px rgba(255, 255, 255, 0.6);
   border-left: 6px solid var(--bs-primary);
   padding: 1rem 1.25rem;
+  position: relative;
 }
 
 .assessment-section-card.disabled {
   background: #e9ecef;
-  opacity: 0.7;
   cursor: not-allowed;
   border-left-color: #adb5bd;
+  /* KHÔNG dùng opacity ở đây vì sẽ làm mờ cả button absolute bên trong */
 }
 
 .assessment-section-card.disabled .section-order-pill {
   background: #adb5bd;
+}
+
+/* Áp dụng opacity cho từng phần tử cụ thể trong disabled section */
+.assessment-section-card.disabled .section-disabled-content {
+  opacity: 0.6;
+}
+
+.assessment-section-card.disabled .section-disabled-content .section-heading,
+.assessment-section-card.disabled .section-disabled-content .section-inline-flags,
+.assessment-section-card.disabled .section-disabled-content .section-subtext {
+  opacity: 0.6;
+  color: #6c757d;
+}
+
+.assessment-section-card.disabled .section-disabled-content h5 {
+  opacity: 0.6;
+  color: #6c757d;
 }
 
 /* Allow dropdown to work even when section is disabled */
@@ -133,8 +159,8 @@
   opacity: 1;
 }
 
-/* Disable all other interactions in disabled section */
-.assessment-section-card.disabled .card-body > *:not(.section-card-header) {
+/* Disable all other interactions in disabled section (nhưng không ảnh hưởng button absolute) */
+.assessment-section-card.disabled .card-body > *:not(.section-card-header):not(.section-actions-absolute) {
   pointer-events: none;
   user-select: none;
 }
@@ -156,20 +182,22 @@
   display: flex;
   flex-direction: column;
   gap: 0.75rem;
+  width: 100%;
 }
 
 .section-header-grid {
   display: grid;
-  grid-template-columns: minmax(220px, 0.8fr) minmax(320px, 1fr) auto;
+  grid-template-columns: 1fr 1.2fr auto;
   align-items: center;
-  gap: 1.25rem;
+  gap: 1.5rem;
   width: 100%;
+  padding-right: 220px; /* Tạo space cho button absolute */
 }
 
 .section-inline-flags {
   display: flex;
   align-items: center;
-  gap: 1.25rem;
+  gap: 1rem;
   flex-wrap: wrap;
 }
 
@@ -177,7 +205,7 @@
   display: flex;
   flex-direction: column;
   gap: 0.1rem;
-  min-width: 150px;
+  min-width: auto;
   align-items: center;
   text-align: center;
 }
@@ -192,7 +220,132 @@
 .section-actions {
   display: flex;
   align-items: center;
-  gap: 0.6rem;
+  gap: 0.75rem;
+  flex-shrink: 0;
+  justify-content: flex-end;
+  margin-left: auto;
+}
+
+/* Placeholder để giữ layout grid khi button di chuyển ra ngoài */
+.section-actions-placeholder {
+  width: 100%;
+  min-width: 200px; /* Đảm bảo grid column có width */
+  visibility: hidden; /* Ẩn nhưng vẫn chiếm space */
+}
+
+/* Button đặt HOÀN TOÀN NGOÀI Card - KHÔNG BỊ OPACITY/FILTER */
+.section-actions-absolute {
+  position: absolute;
+  top: 1rem;
+  right: 1.25rem;
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  z-index: 100 !important; /* Đảm bảo button nằm trên cùng, cao hơn card */
+  pointer-events: auto !important; /* Đảm bảo button có thể click */
+  filter: none !important; /* Không bị filter brightness */
+  opacity: 1 !important; /* Không bị opacity - QUAN TRỌNG */
+  background: transparent; /* Không có background để không che card */
+  isolation: isolate; /* Tạo stacking context riêng, tách khỏi parent */
+}
+
+/* Đảm bảo button và badge bên trong không bị ảnh hưởng */
+.section-actions-absolute .btn,
+.section-actions-absolute button,
+.section-actions-absolute .badge {
+  opacity: 1 !important;
+  filter: none !important;
+  position: relative;
+  z-index: 101;
+}
+
+/* Responsive cho button absolute - Tablet và Mobile */
+@media (max-width: 992px) {
+  .section-header-grid {
+    grid-template-columns: 1fr;
+    padding-right: 0;
+    gap: 1rem;
+  }
+  
+  .assessment-section-wrapper {
+    overflow: visible; /* Đảm bảo button không bị cắt */
+    width: 100%;
+    position: relative;
+  }
+  
+  .assessment-section-card {
+    width: 100%;
+    margin-bottom: 0;
+  }
+  
+  .section-actions-absolute {
+    position: relative;
+    top: auto;
+    right: auto;
+    left: auto;
+    bottom: auto;
+    margin-top: 1rem;
+    margin-bottom: 0;
+    margin-left: 1.25rem;
+    margin-right: 1.25rem;
+    justify-content: flex-end;
+    width: auto;
+    max-width: calc(100% - 2.5rem);
+    padding: 0;
+    box-sizing: border-box;
+    transform: none;
+  }
+  
+  .section-actions-placeholder {
+    display: none;
+  }
+}
+
+/* Responsive cho Mobile */
+@media (max-width: 768px) {
+  .assessment-section-wrapper {
+    overflow: visible;
+    width: 100%;
+    position: relative;
+  }
+  
+  .assessment-section-card {
+    width: 100%;
+    margin-bottom: 0;
+  }
+  
+  .section-actions-absolute {
+    position: relative;
+    top: auto;
+    right: auto;
+    left: auto;
+    bottom: auto;
+    margin-top: 1rem;
+    margin-bottom: 0;
+    margin-left: 1.25rem;
+    margin-right: 1.25rem;
+    justify-content: flex-start;
+    width: auto;
+    max-width: calc(100% - 2.5rem);
+    padding: 0;
+    box-sizing: border-box;
+    transform: none;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+  }
+  
+  .section-actions-absolute .badge {
+    font-size: 0.75rem;
+    padding: 0.35em 0.65em;
+    flex-shrink: 0;
+  }
+  
+  .section-actions-absolute .btn {
+    font-size: 0.875rem;
+    padding: 0.375rem 0.75rem;
+    white-space: nowrap;
+    flex-shrink: 0;
+  }
 }
 
 .section-subtext {
@@ -252,23 +405,62 @@
   color: var(--bs-primary);
 }
 
-@media (max-width: 992px) {
+@media (max-width: 1400px) {
   .section-header-grid {
-    grid-template-columns: 1fr;
+    grid-template-columns: 1fr 1.2fr auto;
+    gap: 1.2rem;
   }
 
   .section-inline-flags {
+    gap: 0.8rem;
+  }
+
+  .section-inline-flags .flag-item {
+    min-width: auto;
+  }
+
+  .section-actions {
+    gap: 0.6rem;
+  }
+}
+
+@media (max-width: 1200px) {
+  .section-header-grid {
+    grid-template-columns: 1fr 1fr auto;
+    gap: 1rem;
+  }
+
+  .section-inline-flags {
+    gap: 0.7rem;
+  }
+
+  .section-actions {
+    gap: 0.5rem;
+  }
+}
+
+@media (max-width: 992px) {
+  .section-header-grid {
+    grid-template-columns: 1fr auto;
+    gap: 1rem;
+    align-items: start;
+  }
+
+  .section-inline-flags {
+    grid-column: 1 / -1;
     justify-content: flex-start;
+    gap: 1rem;
   }
 
   .section-inline-flags .flag-item {
     align-items: flex-start;
     text-align: left;
+    min-width: auto;
   }
 
   .section-actions {
-    justify-content: flex-start;
-    width: 100%;
+    justify-content: flex-end;
+    align-self: center;
   }
 
   .section-subtext {
@@ -290,13 +482,33 @@
     text-align: center;
   }
 
+  .section-header-grid {
+    grid-template-columns: 1fr;
+    gap: 0.8rem;
+  }
+
   .section-inline-flags {
-    flex-direction: column;
-    align-items: flex-start;
+    grid-column: 1;
+    flex-direction: row;
+    align-items: center;
+    gap: 0.5rem;
+    flex-wrap: wrap;
   }
 
   .section-inline-flags .flag-item {
-    min-width: 100%;
+    min-width: auto;
+    text-align: center;
+    align-items: center;
+  }
+
+  .section-actions {
+    width: 100%;
+    justify-content: flex-start;
+  }
+
+  .section-actions button {
+    font-size: 0.875rem;
+    padding: 0.4rem 0.8rem !important;
   }
 
   .section-actions {
