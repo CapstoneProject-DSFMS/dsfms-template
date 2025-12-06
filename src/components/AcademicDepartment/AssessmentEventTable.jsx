@@ -4,6 +4,7 @@ import { Eye, Pencil, ThreeDotsVertical } from 'react-bootstrap-icons';
 import { LoadingSkeleton, SortIcon, PortalUnifiedDropdown, PermissionWrapper } from '../Common';
 import { PERMISSION_IDS } from '../../constants/permissionIds';
 import useTableSort from '../../hooks/useTableSort';
+import '../../styles/scrollable-table.css';
 
 const AssessmentEventTable = ({
   assessmentEvents = [],
@@ -139,9 +140,9 @@ const AssessmentEventTable = ({
   };
 
   return (
-    <div className="table-responsive">
+    <div className="scrollable-table-container">
       <Table hover striped bordered className="mb-0">
-        <thead>
+        <thead className="sticky-header">
           <tr>
             <SortableHeader columnKey="name">Name</SortableHeader>
             <SortableHeader columnKey="subject">Subject</SortableHeader>
@@ -149,7 +150,7 @@ const AssessmentEventTable = ({
             <SortableHeader columnKey="occurrenceDate">Occurrence Date</SortableHeader>
             <SortableHeader columnKey="status">Status</SortableHeader>
             <th 
-              className="fw-semibold text-center"
+              className="fw-semibold text-center sticky-header"
               style={{ 
                 backgroundColor: 'var(--bs-primary)',
                 color: 'white',

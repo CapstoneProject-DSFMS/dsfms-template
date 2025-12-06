@@ -4,7 +4,7 @@ import { X, Plus } from 'react-bootstrap-icons';
 import { toast } from 'react-toastify';
 import apiClient from '../../api/config';
 
-const AddSubjectModal = ({ show, onClose, onSave, loading = false, courseId }) => {
+const AddSubjectModal = ({ show, onClose, onSave, loading = false, courseId, courseStartDate, courseEndDate }) => {
   const [formData, setFormData] = useState({
     name: '',
     code: '',
@@ -76,14 +76,65 @@ const AddSubjectModal = ({ show, onClose, onSave, loading = false, courseId }) =
     // Mandatory date fields (NN in schema)
     if (!formData.startDate.trim()) {
       newErrors.push('Start date is required');
+    } else {
+      // Check if start date is in the past
+      const today = new Date();
+      today.setHours(0, 0, 0, 0); // Reset time to start of day
+      const startDate = new Date(formData.startDate + 'T00:00:00'); // Ensure local timezone
+      if (startDate < today) {
+        newErrors.push('Start date cannot be in the past');
+      }
     }
 
     if (!formData.endDate.trim()) {
       newErrors.push('End date is required');
+    } else {
+      // Check if end date is in the past
+      const today = new Date();
+      today.setHours(0, 0, 0, 0); // Reset time to start of day
+      const endDate = new Date(formData.endDate + 'T00:00:00'); // Ensure local timezone
+      if (endDate < today) {
+        newErrors.push('End date cannot be in the past');
+      }
     }
 
-    if (formData.startDate && formData.endDate && new Date(formData.startDate) >= new Date(formData.endDate)) {
+    if (formData.startDate && formData.endDate && new Date(formData.startDate + 'T00:00:00') >= new Date(formData.endDate + 'T00:00:00')) {
       newErrors.push('End date must be after start date');
+    }
+
+    // Validate subject dates are within course range (if course dates are available)
+    if (courseStartDate && courseEndDate && formData.startDate && formData.endDate) {
+      const courseStart = new Date(courseStartDate);
+      const courseEnd = new Date(courseEndDate);
+      
+      // Normalize dates to start of day for comparison (ignore time component)
+      const courseStartNormalized = new Date(courseStart.getFullYear(), courseStart.getMonth(), courseStart.getDate());
+      const courseEndNormalized = new Date(courseEnd.getFullYear(), courseEnd.getMonth(), courseEnd.getDate());
+      const subjectStart = new Date(formData.startDate + 'T00:00:00');
+      const subjectEnd = new Date(formData.endDate + 'T00:00:00');
+      const subjectStartNormalized = new Date(subjectStart.getFullYear(), subjectStart.getMonth(), subjectStart.getDate());
+      const subjectEndNormalized = new Date(subjectEnd.getFullYear(), subjectEnd.getMonth(), subjectEnd.getDate());
+      
+      // Format course dates for display (YYYY-MM-DD)
+      const formatDateForDisplay = (date) => {
+        if (!date) return '';
+        const d = new Date(date);
+        const year = d.getFullYear();
+        const month = String(d.getMonth() + 1).padStart(2, '0');
+        const day = String(d.getDate()).padStart(2, '0');
+        return `${year}-${month}-${day}`;
+      };
+      
+      const courseStartDisplay = formatDateForDisplay(courseStartDate);
+      const courseEndDisplay = formatDateForDisplay(courseEndDate);
+      
+      if (subjectStartNormalized < courseStartNormalized) {
+        newErrors.push(`Subject start date must be on or after course start date (Course start: ${courseStartDisplay})`);
+      }
+      
+      if (subjectEndNormalized > courseEndNormalized) {
+        newErrors.push(`Subject end date must be on or before course end date (Course end: ${courseEndDisplay})`);
+      }
     }
 
     setErrors(newErrors);
