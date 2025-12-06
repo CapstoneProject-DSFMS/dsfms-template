@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Modal, Form, Button } from 'react-bootstrap';
+import { Modal, Form, Button, Spinner } from 'react-bootstrap';
 import { X, Save } from 'react-bootstrap-icons';
 import { toast } from 'react-toastify';
 import { globalFieldAPI } from '../../../api';
@@ -13,17 +13,53 @@ const EditGlobalFieldModal = ({ show, onHide, field, onSuccess }) => {
   });
   const [errors, setErrors] = useState({});
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [loadingField, setLoadingField] = useState(false);
 
   useEffect(() => {
-    if (field && show) {
-      setFormData({
-        label: field.label || '',
-        fieldName: field.fieldName || '',
-        fieldType: field.fieldType || 'TEXT',
-        options: field.options || null
-      });
-      setErrors({});
-    }
+    const loadFieldDetail = async () => {
+      if (field && show && field.id) {
+        try {
+          setLoadingField(true);
+          // Fetch field detail to ensure we have complete information including fieldType
+          const response = await globalFieldAPI.getGlobalFieldDetail(field.id);
+          const fieldDetail = response?.data || response || field;
+          
+          // Normalize fieldType - check multiple possible property names and normalize to uppercase
+          const rawFieldType = fieldDetail?.fieldType || fieldDetail?.type || field?.fieldType || field?.type;
+          const normalizedFieldType = rawFieldType ? String(rawFieldType).toUpperCase().trim() : 'TEXT';
+          
+          console.log('EditGlobalFieldModal - Field detail loaded:', {
+            fieldFromProp: field,
+            responseData: response,
+            fieldDetail: fieldDetail,
+            rawFieldType: rawFieldType,
+            normalizedFieldType: normalizedFieldType
+          });
+          
+          setFormData({
+            label: fieldDetail.label || field.label || '',
+            fieldName: fieldDetail.fieldName || field.fieldName || '',
+            fieldType: normalizedFieldType,
+            options: fieldDetail.options || field.options || null
+          });
+          setErrors({});
+        } catch (error) {
+          console.error('Error loading field detail:', error);
+          // Fallback to field from prop if detail fetch fails
+          setFormData({
+            label: field.label || '',
+            fieldName: field.fieldName || '',
+            fieldType: field.fieldType || 'TEXT',
+            options: field.options || null
+          });
+          setErrors({});
+        } finally {
+          setLoadingField(false);
+        }
+      }
+    };
+
+    loadFieldDetail();
   }, [field, show]);
 
   const handleChange = (e) => {
@@ -142,6 +178,15 @@ const EditGlobalFieldModal = ({ show, onHide, field, onSuccess }) => {
       
       <Form onSubmit={handleSubmit}>
         <Modal.Body style={{ padding: '1.5rem' }}>
+          {loadingField && (
+            <div className="text-center py-4">
+              <Spinner animation="border" variant="primary" className="me-2" />
+              <span>Loading field details...</span>
+            </div>
+          )}
+          
+          {!loadingField && (
+            <>
           <Form.Group className="mb-3">
             <Form.Label className="fw-medium">
               Label <span className="text-danger">*</span>
@@ -196,20 +241,22 @@ const EditGlobalFieldModal = ({ show, onHide, field, onSuccess }) => {
               {errors.fieldType}
             </Form.Control.Feedback>
           </Form.Group>
+          </>
+          )}
         </Modal.Body>
         
         <Modal.Footer className="bg-light border-0 d-flex flex-wrap gap-2" style={{ justifyContent: 'flex-end' }}>
           <Button 
             variant="secondary"
             onClick={handleClose}
-            disabled={isSubmitting}
+            disabled={isSubmitting || loadingField}
           >
             Cancel
           </Button>
           <Button 
             variant="primary"
             type="submit"
-            disabled={isSubmitting}
+            disabled={isSubmitting || loadingField}
             className="d-flex align-items-center"
           >
             {isSubmitting ? (
