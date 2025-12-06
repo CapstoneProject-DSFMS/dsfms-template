@@ -162,17 +162,32 @@ const BulkImportTraineesModal = ({ show, onClose, onImport, loading = false }) =
 
       // Call lookup API
       const response = await traineeAPI.lookupTrainees(identifiers);
+      console.log('Lookup API response:', response);
+      
+      // Extract data from response (response structure: { message: "...", data: { foundUsers: [...], notFoundIdentifiers: [...] } })
+      // API function returns response.data from axios, so response = { message: "...", data: { foundUsers: [...], notFoundIdentifiers: [...] } }
+      const responseData = response.data || response;
+      console.log('Response data extracted:', responseData);
+      
+      const foundUsers = responseData.foundUsers || [];
+      const notFoundIdentifiers = responseData.notFoundIdentifiers || [];
+      console.log('Found users:', foundUsers);
+      console.log('Not found identifiers:', notFoundIdentifiers);
       
       // Create a map of found users
       const foundUsersMap = {};
-      (response.foundUsers || []).forEach(trainee => {
-        foundUsersMap[`${trainee.eid}:${trainee.email}`] = trainee;
+      foundUsers.forEach(trainee => {
+        const key = `${trainee.eid}:${trainee.email}`;
+        foundUsersMap[key] = trainee;
+        console.log(`Mapped trainee: ${key}`, trainee);
       });
+      console.log('Found users map:', foundUsersMap);
       
       // Update preview data with lookup results
       const updatedPreviewData = identifiersToLookup.map(item => {
         const key = `${item.eid}:${item.email}`;
         const foundUser = foundUsersMap[key];
+        console.log(`Checking item ${key}:`, { item, foundUser, key });
         
         if (item.hasError) {
           return item; // Keep existing errors
@@ -180,6 +195,7 @@ const BulkImportTraineesModal = ({ show, onClose, onImport, loading = false }) =
         
         if (foundUser) {
           // Store matched user data in preview
+          console.log(`✅ Matched: ${key}`);
           return {
             ...item,
             matchedUser: foundUser,
@@ -188,6 +204,7 @@ const BulkImportTraineesModal = ({ show, onClose, onImport, loading = false }) =
           };
         } else {
           // Trainee not found in system
+          console.log(`❌ Not found: ${key}`);
           return {
             ...item,
             isMatched: false,
@@ -195,6 +212,7 @@ const BulkImportTraineesModal = ({ show, onClose, onImport, loading = false }) =
           };
         }
       });
+      console.log('Updated preview data:', updatedPreviewData);
       
       setPreviewData(updatedPreviewData);
       
@@ -400,23 +418,28 @@ const BulkImportTraineesModal = ({ show, onClose, onImport, loading = false }) =
                     </tr>
                   </thead>
                   <tbody>
-                    {previewData.map((item) => (
-                      <tr key={item.id} className={item.hasError ? 'table-danger' : ''}>
-                        <td>{item.rowNumber || item.id}</td>
-                        <td>{item.eid || '-'}</td>
-                        <td>{item.email || '-'}</td>
-                        <td className="text-center">
-                          {getStatusIcon(item.hasError ? 'invalid' : 'valid')}
-                        </td>
-                        <td>
-                          {item.errors.length > 0 && (
-                            <small className="text-danger">
-                              {item.errors.length > 1 ? `${item.errors[0]} (+${item.errors.length - 1} more)` : item.errors[0]}
-                            </small>
-                          )}
-                        </td>
-                      </tr>
-                    ))}
+                    {previewData.map((item) => {
+                      const isMatched = item.isMatched === true && !item.hasError;
+                      const hasError = item.hasError || (item.errors && item.errors.length > 0);
+                      
+                      return (
+                        <tr key={item.id} className={hasError ? 'table-danger' : (isMatched ? 'table-success' : '')}>
+                          <td>{item.rowNumber || item.id}</td>
+                          <td>{item.eid || '-'}</td>
+                          <td>{item.email || '-'}</td>
+                          <td className="text-center">
+                            {getStatusIcon(isMatched ? 'valid' : 'invalid')}
+                          </td>
+                          <td>
+                            {item.errors && item.errors.length > 0 && (
+                              <small className="text-danger">
+                                {item.errors.length > 1 ? `${item.errors[0]} (+${item.errors.length - 1} more)` : item.errors[0]}
+                              </small>
+                            )}
+                          </td>
+                        </tr>
+                      );
+                    })}
                   </tbody>
                 </Table>
               </div>
