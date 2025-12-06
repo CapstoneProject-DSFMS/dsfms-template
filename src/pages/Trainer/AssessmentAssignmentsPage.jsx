@@ -59,8 +59,11 @@ const AssessmentAssignmentsPage = () => {
         return;
       }
 
-      // Check if we have data from location.state (from Access button)
-      if (location.state?.assessments && location.state?.eventInfo) {
+      // If shouldRefresh flag is set (from navigate back), skip using location.state data
+      const shouldRefresh = location.state?.shouldRefresh;
+
+      // Check if we have data from location.state (from Access button) and not refreshing
+      if (!shouldRefresh && location.state?.assessments && location.state?.eventInfo) {
         setState({
           loading: false,
           error: null,
@@ -75,8 +78,9 @@ const AssessmentAssignmentsPage = () => {
 
       // If no state data (F5 or direct navigation), use new API
       // Get templateId and occuranceDate from URL query params (set when navigating from Access button)
-      const templateId = searchParams.get('templateId');
-      const occuranceDate = searchParams.get('occuranceDate');
+      // Or from location.state if navigating back from sections page
+      const templateId = location.state?.templateId || searchParams.get('templateId');
+      const occuranceDate = location.state?.occuranceDate || searchParams.get('occuranceDate');
       
       if (!templateId || !occuranceDate) {
         // Missing required params - show error message
@@ -131,6 +135,11 @@ const AssessmentAssignmentsPage = () => {
             info: location.state || null
           });
         }
+        
+        // Clear shouldRefresh flag from location state after fetching
+        if (shouldRefresh) {
+          window.history.replaceState({}, document.title);
+        }
       } catch (err) {
         console.error('Error loading assessments:', err);
         toast.error('Failed to load assessments');
@@ -143,7 +152,8 @@ const AssessmentAssignmentsPage = () => {
     };
 
     fetchDetails();
-  }, [entityType, entityId, isValidType, location.state, navigate, searchParams]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [entityType, entityId, isValidType, location.key, searchParams]);
 
   if (!isValidType) {
     return (
@@ -157,7 +167,22 @@ const AssessmentAssignmentsPage = () => {
     // Exclude these statuses: NOT_STARTED, SUBMITTED, APPROVED, CANCELLED
     const excludedStatuses = ['NOT_STARTED', 'SUBMITTED', 'APPROVED', 'CANCELLED'];
     if (excludedStatuses.includes(record.status)) return;
-    navigate(ROUTES.ASSESSMENTS_SECTIONS(record.id));
+    
+    // Get templateId and occuranceDate from URL params or location.state
+    const templateId = location.state?.templateId || searchParams.get('templateId');
+    const occuranceDate = location.state?.occuranceDate || searchParams.get('occuranceDate');
+    
+    // Navigate to sections page with return info
+    navigate(ROUTES.ASSESSMENTS_SECTIONS(record.id), {
+      state: {
+        returnPath: location.pathname + location.search,
+        entityType,
+        entityId,
+        templateId,
+        occuranceDate,
+        info: state.info
+      }
+    });
   };
 
   const handleViewPDF = (pdfUrl) => {
