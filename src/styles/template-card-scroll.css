@@ -81,3 +81,86 @@
   }
 }
 
+/* Draft Card Scroll Container - Specific styles for Your Drafts page */
+.draft-card-scroll-container {
+  max-height: calc(92vh - 120px);
+  overflow-y: auto;
+  overflow-x: hidden;
+  position: relative;
+  padding-right: 4px;
+  -webkit-overflow-scrolling: touch;
+}
+
+/* Custom Scrollbar for Draft Card Container */
+.draft-card-scroll-container::-webkit-scrollbar {
+  width: 8px;
+}
+
+.draft-card-scroll-container::-webkit-scrollbar-track {
+  background: #f1f1f1;
+  border-radius: 4px;
+}
+
+.draft-card-scroll-container::-webkit-scrollbar-thumb {
+  background: #c1c1c1;
+  border-radius: 4px;
+}
+
+.draft-card-scroll-container::-webkit-scrollbar-thumb:hover {
+  background: #a8a8a8;
+}
+
+/* Desktop - Larger screens */
+@media (min-width: 992px) {
+  .draft-card-scroll-container {
+    max-height: calc(92vh - 120px);
+  }
+}
+
+/* Tablet - Medium screens (768px - 991px) */
+@media (min-width: 768px) and (max-width: 991px) {
+  .draft-card-scroll-container {
+    max-height: calc(87vh - 110px);
+  }
+}
+
+/* Mobile - Small screens (max-width: 767px) */
+@media (max-width: 767px) {
+  .draft-card-scroll-container {
+    max-height: calc(82vh - 100px);
+  }
+}
+
+/* Small mobile - Extra small screens (max-width: 576px) */
+@media (max-width: 576px) {
+  .draft-card-scroll-container {
+    max-height: calc(77vh - 90px);
+  }
+}
+
+/* Responsive height adjustments for short screens */
+@media (max-height: 800px) {
+  .draft-card-scroll-container {
+    max-height: calc(87vh - 110px);
+  }
+}
+
+@media (max-height: 600px) {
+  .draft-card-scroll-container {
+    max-height: calc(82vh - 90px);
+  }
+}
+
+/* Combined mobile and short screen */
+@media (max-width: 767px) and (max-height: 800px) {
+  .draft-card-scroll-container {
+    max-height: calc(77vh - 100px);
+  }
+}
+
+@media (max-width: 576px) and (max-height: 600px) {
+  .draft-card-scroll-container {
+    max-height: calc(72vh - 80px);
+  }
+}
+

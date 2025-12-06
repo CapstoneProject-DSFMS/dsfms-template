@@ -30,11 +30,16 @@ const AssessmentSectionCard = ({ section }) => {
   };
 
   // Determine badge and button based on canAssessed and assessedBy
-  const isAssessmentRequired = section.canAssessed; // No one assessed yet
+  const hasBeenAssessed = !!section.assessedBy;
+  const isAssessmentRequired = section.canAssessed && !hasBeenAssessed; // No one assessed yet
   const isCompletedByCurrentUser = !section.canAssessed && section.assessedBy?.id === user?.id;
   const isCompletedByOthers = !section.canAssessed && section.assessedBy?.id !== user?.id;
+  const isAssessedByCurrentUser = hasBeenAssessed && section.assessedBy?.id === user?.id;
 
   const getSectionStatusBadge = () => {
+    if (hasBeenAssessed) {
+      return <Badge bg="success">ASSESSED</Badge>;
+    }
     if (isAssessmentRequired) {
       return <Badge bg="primary">ASSESSMENT REQUIRED</Badge>;
     }
@@ -42,6 +47,12 @@ const AssessmentSectionCard = ({ section }) => {
   };
 
   const getButtonText = () => {
+    if (hasBeenAssessed && section.canAssessed) {
+      if (isAssessedByCurrentUser) {
+        return 'Update Assessments';
+      }
+      return 'Fill Assessments';
+    }
     if (isAssessmentRequired) {
       return 'Fill Assessments';
     }
