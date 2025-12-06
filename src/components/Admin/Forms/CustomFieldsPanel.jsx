@@ -920,17 +920,27 @@ const CustomFieldsPanel = ({
       fieldToSave.roleRequired = section?.editBy || 'TRAINER';
     }
 
+    // Get the current section's fields
+    const currentSection = sections[editingSectionIndex];
+    const sectionFields = currentSection?.fields || [];
+
     const nextSections = [...sections];
     if (editingFieldIndex !== null) {
       // Update existing field in the selected section
-      nextSections[editingSectionIndex].fields = [
-        ...sectionFields.slice(0, editingFieldIndex),
-        fieldToSave,
-        ...sectionFields.slice(editingFieldIndex + 1)
-      ];
+      nextSections[editingSectionIndex] = {
+        ...currentSection,
+        fields: [
+          ...sectionFields.slice(0, editingFieldIndex),
+          fieldToSave,
+          ...sectionFields.slice(editingFieldIndex + 1)
+        ]
+      };
     } else {
       // Add new field in the selected section (no displayOrder; computed on submit)
-      nextSections[editingSectionIndex].fields = [...sectionFields, fieldToSave];
+      nextSections[editingSectionIndex] = {
+        ...currentSection,
+        fields: [...sectionFields, fieldToSave]
+      };
     }
 
     setSections(nextSections);

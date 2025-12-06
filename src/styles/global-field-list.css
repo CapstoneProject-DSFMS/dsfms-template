@@ -1,0 +1,124 @@
+/* Global Field List Responsive Styles */
+
+/* Ensure all cards have equal height */
+.global-field-list-page .row {
+  display: flex;
+  flex-wrap: wrap;
+}
+
+.global-field-list-page .row > [class*='col-'] {
+  display: flex;
+  flex-direction: column;
+}
+
+.global-field-list-page .card {
+  height: 100%;
+  display: flex !important;
+  flex-direction: column !important;
+  width: 100%;
+}
+
+.global-field-list-page .card-body {
+  flex: 1 1 auto;
+  display: flex !important;
+  flex-direction: column !important;
+  min-height: 0;
+}
+
+
+/* Tablet (max-width: 991px) */
+@media (max-width: 991px) {
+  .global-field-list-page .card-body {
+    padding: 1rem !important;
+  }
+
+  .global-field-list-page .card-body h6 {
+    font-size: 0.9rem !important;
+  }
+
+  .global-field-list-page .card-body code {
+    font-size: 0.8rem !important;
+    padding: 0.2rem 0.4rem !important;
+  }
+
+  .global-field-list-page .card-body small {
+    font-size: 0.8rem !important;
+  }
+}
+
+/* Mobile (max-width: 767px) */
+@media (max-width: 767px) {
+  .global-field-list-page .card-body {
+    padding: 0.875rem !important;
+  }
+
+  .global-field-list-page .card-body h6 {
+    font-size: 0.85rem !important;
+    min-height: 2.4em !important;
+  }
+
+  .global-field-list-page .card-body code {
+    font-size: 0.75rem !important;
+    padding: 0.15rem 0.35rem !important;
+  }
+
+  .global-field-list-page .card-body small {
+    font-size: 0.75rem !important;
+  }
+
+  .global-field-list-page .badge {
+    font-size: 0.7rem !important;
+    padding: 0.25rem 0.5rem !important;
+  }
+
+  /* Icon size on mobile */
+  .global-field-list-page .card-body .bg-primary-custom {
+    width: 35px !important;
+    height: 35px !important;
+    min-width: 35px !important;
+  }
+
+  .global-field-list-page .card-body .bg-primary-custom svg {
+    width: 16px !important;
+    height: 16px !important;
+  }
+}
+
+/* Small Mobile (max-width: 576px) */
+@media (max-width: 576px) {
+  .global-field-list-page .card-body {
+    padding: 0.75rem !important;
+  }
+
+  .global-field-list-page .card-body h6 {
+    font-size: 0.8rem !important;
+    min-height: 2.2em !important;
+  }
+
+  .global-field-list-page .card-body code {
+    font-size: 0.7rem !important;
+    padding: 0.1rem 0.3rem !important;
+  }
+
+  .global-field-list-page .card-body small {
+    font-size: 0.7rem !important;
+  }
+
+  .global-field-list-page .badge {
+    font-size: 0.65rem !important;
+    padding: 0.2rem 0.4rem !important;
+  }
+
+  /* Icon size on small mobile */
+  .global-field-list-page .card-body .bg-primary-custom {
+    width: 32px !important;
+    height: 32px !important;
+    min-width: 32px !important;
+  }
+
+  .global-field-list-page .card-body .bg-primary-custom svg {
+    width: 14px !important;
+    height: 14px !important;
+  }
+}
+

@@ -9,6 +9,8 @@ import GlobalFieldCard from '../../../components/Admin/GlobalField/GlobalFieldCa
 import GlobalFieldDetailModal from '../../../components/Admin/GlobalField/GlobalFieldDetailModal';
 import EditGlobalFieldModal from '../../../components/Admin/GlobalField/EditGlobalFieldModal';
 import CreateGlobalFieldModal from '../../../components/Admin/GlobalField/CreateGlobalFieldModal';
+import DeleteGlobalFieldModal from '../../../components/Admin/GlobalField/DeleteGlobalFieldModal';
+import '../../../styles/global-field-list.css';
 
 const GlobalFieldListPage = () => {
   const [globalFields, setGlobalFields] = useState([]);
@@ -17,8 +19,10 @@ const GlobalFieldListPage = () => {
   const [showDetailModal, setShowDetailModal] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
   const [showCreateModal, setShowCreateModal] = useState(false);
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [selectedField, setSelectedField] = useState(null);
   const [fieldDetails, setFieldDetails] = useState(null);
+  const [deleting, setDeleting] = useState(false);
 
   const loadGlobalFields = useCallback(async () => {
     try {
@@ -61,9 +65,23 @@ const GlobalFieldListPage = () => {
     }
   };
 
-  const handleEdit = (field) => {
-    setSelectedField(field);
-    setShowEditModal(true);
+  const handleEdit = async (field) => {
+    try {
+      setSelectedField(field);
+      
+      // Load detailed field information to ensure we have all data including fieldType
+      const response = await globalFieldAPI.getGlobalFieldDetail(field.id);
+      const fieldDetail = response?.data || response || field;
+      
+      setSelectedField(fieldDetail);
+      setShowEditModal(true);
+    } catch (error) {
+      console.error('Error loading field detail for edit:', error);
+      toast.error('Failed to load field details');
+      // Still open modal with basic info from list
+      setSelectedField(field);
+      setShowEditModal(true);
+    }
   };
 
   const handleCloseDetailModal = () => {
@@ -91,6 +109,32 @@ const GlobalFieldListPage = () => {
 
   const handleCloseCreateModal = () => {
     setShowCreateModal(false);
+  };
+
+  const handleDelete = (field) => {
+    setSelectedField(field);
+    setShowDeleteModal(true);
+  };
+
+  const handleCloseDeleteModal = () => {
+    setShowDeleteModal(false);
+    setSelectedField(null);
+    setDeleting(false);
+  };
+
+  const handleConfirmDelete = async (fieldId) => {
+    try {
+      setDeleting(true);
+      await globalFieldAPI.deleteGlobalField(fieldId);
+      toast.success('Global field deleted successfully!');
+      handleCloseDeleteModal();
+      loadGlobalFields();
+    } catch (error) {
+      console.error('Error deleting global field:', error);
+      const errorMessage = error.response?.data?.message || error.message || 'Failed to delete global field';
+      toast.error(`Error: ${errorMessage}`);
+      setDeleting(false);
+    }
   };
 
   if (loading) {
@@ -126,7 +170,7 @@ const GlobalFieldListPage = () => {
   }
 
   return (
-    <Container fluid className="py-4">
+    <Container fluid className="py-4 global-field-list-page">
       <Card className="border-neutral-200 shadow-sm">
         <Card.Header 
           className="bg-primary-custom text-white"
@@ -180,11 +224,21 @@ const GlobalFieldListPage = () => {
           ) : (
             <Row className="g-3 g-md-4">
               {globalFields.map((field) => (
-                <Col key={field.id} xs={12} sm={6} md={6} lg={4} xl={3}>
+                <Col 
+                  key={field.id} 
+                  xs={12} 
+                  sm={6} 
+                  md={6} 
+                  lg={4} 
+                  xl={3}
+                  className="d-flex"
+                  style={{ minHeight: '200px' }}
+                >
                   <GlobalFieldCard
                     field={field}
                     onViewDetail={handleViewDetail}
                     onEdit={handleEdit}
+                    onDelete={handleDelete}
                   />
                 </Col>
               ))}
@@ -213,6 +267,15 @@ const GlobalFieldListPage = () => {
         show={showCreateModal}
         onHide={handleCloseCreateModal}
         onSuccess={handleCreateSuccess}
+      />
+
+      {/* Delete Modal */}
+      <DeleteGlobalFieldModal
+        show={showDeleteModal}
+        onClose={handleCloseDeleteModal}
+        onConfirm={handleConfirmDelete}
+        field={selectedField}
+        loading={deleting}
       />
     </Container>
   );
