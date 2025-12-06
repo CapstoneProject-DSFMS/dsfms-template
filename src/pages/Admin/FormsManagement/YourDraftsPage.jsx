@@ -8,6 +8,7 @@ import { LoadingSkeleton } from '../../../components/Common';
 import { templateAPI } from '../../../api';
 import { useAuth } from '../../../hooks/useAuth';
 import { convertBackendToFrontendSections } from '../../../utils/templateBuilder';
+import '../../../styles/template-card-scroll.css';
 
 const YourDraftsPage = () => {
   const navigate = useNavigate();
@@ -186,30 +187,35 @@ const YourDraftsPage = () => {
           </Row>
         </Card.Header>
 
-        <Card.Body>
+        <Card.Body style={{ padding: 0 }}>
           {loading ? (
-            <LoadingSkeleton />
+            <div style={{ padding: '1.5rem' }}>
+              <LoadingSkeleton />
+            </div>
           ) : drafts.length === 0 ? (
-            <Row className="mb-4">
-              <Col>
-                <div className="text-center py-5">
-                  <FileEarmark size={64} className="text-muted mb-3" />
-                  <h5 className="text-muted">No drafts found</h5>
-                  <p className="text-muted mb-4">
-                    You haven't saved any drafts yet. Start creating a template to save drafts.
-                  </p>
-                  <Button
-                    variant="primary-custom"
-                    onClick={() => navigate(ROUTES.TEMPLATES)}
-                  >
-                    Go to Templates
-                  </Button>
-                </div>
-              </Col>
-            </Row>
+            <div style={{ padding: '1.5rem' }}>
+              <Row className="mb-4">
+                <Col>
+                  <div className="text-center py-5">
+                    <FileEarmark size={64} className="text-muted mb-3" />
+                    <h5 className="text-muted">No drafts found</h5>
+                    <p className="text-muted mb-4">
+                      You haven't saved any drafts yet. Start creating a template to save drafts.
+                    </p>
+                    <Button
+                      variant="primary-custom"
+                      onClick={() => navigate(ROUTES.TEMPLATES)}
+                    >
+                      Go to Templates
+                    </Button>
+                  </div>
+                </Col>
+              </Row>
+            </div>
           ) : (
-            <Row className="g-3 g-md-4">
-              {drafts.map((draft) => (
+            <div className="draft-card-scroll-container" style={{ padding: '1.5rem' }}>
+              <Row className="g-3 g-md-4">
+                {drafts.map((draft) => (
                 <Col key={draft.id} xs={12} sm={6} md={6} lg={4} xl={3}>
                   <Card
                     className="h-100 border-0 shadow-sm template-card"
@@ -383,7 +389,8 @@ const YourDraftsPage = () => {
                   </Card>
                 </Col>
               ))}
-            </Row>
+              </Row>
+            </div>
           )}
         </Card.Body>
       </Card>
