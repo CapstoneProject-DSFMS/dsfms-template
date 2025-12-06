@@ -35,9 +35,47 @@
           var decoded = l.search.slice(1).split('&').map(function(s) { 
             return s.replace(/~and~/g, '&')
           }).join('?');
-          window.history.replaceState(null, null,
-              l.pathname.slice(0, -1) + decoded + l.hash
-          );
+          
+          // Get base path from sessionStorage or calculate from current path
+          var basePath = sessionStorage.getItem('ghpBasePath') || 
+                        (l.pathname.includes('/dsfms-template') ? '/dsfms-template' : '');
+          
+          // Remove base path from pathname before reconstructing
+          var pathWithoutBase = l.pathname.replace(basePath, '');
+          var newPath = basePath + (pathWithoutBase === '/' ? '' : pathWithoutBase.slice(0, -1)) + decoded + l.hash;
+          
+          window.history.replaceState(null, null, newPath);
+          
+          // Fix CSS and JS file paths if they're relative
+          // This ensures assets load correctly after redirect
+          var basePathForAssets = basePath || '';
+          if (basePathForAssets && basePathForAssets !== '/') {
+            // Fix link tags (CSS)
+            var links = document.querySelectorAll('link[rel="stylesheet"]');
+            links.forEach(function(link) {
+              var href = link.getAttribute('href');
+              if (href && !href.startsWith('http') && !href.startsWith('//') && !href.startsWith(basePathForAssets)) {
+                if (href.startsWith('/')) {
+                  link.setAttribute('href', basePathForAssets + href);
+                } else {
+                  link.setAttribute('href', basePathForAssets + '/' + href);
+                }
+              }
+            });
+            
+            // Fix script tags (JS)
+            var scripts = document.querySelectorAll('script[src]');
+            scripts.forEach(function(script) {
+              var src = script.getAttribute('src');
+              if (src && !src.startsWith('http') && !src.startsWith('//') && !src.startsWith(basePathForAssets)) {
+                if (src.startsWith('/')) {
+                  script.setAttribute('src', basePathForAssets + src);
+                } else {
+                  script.setAttribute('src', basePathForAssets + '/' + src);
+                }
+              }
+            });
+          }
         }
       }(window.location))
     </script>
