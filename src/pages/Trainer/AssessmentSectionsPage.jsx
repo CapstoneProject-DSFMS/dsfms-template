@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { Container, Card, Spinner, Alert, Button, Modal, Form } from 'react-bootstrap';
-import { useNavigate, useParams } from 'react-router-dom';
+import { useNavigate, useParams, useLocation } from 'react-router-dom';
 import { ArrowLeft, CheckCircle, XCircle } from 'react-bootstrap-icons';
 import { toast } from 'react-toastify';
 import { useAuth } from '../../hooks/useAuth';
@@ -15,6 +15,7 @@ import '../../styles/assessment-sections.css';
 const TrainerAssessmentSectionsPage = () => {
   const { assessmentId } = useParams();
   const navigate = useNavigate();
+  const location = useLocation();
   const { user, userRole } = useAuth();
   const isTrainee = user?.role === 'TRAINEE';
   const isTrainer = userRole?.name === 'TRAINER' || user?.role === 'TRAINER';
@@ -30,7 +31,8 @@ const TrainerAssessmentSectionsPage = () => {
   const [rejectModalShow, setRejectModalShow] = useState(false);
   const [rejectComment, setRejectComment] = useState('');
   const [rejectError, setRejectError] = useState('');
-  const [actionLoading, setActionLoading] = useState(false);
+  const [isApproving, setIsApproving] = useState(false);
+  const [isRejecting, setIsRejecting] = useState(false);
 
   useEffect(() => {
     if (assessmentId) {
@@ -101,7 +103,7 @@ const TrainerAssessmentSectionsPage = () => {
     }
 
     try {
-      setActionLoading(true);
+      setIsApproving(true);
       const response = await assessmentAPI.approveRejectAssessment(assessmentId, 'APPROVED');
       
       // Get success message from response
@@ -110,14 +112,14 @@ const TrainerAssessmentSectionsPage = () => {
       
       // Navigate to Assessment Review Requests page after 1.5 seconds
       setTimeout(() => {
-        setActionLoading(false);
+        setIsApproving(false);
         navigate(ROUTES.ASSESSMENT_REVIEW_REQUESTS);
       }, 1500);
     } catch (error) {
       console.error('Error approving assessment:', error);
       const errorMessage = error.response?.data?.message || error.message || 'Failed to approve assessment. Please try again.';
       toast.error(errorMessage);
-      setActionLoading(false);
+      setIsApproving(false);
     }
   };
 
@@ -143,7 +145,7 @@ const TrainerAssessmentSectionsPage = () => {
     }
 
     try {
-      setActionLoading(true);
+      setIsRejecting(true);
       setRejectError('');
       const response = await assessmentAPI.approveRejectAssessment(assessmentId, 'REJECTED', rejectComment);
       
@@ -156,14 +158,14 @@ const TrainerAssessmentSectionsPage = () => {
       
       // Navigate to Assessment Review Requests page after 1.5 seconds
       setTimeout(() => {
-        setActionLoading(false);
+        setIsRejecting(false);
         navigate(ROUTES.ASSESSMENT_REVIEW_REQUESTS);
       }, 1500);
     } catch (error) {
       console.error('Error rejecting assessment:', error);
       const errorMessage = error.response?.data?.message || error.message || 'Failed to reject assessment. Please try again.';
       setRejectError(errorMessage);
-      setActionLoading(false);
+      setIsRejecting(false);
     }
   };
 
@@ -198,10 +200,26 @@ const TrainerAssessmentSectionsPage = () => {
       const successMessage = response?.data?.message || response?.message || 'Assessment submitted successfully';
       toast.success(successMessage);
       
-      // Refresh sections to update state
-      setTimeout(() => {
-        fetchSections();
-      }, 1000);
+      // Navigate back to previous page (Assessment Assignments) with refresh flag
+      const returnPath = location.state?.returnPath;
+      if (returnPath) {
+        // Navigate to returnPath with refresh flag and necessary info
+        navigate(returnPath, {
+          state: {
+            shouldRefresh: true,
+            templateId: location.state?.templateId,
+            occuranceDate: location.state?.occuranceDate,
+            entityType: location.state?.entityType,
+            entityId: location.state?.entityId,
+            info: location.state?.info
+          }
+        });
+      } else {
+        // Fallback: navigate back normally
+        setTimeout(() => {
+          navigate(-1);
+        }, 1000);
+      }
     } catch (error) {
       console.error('Error submitting assessment:', error);
       const errorMessage = error.response?.data?.message || error.message || 'Failed to submit assessment';
@@ -302,9 +320,9 @@ const TrainerAssessmentSectionsPage = () => {
                     variant="success"
                     className="footer-btn"
                     onClick={handleApprove}
-                    disabled={actionLoading}
+                    disabled={isApproving || isRejecting}
                   >
-                    {actionLoading ? (
+                    {isApproving ? (
                       <>
                         <Spinner animation="border" size="sm" className="me-2" />
                         Approving...
@@ -325,9 +343,9 @@ const TrainerAssessmentSectionsPage = () => {
                     variant="danger"
                     className="footer-btn"
                     onClick={handleReject}
-                    disabled={actionLoading}
+                    disabled={isApproving || isRejecting}
                   >
-                    {actionLoading ? (
+                    {isRejecting ? (
                       <>
                         <Spinner animation="border" size="sm" className="me-2" />
                         Rejecting...
@@ -399,12 +417,12 @@ const TrainerAssessmentSectionsPage = () => {
                 setRejectComment('');
                 setRejectError('');
               }} 
-              disabled={actionLoading}
+              disabled={isRejecting}
             >
               Cancel
             </Button>
-            <Button variant="danger" onClick={handleRejectConfirm} disabled={actionLoading}>
-              {actionLoading ? (
+            <Button variant="danger" onClick={handleRejectConfirm} disabled={isRejecting}>
+              {isRejecting ? (
                 <>
                   <Spinner size="sm" className="me-2" />
                   Rejecting...
