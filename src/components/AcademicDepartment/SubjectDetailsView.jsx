@@ -544,7 +544,7 @@ const SubjectDetailsView = ({ subjectId, courseId }) => {
                               className="align-middle"
                               style={{ borderLeft: 'none', borderRight: 'none' }}
                             >
-                              <Badge bg={roleInfo.variant}>
+                              <Badge bg="success">
                                 {roleInfo.text}
                               </Badge>
                             </td>

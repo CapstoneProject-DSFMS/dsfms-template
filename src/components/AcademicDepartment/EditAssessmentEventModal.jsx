@@ -109,13 +109,6 @@ const EditAssessmentEventModal = ({ show, onClose, onSave, event, loading = fals
     setIsSaving(true);
 
     try {
-      // Format date to ISO string at UTC midnight to avoid timezone issues
-      // Parse YYYY-MM-DD and create date at UTC midnight
-      // Format: "2026-12-20T00:00:00.000Z" (matching data sample)
-      const [year, month, day] = formData.occuranceDate.split('-').map(Number);
-      const dateAtUTCMidnight = new Date(Date.UTC(year, month - 1, day, 0, 0, 0, 0));
-      const isoDateString = dateAtUTCMidnight.toISOString(); // Format: "2026-12-20T00:00:00.000Z"
-
       // Format original date for query params (YYYY-MM-DD)
       const originalDate = event.occuranceDate || event.occurrenceDate;
       const originalDateFormatted = formatDateForInput(originalDate);
@@ -137,17 +130,16 @@ const EditAssessmentEventModal = ({ show, onClose, onSave, event, loading = fals
       }
 
       // Build request body - only UPDATED fields (name and occuranceDate)
-      // Format must match: "2026-12-20T00:00:00.000Z"
+      // Format: YYYY-MM-DD (date only, no time) - same as create form
       const body = {
         name: formData.name, // Updated name
-        occuranceDate: isoDateString // Updated date in ISO format: "2026-12-20T00:00:00.000Z"
+        occuranceDate: formData.occuranceDate // Updated date in YYYY-MM-DD format (no time)
       };
 
       // Debug log to verify format
       console.log('Update Assessment Event - Request:', {
         params,
-        body,
-        isoDateString
+        body
       });
 
       await assessmentAPI.updateAssessmentEvent(params, body);
@@ -247,7 +239,9 @@ const EditAssessmentEventModal = ({ show, onClose, onSave, event, loading = fals
           <Row className="mt-4">
             <Col md={6}>
               <div className="p-3 bg-light rounded">
-                <small className="text-muted d-block mb-1">Course/Subject</small>
+                <small className="text-muted d-block mb-1">
+                  {event.subjectId === null && event.courseId ? 'Course' : 'Subject'}
+                </small>
                 <strong>
                   {event.entityInfo?.name || '-'}
                 </strong>

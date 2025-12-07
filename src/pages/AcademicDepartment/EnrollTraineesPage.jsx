@@ -456,6 +456,7 @@ const EnrollTraineesPage = () => {
               <TraineeSelectionPanel 
                 selectedTrainees={selectedTrainees}
                 onSelectionChange={setSelectedTrainees}
+                subjects={courseSubjects}
               />
             </div>
           </Col>
