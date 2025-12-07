@@ -205,6 +205,18 @@ const courseAPI = {
       console.error('Error removing trainer from course:', error);
       throw error;
     }
+  },
+
+  // Update trainer role in course
+  // PUT {{baseUrl}}/courses/{courseId}/trainers/{trainerId}
+  updateTrainerInCourse: async (courseId, trainerId, roleData) => {
+    try {
+      const response = await apiClient.put(`/courses/${courseId}/trainers/${trainerId}`, roleData);
+      return response.data;
+    } catch (error) {
+      console.error('Error updating trainer in course:', error);
+      throw error;
+    }
   }
 };
 

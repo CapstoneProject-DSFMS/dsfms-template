@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Card, Button, Row, Col, Container, Badge, Nav, Tab } from 'react-bootstrap';
+import { Card, Button, Row, Col, Container, Badge, Nav, Tab, Table } from 'react-bootstrap';
 import { Plus, Upload, Pencil, ArrowLeft, People, Calendar, GeoAlt, FileText, Award, PersonCheck, Book, CalendarEvent, Trash } from 'react-bootstrap-icons';
 import { useNavigate, useParams, useLocation } from 'react-router-dom';
 import { toast } from 'react-toastify';
@@ -22,6 +22,9 @@ import AssessmentEventDetailModal from '../../components/AcademicDepartment/Asse
 import DeleteBatchEnrollmentsModal from '../../components/AcademicDepartment/DeleteBatchEnrollmentsModal';
 import AddTrainerModal from '../../components/AcademicDepartment/AddTrainerModal';
 import RemoveTrainerModal from '../../components/AcademicDepartment/RemoveTrainerModal';
+import EditCourseTrainerModal from '../../components/AcademicDepartment/EditCourseTrainerModal';
+import TrainerActions from '../../components/AcademicDepartment/TrainerActions';
+import '../../styles/scrollable-table.css';
 
 const InPageCourseDetail = ({ course, department } = {}) => {
   const navigate = useNavigate();
@@ -48,7 +51,9 @@ const InPageCourseDetail = ({ course, department } = {}) => {
   const [showDeleteBatchEnrollments, setShowDeleteBatchEnrollments] = useState(false);
   const [showAddTrainer, setShowAddTrainer] = useState(false);
   const [showRemoveTrainer, setShowRemoveTrainer] = useState(false);
+  const [showEditTrainer, setShowEditTrainer] = useState(false);
   const [selectedTrainerToRemove, setSelectedTrainerToRemove] = useState(null);
+  const [selectedTrainerToEdit, setSelectedTrainerToEdit] = useState(null);
   const [isAddingTrainer, setIsAddingTrainer] = useState(false);
   
   // Course details state
@@ -369,6 +374,52 @@ const InPageCourseDetail = ({ course, department } = {}) => {
     }
   };
 
+  const handleEditTrainer = async (trainerId) => {
+    if (!trainerId) return;
+    
+    // Find trainer object for modal
+    const trainer = courseDetails?.instructors?.find(instr => instr.id === trainerId);
+    setSelectedTrainerToEdit(trainer);
+    setShowEditTrainer(true);
+  };
+
+  const handleUpdateTrainer = async (roleData) => {
+    if (!selectedTrainerToEdit) return;
+    
+    setIsAddingTrainer(true);
+    try {
+      // Call API to update trainer role in course
+      // PUT {{baseUrl}}/courses/{courseId}/trainers/{trainerId}
+      await courseAPI.updateTrainerInCourse(courseId, selectedTrainerToEdit.id, roleData);
+      
+      toast.success('Trainer role updated successfully!', {
+        autoClose: 3000,
+        position: "top-right"
+      });
+      
+      setShowEditTrainer(false);
+      
+      // Reload course details to get updated instructors list
+      const response = await courseAPI.getCourseById(courseId);
+      if (response) {
+        setCourseDetails(prev => ({
+          ...prev,
+          instructors: response.instructors || []
+        }));
+      }
+    } catch (error) {
+      const errorMessage = error?.response?.data?.message || error?.message || 'Failed to update trainer role';
+      toast.error(`Error: ${errorMessage}`, {
+        autoClose: 4000,
+        position: "top-right",
+        icon: false
+      });
+      console.error('Error updating trainer role:', error);
+    } finally {
+      setIsAddingTrainer(false);
+    }
+  };
+
   const handleRemoveTrainer = async (trainerId) => {
     if (!trainerId) return;
     
@@ -497,7 +548,7 @@ const InPageCourseDetail = ({ course, department } = {}) => {
       {/* Tab Interface */}
       <Card className="border-0 shadow-sm mb-2">
         <Tab.Container activeKey={activeTab} onSelect={setActiveTab}>
-          <Card.Header className="border-bottom py-2 bg-primary">
+          <Card.Header className="border-bottom py-2 bg-primary d-flex justify-content-between align-items-center">
             <Nav variant="tabs" className="border-0">
               <Nav.Item>
                 <Nav.Link 
@@ -591,6 +642,27 @@ const InPageCourseDetail = ({ course, department } = {}) => {
                 </Nav.Item>
               )}
             </Nav>
+            {activeTab === 'assign-trainer' && (
+              <PermissionWrapper 
+                permission={PERMISSION_IDS.ASSIGN_TRAINERS}
+                fallback={null}
+              >
+                <Button 
+                  variant="light"
+                  size="sm"
+                  onClick={() => setShowAddTrainer(true)}
+                  className="d-flex align-items-center"
+                  style={{
+                    backgroundColor: '#ffffff',
+                    color: '#000000',
+                    border: '1px solid #dee2e6'
+                  }}
+                >
+                  <Plus size={16} className="me-2" />
+                  Add Trainer
+                </Button>
+              </PermissionWrapper>
+            )}
           </Card.Header>
           
           <Card.Body className="p-0">
@@ -768,58 +840,151 @@ const InPageCourseDetail = ({ course, department } = {}) => {
               {/* Assign Trainer Tab */}
               {hasPermission(PERMISSION_IDS.ASSIGN_TRAINERS) && (
                 <Tab.Pane eventKey="assign-trainer" style={{ height: '100%' }}>
-                <div className="p-4">
-                  <div className="d-flex justify-content-between align-items-center mb-4">
-                    <h6 style={{ 
-                      color: '#1b3c53', 
-                      fontWeight: '800', 
-                      fontSize: '1.3rem',
-                      letterSpacing: '0.5px',
-                      textTransform: 'uppercase',
-                      borderBottom: '2px solid #d2c1b6',
-                      paddingBottom: '0.5rem',
-                      margin: 0
-                    }}>
-                      Assign Trainer to Course
-                    </h6>
-                    <Button 
-                      variant="primary" 
-                      size="sm"
-                      onClick={() => setShowAddTrainer(true)}
-                    >
-                      <Plus size={16} className="me-2" />
-                      Add Trainer
-                    </Button>
-                  </div>
-
                   {/* Trainers Table */}
                   {courseDetails?.instructors && courseDetails.instructors.length > 0 ? (
-                    <div className="table-responsive">
-                      <table className="table table-hover table-sm">
-                        <thead className="table-light">
+                    <div className="scrollable-table-container admin-table trainer-table-scroll">
+                      <Table hover className="mb-0" style={{ fontSize: '0.875rem' }}>
+                        <thead className="sticky-header">
                           <tr>
-                            <th style={{ width: '5%' }}>#</th>
-                            <th style={{ width: '15%' }}>EID</th>
-                            <th style={{ width: '20%' }}>Name</th>
-                            <th style={{ width: '25%' }}>Email</th>
-                            <th style={{ width: '15%' }}>Phone</th>
-                            <th style={{ width: '15%' }}>Role</th>
-                            <th style={{ width: '5%', textAlign: 'center' }}>Action</th>
+                            <th 
+                              className="fw-semibold"
+                              style={{
+                                backgroundColor: 'var(--bs-primary)',
+                                color: 'white',
+                                borderColor: 'var(--bs-primary)',
+                                borderLeft: 'none',
+                                borderRight: 'none'
+                              }}
+                            >
+                              #
+                            </th>
+                            <th 
+                              className="fw-semibold"
+                              style={{
+                                backgroundColor: 'var(--bs-primary)',
+                                color: 'white',
+                                borderColor: 'var(--bs-primary)',
+                                borderLeft: 'none',
+                                borderRight: 'none'
+                              }}
+                            >
+                              EID
+                            </th>
+                            <th 
+                              className="fw-semibold"
+                              style={{
+                                backgroundColor: 'var(--bs-primary)',
+                                color: 'white',
+                                borderColor: 'var(--bs-primary)',
+                                borderLeft: 'none',
+                                borderRight: 'none'
+                              }}
+                            >
+                              Name
+                            </th>
+                            <th 
+                              className="fw-semibold"
+                              style={{
+                                backgroundColor: 'var(--bs-primary)',
+                                color: 'white',
+                                borderColor: 'var(--bs-primary)',
+                                borderLeft: 'none',
+                                borderRight: 'none'
+                              }}
+                            >
+                              Email
+                            </th>
+                            <th 
+                              className="fw-semibold"
+                              style={{
+                                backgroundColor: 'var(--bs-primary)',
+                                color: 'white',
+                                borderColor: 'var(--bs-primary)',
+                                borderLeft: 'none',
+                                borderRight: 'none'
+                              }}
+                            >
+                              Phone
+                            </th>
+                            <th 
+                              className="fw-semibold"
+                              style={{
+                                backgroundColor: 'var(--bs-primary)',
+                                color: 'white',
+                                borderColor: 'var(--bs-primary)',
+                                borderLeft: 'none',
+                                borderRight: 'none'
+                              }}
+                            >
+                              Role
+                            </th>
+                            <th 
+                              className="fw-semibold text-center"
+                              style={{
+                                backgroundColor: 'var(--bs-primary)',
+                                color: 'white',
+                                borderColor: 'var(--bs-primary)',
+                                borderLeft: 'none',
+                                borderRight: 'none'
+                              }}
+                            >
+                              Actions
+                            </th>
                           </tr>
                         </thead>
                         <tbody>
                           {courseDetails.instructors.map((trainer, index) => (
-                            <tr key={trainer.id}>
-                              <td>{index + 1}</td>
-                              <td>
-                                <Badge bg="info">{trainer.eid}</Badge>
+                            <tr 
+                              key={trainer.id}
+                              className={`${index % 2 === 0 ? 'bg-white' : 'bg-neutral-50'} transition-all`}
+                              style={{
+                                transition: 'background-color 0.2s ease'
+                              }}
+                              onMouseEnter={(e) => {
+                                e.currentTarget.style.backgroundColor = 'var(--bs-neutral-100)';
+                              }}
+                              onMouseLeave={(e) => {
+                                e.currentTarget.style.backgroundColor = index % 2 === 0 ? 'white' : 'var(--bs-neutral-50)';
+                              }}
+                            >
+                              <td 
+                                className="align-middle"
+                                style={{ borderLeft: 'none', borderRight: 'none' }}
+                              >
+                                {index + 1}
                               </td>
-                              <td>
-                                <strong>{trainer.firstName} {trainer.middleName} {trainer.lastName}</strong>
+                              <td 
+                                className="align-middle"
+                                style={{ borderLeft: 'none', borderRight: 'none' }}
+                              >
+                                <Badge bg="secondary" className="text-white">
+                                  {trainer.eid}
+                                </Badge>
                               </td>
-                              <td>{trainer.email}</td>
-                              <td>{trainer.phoneNumber}</td>
-                              <td>
+                              <td 
+                                className="align-middle"
+                                style={{ borderLeft: 'none', borderRight: 'none' }}
+                              >
+                                <span className="fw-medium text-dark">
+                                  {trainer.firstName} {trainer.middleName} {trainer.lastName}
+                                </span>
+                              </td>
+                              <td 
+                                className="align-middle"
+                                style={{ borderLeft: 'none', borderRight: 'none' }}
+                              >
+                                <span className="text-dark">{trainer.email}</span>
+                              </td>
+                              <td 
+                                className="align-middle"
+                                style={{ borderLeft: 'none', borderRight: 'none' }}
+                              >
+                                <span className="text-dark">{trainer.phoneNumber}</span>
+                              </td>
+                              <td 
+                                className="align-middle"
+                                style={{ borderLeft: 'none', borderRight: 'none' }}
+                              >
                                 {trainer.roleInCourse && trainer.roleInCourse.length > 0 ? (
                                   trainer.roleInCourse.map(role => (
                                     <Badge key={role} bg="success" className="me-1">
@@ -830,28 +995,27 @@ const InPageCourseDetail = ({ course, department } = {}) => {
                                   <span className="text-muted">-</span>
                                 )}
                               </td>
-                              <td style={{ textAlign: 'center' }}>
-                                <Button
-                                  variant="danger"
-                                  size="sm"
-                                  onClick={() => handleRemoveTrainer(trainer.id)}
-                                  disabled={isAddingTrainer}
-                                  title="Remove trainer from course"
-                                >
-                                  <Trash size={14} />
-                                </Button>
+                              <td 
+                                className="align-middle text-center"
+                                style={{ borderLeft: 'none', borderRight: 'none' }}
+                              >
+                                <TrainerActions
+                                  trainer={trainer}
+                                  onEdit={() => handleEditTrainer(trainer.id)}
+                                  onDelete={() => handleRemoveTrainer(trainer.id)}
+                                  editPermission={PERMISSION_IDS.ASSIGN_TRAINERS}
+                                />
                               </td>
                             </tr>
                           ))}
                         </tbody>
-                      </table>
+                      </Table>
                     </div>
                   ) : (
                     <div className="alert alert-info">
                       No trainers assigned yet. Click "Add Trainer" button to assign a trainer to this course.
                     </div>
                   )}
-                </div>
               </Tab.Pane>
               )}
 
@@ -906,6 +1070,16 @@ const InPageCourseDetail = ({ course, department } = {}) => {
         courseId={courseId}
       />
 
+      <EditCourseTrainerModal
+        show={showEditTrainer}
+        onClose={() => {
+          setShowEditTrainer(false);
+          setSelectedTrainerToEdit(null);
+        }}
+        onSave={handleUpdateTrainer}
+        trainer={selectedTrainerToEdit}
+        loading={isAddingTrainer}
+      />
       <RemoveTrainerModal
         show={showRemoveTrainer}
         onClose={() => {

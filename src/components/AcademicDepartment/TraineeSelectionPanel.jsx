@@ -6,7 +6,7 @@ import { PERMISSION_IDS } from '../../constants/permissionIds';
 import traineeAPI from '../../api/trainee';
 import './TraineeSelectionPanel.css';  // ← ADD CUSTOM CSS
 
-const TraineeSelectionPanel = ({ selectedTrainees, onSelectionChange }) => {
+const TraineeSelectionPanel = ({ selectedTrainees, onSelectionChange, subjects = [] }) => {
   const [searchTerm, setSearchTerm] = useState('');
   const [showAvailableDropdown, setShowAvailableDropdown] = useState(false);
   const [allTrainees, setAllTrainees] = useState([]);
@@ -15,10 +15,10 @@ const TraineeSelectionPanel = ({ selectedTrainees, onSelectionChange }) => {
   const [justAddedTraineeId, setJustAddedTraineeId] = useState(null);
   const dropdownRef = useRef(null);
 
-  // Load trainees from API
+  // Load trainees from API when subjects list changes
   useEffect(() => {
     loadTrainees();
-  }, []);
+  }, [subjects]);
 
   // Close dropdown when clicking outside
   useEffect(() => {
@@ -38,27 +38,26 @@ const TraineeSelectionPanel = ({ selectedTrainees, onSelectionChange }) => {
   }, [showAvailableDropdown]);
 
   const loadTrainees = async () => {
+    // Extract all subject IDs from subjects list
+    const subjectIds = Array.isArray(subjects) 
+      ? subjects.map(subject => subject.id).filter(Boolean) // Filter out null/undefined IDs
+      : [];
+    
+    // If no subjects, clear trainees list
+    if (subjectIds.length === 0) {
+      setAllTrainees([]);
+      setError(null);
+      return;
+    }
+
     setLoadingTrainees(true);
     setError(null);
     try {
-      const response = await traineeAPI.getTraineesForEnrollment();
+      // Call POST API with subjectIds in body
+      const response = await traineeAPI.getTraineesForEnrollment(subjectIds);
       
-      // Handle different response formats:
-      // Format 1: { message: "...", data: { trainees: [...] } } (wrapped)
-      // Format 2: { trainees: [...], totalItems: ... }
-      // Format 3: Direct array [...]
-      let traineesData = [];
-      
-      if (response?.data?.trainees && Array.isArray(response.data.trainees)) {
-        // Wrapped format: { data: { trainees: [...] } }
-        traineesData = response.data.trainees;
-      } else if (response?.trainees && Array.isArray(response.trainees)) {
-        // Format: { trainees: [...] }
-        traineesData = response.trainees;
-      } else if (Array.isArray(response)) {
-        // Direct array format
-        traineesData = response;
-      }
+      // Response format: { message: "...", data: { trainees: [...], totalItems: ... } }
+      const traineesData = response?.data?.trainees || [];
       
       // Transform API data to match component format
       // API returns: { id, eid, firstName, middleName, lastName, email, avatarUrl, departmentId, department: { id, name } }
