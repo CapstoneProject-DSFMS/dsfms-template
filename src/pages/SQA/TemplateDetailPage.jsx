@@ -26,6 +26,7 @@ const TemplateDetailPage = () => {
   const [showRejectModal, setShowRejectModal] = useState(false);
   const [rejectComment, setRejectComment] = useState('');
   const [reviewing, setReviewing] = useState(false);
+  const [downloadingPDF, setDownloadingPDF] = useState(false);
 
   const loadTemplateDetail = useCallback(async () => {
     if (!templateId) {
@@ -150,6 +151,7 @@ const TemplateDetailPage = () => {
     }
 
     try {
+      setDownloadingPDF(true);
       // Call API to get PDF blob
       const pdfBlob = await templateAPI.getTemplatePDF(template.formId);
       
@@ -165,10 +167,11 @@ const TemplateDetailPage = () => {
       
       // Clean up
       URL.revokeObjectURL(url);
-      toast.success('PDF downloaded successfully');
     } catch (error) {
       console.error('Error downloading PDF:', error);
       toast.error(error.response?.data?.message || 'Failed to download PDF');
+    } finally {
+      setDownloadingPDF(false);
     }
   };
 
@@ -345,10 +348,25 @@ const TemplateDetailPage = () => {
                   size="sm"
                   onClick={handleExportPDF}
                   className="d-flex align-items-center"
-                  disabled={!template?.formId}
+                  disabled={!template?.formId || downloadingPDF}
+                  style={{ 
+                    fontSize: '0.875rem', 
+                    padding: '0.25rem 0.5rem',
+                    whiteSpace: 'nowrap',
+                    minWidth: 'auto'
+                  }}
                 >
-                  <FileEarmarkPdf className="me-1" size={16} />
-                  Download PDF
+                  {downloadingPDF ? (
+                    <>
+                      <span className="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
+                      Downloading...
+                    </>
+                  ) : (
+                    <>
+                      <FileEarmarkPdf className="me-2" size={16} />
+                      Download PDF
+                    </>
+                  )}
                 </Button>
               </PermissionWrapper>
             </div>

@@ -807,7 +807,17 @@ const FormEditorPage = () => {
                     <strong className="me-3" style={{ minWidth: '120px', fontWeight: 600, color: '#172B4D' }}>Field:</strong>
                     <div className="flex-grow-1">
                       <code className="syntax-pill">&#123;variable_name&#125;</code>
-                      <div className="data-type-info mt-1">Data Types: TEXT, VALUE_LIST, FINAL_SCORE_TEXT, FINAL_SCORE_NUM, SIGNATURE_DRAW, SIGNATURE_IMG</div>
+                      <div className="data-type-info mt-1">Data Types: TEXT, VALUE_LIST, FINAL_SCORE_TEXT, FINAL_SCORE_NUM</div>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="syntax-item mb-3">
+                  <div className="d-flex align-items-start">
+                    <strong className="me-3" style={{ minWidth: '120px', fontWeight: 600, color: '#172B4D' }}>Signature (image):</strong>
+                    <div className="flex-grow-1">
+                      <code className="syntax-pill">&#123;%signature&#125;</code>
+                      <div className="data-type-info mt-1">Data Types: SIGNATURE_DRAW, SIGNATURE_IMG</div>
                     </div>
                   </div>
                 </div>
@@ -816,8 +826,18 @@ const FormEditorPage = () => {
                   <div className="d-flex align-items-start">
                     <strong className="me-3" style={{ minWidth: '120px', fontWeight: 600, color: '#172B4D' }}>Part:</strong>
                     <div className="flex-grow-1">
-                      <code className="syntax-pill">&#123;#Part_Name&#125; &#123;field1&#125; &#123;field2&#125; &#123;/PartName&#125;</code>
+                      <code className="syntax-pill">&#123;#Part_Name&#125; &#123;field1&#125; &#123;field2&#125; &#123;/Part_Name&#125;</code>
                       <div className="data-type-info mt-1">Data Types: PART</div>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="syntax-item mb-3">
+                  <div className="d-flex align-items-start">
+                    <strong className="me-3" style={{ minWidth: '120px', fontWeight: 600, color: '#172B4D' }}>Check box:</strong>
+                    <div className="flex-grow-1">
+                      <code className="syntax-pill">&#123;#Checkbox_Name&#125; &#123;check1&#125; &#123;check2&#125; &#123;/Checkbox_Name&#125;</code>
+                      <div className="data-type-info mt-1">Data Types: CHECK_BOX</div>
                     </div>
                   </div>
                 </div>
@@ -864,7 +884,7 @@ const FormEditorPage = () => {
               <h5 className="mb-3" style={{ fontSize: '1.25rem', fontWeight: 600, color: '#172B4D' }}>Template Rule</h5>
               <ul className="rule-list" style={{ paddingLeft: '1.5rem', lineHeight: 1.8 }}>
                 <li>Placeholders in the Template must match the Available Fields (e.g., no Field in the Template that is not in Available Fields when submitting, and vice versa).</li>
-                <li>For the "Submittable" field of a Section for a TRAINER, it means only the person Assessing that Section later will be allowed to Submit the Assessment Form.</li>
+                <li>For the "Submittable" field of a Section for a TRAINER, it means only the person Assessing that Section later will be allowed to Submit the Assessment Form and there must be one or more Section that is "Submittable".</li>
                 <li>For the "Toggle Dependent" field of a Section for a TRAINER:
                   <ul style={{ marginTop: '0.5rem', paddingLeft: '1.5rem' }}>
                     <li>It means the person Assessing this Section is allowed to skip Fields without filling them in.</li>
@@ -872,6 +892,7 @@ const FormEditorPage = () => {
                   </ul>
                 </li>
                 <li>A Field with the type FINAL_SCORE_TEXT or FINAL_SCORE_NUM must exist (serving the purpose of Assessing TRAINEE), and no more than two Fields with this same Field Type can exist.</li>
+                <li>There must exist one Section for Trainee that have the SIGNATURE_DRAW field (Trainee must sign confirmation for the Assessment).</li>
               </ul>
             </div>
           </Modal.Body>

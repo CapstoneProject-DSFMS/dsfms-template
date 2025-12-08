@@ -648,7 +648,7 @@ const TemplateDetailModal = ({ show, onHide, template, onCreateVersion }) => {
               </div>
             ) : pdfConfigUrl ? (
               <iframe 
-                src={pdfConfigUrl} 
+                src={`${pdfConfigUrl}#toolbar=0`}
                 style={{ 
                   flex: 1, 
                   border: 'none', 
@@ -1017,7 +1017,7 @@ const TemplateDetailModal = ({ show, onHide, template, onCreateVersion }) => {
           minHeight: 0
         }}>
           <iframe
-            src={pdfUrl}
+            src={`${pdfUrl}#toolbar=0`}
             style={{
               width: '100%',
               height: '100%',
@@ -1302,7 +1302,7 @@ const TemplateDetailModal = ({ show, onHide, template, onCreateVersion }) => {
             <span className="d-inline d-sm-none">Update</span>
           </Button>
         )}
-        {template?.status !== 'PENDING' && (
+        {template?.status === 'PUBLISHED' && (
           <Button
             variant="danger"
             onClick={handleDisableTemplate}

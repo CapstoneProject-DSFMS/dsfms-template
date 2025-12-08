@@ -291,7 +291,7 @@ const TemplatePreviewModal = ({ show, onHide, template }) => {
           ) : pdfUrl ? (
             <div style={{ height: '55vh', overflow: 'hidden' }}>
               <iframe
-                src={pdfUrl}
+                src={`${pdfUrl}#toolbar=0`}
                 style={{
                   width: '100%',
                   height: '100%',

@@ -18,6 +18,8 @@ const TemplateConfigSchema = ({ sections = [] }) => {
         name: section.label || section.name,
         fieldCount: section.fields?.length || 0,
         data: section,
+        isSubmittable: Boolean(section.isSubmittable),
+        isToggleDependent: Boolean(section.isToggleDependent),
         level: 0
       });
       
@@ -204,20 +206,59 @@ const TemplateConfigSchema = ({ sections = [] }) => {
                     </Badge>
                   )}
                 </div>
-                <Badge
-                  bg={isSection ? 'warning' : 'secondary'}
-                  style={{
-                    fontSize: '11px',
-                    padding: '4px 10px',
-                    borderRadius: '4px',
-                    backgroundColor: isSection ? '#ffc107' : 'var(--bs-secondary)',
-                    color: isSection ? '#000' : '#fff',
-                    fontWeight: 500,
-                    marginLeft: '12px'
-                  }}
-                >
-                  {isSection ? 'SECTION' : (item.data?.fieldType || item.data?.type || 'FIELD')}
-                </Badge>
+                <div className="d-flex align-items-center gap-1" style={{ flexWrap: 'wrap', justifyContent: 'flex-end', flexShrink: 0 }}>
+                  {/* isSubmittable and isToggleDependent badges */}
+                  {isSection && (
+                    <div className="d-flex align-items-center gap-1" style={{ flexWrap: 'wrap' }}>
+                      {item.isSubmittable && (
+                        <Badge
+                          bg="success"
+                          style={{
+                            fontSize: '10px',
+                            padding: '3px 8px',
+                            borderRadius: '4px',
+                            backgroundColor: '#28a745',
+                            color: '#fff',
+                            fontWeight: 500,
+                            whiteSpace: 'nowrap'
+                          }}
+                        >
+                          Submittable
+                        </Badge>
+                      )}
+                      {item.isToggleDependent && (
+                        <Badge
+                          bg="info"
+                          style={{
+                            fontSize: '10px',
+                            padding: '3px 8px',
+                            borderRadius: '4px',
+                            backgroundColor: '#17a2b8',
+                            color: '#fff',
+                            fontWeight: 500,
+                            whiteSpace: 'nowrap'
+                          }}
+                        >
+                          Toggle Dependent
+                        </Badge>
+                      )}
+                    </div>
+                  )}
+                  <Badge
+                    bg={isSection ? 'warning' : 'secondary'}
+                    style={{
+                      fontSize: '11px',
+                      padding: '4px 10px',
+                      borderRadius: '4px',
+                      backgroundColor: isSection ? '#ffc107' : 'var(--bs-secondary)',
+                      color: isSection ? '#000' : '#fff',
+                      fontWeight: 500,
+                      marginLeft: '12px'
+                    }}
+                  >
+                    {isSection ? 'SECTION' : (item.data?.fieldType || item.data?.type || 'FIELD')}
+                  </Badge>
+                </div>
               </div>
             </div>
           );

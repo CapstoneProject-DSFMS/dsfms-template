@@ -26,7 +26,7 @@ const PreviewTab = ({
           ) : pdfUrl ? (
             <div style={{ height: '60vh', overflow: 'hidden' }}>
               <iframe
-                src={pdfUrl}
+                src={`${pdfUrl}#toolbar=0`}
                 style={{
                   width: '100%',
                   height: '100%',
