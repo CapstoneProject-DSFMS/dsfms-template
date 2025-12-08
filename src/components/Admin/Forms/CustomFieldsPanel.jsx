@@ -58,7 +58,7 @@ const CustomFieldsPanel = ({
     label: '',
     displayOrder: 1,
     editBy: 'TRAINER',
-    roleInSubject: '',
+    roleInSubject: 'ASSESSMENT_REVIEWER',
     isSubmittable: true,
     isToggleDependent: false,
     fields: []
@@ -89,7 +89,7 @@ const CustomFieldsPanel = ({
           label: 'Default',
           displayOrder: 1,
           editBy: 'TRAINER',
-          roleInSubject: '',
+          roleInSubject: 'ASSESSMENT_REVIEWER',
           isSubmittable: true,
           isToggleDependent: false,
           fields: [...customFields]
@@ -439,7 +439,7 @@ const CustomFieldsPanel = ({
       label: '',
       displayOrder: sections.length + 1,
       editBy: 'TRAINER',
-      roleInSubject: '',
+      roleInSubject: 'ASSESSMENT_REVIEWER',
       isSubmittable: true,
       isToggleDependent: false,
       fields: []
@@ -459,7 +459,9 @@ const CustomFieldsPanel = ({
       label: section.label || '',
       displayOrder: section.displayOrder || sectionIndex + 1,
       editBy: section.editBy || 'TRAINER',
-      roleInSubject: section.roleInSubject || '',
+      roleInSubject: section.editBy === 'TRAINER' 
+        ? (section.roleInSubject || 'ASSESSMENT_REVIEWER')
+        : (section.roleInSubject || ''),
       isSubmittable: section.isSubmittable !== undefined ? section.isSubmittable : true,
       isToggleDependent: section.isToggleDependent !== undefined ? section.isToggleDependent : false,
       fields: section.fields || []

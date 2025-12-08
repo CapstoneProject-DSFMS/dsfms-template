@@ -45,7 +45,7 @@ const EditorWithMergeFields = forwardRef(({
     label: '',
     displayOrder: 1,
     editBy: 'TRAINER',
-    roleInSubject: '',
+    roleInSubject: 'ASSESSMENT_REVIEWER',
     isSubmittable: true,
     isToggleDependent: false,
     fields: []
@@ -416,7 +416,7 @@ const EditorWithMergeFields = forwardRef(({
       label: '',
       displayOrder: idx,
       editBy: 'TRAINER',
-      roleInSubject: '',
+      roleInSubject: 'ASSESSMENT_REVIEWER',
       isSubmittable: true,
       isToggleDependent: false,
       fields: []
@@ -446,7 +446,7 @@ const EditorWithMergeFields = forwardRef(({
       label: '',
       displayOrder: sections.length + 1,
       editBy: 'TRAINER',
-      roleInSubject: '',
+      roleInSubject: 'ASSESSMENT_REVIEWER',
       isSubmittable: true,
       isToggleDependent: false,
       fields: []
