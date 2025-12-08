@@ -1453,6 +1453,8 @@ const CustomFieldsPanel = ({
         return `{#${name}} {/${name}}`;
       case 'SIGNATURE_DRAW':
       case 'SIGNATURE_IMAGE':
+        // {%fieldName} for signature fields
+        return `{%${name}}`;
       case 'FINAL_SCORE_TEXT':
       case 'FINAL_SCORE_NUM':
       case 'VALUE_LIST':
