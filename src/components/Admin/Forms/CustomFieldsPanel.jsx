@@ -1541,12 +1541,6 @@ const CustomFieldsPanel = ({
       onAddField(flattened);
       }, 0);
     }
-    // Build inner template - PART sub-fields are always TEXT
-    const inner = `{${partSubFieldName}}`;
-    // Insert only the inner field so it goes inside the existing part block
-    const template = ` ${inner}`;
-    // Defer insertion to next tick to avoid parent state updates during render
-    setTimeout(() => onInsertField(template), 0);
     setShowPartFieldModal(false);
     setActivePartField(null);
     setActivePartSectionIndex(null);

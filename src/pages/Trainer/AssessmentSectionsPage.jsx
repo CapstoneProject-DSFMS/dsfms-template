@@ -1,10 +1,11 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { Container, Card, Spinner, Alert, Button, Modal, Form } from 'react-bootstrap';
 import { useNavigate, useParams, useLocation } from 'react-router-dom';
-import { ArrowLeft, CheckCircle, XCircle } from 'react-bootstrap-icons';
+import { ArrowLeft, CheckCircle, XCircle, FileEarmarkPdf } from 'react-bootstrap-icons';
 import { toast } from 'react-toastify';
 import { useAuth } from '../../hooks/useAuth';
 import assessmentAPI from '../../api/assessment';
+import templateAPI from '../../api/template';
 import { ROUTES } from '../../constants/routes';
 import AssessmentOverview from '../../components/Trainer/AssessmentOverview';
 import AssessmentSectionCard from '../../components/Trainer/AssessmentSectionCard';
@@ -33,12 +34,24 @@ const TrainerAssessmentSectionsPage = () => {
   const [rejectError, setRejectError] = useState('');
   const [isApproving, setIsApproving] = useState(false);
   const [isRejecting, setIsRejecting] = useState(false);
+  const [showPreviewModal, setShowPreviewModal] = useState(false);
+  const [loadingPDF, setLoadingPDF] = useState(false);
+  const [pdfUrl, setPdfUrl] = useState(null);
 
   useEffect(() => {
     if (assessmentId) {
       fetchSections();
     }
   }, [assessmentId]);
+
+  // Clean up PDF URL when component unmounts
+  useEffect(() => {
+    return () => {
+      if (pdfUrl) {
+        URL.revokeObjectURL(pdfUrl);
+      }
+    };
+  }, [pdfUrl]);
 
   const fetchSections = async () => {
     try {
@@ -82,17 +95,38 @@ const TrainerAssessmentSectionsPage = () => {
   const handleBack = () => navigate(-1);
 
   const handlePreviewForm = async () => {
+    const templateId = state.assessmentInfo?.template?.id;
+    
+    if (!templateId) {
+      toast.error('Template information is not available');
+      return;
+    }
+
     try {
-      const response = await assessmentAPI.getAssessmentFormPreview(assessmentId);
-      const previewUrl = response?.previewUrl || response?.url;
-      if (previewUrl) {
-        window.open(previewUrl, '_blank', 'noopener');
-      } else {
-        toast.info('No preview available.');
-      }
+      setLoadingPDF(true);
+      setShowPreviewModal(true);
+      
+      // Get PDF blob from API using templateFormId (which is template.id)
+      const pdfBlob = await templateAPI.getTemplatePDF(templateId);
+      
+      // Create object URL for PDF
+      const url = URL.createObjectURL(pdfBlob);
+      setPdfUrl(url);
     } catch (error) {
-      console.error('Error previewing form:', error);
-      toast.error('Failed to load assessment form preview.');
+      console.error('Error loading PDF:', error);
+      toast.error('Failed to load PDF preview');
+      setShowPreviewModal(false);
+    } finally {
+      setLoadingPDF(false);
+    }
+  };
+
+  const handleClosePreview = () => {
+    setShowPreviewModal(false);
+    // Clean up object URL to prevent memory leaks
+    if (pdfUrl) {
+      URL.revokeObjectURL(pdfUrl);
+      setPdfUrl(null);
     }
   };
 
@@ -260,6 +294,16 @@ const TrainerAssessmentSectionsPage = () => {
             <ArrowLeft size={16} className="me-2" />
             Back
           </Button>
+          {isTrainer && state.assessmentInfo?.template?.id && (
+            <Button
+              variant="primary"
+              className="d-flex align-items-center"
+              onClick={handlePreviewForm}
+            >
+              <FileEarmarkPdf className="me-2" size={16} />
+              Assessment Form Preview
+            </Button>
+          )}
         </div>
 
         <Card className="assessment-details-card shadow-sm">
@@ -432,6 +476,48 @@ const TrainerAssessmentSectionsPage = () => {
               )}
             </Button>
           </Modal.Footer>
+        </Modal>
+
+        {/* Assessment Form Preview Modal */}
+        <Modal
+          show={showPreviewModal}
+          onHide={handleClosePreview}
+          size="lg"
+          centered
+          fullscreen="lg-down"
+        >
+          <Modal.Header closeButton className="bg-primary text-white border-0">
+            <Modal.Title className="text-white d-flex align-items-center">
+              <FileEarmarkPdf className="me-2" size={20} />
+              Assessment Form Preview
+            </Modal.Title>
+          </Modal.Header>
+          <Modal.Body style={{ padding: 0, height: '70vh', minHeight: '500px' }}>
+            {loadingPDF ? (
+              <div className="d-flex justify-content-center align-items-center" style={{ height: '100%' }}>
+                <div className="text-center">
+                  <Spinner animation="border" variant="primary" role="status">
+                    <span className="visually-hidden">Loading...</span>
+                  </Spinner>
+                  <p className="mt-2">Loading PDF...</p>
+                </div>
+              </div>
+            ) : pdfUrl ? (
+              <iframe
+                src={`${pdfUrl}#toolbar=0`}
+                style={{
+                  width: '100%',
+                  height: '100%',
+                  border: 'none'
+                }}
+                title="Assessment Form PDF Preview"
+              />
+            ) : (
+              <div className="d-flex justify-content-center align-items-center" style={{ height: '100%' }}>
+                <p className="text-muted">No preview available</p>
+              </div>
+            )}
+          </Modal.Body>
         </Modal>
       </Container>
     </div>
