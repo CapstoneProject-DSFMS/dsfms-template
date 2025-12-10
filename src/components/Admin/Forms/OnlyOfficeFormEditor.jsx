@@ -1103,8 +1103,8 @@ JSON.stringify(data, null, 2)
             }
             
             // Close modal and reset state
-            setShowSectionModal(false)
-            setSelectedSystemField(null)
+                setShowSectionModal(false)
+                setSelectedSystemField(null)
         } else {
             console.error('❌ [Add Field] addSystemField function not available')
             toast.error('Failed to add field to section')
@@ -1701,25 +1701,25 @@ console.log('🌐 Full S3 URL:', s3Url)
               <div className="mb-2">
                 <span style={{ fontSize: '0.875rem', color: 'var(--bs-secondary)', fontWeight: 500 }}>Label: </span>
                 <span style={{ fontSize: '1rem', fontWeight: 600, color: 'var(--bs-dark)' }}>
-                  {selectedSystemField.label}
+                {selectedSystemField.label}
                 </span>
               </div>
               
               {/* Field Name */}
               <div className="mb-2">
                 <span style={{ fontSize: '0.875rem', color: 'var(--bs-secondary)', fontWeight: 500 }}>Field Name: </span>
-                <code 
+              <code 
                   className="d-inline-block px-2 py-1 rounded"
-                  style={{ 
-                    fontSize: '0.875rem',
-                    backgroundColor: 'var(--bs-neutral-100)',
-                    color: 'var(--bs-primary)',
+                style={{ 
+                  fontSize: '0.875rem',
+                  backgroundColor: 'var(--bs-neutral-100)',
+                  color: 'var(--bs-primary)',
                     border: '1px solid var(--bs-neutral-300)',
                     fontWeight: 500
-                  }}
-                >
+                }}
+              >
                   {selectedSystemField.variable.replace(/[{}]/g, '')}
-                </code>
+              </code>
               </div>
               
               {/* Field Type */}
@@ -1738,7 +1738,7 @@ console.log('🌐 Full S3 URL:', s3Url)
                   {selectedSystemField.fieldType || 'TEXT'}
                 </span>
               </div>
-            </div>
+    </div>
           )}
           <p className="mb-3" style={{ fontSize: '0.95rem', color: 'var(--bs-dark)', fontWeight: 500 }}>
             Choose a section to add this field:

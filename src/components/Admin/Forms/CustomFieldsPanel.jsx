@@ -108,49 +108,49 @@ const CustomFieldsPanel = ({
           // Use functional update to ensure we always use the latest state
           setSections(prevSections => {
             if (sectionIndex === null || sectionIndex < 0 || sectionIndex >= prevSections.length) {
-              toast.error('Invalid section index');
+            toast.error('Invalid section index');
               return prevSections; // Return unchanged state on error
-            }
+          }
 
             const section = prevSections[sectionIndex];
-            const sectionFields = section.fields || [];
-            
-            // Check if fieldName already exists in the entire template (exclude sub-fields of PART/CHECK_BOX)
-            // Flatten all fields from all sections
+          const sectionFields = section.fields || [];
+          
+          // Check if fieldName already exists in the entire template (exclude sub-fields of PART/CHECK_BOX)
+          // Flatten all fields from all sections
             const allFields = prevSections.flatMap((section) => section.fields || []);
-            
-            // Filter to exclude sub-fields (those with parentTempId or parentId)
-            const topLevelFields = allFields.filter(field => !field.parentTempId && !field.parentId);
-            
-            // Check if fieldData is a sub-field (if so, skip duplicate check)
-            const isSubField = fieldData.parentTempId || fieldData.parentId;
-            
-            if (!isSubField && topLevelFields.some(f => f.fieldName === fieldData.fieldName)) {
-              toast.warning(`Field "${fieldData.fieldName}" already exists in the template`);
+          
+          // Filter to exclude sub-fields (those with parentTempId or parentId)
+          const topLevelFields = allFields.filter(field => !field.parentTempId && !field.parentId);
+          
+          // Check if fieldData is a sub-field (if so, skip duplicate check)
+          const isSubField = fieldData.parentTempId || fieldData.parentId;
+          
+          if (!isSubField && topLevelFields.some(f => f.fieldName === fieldData.fieldName)) {
+            toast.warning(`Field "${fieldData.fieldName}" already exists in the template`);
               return prevSections; // Return unchanged state on error
-            }
+          }
 
-            // Use section's editBy as roleRequired if not provided
-            const fieldToAdd = {
-              ...fieldData,
-              roleRequired: fieldData.roleRequired || section.editBy || 'TRAINER'
-            };
+          // Use section's editBy as roleRequired if not provided
+          const fieldToAdd = {
+            ...fieldData,
+            roleRequired: fieldData.roleRequired || section.editBy || 'TRAINER'
+          };
 
             const nextSections = [...prevSections];
-            nextSections[sectionIndex] = {
-              ...section,
-              fields: [...sectionFields, fieldToAdd]
-            };
+          nextSections[sectionIndex] = {
+            ...section,
+            fields: [...sectionFields, fieldToAdd]
+          };
 
-            // Notify parent component - use setTimeout to avoid "Cannot update component while rendering" warning
-            if (onAddField) {
-              const flattened = nextSections.flatMap((s) => s.fields || []);
-              // Defer callback to avoid updating parent during render phase
-              setTimeout(() => {
-                onAddField(flattened);
-              }, 0);
-            }
-            
+          // Notify parent component - use setTimeout to avoid "Cannot update component while rendering" warning
+          if (onAddField) {
+            const flattened = nextSections.flatMap((s) => s.fields || []);
+            // Defer callback to avoid updating parent during render phase
+            setTimeout(() => {
+              onAddField(flattened);
+            }, 0);
+          }
+          
             return nextSections; // Return updated state
           });
           
@@ -2026,25 +2026,25 @@ const CustomFieldsPanel = ({
                                 </Button>
                                 {/* Hide delete button for SECTION_CONTROL_TOGGLE fields */}
                                 {String(field.fieldType).toUpperCase() !== 'SECTION_CONTROL_TOGGLE' && (
-                                  <Button
-                                    variant="outline-danger"
-                                    size="sm"
-                                    onClick={() => {
-                                      const next = [...sections];
-                                      next[sIdx].fields = next[sIdx].fields.filter((_, i) => i !== realIndex);
-                                      setSections(next);
-                                      if (onRemoveField) {
-                                        const flattened = next.flatMap((s) => s.fields || []);
-                                        onRemoveField(flattened);
-                                      }
-                                    }}
-                                    disabled={readOnly}
-                                    title="Remove Field"
-                                    className="text-danger border-danger"
-                                    style={{ padding: '0.25rem 0.4rem' }}
-                                  >
-                                    <X size={12} />
-                                  </Button>
+                                <Button
+                                  variant="outline-danger"
+                                  size="sm"
+                                  onClick={() => {
+                                    const next = [...sections];
+                                    next[sIdx].fields = next[sIdx].fields.filter((_, i) => i !== realIndex);
+                                    setSections(next);
+                                    if (onRemoveField) {
+                                      const flattened = next.flatMap((s) => s.fields || []);
+                                      onRemoveField(flattened);
+                                    }
+                                  }}
+                                  disabled={readOnly}
+                                  title="Remove Field"
+                                  className="text-danger border-danger"
+                                  style={{ padding: '0.25rem 0.4rem' }}
+                                >
+                                  <X size={12} />
+                                </Button>
                                 )}
                               </div>
                             </div>
@@ -2493,32 +2493,32 @@ const CustomFieldsPanel = ({
               </Col>
               {/* Hide Field Type for SECTION_CONTROL_TOGGLE fields */}
               {String(newField.fieldType).toUpperCase() !== 'SECTION_CONTROL_TOGGLE' && (
-                <Col md={6}>
-                  <Form.Group>
-                    <Form.Label className="text-primary-custom">Field Type <span className="text-danger">*</span></Form.Label>
-                    <Form.Select
-                      value={newField.fieldType}
-                      onChange={(e) => {
-                        const newType = e.target.value;
-                        setNewField(prev => ({ 
-                          ...prev, 
-                          fieldType: newType,
-                          option: newType === 'VALUE_LIST' ? prev.option : null // Clear option if not VALUE_LIST
-                        }));
-                        // Reset options array when changing field type
-                        if (newType !== 'VALUE_LIST') {
-                          setValueListOptions([]);
-                          setNewOptionInput('');
-                        }
-                      }}
-                      required
-                    >
-                      {availableFieldTypeOptions.map(option => (
-                        <option key={option.value} value={option.value}>{option.label}</option>
-                      ))}
-                    </Form.Select>
-                  </Form.Group>
-                </Col>
+              <Col md={6}>
+                <Form.Group>
+                  <Form.Label className="text-primary-custom">Field Type <span className="text-danger">*</span></Form.Label>
+                  <Form.Select
+                    value={newField.fieldType}
+                    onChange={(e) => {
+                      const newType = e.target.value;
+                      setNewField(prev => ({ 
+                        ...prev, 
+                        fieldType: newType,
+                        option: newType === 'VALUE_LIST' ? prev.option : null // Clear option if not VALUE_LIST
+                      }));
+                      // Reset options array when changing field type
+                      if (newType !== 'VALUE_LIST') {
+                        setValueListOptions([]);
+                        setNewOptionInput('');
+                      }
+                    }}
+                    required
+                  >
+                    {availableFieldTypeOptions.map(option => (
+                      <option key={option.value} value={option.value}>{option.label}</option>
+                    ))}
+                  </Form.Select>
+                </Form.Group>
+              </Col>
               )}
               {/* Hide Role Required for sub-fields of PART/CHECK_BOX */}
               {!(newField.parentTempId || newField.parentId) && (
