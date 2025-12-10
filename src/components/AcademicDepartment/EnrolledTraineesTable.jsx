@@ -146,7 +146,10 @@ const EnrolledTraineesTable = ({ courseId, loading = false }) => {
       // Call API to get trainee enrollments
       const response = await courseAPI.getTraineeEnrollments(courseId, traineeToRemove.userId);
       const responseData = response?.data || response;
-      const subjects = responseData.subjects || [];
+      // Filter out cancelled enrollments before removing
+      const subjects = (responseData.subjects || []).filter(item => 
+        item.enrollment?.status !== 'CANCELLED'
+      );
       
       if (subjects.length > 0) {
         // Remove trainee from each subject
