@@ -3,6 +3,7 @@ import { Modal, Form, Button, Row, Col } from 'react-bootstrap';
 import { Plus, X } from 'react-bootstrap-icons';
 import { toast } from 'react-toastify';
 import { globalFieldAPI } from '../../../api';
+import '../../../styles/global-field-list.css';
 
 const CreateGlobalFieldModal = ({ show, onHide, onSuccess }) => {
   const [formData, setFormData] = useState({
@@ -14,6 +15,10 @@ const CreateGlobalFieldModal = ({ show, onHide, onSuccess }) => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [valueListOptions, setValueListOptions] = useState([]);
   const [newOptionInput, setNewOptionInput] = useState('');
+  // Children fields state for PART and CHECK_BOX
+  const [children, setChildren] = useState([]);
+  const [newChildLabel, setNewChildLabel] = useState('');
+  const [newChildFieldName, setNewChildFieldName] = useState('');
 
   const validateFieldName = (fieldName, fieldType) => {
     if (!fieldName) return { valid: false, message: 'Field name is required' };
@@ -91,6 +96,7 @@ const CreateGlobalFieldModal = ({ show, onHide, onSuccess }) => {
         options = { items: valueListOptions };
       }
 
+      // Build payload with children if PART or CHECK_BOX
       const payload = {
         label: formData.label.trim(),
         fieldName: formData.fieldName.trim(),
@@ -98,6 +104,18 @@ const CreateGlobalFieldModal = ({ show, onHide, onSuccess }) => {
         roleRequired: null,
         options: options
       };
+
+      // Add children for PART and CHECK_BOX fields
+      if ((formData.fieldType === 'PART' || formData.fieldType === 'CHECK_BOX') && children.length > 0) {
+        // Generate tempId for parent
+        const parentTempId = `parent_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+        payload.tempId = parentTempId;
+        payload.children = children.map(child => ({
+          label: child.label,
+          fieldName: child.fieldName,
+          parentTempId: parentTempId
+        }));
+      }
 
       await globalFieldAPI.createGlobalField(payload);
       
@@ -126,6 +144,9 @@ const CreateGlobalFieldModal = ({ show, onHide, onSuccess }) => {
     });
     setValueListOptions([]);
     setNewOptionInput('');
+    setChildren([]);
+    setNewChildLabel('');
+    setNewChildFieldName('');
     onHide();
   };
 
@@ -134,11 +155,21 @@ const CreateGlobalFieldModal = ({ show, onHide, onSuccess }) => {
       show={show} 
       onHide={handleClose} 
       size="lg"
+      centered
+      fullscreen="md-down"
     >
       <Modal.Header closeButton>
         <Modal.Title>Create Global Field</Modal.Title>
       </Modal.Header>
-      <Modal.Body>
+      <Modal.Body 
+        style={{ 
+          maxHeight: '70vh',
+          overflowY: 'auto',
+          overflowX: 'hidden',
+          padding: '1.5rem'
+        }}
+        className="modal-body-scrollable"
+      >
         <Form>
           <Row className="g-3">
             <Col md={12}>
@@ -194,6 +225,12 @@ const CreateGlobalFieldModal = ({ show, onHide, onSuccess }) => {
                     if (newType !== 'VALUE_LIST') {
                       setValueListOptions([]);
                       setNewOptionInput('');
+                    }
+                    // Reset children when changing away from PART/CHECK_BOX
+                    if (newType !== 'PART' && newType !== 'CHECK_BOX') {
+                      setChildren([]);
+                      setNewChildLabel('');
+                      setNewChildFieldName('');
                     }
                   }}
                   required
@@ -275,6 +312,102 @@ const CreateGlobalFieldModal = ({ show, onHide, onSuccess }) => {
                   <Form.Text className="text-muted">
                     Add options one by one.
                   </Form.Text>
+                </Form.Group>
+              </Col>
+            )}
+            {/* Children Fields Section for PART and CHECK_BOX */}
+            {(formData.fieldType === 'PART' || formData.fieldType === 'CHECK_BOX') && (
+              <Col md={12}>
+                <Form.Group>
+                  <div className="d-flex justify-content-between align-items-center mb-2">
+                    <Form.Label className="text-primary-custom mb-0">
+                      Children Fields (Optional)
+                    </Form.Label>
+                    <Button
+                      variant="outline-primary"
+                      size="sm"
+                      onClick={() => {
+                        if (!newChildLabel.trim() || !newChildFieldName.trim()) {
+                          toast.warning('Please enter both label and field name for the child field');
+                          return;
+                        }
+                        // Validate child fieldName format (should be snake_case for TEXT children)
+                        const snakeCaseRegex = /^[a-z][a-z0-9_]*$/;
+                        if (!snakeCaseRegex.test(newChildFieldName.trim())) {
+                          toast.warning('Child field name must be in snake_case format (e.g., first_name)');
+                          return;
+                        }
+                        // Check for duplicate fieldName
+                        if (children.some(child => child.fieldName === newChildFieldName.trim())) {
+                          toast.warning('This field name already exists in children');
+                          return;
+                        }
+                        setChildren(prev => [...prev, {
+                          label: newChildLabel.trim(),
+                          fieldName: newChildFieldName.trim()
+                        }]);
+                        setNewChildLabel('');
+                        setNewChildFieldName('');
+                      }}
+                      disabled={!newChildLabel.trim() || !newChildFieldName.trim()}
+                    >
+                      <Plus size={14} className="me-1" />
+                      Add Child
+                    </Button>
+                  </div>
+                  <Form.Text className="text-muted d-block mb-3">
+                    Add child fields that will be nested under this {formData.fieldType} field. Children are automatically created as TEXT type.
+                  </Form.Text>
+                  
+                  {/* Add Child Form */}
+                  <div className="border rounded p-3 mb-3" style={{ backgroundColor: '#f8f9fa' }}>
+                    <Row className="g-2">
+                      <Col md={5}>
+                        <Form.Control
+                          type="text"
+                          placeholder="Child Label (e.g., First Name)"
+                          value={newChildLabel}
+                          onChange={(e) => setNewChildLabel(e.target.value)}
+                          size="sm"
+                        />
+                      </Col>
+                      <Col md={5}>
+                        <Form.Control
+                          type="text"
+                          placeholder="Field Name (e.g., first_name)"
+                          value={newChildFieldName}
+                          onChange={(e) => setNewChildFieldName(e.target.value)}
+                          size="sm"
+                        />
+                      </Col>
+                    </Row>
+                  </div>
+
+                  {/* Children List */}
+                  {children.length > 0 && (
+                    <div className="border rounded p-2" style={{ maxHeight: '300px', overflowY: 'auto' }}>
+                      {children.map((child, idx) => (
+                        <div key={idx} className="d-flex align-items-center justify-content-between p-2 mb-2 border-bottom">
+                          <div className="flex-grow-1">
+                            <div className="fw-medium">{child.label}</div>
+                            <code className="text-muted" style={{ fontSize: '0.85rem' }}>
+                              {child.fieldName}
+                            </code>
+                          </div>
+                          <Button
+                            variant="outline-danger"
+                            size="sm"
+                            onClick={() => {
+                              setChildren(prev => prev.filter((_, i) => i !== idx));
+                            }}
+                            style={{ padding: '0.25rem 0.4rem' }}
+                          >
+                            <X size={12} />
+                          </Button>
+                        </div>
+                      ))}
+                    </div>
+                  )}
                 </Form.Group>
               </Col>
             )}

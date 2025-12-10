@@ -1020,7 +1020,10 @@ JSON.stringify(data, null, 2)
             variable,
             fieldType: field.fieldType || 'TEXT',
             roleRequired: field.roleRequired || 'TRAINER',
-            options: field.options || null
+            options: field.options || null,
+            // Store original field to access children if available
+            originalField: field,
+            children: field.children || null
         }
         handleSystemFieldSelect(mappedField)
     }
@@ -1031,25 +1034,79 @@ JSON.stringify(data, null, 2)
         
         // Call function from CustomFieldsPanel to add field to section
         if (addSystemFieldToSectionRef.current && typeof addSystemFieldToSectionRef.current.addSystemField === 'function') {
+            const fieldName = selectedSystemField.variable.replace(/[{}]/g, '') // Remove { } from variable name
+            const fieldType = selectedSystemField.fieldType || 'TEXT'
+            const fieldTypeUpper = String(fieldType).toUpperCase()
+            
+            // Check if this is a PART or CHECK_BOX field with children
+            const hasChildren = selectedSystemField.children && 
+                               Array.isArray(selectedSystemField.children) && 
+                               selectedSystemField.children.length > 0 &&
+                               (fieldTypeUpper === 'PART' || fieldTypeUpper === 'CHECK_BOX')
+            
+            // Generate tempId for parent if PART/CHECK_BOX
+            const parentTempId = (fieldTypeUpper === 'PART' || fieldTypeUpper === 'CHECK_BOX') 
+                ? `${fieldName}-parent` 
+                : null
+            
+            // Build parent field data
             const fieldData = {
                 label: selectedSystemField.label,
-                fieldName: selectedSystemField.variable.replace(/[{}]/g, ''), // Remove { } from variable name
-                fieldType: selectedSystemField.fieldType || 'TEXT',
+                fieldName: fieldName,
+                fieldType: fieldType,
                 roleRequired: selectedSystemField.roleRequired || 'TRAINER',
                 displayOrder: 1,
-                ...(selectedSystemField.options ? { options: selectedSystemField.options } : {})
+                ...(selectedSystemField.options ? { options: selectedSystemField.options } : {}),
+                ...(parentTempId ? { tempId: parentTempId } : {})
             }
             
-            // Call addSystemField and check return value
+            // Add parent field first
             const success = addSystemFieldToSectionRef.current.addSystemField(sectionIndex, fieldData)
             
-            if (success) {
-                // Only show success toast and close modal if field was successfully added
-                setShowSectionModal(false)
-                setSelectedSystemField(null)
+            if (!success) {
+                // If parent field failed to add, stop here
+                return
             }
-            // If success is false, addSystemField already showed warning toast, so we don't need to do anything else
+            
+            // If field has children, add them all with parentTempId
+            if (hasChildren) {
+                const children = selectedSystemField.children
+                let allChildrenAdded = true
+                
+                children.forEach((child, index) => {
+                    const childFieldName = child.fieldName || child.name
+                    if (!childFieldName) {
+                        console.warn(`Child field at index ${index} is missing fieldName, skipping`)
+                        return
+                    }
+                    
+                    const childFieldData = {
+                        label: child.label || childFieldName,
+                        fieldName: childFieldName,
+                        fieldType: 'TEXT', // Children are always TEXT type
+                        roleRequired: selectedSystemField.roleRequired || 'TRAINER',
+                        displayOrder: 1,
+                        parentTempId: parentTempId // Link to parent
+                    }
+                    
+                    const childSuccess = addSystemFieldToSectionRef.current.addSystemField(sectionIndex, childFieldData)
+                    
+                    if (!childSuccess) {
+                        allChildrenAdded = false
+                        console.warn(`Failed to add child field: ${childFieldName}`)
+                    }
+                })
+                
+                if (!allChildrenAdded) {
+                    toast.warning('Parent field added, but some children failed to add')
+                }
+            }
+            
+            // Close modal and reset state
+            setShowSectionModal(false)
+            setSelectedSystemField(null)
         } else {
+            console.error('❌ [Add Field] addSystemField function not available')
             toast.error('Failed to add field to section')
         }
     }

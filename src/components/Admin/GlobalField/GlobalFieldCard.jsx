@@ -1,6 +1,6 @@
 import React from 'react';
-import { Card } from 'react-bootstrap';
-import { FileText, ThreeDotsVertical, Pencil, Trash } from 'react-bootstrap-icons';
+import { Card, Badge } from 'react-bootstrap';
+import { FileText, ThreeDotsVertical, Pencil, Trash, Folder } from 'react-bootstrap-icons';
 import PortalUnifiedDropdown from '../../Common/PortalUnifiedDropdown';
 import { PermissionWrapper } from '../../Common';
 import { PERMISSION_IDS } from '../../../constants/permissionIds';
@@ -100,7 +100,15 @@ const GlobalFieldCard = ({ field, onViewDetail, onEdit, onDelete }) => {
         
         {/* Field Name */}
         <div style={{ flexShrink: 0 }}>
-          <small className="text-muted d-block mb-1">Field Name:</small>
+          <div className="d-flex align-items-center justify-content-between mb-1">
+            <small className="text-muted">Field Name:</small>
+            {field.children && Array.isArray(field.children) && field.children.length > 0 && (
+              <Badge bg="info" className="d-flex align-items-center">
+                <Folder size={10} className="me-1" />
+                {field.children.length} child{field.children.length !== 1 ? 'ren' : ''}
+              </Badge>
+            )}
+          </div>
           <code 
             className="text-dark d-block" 
             style={{ 
