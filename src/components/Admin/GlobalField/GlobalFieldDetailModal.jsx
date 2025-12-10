@@ -1,14 +1,18 @@
-import React from 'react';
-import { Modal, Badge, ListGroup } from 'react-bootstrap';
+import React, { useState } from 'react';
+import { Modal, Badge, ListGroup, Collapse } from 'react-bootstrap';
 import { 
   X, 
   FileText, 
   Person,
   Calendar,
-  Clock
+  Clock,
+  ChevronDown,
+  ChevronRight
 } from 'react-bootstrap-icons';
 
 const GlobalFieldDetailModal = ({ show, onHide, field }) => {
+  const [showChildren, setShowChildren] = useState(false);
+  
   if (!field) return null;
 
   const formatDateTime = (dateString) => {
@@ -180,7 +184,7 @@ const GlobalFieldDetailModal = ({ show, onHide, field }) => {
           )}
 
           {field.updatedAt && (
-            <ListGroup.Item className="px-0 py-3">
+            <ListGroup.Item className="px-0 py-3 border-bottom">
               <div className="d-flex align-items-center mb-2">
                 <Clock className="text-primary-custom me-3" size={20} />
                 <div className="flex-grow-1">
@@ -188,6 +192,55 @@ const GlobalFieldDetailModal = ({ show, onHide, field }) => {
                   <span className="text-dark">{formatDateTime(field.updatedAt)}</span>
                 </div>
               </div>
+            </ListGroup.Item>
+          )}
+
+          {/* Children Fields Section */}
+          {(field.children && Array.isArray(field.children) && field.children.length > 0) && (
+            <ListGroup.Item className="px-0 py-3">
+              <div 
+                className="d-flex align-items-center mb-2 cursor-pointer"
+                onClick={() => setShowChildren(!showChildren)}
+                style={{ cursor: 'pointer' }}
+              >
+                <FileText className="text-primary-custom me-3" size={20} />
+                <div className="flex-grow-1">
+                  <div className="d-flex align-items-center justify-content-between">
+                    <div>
+                      <strong className="text-muted small d-block mb-1">Children Fields</strong>
+                      <span className="text-dark">
+                        {field.children.length} child{field.children.length !== 1 ? 'ren' : ''}
+                      </span>
+                    </div>
+                    <div className="ms-2">
+                      {showChildren ? <ChevronDown size={16} /> : <ChevronRight size={16} />}
+                    </div>
+                  </div>
+                </div>
+              </div>
+              <Collapse in={showChildren}>
+                <div className="mt-3">
+                  <div className="border rounded p-3" style={{ backgroundColor: '#f8f9fa' }}>
+                    {field.children.map((child, idx) => (
+                      <div key={child.id || idx} className="mb-3 pb-3 border-bottom" style={{ paddingLeft: '1rem' }}>
+                        <div className="d-flex align-items-start">
+                          <div className="flex-grow-1">
+                            <div className="d-flex align-items-center mb-1">
+                              <strong className="me-2">{child.label || 'N/A'}</strong>
+                              <Badge bg="secondary" className="me-2">
+                                {child.fieldType || 'TEXT'}
+                              </Badge>
+                            </div>
+                            <code className="text-muted" style={{ fontSize: '0.85rem' }}>
+                              {child.fieldName || 'N/A'}
+                            </code>
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </Collapse>
             </ListGroup.Item>
           )}
         </ListGroup>

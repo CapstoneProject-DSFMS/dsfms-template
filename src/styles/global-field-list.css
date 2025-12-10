@@ -122,3 +122,33 @@
   }
 }
 
+/* Create Global Field Modal - Fixed Height with Scroll */
+.modal-body-scrollable {
+  max-height: 70vh !important;
+  overflow-y: auto !important;
+  overflow-x: hidden !important;
+}
+
+/* Responsive for tablet */
+@media (max-width: 992px) {
+  .modal-body-scrollable {
+    max-height: 65vh !important;
+  }
+}
+
+/* Responsive for mobile */
+@media (max-width: 768px) {
+  .modal-body-scrollable {
+    max-height: 60vh !important;
+    padding: 1rem !important;
+  }
+}
+
+/* Extra small mobile */
+@media (max-width: 576px) {
+  .modal-body-scrollable {
+    max-height: 55vh !important;
+    padding: 0.75rem !important;
+  }
+}
+

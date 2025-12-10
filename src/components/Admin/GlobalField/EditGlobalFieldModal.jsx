@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { Modal, Form, Button, Spinner } from 'react-bootstrap';
-import { X, Save } from 'react-bootstrap-icons';
+import { Modal, Form, Button, Spinner, Row, Col, Alert } from 'react-bootstrap';
+import { X, Save, Plus, Pencil } from 'react-bootstrap-icons';
 import { toast } from 'react-toastify';
 import { globalFieldAPI } from '../../../api';
 
@@ -14,6 +14,11 @@ const EditGlobalFieldModal = ({ show, onHide, field, onSuccess }) => {
   const [errors, setErrors] = useState({});
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [loadingField, setLoadingField] = useState(false);
+  // Children fields state for PART and CHECK_BOX
+  const [children, setChildren] = useState([]);
+  const [newChildLabel, setNewChildLabel] = useState('');
+  const [newChildFieldName, setNewChildFieldName] = useState('');
+  const [editingChildIndex, setEditingChildIndex] = useState(null);
 
   useEffect(() => {
     const loadFieldDetail = async () => {
@@ -42,6 +47,16 @@ const EditGlobalFieldModal = ({ show, onHide, field, onSuccess }) => {
             fieldType: normalizedFieldType,
             options: fieldDetail.options || field.options || null
           });
+          // Load children if field has them
+          if (fieldDetail.children && Array.isArray(fieldDetail.children)) {
+            setChildren(fieldDetail.children.map(child => ({
+              id: child.id,
+              label: child.label || '',
+              fieldName: child.fieldName || ''
+            })));
+          } else {
+            setChildren([]);
+          }
           setErrors({});
         } catch (error) {
           console.error('Error loading field detail:', error);
@@ -52,6 +67,16 @@ const EditGlobalFieldModal = ({ show, onHide, field, onSuccess }) => {
             fieldType: field.fieldType || 'TEXT',
             options: field.options || null
           });
+          // Load children if field has them
+          if (field.children && Array.isArray(field.children)) {
+            setChildren(field.children.map(child => ({
+              id: child.id,
+              label: child.label || '',
+              fieldName: child.fieldName || ''
+            })));
+          } else {
+            setChildren([]);
+          }
           setErrors({});
         } finally {
           setLoadingField(false);
@@ -114,6 +139,27 @@ const EditGlobalFieldModal = ({ show, onHide, field, onSuccess }) => {
         options: formData.options || null
       };
 
+      // Add children for PART and CHECK_BOX fields (complete replacement strategy)
+      if (formData.fieldType === 'PART' || formData.fieldType === 'CHECK_BOX') {
+        payload.children = children.map(child => {
+          // If child has id, it's existing - include id to keep/update it
+          if (child.id) {
+            return {
+              id: child.id,
+              label: child.label.trim(),
+              // Only include fieldName if it's a new field (no id) or if updating
+              ...(child.fieldName && { fieldName: child.fieldName.trim() })
+            };
+          } else {
+            // New child - must have label and fieldName
+            return {
+              label: child.label.trim(),
+              fieldName: child.fieldName.trim()
+            };
+          }
+        });
+      }
+
       await globalFieldAPI.updateGlobalField(field.id, payload);
       
       toast.success('Global field updated successfully');
@@ -140,6 +186,10 @@ const EditGlobalFieldModal = ({ show, onHide, field, onSuccess }) => {
       options: null
     });
     setErrors({});
+    setChildren([]);
+    setNewChildLabel('');
+    setNewChildFieldName('');
+    setEditingChildIndex(null);
     onHide();
   };
 
@@ -241,6 +291,164 @@ const EditGlobalFieldModal = ({ show, onHide, field, onSuccess }) => {
               {errors.fieldType}
             </Form.Control.Feedback>
           </Form.Group>
+
+          {/* Children Fields Section for PART and CHECK_BOX */}
+          {(formData.fieldType === 'PART' || formData.fieldType === 'CHECK_BOX') && (
+            <Form.Group className="mb-3">
+              <div className="d-flex justify-content-between align-items-center mb-2">
+                <Form.Label className="fw-medium mb-0">
+                  Children Fields
+                </Form.Label>
+                <Button
+                  variant="outline-primary"
+                  size="sm"
+                  onClick={() => {
+                    if (!newChildLabel.trim() || !newChildFieldName.trim()) {
+                      toast.warning('Please enter both label and field name for the child field');
+                      return;
+                    }
+                    // Validate child fieldName format (should be snake_case for TEXT children)
+                    const snakeCaseRegex = /^[a-z][a-z0-9_]*$/;
+                    if (!snakeCaseRegex.test(newChildFieldName.trim())) {
+                      toast.warning('Child field name must be in snake_case format (e.g., first_name)');
+                      return;
+                    }
+                    // Check for duplicate fieldName
+                    if (children.some(child => child.fieldName === newChildFieldName.trim())) {
+                      toast.warning('This field name already exists in children');
+                      return;
+                    }
+                    setChildren(prev => [...prev, {
+                      label: newChildLabel.trim(),
+                      fieldName: newChildFieldName.trim()
+                    }]);
+                    setNewChildLabel('');
+                    setNewChildFieldName('');
+                  }}
+                  disabled={!newChildLabel.trim() || !newChildFieldName.trim()}
+                >
+                  <Plus size={14} className="me-1" />
+                  Add Child
+                </Button>
+              </div>
+              <Form.Text className="text-muted d-block mb-3">
+                Manage child fields nested under this {formData.fieldType} field. Children not included will be deleted. Children are automatically TEXT type.
+              </Form.Text>
+              
+              {/* Add Child Form */}
+              <div className="border rounded p-3 mb-3" style={{ backgroundColor: '#f8f9fa' }}>
+                <Row className="g-2">
+                  <Col md={5}>
+                    <Form.Control
+                      type="text"
+                      placeholder="Child Label (e.g., First Name)"
+                      value={newChildLabel}
+                      onChange={(e) => setNewChildLabel(e.target.value)}
+                      size="sm"
+                    />
+                  </Col>
+                  <Col md={5}>
+                    <Form.Control
+                      type="text"
+                      placeholder="Field Name (e.g., first_name)"
+                      value={newChildFieldName}
+                      onChange={(e) => setNewChildFieldName(e.target.value)}
+                      size="sm"
+                    />
+                  </Col>
+                </Row>
+              </div>
+
+              {/* Children List */}
+              {children.length > 0 && (
+                <div className="border rounded p-2" style={{ maxHeight: '300px', overflowY: 'auto' }}>
+                  {children.map((child, idx) => (
+                    <div key={child.id || idx} className="d-flex align-items-center justify-content-between p-2 mb-2 border-bottom">
+                      <div className="flex-grow-1">
+                        {editingChildIndex === idx ? (
+                          <Row className="g-2">
+                            <Col md={5}>
+                              <Form.Control
+                                type="text"
+                                size="sm"
+                                value={child.label}
+                                onChange={(e) => {
+                                  const updatedChildren = [...children];
+                                  updatedChildren[idx] = { ...updatedChildren[idx], label: e.target.value };
+                                  setChildren(updatedChildren);
+                                }}
+                              />
+                            </Col>
+                            <Col md={5}>
+                              <Form.Control
+                                type="text"
+                                size="sm"
+                                value={child.fieldName}
+                                onChange={(e) => {
+                                  const updatedChildren = [...children];
+                                  updatedChildren[idx] = { ...updatedChildren[idx], fieldName: e.target.value };
+                                  setChildren(updatedChildren);
+                                }}
+                                disabled={!!child.id} // Can't change fieldName of existing children
+                              />
+                            </Col>
+                            <Col md={2}>
+                              <Button
+                                variant="outline-success"
+                                size="sm"
+                                onClick={() => setEditingChildIndex(null)}
+                                style={{ padding: '0.25rem 0.4rem' }}
+                              >
+                                <Save size={12} />
+                              </Button>
+                            </Col>
+                          </Row>
+                        ) : (
+                          <>
+                            <div className="fw-medium">{child.label}</div>
+                            <code className="text-muted" style={{ fontSize: '0.85rem' }}>
+                              {child.fieldName}
+                            </code>
+                            {child.id && (
+                              <small className="text-muted d-block">(Existing)</small>
+                            )}
+                          </>
+                        )}
+                      </div>
+                      {editingChildIndex !== idx && (
+                        <div className="d-flex gap-1">
+                          <Button
+                            variant="outline-primary"
+                            size="sm"
+                            onClick={() => setEditingChildIndex(idx)}
+                            style={{ padding: '0.25rem 0.4rem' }}
+                          >
+                            <Pencil size={12} />
+                          </Button>
+                          <Button
+                            variant="outline-danger"
+                            size="sm"
+                            onClick={() => {
+                              setChildren(prev => prev.filter((_, i) => i !== idx));
+                              setEditingChildIndex(null);
+                            }}
+                            style={{ padding: '0.25rem 0.4rem' }}
+                          >
+                            <X size={12} />
+                          </Button>
+                        </div>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              )}
+              {children.length === 0 && (
+                <Alert variant="info" className="mb-0">
+                  No children fields. Add children using the form above.
+                </Alert>
+              )}
+            </Form.Group>
+          )}
           </>
           )}
         </Modal.Body>

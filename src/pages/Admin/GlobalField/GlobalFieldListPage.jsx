@@ -30,8 +30,12 @@ const GlobalFieldListPage = () => {
       setError(null);
       
       const response = await globalFieldAPI.getGlobalFields();
+      // API returns hierarchical structure with children array for PART/CHECK_BOX fields
+      // Response format: { data: [...], message: "..." } or direct array
       const fields = response?.data || response || [];
-      setGlobalFields(fields);
+      // Ensure fields is an array and handle hierarchical structure
+      const fieldsArray = Array.isArray(fields) ? fields : [];
+      setGlobalFields(fieldsArray);
     } catch (error) {
       console.error('Error loading global fields:', error);
       setError(error.response?.data?.message || error.message || 'Failed to load global fields');
