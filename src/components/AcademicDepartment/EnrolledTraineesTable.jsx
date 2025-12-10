@@ -90,7 +90,11 @@ const EnrolledTraineesTable = ({ courseId, loading = false }) => {
       // Handle response format: { message: "...", data: { trainee: {...}, subjects: [...], totalSubjects: ... } }
       const responseData = response?.data || response;
       
-      // Map API response to component format
+      // Filter out cancelled enrollments and map API response to component format
+      const filteredSubjects = (responseData.subjects || []).filter(item => 
+        item.enrollment?.status !== 'CANCELLED'
+      );
+      
       const transformedTrainee = {
         id: trainee.id,
         eid: responseData.trainee?.eid || trainee.eid,
@@ -98,8 +102,8 @@ const EnrolledTraineesTable = ({ courseId, loading = false }) => {
         email: responseData.trainee?.email || trainee.email,
         department: responseData.trainee?.department || null,
         userId: responseData.trainee?.userId || trainee.userId,
-        subjectCount: responseData.totalSubjects || 0,
-        subjects: (responseData.subjects || []).map(item => ({
+        subjectCount: filteredSubjects.length,
+        subjects: filteredSubjects.map(item => ({
           id: item.subject?.id,
           code: item.subject?.code,
           name: item.subject?.name,
