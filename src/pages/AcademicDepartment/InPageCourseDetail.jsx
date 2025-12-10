@@ -55,6 +55,7 @@ const InPageCourseDetail = ({ course, department } = {}) => {
   const [selectedTrainerToRemove, setSelectedTrainerToRemove] = useState(null);
   const [selectedTrainerToEdit, setSelectedTrainerToEdit] = useState(null);
   const [isAddingTrainer, setIsAddingTrainer] = useState(false);
+  const [refreshTraineesTrigger, setRefreshTraineesTrigger] = useState(0);
   
   // Course details state
   const [courseDetails, setCourseDetails] = useState(null);
@@ -833,6 +834,7 @@ const InPageCourseDetail = ({ course, department } = {}) => {
                     courseId={courseId}
                     loading={false}
                     title="Trainees Roster"
+                    refreshTrigger={refreshTraineesTrigger}
                   />
                 </Tab.Pane>
               )}
@@ -1116,8 +1118,8 @@ const InPageCourseDetail = ({ course, department } = {}) => {
         onClose={() => setShowDeleteBatchEnrollments(false)}
         courseId={courseId}
         onSuccess={() => {
-          // Optionally refresh course data after deletion
-          // You can reload course details here if needed
+          // Refresh trainee roster table after deletion
+          setRefreshTraineesTrigger(prev => prev + 1);
         }}
       />
     </Container>
