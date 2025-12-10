@@ -455,7 +455,7 @@ const UpcomingAssessmentsList = () => {
                           onClick={() => handleAccess(assessment)}
                           disabled={loading}
                         >
-                          {loading ? 'Processing...' : 'Access'}
+                          {loading ? 'Processing...' : 'View all forms'}
                         </button>
                       )}
                     </td>

@@ -1560,7 +1560,7 @@ console.log('🌐 Full S3 URL:', s3Url)
                     id="global-mapped-field-dropdown"
                     disabled={isLoadingGlobalFields}
                   >
-                    {isLoadingGlobalFields ? 'Loading Global Fields...' : 'Global Mapped Field'}
+                    {isLoadingGlobalFields ? 'Loading Global Fields...' : 'Global Field'}
                   </Dropdown.Toggle>
                   <Dropdown.Menu style={{ maxHeight: '400px', overflowY: 'auto' }}>
                     {isLoadingGlobalFields ? (

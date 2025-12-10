@@ -11,7 +11,7 @@ import courseAPI from '../../api/course';
 import subjectAPI from '../../api/subject';
 
 
-const EnrolledTraineesTable = ({ courseId, loading = false }) => {
+const EnrolledTraineesTable = ({ courseId, loading = false, refreshTrigger }) => {
   const [enrolledTrainees, setEnrolledTrainees] = useState([]);
   const [loadingEnrolled, setLoadingEnrolled] = useState(true);
   const [showSubjectModal, setShowSubjectModal] = useState(false);
@@ -80,7 +80,7 @@ const EnrolledTraineesTable = ({ courseId, loading = false }) => {
     if (courseId) {
       loadEnrolledTrainees();
     }
-  }, [courseId, loadEnrolledTrainees]); // Include loadEnrolledTrainees since it now depends on courseId
+  }, [courseId, loadEnrolledTrainees, refreshTrigger]); // Include refreshTrigger to reload when it changes
 
   const handleViewSubjects = async (trainee) => {
     try {

@@ -405,19 +405,25 @@ const TraineeSignatureRequiredList = ({ traineeId }) => {
                           </div>
                         </td>
                         <td className="border-neutral-200 align-middle text-center">
-                          <Form.Check
-                            type="checkbox"
-                            checked={assessment.status === 'READY_TO_SUBMIT' || signingAssessmentId === assessment.id}
-                            disabled={assessment.status === 'READY_TO_SUBMIT' || signingAssessmentId === assessment.id}
-                            onChange={() => {
-                              if (assessment.status === 'SIGNATURE_PENDING') {
-                                handleSign(assessment.id);
-                              }
-                            }}
-                            style={{
-                              cursor: assessment.status === 'SIGNATURE_PENDING' ? 'pointer' : 'not-allowed'
-                            }}
-                          />
+                          <div className="d-flex justify-content-center">
+                            <Button
+                              variant={assessment.status === 'READY_TO_SUBMIT' ? 'success' : 'primary'}
+                              size="sm"
+                              disabled={assessment.status === 'READY_TO_SUBMIT' || signingAssessmentId === assessment.id}
+                              onClick={() => {
+                                if (assessment.status === 'SIGNATURE_PENDING') {
+                                  handleSign(assessment.id);
+                                }
+                              }}
+                              className="d-flex align-items-center"
+                              style={{
+                                gap: '0.5rem'
+                              }}
+                            >
+                              <Pen size={14} />
+                              {assessment.status === 'READY_TO_SUBMIT' ? 'Signed' : 'Sign'}
+                            </Button>
+                          </div>
                         </td>
                       </tr>
                     ))}

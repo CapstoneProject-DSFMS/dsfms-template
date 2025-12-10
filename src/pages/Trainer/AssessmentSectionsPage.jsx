@@ -147,7 +147,7 @@ const TrainerAssessmentSectionsPage = () => {
       // Navigate to Assessment Review Requests page after 1.5 seconds
       setTimeout(() => {
         setIsApproving(false);
-        navigate(ROUTES.ASSESSMENT_REVIEW_REQUESTS);
+        navigate(ROUTES.DEPARTMENT_REVIEW_REQUESTS);
       }, 1500);
     } catch (error) {
       console.error('Error approving assessment:', error);
@@ -193,7 +193,7 @@ const TrainerAssessmentSectionsPage = () => {
       // Navigate to Assessment Review Requests page after 1.5 seconds
       setTimeout(() => {
         setIsRejecting(false);
-        navigate(ROUTES.ASSESSMENT_REVIEW_REQUESTS);
+        navigate(ROUTES.DEPARTMENT_REVIEW_REQUESTS);
       }, 1500);
     } catch (error) {
       console.error('Error rejecting assessment:', error);
