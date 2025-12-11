@@ -313,15 +313,17 @@ const SubjectDetailsView = ({ subjectId, courseId }) => {
           </div>
         </div>
         <div className="d-flex gap-2"> {/* Added div for buttons */}
-          <PermissionWrapper
-            permission={PERMISSION_IDS.UPDATE_SUBJECT}
-            fallback={null}
-          >
-            <Button variant="primary" onClick={() => setShowEditSubject(true)} className="d-flex align-items-center" size="sm">
-              <Pencil size={16} className="me-1" />
-              Edit Subject
-            </Button>
-          </PermissionWrapper>
+          {subject?.status === 'PLANNED' && (
+            <PermissionWrapper
+              permission={PERMISSION_IDS.UPDATE_SUBJECT}
+              fallback={null}
+            >
+              <Button variant="primary" onClick={() => setShowEditSubject(true)} className="d-flex align-items-center" size="sm">
+                <Pencil size={16} className="me-1" />
+                Edit Subject
+              </Button>
+            </PermissionWrapper>
+          )}
           <PermissionWrapper
             permission={PERMISSION_IDS.ARCHIVE_SUBJECT}
             fallback={null}

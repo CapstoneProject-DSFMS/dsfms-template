@@ -506,14 +506,16 @@ const InPageCourseDetail = ({ course, department } = {}) => {
 
         {/* Right Group - Subject Management & Edit Course */}
         <div className="d-flex gap-2">
-          <PermissionWrapper 
-            permission={PERMISSION_IDS.UPDATE_COURSE}
-            fallback={null}
-          >
-            <Button size="sm" variant="outline-secondary" onClick={() => setShowEditCourse(true)}>
-              <Pencil size={14} className="me-1" /> Edit Course
-            </Button>
-          </PermissionWrapper>
+          {courseDetails?.status === 'PLANNED' && (
+            <PermissionWrapper 
+              permission={PERMISSION_IDS.UPDATE_COURSE}
+              fallback={null}
+            >
+              <Button size="sm" variant="outline-secondary" onClick={() => setShowEditCourse(true)}>
+                <Pencil size={14} className="me-1" /> Edit Course
+              </Button>
+            </PermissionWrapper>
+          )}
           <div className="vr" style={{ height: '24px', margin: '0 8px' }}></div>
           <PermissionWrapper 
             permission={PERMISSION_IDS.CREATE_SUBJECT}
