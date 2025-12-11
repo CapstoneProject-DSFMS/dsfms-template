@@ -32,24 +32,24 @@ const TrainerActions = ({ trainer, onEdit, onDelete, editPermission }) => {
     : [PERMISSION_IDS.REMOVE_TRAINERS];
 
   return (
-    <PermissionWrapper 
+  <PermissionWrapper 
       permissions={permissions}
-      fallback={null}
-    >
-      <PortalUnifiedDropdown
-        align="end"
-        className="table-dropdown"
-        placement="bottom-end"
-        trigger={{
-          variant: 'link',
-          className: 'btn btn-link p-0 text-primary-custom',
-          style: { border: 'none', background: 'transparent' },
-          children: <ThreeDotsVertical size={16} />
-        }}
+    fallback={null}
+  >
+    <PortalUnifiedDropdown
+      align="end"
+      className="table-dropdown"
+      placement="bottom-end"
+      trigger={{
+        variant: 'link',
+        className: 'btn btn-link p-0 text-primary-custom',
+        style: { border: 'none', background: 'transparent' },
+        children: <ThreeDotsVertical size={16} />
+      }}
         items={items}
-      />
-    </PermissionWrapper>
-  );
+    />
+  </PermissionWrapper>
+);
 };
 
 export default TrainerActions;

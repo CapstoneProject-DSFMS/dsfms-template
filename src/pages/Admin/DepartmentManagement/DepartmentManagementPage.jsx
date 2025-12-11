@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { Container, Row, Col, Button, Card } from 'react-bootstrap';
 import { Plus } from 'react-bootstrap-icons';
 import { useNavigate } from 'react-router-dom';
@@ -50,61 +50,62 @@ const DepartmentManagementPage = () => {
   // Available users for department head selection
   const [availableUsers, setAvailableUsers] = useState([]);
 
-  // Load departments based on permission
-  useEffect(() => {
-    const loadDepartmentsData = async () => {
-      try {
-        setPageLoading(true);
-        let data;
-        
-        if (hasViewAll) {
-          // Admin: fetch all departments
-          data = await departmentAPI.getDepartments();
-        } else {
-          // Dept Head: fetch my department only, wrap in array for consistency
-          const myDept = await departmentAPI.getMyDepartment();
-          data = myDept ? [myDept] : [];
-        }
-        
-        // Transform data
-        const transformed = data.map(dept => ({
-          id: dept.id,
-          name: dept.name,
-          code: dept.code,
-          type: dept.code,
-          description: dept.description,
-          departmentHeadId: dept.headUserId,
-          departmentHead: dept.headUser ? {
-            id: dept.headUser.id,
-            name: dept.headUser.name || dept.headUser.email,
-            email: dept.headUser.email,
-            role: dept.headUser.role,
-            lastName: dept.headUser.lastName,
-            middleName: dept.headUser.middleName,
-            firstName: dept.headUser.firstName
-          } : null,
-          status: dept.isActive === true ? 'ACTIVE' : 'INACTIVE',
-          coursesCount: dept.courseCount || dept.coursesCount || 0,
-          traineesCount: dept.traineeCount || dept.traineesCount || 0,
-          trainersCount: dept.trainerCount || dept.trainersCount || 0,
-          createdAt: dept.createdAt,
-          updatedAt: dept.updatedAt,
-          deletedAt: dept.deletedAt,
-          courses: dept.courses || []
-        }));
-        
-        setDepartmentData(transformed);
-      } catch (error) {
-        console.error('Error loading departments:', error);
-        toast.error('Failed to load departments');
-        setDepartmentData([]);
-      } finally {
-        setPageLoading(false);
+  // Load departments based on permission - extracted as function for reuse
+  const loadDepartmentsData = useCallback(async () => {
+    try {
+      setPageLoading(true);
+      let data;
+      
+      if (hasViewAll) {
+        // Admin: fetch all departments
+        data = await departmentAPI.getDepartments();
+      } else {
+        // Dept Head: fetch my department only, wrap in array for consistency
+        const myDept = await departmentAPI.getMyDepartment();
+        data = myDept ? [myDept] : [];
       }
-    };
-
-    loadDepartmentsData();
+      
+      // Transform data
+      const transformed = data.map(dept => ({
+        id: dept.id,
+        name: dept.name,
+        code: dept.code,
+        type: dept.code,
+        description: dept.description,
+        departmentHeadId: dept.headUserId,
+        departmentHead: dept.headUser ? {
+          id: dept.headUser.id,
+          name: dept.headUser.name || dept.headUser.email,
+          email: dept.headUser.email,
+          role: dept.headUser.role,
+          lastName: dept.headUser.lastName,
+          middleName: dept.headUser.middleName,
+          firstName: dept.headUser.firstName
+        } : null,
+        status: dept.isActive === true ? 'ACTIVE' : 'INACTIVE',
+        coursesCount: dept.courseCount || dept.coursesCount || 0,
+        traineesCount: dept.traineeCount || dept.traineesCount || 0,
+        trainersCount: dept.trainerCount || dept.trainersCount || 0,
+        createdAt: dept.createdAt,
+        updatedAt: dept.updatedAt,
+        deletedAt: dept.deletedAt,
+        courses: dept.courses || []
+      }));
+      
+      setDepartmentData(transformed);
+    } catch (error) {
+      console.error('Error loading departments:', error);
+      toast.error('Failed to load departments');
+      setDepartmentData([]);
+    } finally {
+      setPageLoading(false);
+    }
   }, [hasViewAll]);
+
+  // Load departments on mount and when hasViewAll changes
+  useEffect(() => {
+    loadDepartmentsData();
+  }, [loadDepartmentsData]);
 
   // Load available users for department head selection
   useEffect(() => {
@@ -164,6 +165,8 @@ const DepartmentManagementPage = () => {
         toast.success('Department updated successfully');
       }
       handleCloseModal();
+      // Reload departments data to show newly created/updated department
+      await loadDepartmentsData();
     } catch (error) {
       console.error('Error saving department:', error);
       const errorData = error?.response?.data;
@@ -202,6 +205,8 @@ const DepartmentManagementPage = () => {
           toast.success('Department enabled successfully');
         }
         handleCloseDisableModal();
+        // Reload departments data to reflect status change immediately
+        await loadDepartmentsData();
       }
     } catch (error) {
       console.error('Error toggling department status:', error);

@@ -18,7 +18,6 @@ export const departmentAPI = {
     try {
       const response = await apiClient.get('/departments', {
         params: {
-          includeDeleted: true,
           ...params
         }
       });
@@ -34,11 +33,7 @@ export const departmentAPI = {
   // Get department by ID
   getDepartmentById: async (id) => {
     try {
-      const response = await apiClient.get(`/departments/${id}`, {
-        params: {
-          includeDeleted: true,
-        }
-      });
+      const response = await apiClient.get(`/departments/${id}`);
       // Handle response format: { message: "...", data: { id, name, courses, ... } }
       return response.data?.data || response.data || {};
     } catch (error) {

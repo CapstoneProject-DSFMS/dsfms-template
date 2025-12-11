@@ -46,8 +46,8 @@ const UserRow = ({ user, index, onView, onEdit, onDisable }) => {
         </div>
       </td>
       
-      <td className="align-middle show-mobile">
-        <span className="text-dark">
+      <td className="align-middle show-mobile" style={{ maxWidth: '200px', overflow: 'hidden' }}>
+        <span className="text-dark" style={{ display: 'block', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
           {user.email}
         </span>
       </td>

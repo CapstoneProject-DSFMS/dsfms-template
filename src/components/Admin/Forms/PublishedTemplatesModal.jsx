@@ -328,6 +328,7 @@ const PublishedTemplatesModal = ({ show, onHide }) => {
           setShowDetailModal(false);
           handleCreateVersion(template);
         }}
+        onTemplateStatusChange={loadPublishedTemplates}
       />
     </>
   );

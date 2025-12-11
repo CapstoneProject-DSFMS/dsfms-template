@@ -424,20 +424,20 @@ const BulkImportTraineesModal = ({ show, onClose, onImport, loading = false }) =
                       
                       return (
                         <tr key={item.id} className={hasError ? 'table-danger' : (isMatched ? 'table-success' : '')}>
-                          <td>{item.rowNumber || item.id}</td>
-                          <td>{item.eid || '-'}</td>
-                          <td>{item.email || '-'}</td>
-                          <td className="text-center">
+                        <td>{item.rowNumber || item.id}</td>
+                        <td>{item.eid || '-'}</td>
+                        <td>{item.email || '-'}</td>
+                        <td className="text-center">
                             {getStatusIcon(isMatched ? 'valid' : 'invalid')}
-                          </td>
-                          <td>
+                        </td>
+                        <td>
                             {item.errors && item.errors.length > 0 && (
-                              <small className="text-danger">
-                                {item.errors.length > 1 ? `${item.errors[0]} (+${item.errors.length - 1} more)` : item.errors[0]}
-                              </small>
-                            )}
-                          </td>
-                        </tr>
+                            <small className="text-danger">
+                              {item.errors.length > 1 ? `${item.errors[0]} (+${item.errors.length - 1} more)` : item.errors[0]}
+                            </small>
+                          )}
+                        </td>
+                      </tr>
                       );
                     })}
                   </tbody>

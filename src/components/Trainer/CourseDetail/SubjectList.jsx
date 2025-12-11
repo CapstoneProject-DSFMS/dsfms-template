@@ -6,6 +6,7 @@ import { ROUTES } from '../../../constants/routes';
 import { LoadingSkeleton, SortIcon, PortalUnifiedDropdown, SearchBar } from '../../Common';
 import TrainerFilterPanel from '../TrainerFilterPanel';
 import useTableSort from '../../../hooks/useTableSort';
+import courseAPI from '../../../api/course';
 import '../../../styles/scrollable-table.css';
 
 const SubjectList = ({ courseId }) => {
@@ -18,74 +19,38 @@ const SubjectList = ({ courseId }) => {
 
   useEffect(() => {
     const fetchSubjects = async () => {
+      if (!courseId) {
+        setLoading(false);
+        setSubjects([]);
+        return;
+      }
+
       try {
         setLoading(true);
-        // Simulate API call
-        await new Promise(resolve => setTimeout(resolve, 1000));
-        
-        // Mock data
-        const mockSubjects = [
-          {
-            id: 1,
-            title: 'Safety Procedures - Module 1',
-            code: 'SP-101',
-            duration: '2 hours',
-            status: 'completed',
-            instructor: 'Dr. Smith',
-            completionDate: '2024-01-20',
-            progress: 100,
-            description: 'Introduction to aviation safety procedures and protocols'
-          },
-          {
-            id: 2,
-            title: 'Risk Assessment Fundamentals',
-            code: 'RAF-102',
-            duration: '3 hours',
-            status: 'completed',
-            instructor: 'Dr. Smith',
-            completionDate: '2024-01-25',
-            progress: 100,
-            description: 'Understanding risk assessment methodologies in aviation'
-          },
-          {
-            id: 3,
-            title: 'Emergency Response Protocols',
-            code: 'ERP-103',
-            duration: '2.5 hours',
-            status: 'in_progress',
-            instructor: 'Dr. Smith',
-            completionDate: null,
-            progress: 65,
-            description: 'Emergency response procedures and communication protocols'
-          },
-          {
-            id: 4,
-            title: 'Regulatory Compliance',
-            code: 'RC-104',
-            duration: '4 hours',
-            status: 'pending',
-            instructor: 'Dr. Smith',
-            completionDate: null,
-            progress: 0,
-            description: 'Understanding aviation regulations and compliance requirements'
-          },
-          {
-            id: 5,
-            title: 'Safety Management Systems',
-            code: 'SMS-105',
-            duration: '3.5 hours',
-            status: 'pending',
-            instructor: 'Dr. Smith',
-            completionDate: null,
-            progress: 0,
-            description: 'Implementation and management of safety management systems'
-          }
-        ];
-        
-        setSubjects(mockSubjects);
+        setError(null);
+
+        // Call API to get course data
+        const courseData = await courseAPI.getCourseById(courseId);
+
+        // Extract subjects from course response
+        const apiSubjects = courseData.subjects || [];
+
+        // Map subjects - chỉ dùng data thật từ API, không tự tạo thêm
+        const mappedSubjects = apiSubjects.map(subject => ({
+          id: subject.id,
+          title: subject.name,
+          code: subject.code,
+          duration: subject.duration, // Giữ nguyên format từ API
+          status: subject.status, // Giữ nguyên format từ API
+          description: subject.description,
+          progress: subject.progress // Chỉ dùng nếu API có trả về
+        })).filter(subject => subject.id); // Chỉ lấy subjects có id
+
+        setSubjects(mappedSubjects);
       } catch (err) {
-        setError('Failed to load subjects');
+        setError(err?.response?.data?.message || err?.message || 'Failed to load subjects');
         console.error('Error fetching subjects:', err);
+        setSubjects([]);
       } finally {
         setLoading(false);
       }
@@ -95,13 +60,21 @@ const SubjectList = ({ courseId }) => {
   }, [courseId]);
 
   const getStatusBadge = (status) => {
-    const statusConfig = {
-      pending: { variant: 'warning', text: 'Pending' },
-      in_progress: { variant: 'info', text: 'In Progress' },
-      completed: { variant: 'success', text: 'Completed' }
-    };
+    if (!status) return null;
     
-    const config = statusConfig[status] || { variant: 'secondary', text: 'Unknown' };
+    const statusUpper = String(status).toUpperCase();
+    let config = { variant: 'secondary', text: status };
+    
+    if (statusUpper === 'COMPLETED' || statusUpper === 'COMPLETE') {
+      config = { variant: 'success', text: 'Completed' };
+    } else if (statusUpper === 'ON_GOING' || statusUpper === 'ONGOING' || statusUpper === 'ON-GOING' || statusUpper === 'IN_PROGRESS') {
+      config = { variant: 'info', text: 'In Progress' };
+    } else if (statusUpper === 'PLANNED' || statusUpper === 'PENDING') {
+      config = { variant: 'warning', text: 'Pending' };
+    } else if (statusUpper === 'ARCHIVED' || statusUpper === 'DELETED') {
+      config = { variant: 'secondary', text: 'Archived' };
+    }
+    
     return <Badge bg={config.variant}>{config.text}</Badge>;
   };
 
@@ -274,9 +247,6 @@ const SubjectList = ({ courseId }) => {
               <SortableHeader columnKey="status" className="show-mobile">
                 Status
               </SortableHeader>
-              <SortableHeader columnKey="progress" className="hide-mobile">
-                Progress
-              </SortableHeader>
               <th className="border-neutral-200 text-primary-custom fw-semibold text-center show-mobile">
                 Actions
               </th>
@@ -287,41 +257,36 @@ const SubjectList = ({ courseId }) => {
               <tr key={subject.id}>
                 <td className="border-neutral-200 align-middle">
                   <div>
-                    <h6 className="mb-1 fw-medium">{subject.title}</h6>
+                    <h6 className="mb-1 fw-medium">{subject.title || '-'}</h6>
+                    {subject.description && (
                     <small className="text-muted">
                       {subject.description}
                     </small>
+                    )}
                   </div>
                 </td>
                 <td className="border-neutral-200 align-middle">
+                  {subject.code ? (
                   <div className="d-flex align-items-center">
                     <Book size={16} className="me-2 text-muted" />
                     <span>{subject.code}</span>
                   </div>
+                  ) : (
+                    <span className="text-muted">-</span>
+                  )}
                 </td>
                 <td className="border-neutral-200 align-middle hide-mobile">
+                  {subject.duration != null && subject.duration !== undefined ? (
                   <div className="d-flex align-items-center">
                     <Clock size={16} className="me-2 text-muted" />
                     <span>{subject.duration}</span>
                   </div>
+                  ) : (
+                    <span className="text-muted">-</span>
+                  )}
                 </td>
                 <td className="border-neutral-200 align-middle">
-                  {getStatusBadge(subject.status)}
-                </td>
-                <td className="border-neutral-200 align-middle hide-mobile">
-                  <div className="d-flex align-items-center">
-                    <div className="progress flex-grow-1 me-2" style={{ height: '8px' }}>
-                      <div 
-                        className="progress-bar" 
-                        role="progressbar" 
-                        style={{ width: `${subject.progress}%` }}
-                        aria-valuenow={subject.progress} 
-                        aria-valuemin="0" 
-                        aria-valuemax="100"
-                      ></div>
-                    </div>
-                    <small className="text-muted">{subject.progress}%</small>
-                  </div>
+                  {subject.status ? getStatusBadge(subject.status) : <span className="text-muted">-</span>}
                 </td>
                 <td className="border-neutral-200 align-middle text-center">
                   <PortalUnifiedDropdown

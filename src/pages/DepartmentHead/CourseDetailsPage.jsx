@@ -142,7 +142,7 @@ const SubjectRow = ({ subject, index, onView }) => {
       label: 'View Details',
       icon: <Eye />,
       onClick: () => onView(subject),
-      permission: PERMISSION_IDS.VIEW_SUBJECT_DETAIL
+      permission: PERMISSION_IDS.VIEW_SUBJECT_DETAILS
     }
   ];
 
@@ -183,7 +183,7 @@ const SubjectRow = ({ subject, index, onView }) => {
       </td>
       <td className="align-middle text-center show-mobile">
         <PermissionWrapper 
-          permissions={[PERMISSION_IDS.VIEW_SUBJECT_DETAIL]}
+          permissions={[PERMISSION_IDS.VIEW_SUBJECT_DETAILS]}
           fallback={null}
         >
           <PortalUnifiedDropdown

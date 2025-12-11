@@ -6,6 +6,7 @@ import { ROUTES } from '../../../constants/routes';
 import { LoadingSkeleton, SortIcon, PortalUnifiedDropdown, SearchBar } from '../../Common';
 import TrainerFilterPanel from '../TrainerFilterPanel';
 import useTableSort from '../../../hooks/useTableSort';
+import courseAPI from '../../../api/course';
 import '../../../styles/scrollable-table.css';
 
 const TraineeList = ({ courseId }) => {
@@ -18,84 +19,51 @@ const TraineeList = ({ courseId }) => {
 
   useEffect(() => {
     const fetchTrainees = async () => {
+      if (!courseId) {
+        setLoading(false);
+        setTrainees([]);
+        return;
+      }
+
       try {
         setLoading(true);
-        // Simulate API call
-        await new Promise(resolve => setTimeout(resolve, 1000));
+        setError(null);
+
+        // Call API to get course trainees
+        const response = await courseAPI.getCourseTrainees(courseId);
         
-        // Mock data
-        const mockTrainees = [
-          {
-            id: 1,
-            name: 'John Doe',
-            email: 'john.doe@email.com',
-            employeeId: 'EMP001',
-            department: 'Operations',
-            enrollmentDate: '2024-01-15',
-            status: 'active',
-            progress: 75,
-            lastActivity: '2024-01-20',
-            completedSubjects: 6,
-            totalSubjects: 8
-          },
-          {
-            id: 2,
-            name: 'Jane Smith',
-            email: 'jane.smith@email.com',
-            employeeId: 'EMP002',
-            department: 'Maintenance',
-            enrollmentDate: '2024-01-16',
-            status: 'active',
-            progress: 60,
-            lastActivity: '2024-01-19',
-            completedSubjects: 5,
-            totalSubjects: 8
-          },
-          {
-            id: 3,
-            name: 'Mike Johnson',
-            email: 'mike.johnson@email.com',
-            employeeId: 'EMP003',
-            department: 'Safety',
-            enrollmentDate: '2024-01-17',
-            status: 'completed',
-            progress: 100,
-            lastActivity: '2024-01-25',
-            completedSubjects: 8,
-            totalSubjects: 8
-          },
-          {
-            id: 4,
-            name: 'Sarah Wilson',
-            email: 'sarah.wilson@email.com',
-            employeeId: 'EMP004',
-            department: 'Quality',
-            enrollmentDate: '2024-01-18',
-            status: 'inactive',
-            progress: 25,
-            lastActivity: '2024-01-22',
-            completedSubjects: 2,
-            totalSubjects: 8
-          },
-          {
-            id: 5,
-            name: 'David Brown',
-            email: 'david.brown@email.com',
-            employeeId: 'EMP005',
-            department: 'Training',
-            enrollmentDate: '2024-01-19',
-            status: 'active',
-            progress: 40,
-            lastActivity: '2024-01-23',
-            completedSubjects: 3,
-            totalSubjects: 8
-          }
-        ];
-        
-        setTrainees(mockTrainees);
+        // Handle response format: { message: "...", data: { trainees: [...] } } or { trainees: [...] }
+        const traineesList = response?.data?.trainees || response?.trainees || [];
+
+        // Map API response to component format - chỉ dùng data thật từ API
+        const mappedTrainees = traineesList.map((trainee) => {
+          // Build full name from firstName, middleName, lastName
+          const nameParts = [
+            trainee.firstName,
+            trainee.middleName,
+            trainee.lastName
+          ].filter(Boolean);
+          const fullName = nameParts.join(' ') || null;
+
+          return {
+            id: trainee.id,
+            name: fullName,
+            email: trainee.email,
+            employeeId: trainee.eid, // Employee ID từ API
+            department: trainee.department?.name || trainee.department, // Nếu API có
+            enrollmentDate: trainee.enrollmentDate || trainee.enrolledAt, // Nếu API có
+            status: trainee.status, // Nếu API có
+            progress: trainee.progress, // Nếu API có
+            lastActivity: trainee.lastActivity || trainee.lastActivityDate, // Nếu API có
+            subjectCount: trainee.subjectCount // Nếu API có
+          };
+        }).filter(trainee => trainee.id); // Chỉ lấy trainees có id
+
+        setTrainees(mappedTrainees);
       } catch (err) {
-        setError('Failed to load trainees');
+        setError(err?.response?.data?.message || err?.message || 'Failed to load trainees');
         console.error('Error fetching trainees:', err);
+        setTrainees([]);
       } finally {
         setLoading(false);
       }
@@ -105,14 +73,21 @@ const TraineeList = ({ courseId }) => {
   }, [courseId]);
 
   const getStatusBadge = (status) => {
-    const statusConfig = {
-      active: { variant: 'success', text: 'Active' },
-      completed: { variant: 'primary', text: 'Completed' },
-      inactive: { variant: 'warning', text: 'Inactive' },
-      suspended: { variant: 'danger', text: 'Suspended' }
-    };
+    if (!status) return null;
     
-    const config = statusConfig[status] || { variant: 'secondary', text: 'Unknown' };
+    const statusUpper = String(status).toUpperCase();
+    let config = { variant: 'secondary', text: status };
+    
+    if (statusUpper === 'ACTIVE' || statusUpper === 'ENROLLED' || statusUpper === 'ONGOING') {
+      config = { variant: 'success', text: 'Active' };
+    } else if (statusUpper === 'COMPLETED' || statusUpper === 'COMPLETE') {
+      config = { variant: 'primary', text: 'Completed' };
+    } else if (statusUpper === 'INACTIVE' || statusUpper === 'PENDING') {
+      config = { variant: 'warning', text: 'Inactive' };
+    } else if (statusUpper === 'SUSPENDED' || statusUpper === 'CANCELLED') {
+      config = { variant: 'danger', text: 'Suspended' };
+    }
+    
     return <Badge bg={config.variant}>{config.text}</Badge>;
   };
 
@@ -120,15 +95,16 @@ const TraineeList = ({ courseId }) => {
     navigate(ROUTES.USERS_DETAIL(traineeId));
   };
 
-  // Get unique statuses for filter
-  const uniqueStatuses = [...new Set(trainees.map(trainee => trainee.status))];
+  // Get unique statuses for filter (chỉ lấy statuses có giá trị)
+  const uniqueStatuses = [...new Set(trainees.map(trainee => trainee.status).filter(Boolean))];
 
   const filteredTrainees = trainees.filter(trainee => {
     const matchesStatus = selectedStatuses.length === 0 || selectedStatuses.includes(trainee.status);
-    const matchesSearch = trainee.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         trainee.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         trainee.employeeId.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         trainee.department.toLowerCase().includes(searchTerm.toLowerCase());
+    const matchesSearch = !searchTerm || 
+      (trainee.name && trainee.name.toLowerCase().includes(searchTerm.toLowerCase())) ||
+      (trainee.email && trainee.email.toLowerCase().includes(searchTerm.toLowerCase())) ||
+      (trainee.employeeId && trainee.employeeId.toLowerCase().includes(searchTerm.toLowerCase())) ||
+      (trainee.department && trainee.department.toLowerCase().includes(searchTerm.toLowerCase()));
     return matchesStatus && matchesSearch;
   });
 
@@ -277,21 +253,31 @@ const TraineeList = ({ courseId }) => {
               <SortableHeader columnKey="name" className="show-mobile">
                 Trainee
               </SortableHeader>
+              {trainees.some(t => t.employeeId) && (
               <SortableHeader columnKey="employeeId" className="hide-mobile">
                 Employee ID
               </SortableHeader>
+              )}
+              {trainees.some(t => t.department) && (
               <SortableHeader columnKey="department" className="hide-mobile">
                 Department
               </SortableHeader>
+              )}
+              {trainees.some(t => t.enrollmentDate) && (
               <SortableHeader columnKey="enrollmentDate" className="show-mobile">
                 Enrollment Date
               </SortableHeader>
+              )}
+              {trainees.some(t => t.status) && (
               <SortableHeader columnKey="status" className="show-mobile">
                 Status
               </SortableHeader>
+              )}
+              {trainees.some(t => t.progress != null) && (
               <SortableHeader columnKey="progress" className="hide-mobile">
                 Progress
               </SortableHeader>
+              )}
               <th className="border-neutral-200 text-primary-custom fw-semibold text-center show-mobile">
                 Actions
               </th>
@@ -302,33 +288,59 @@ const TraineeList = ({ courseId }) => {
               <tr key={trainee.id}>
                 <td className="border-neutral-200 align-middle">
                   <div>
-                    <h6 className="mb-1 fw-medium">{trainee.name}</h6>
+                    <h6 className="mb-1 fw-medium">{trainee.name || '-'}</h6>
+                    {trainee.email && (
                     <small className="text-muted">
                       {trainee.email}
                     </small>
+                    )}
                   </div>
                 </td>
+                {trainees.some(t => t.employeeId) && (
                 <td className="border-neutral-200 align-middle hide-mobile">
+                    {trainee.employeeId ? (
                   <div className="d-flex align-items-center">
                     <Person size={16} className="me-2 text-muted" />
                     <span>{trainee.employeeId}</span>
                   </div>
+                    ) : (
+                      <span className="text-muted">-</span>
+                    )}
                 </td>
+                )}
+                {trainees.some(t => t.department) && (
                 <td className="border-neutral-200 align-middle hide-mobile">
+                    {trainee.department ? (
                   <span className="text-muted">{trainee.department}</span>
+                    ) : (
+                      <span className="text-muted">-</span>
+                    )}
                 </td>
+                )}
+                {trainees.some(t => t.enrollmentDate) && (
                 <td className="border-neutral-200 align-middle">
+                    {trainee.enrollmentDate ? (
                   <div>
                     <div className="fw-medium">{trainee.enrollmentDate}</div>
+                        {trainee.lastActivity && (
                     <small className="text-muted">
                       Last activity: {trainee.lastActivity}
                     </small>
+                        )}
                   </div>
+                    ) : (
+                      <span className="text-muted">-</span>
+                    )}
                 </td>
+                )}
+                {trainees.some(t => t.status) && (
                 <td className="border-neutral-200 align-middle">
-                  {getStatusBadge(trainee.status)}
+                    {trainee.status ? getStatusBadge(trainee.status) : <span className="text-muted">-</span>}
                 </td>
+                )}
+                {trainees.some(t => t.progress != null) && (
                 <td className="border-neutral-200 align-middle hide-mobile">
+                    {trainee.progress != null && trainee.progress !== undefined ? (
                   <div className="d-flex align-items-center">
                     <div className="progress flex-grow-1 me-2" style={{ height: '8px' }}>
                       <div 
@@ -342,7 +354,11 @@ const TraineeList = ({ courseId }) => {
                     </div>
                     <small className="text-muted">{trainee.progress}%</small>
                   </div>
+                    ) : (
+                      <span className="text-muted">-</span>
+                    )}
                 </td>
+                )}
                 <td className="border-neutral-200 align-middle text-center">
                   <PortalUnifiedDropdown
                     align="end"
