@@ -160,7 +160,7 @@ const templateAPI = {
   enableTemplate: async (templateId) => {
     try {
       const response = await apiClient.patch(`/templates/${templateId}/status`, {
-        status: 'PUBLISHED'
+        status: 'PENDING'
       });
       return response.data;
     } catch (error) {
