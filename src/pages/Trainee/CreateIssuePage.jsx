@@ -169,7 +169,6 @@ const CreateIssuePage = () => {
                           <option value="TRAINING_PROGRAM_REPORT">Training Program Report</option>
                           <option value="FACILITIES_REPORT">Facilities Report</option>
                           <option value="COURSE_ORGANIZATION_REPORT">Course Organization Report</option>
-                          <option value="ASSESSMENT_APPROVAL_REQUEST">Assessment Approval Request</option>
                           <option value="FEEDBACK">Feedback</option>
                           <option value="OTHER">Other</option>
                         </Form.Select>

@@ -23,8 +23,9 @@ import { toast } from 'react-toastify';
 import { ROUTES } from '../../../constants/routes';
 import { userAPI } from '../../../api/user';
 import templateAPI from '../../../api/template';
+import PDFModal from '../../Common/PDFModal';
 
-const TemplateDetailModal = ({ show, onHide, template, onCreateVersion }) => {
+const TemplateDetailModal = ({ show, onHide, template, onCreateVersion, onTemplateStatusChange }) => {
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState('details');
   const [reviewedByUser, setReviewedByUser] = useState(null);
@@ -37,6 +38,21 @@ const TemplateDetailModal = ({ show, onHide, template, onCreateVersion }) => {
   const [loadingPDFConfig, setLoadingPDFConfig] = useState(false);
   const [collapsedSections, setCollapsedSections] = useState({});
   const [disabling, setDisabling] = useState(false);
+  const [enabling, setEnabling] = useState(false);
+  const [historyVersions, setHistoryVersions] = useState([]);
+  const [loadingHistory, setLoadingHistory] = useState(false);
+  const [selectedVersionForPDF, setSelectedVersionForPDF] = useState(null);
+  const [versionPDFUrl, setVersionPDFUrl] = useState(null);
+  const [loadingVersionPDF, setLoadingVersionPDF] = useState(false);
+  
+  // State for version comparison
+  const [originalVersion, setOriginalVersion] = useState(null);
+  const [loadingOriginalVersion, setLoadingOriginalVersion] = useState(false);
+  const [pdfViewType, setPdfViewType] = useState('pdf'); // 'pdf' or 'pdf-config'
+  const [currentVersionPDFUrl, setCurrentVersionPDFUrl] = useState(null);
+  const [originalVersionPDFUrl, setOriginalVersionPDFUrl] = useState(null);
+  const [loadingCurrentPDF, setLoadingCurrentPDF] = useState(false);
+  const [loadingOriginalPDF, setLoadingOriginalPDF] = useState(false);
 
   // console.log('TemplateDetailModal received template:', template);
 
@@ -158,6 +174,169 @@ const TemplateDetailModal = ({ show, onHide, template, onCreateVersion }) => {
     };
   }, [template?.id, show, pdfConfigUrl]);
 
+  // Load original version (referFirstVersionId) for comparison
+  useEffect(() => {
+    const loadOriginalVersion = async () => {
+      if (!template?.referFirstVersionId || !show) {
+        setOriginalVersion(null);
+        setOriginalVersionPDFUrl(null);
+        return;
+      }
+
+      try {
+        setLoadingOriginalVersion(true);
+        const response = await templateAPI.getTemplateById(template.referFirstVersionId);
+        const templateData = response?.data?.templateForm || response?.data || response;
+        setOriginalVersion(templateData);
+      } catch (error) {
+        console.error('Error loading original version:', error);
+        setOriginalVersion(null);
+      } finally {
+        setLoadingOriginalVersion(false);
+      }
+    };
+
+    loadOriginalVersion();
+  }, [template?.referFirstVersionId, show]);
+
+  // Load PDFs when pdfViewType changes or when entering history tab
+  useEffect(() => {
+    const loadPDFs = async () => {
+      if (activeTab !== 'history' || !template?.id || !show || !template.referFirstVersionId) {
+        // Cleanup if not on history tab
+        if (activeTab !== 'history') {
+          if (currentVersionPDFUrl) {
+            URL.revokeObjectURL(currentVersionPDFUrl);
+            setCurrentVersionPDFUrl(null);
+          }
+          if (originalVersionPDFUrl) {
+            URL.revokeObjectURL(originalVersionPDFUrl);
+            setOriginalVersionPDFUrl(null);
+          }
+        }
+        return;
+      }
+
+      // Cleanup old URLs before loading new ones
+      if (currentVersionPDFUrl) {
+        URL.revokeObjectURL(currentVersionPDFUrl);
+        setCurrentVersionPDFUrl(null);
+      }
+      if (originalVersionPDFUrl) {
+        URL.revokeObjectURL(originalVersionPDFUrl);
+        setOriginalVersionPDFUrl(null);
+      }
+
+      try {
+        setLoadingCurrentPDF(true);
+        setLoadingOriginalPDF(true);
+
+        // Load current version PDF
+        try {
+          const currentPdfBlob = pdfViewType === 'pdf' 
+            ? await templateAPI.getTemplatePDF(template.id)
+            : await templateAPI.getTemplatePdfConfig(template.id);
+          const currentUrl = URL.createObjectURL(currentPdfBlob);
+          setCurrentVersionPDFUrl(currentUrl);
+        } catch (error) {
+          console.error('Error loading current version PDF:', error);
+          setCurrentVersionPDFUrl(null);
+        } finally {
+          setLoadingCurrentPDF(false);
+        }
+
+        // Load original version PDF
+        try {
+          const originalPdfBlob = pdfViewType === 'pdf'
+            ? await templateAPI.getTemplatePDF(template.referFirstVersionId)
+            : await templateAPI.getTemplatePdfConfig(template.referFirstVersionId);
+          const originalUrl = URL.createObjectURL(originalPdfBlob);
+          setOriginalVersionPDFUrl(originalUrl);
+        } catch (error) {
+          console.error('Error loading original version PDF:', error);
+          setOriginalVersionPDFUrl(null);
+        } finally {
+          setLoadingOriginalPDF(false);
+        }
+      } catch (error) {
+        console.error('Error loading PDFs:', error);
+      }
+    };
+
+    loadPDFs();
+
+    // Cleanup URLs when modal closes
+    return () => {
+      if (!show) {
+        if (currentVersionPDFUrl) {
+          URL.revokeObjectURL(currentVersionPDFUrl);
+        }
+        if (originalVersionPDFUrl) {
+          URL.revokeObjectURL(originalVersionPDFUrl);
+        }
+      }
+    };
+  }, [activeTab, template?.id, template?.referFirstVersionId, pdfViewType, show]);
+
+  // Load version history based on referFirstVersionId
+  useEffect(() => {
+    const loadVersionHistory = async () => {
+      if (!template?.id || !show) {
+        setHistoryVersions([]);
+        return;
+      }
+
+      try {
+        setLoadingHistory(true);
+        
+        // Get all templates
+        const response = await templateAPI.getMyTemplates();
+        let allTemplates = [];
+        if (response.success && response.data) {
+          allTemplates = response.data;
+        } else if (Array.isArray(response)) {
+          allTemplates = response;
+        } else if (response.data && Array.isArray(response.data)) {
+          allTemplates = response.data;
+        }
+
+        // Only get templates that have referFirstVersionId matching the current template's referFirstVersionId
+        // Do NOT include the first version (id = referFirstVersionId)
+        if (!template.referFirstVersionId) {
+          // If current template is the first version (no referFirstVersionId), show empty
+          setHistoryVersions([]);
+          return;
+        }
+
+        const firstVersionId = template.referFirstVersionId;
+        
+        // Only filter templates with referFirstVersionId = firstVersionId (exclude the first template itself)
+        const versions = allTemplates.filter(t => 
+          t.referFirstVersionId === firstVersionId && t.id !== firstVersionId
+        );
+
+        // Sort by version number (descending) or createdAt (descending)
+        versions.sort((a, b) => {
+          if (a.version && b.version) {
+            return (b.version || 0) - (a.version || 0);
+          }
+          const dateA = new Date(a.createdAt || a.updatedAt || 0);
+          const dateB = new Date(b.createdAt || b.updatedAt || 0);
+          return dateB - dateA;
+        });
+
+        setHistoryVersions(versions);
+      } catch (error) {
+        console.error('Error loading version history:', error);
+        setHistoryVersions([]);
+      } finally {
+        setLoadingHistory(false);
+      }
+    };
+
+    loadVersionHistory();
+  }, [template?.id, template?.referFirstVersionId, show]);
+
   if (!template) return null;
 
   const formatDateTime = (dateString) => {
@@ -180,7 +359,10 @@ const TemplateDetailModal = ({ show, onHide, template, onCreateVersion }) => {
       'PENDING': { variant: 'warning', icon: Clock, text: 'PENDING' },
       'PUBLISHED': { variant: 'success', icon: CheckCircle, text: 'PUBLISHED' },
       'DRAFT': { variant: 'secondary', icon: FileText, text: 'DRAFT' },
-      'ARCHIVED': { variant: 'dark', icon: FileText, text: 'ARCHIVED' }
+      'ARCHIVED': { variant: 'dark', icon: FileText, text: 'ARCHIVED' },
+      'DENIED': { variant: 'danger', icon: Clock, text: 'REJECTED' },
+      'REJECTED': { variant: 'danger', icon: Clock, text: 'REJECTED' },
+      'DISABLED': { variant: 'dark', icon: Ban, text: 'DISABLED' }
     };
     
     const config = statusConfig[status] || statusConfig['DRAFT'];
@@ -229,11 +411,33 @@ const TemplateDetailModal = ({ show, onHide, template, onCreateVersion }) => {
       await templateAPI.disableTemplate(template.id);
       toast.success('Template disabled successfully');
       onHide();
+      // Trigger reload if callback provided
+      if (onTemplateStatusChange) {
+        onTemplateStatusChange();
+      }
     } catch (error) {
       console.error('Error disabling template:', error);
       toast.error(error?.response?.data?.message || 'Failed to disable template');
     } finally {
       setDisabling(false);
+    }
+  };
+
+  const handleEnableTemplate = async () => {
+    try {
+      setEnabling(true);
+      await templateAPI.enableTemplate(template.id);
+      toast.success('Template enabled successfully');
+      onHide();
+      // Trigger reload if callback provided
+      if (onTemplateStatusChange) {
+        onTemplateStatusChange();
+      }
+    } catch (error) {
+      console.error('Error enabling template:', error);
+      toast.error(error?.response?.data?.message || 'Failed to enable template');
+    } finally {
+      setEnabling(false);
     }
   };
 
@@ -920,28 +1124,8 @@ const TemplateDetailModal = ({ show, onHide, template, onCreateVersion }) => {
   };
 
   const renderHistory = () => {
-    // History versions are not available in the current API response
-    // This would need to be implemented separately if needed
-    const historyVersions = [];
-    
-    if (loadingFullData) {
-      return (
-        <div className="text-center" style={{ 
-          flex: 1, 
-          display: 'flex', 
-          alignItems: 'center', 
-          justifyContent: 'center',
-          minHeight: 0
-        }}>
-          <div>
-            <Spinner animation="border" variant="primary" />
-            <p className="mt-3 text-muted">Loading version history...</p>
-          </div>
-        </div>
-      );
-    }
-
-    if (historyVersions.length === 0) {
+    // Check if template has referFirstVersionId
+    if (!template?.referFirstVersionId) {
       return (
         <div style={{ 
           flex: 1, 
@@ -953,38 +1137,257 @@ const TemplateDetailModal = ({ show, onHide, template, onCreateVersion }) => {
           <Alert variant="info" className="mb-0" style={{ maxWidth: '600px', width: '100%' }}>
             <div>
               <strong>No version history found</strong>
-              <p className="mb-0 text-muted">This template has no previous versions.</p>
+              <p className="mb-0 text-muted">This template has no previous versions to compare.</p>
             </div>
           </Alert>
         </div>
       );
     }
 
+    const templateToUse = fullTemplateData || template;
+    const currentTemplate = templateToUse;
+
     return (
-      <div style={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
-        <div className="mb-3">
-          <h6 className="mb-0">Version History</h6>
-        </div>
-        <div className="list-group" style={{ flex: 1, overflowY: 'auto' }}>
-          {historyVersions.map((version, index) => (
-            <div key={version.id || index} className="list-group-item">
-              <div className="d-flex justify-content-between align-items-center">
-                <div>
-                  <h6 className="mb-1">Version {version.version}</h6>
-                  <small className="text-muted">
-                    {formatDateTime(version.createdAt || version.updatedAt)}
-                    {version.createdByUser && (
-                      <> • {version.createdByUser.firstName} {version.createdByUser.lastName}</>
-                    )}
-                  </small>
+      <div style={{ flex: 1, display: 'flex', flexDirection: 'column', minHeight: 0 }}>
+        {/* Version Info - Current and Original */}
+        <Card className="mb-3" style={{ flexShrink: 0 }}>
+          <Card.Body>
+            <Row>
+              {/* Current Version Info */}
+              <Col xs={12} md={6} className="mb-3 mb-md-0">
+                <h6 className="mb-2 text-primary-custom">Current Version</h6>
+                <div className="mb-2">
+                  <strong>{currentTemplate.name || 'Template'}</strong>
                 </div>
-                <Badge bg={version.status === 'PUBLISHED' ? 'success' : 'warning'}>
-                  {version.status}
-                </Badge>
-              </div>
-            </div>
-          ))}
+                <div className="d-flex flex-column gap-2 text-muted" style={{ fontSize: '0.875rem' }}>
+                  <div>
+                    <strong className="text-dark">Version:</strong> {currentTemplate.version || 'N/A'}
+                  </div>
+                  <div>
+                    <strong className="text-dark">Created:</strong> {formatDateTime(currentTemplate.createdAt)}
+                  </div>
+                  {currentTemplate.createdByUser && (
+                    <div>
+                      <strong className="text-dark">Created By:</strong> {
+                        currentTemplate.createdByUser.firstName && currentTemplate.createdByUser.lastName
+                          ? `${currentTemplate.createdByUser.firstName} ${currentTemplate.createdByUser.lastName}`
+                          : currentTemplate.createdByUser.fullName || 'N/A'
+                      }
+                    </div>
+                  )}
+                  <div>
+                    {getStatusBadge(currentTemplate.status)}
+                  </div>
+                </div>
+              </Col>
+
+              {/* Original Version Info */}
+              <Col xs={12} md={6}>
+                {loadingOriginalVersion ? (
+                  <div className="text-center py-3">
+                    <Spinner animation="border" size="sm" variant="primary" />
+                    <p className="text-muted mt-2 mb-0" style={{ fontSize: '0.875rem' }}>Loading original version...</p>
+                  </div>
+                ) : originalVersion ? (
+                  <>
+                    <h6 className="mb-2 text-primary-custom">Original Version</h6>
+                    <div className="mb-2">
+                      <strong>{originalVersion.name || 'Template'}</strong>
+                    </div>
+                    <div className="d-flex flex-column gap-2 text-muted" style={{ fontSize: '0.875rem' }}>
+                      <div>
+                        <strong className="text-dark">Version:</strong> {originalVersion.version || 'N/A'}
+                      </div>
+                      <div>
+                        <strong className="text-dark">Created:</strong> {formatDateTime(originalVersion.createdAt)}
+                      </div>
+                      {originalVersion.createdByUser && (
+                        <div>
+                          <strong className="text-dark">Created By:</strong> {
+                            originalVersion.createdByUser.firstName && originalVersion.createdByUser.lastName
+                              ? `${originalVersion.createdByUser.firstName} ${originalVersion.createdByUser.lastName}`
+                              : originalVersion.createdByUser.fullName || 'N/A'
+                          }
+                        </div>
+                      )}
+                      <div>
+                        {getStatusBadge(originalVersion.status)}
+                      </div>
+                    </div>
+                  </>
+                ) : (
+                  <div className="text-muted">
+                    <h6 className="mb-2 text-muted">Original Version</h6>
+                    <p className="mb-0" style={{ fontSize: '0.875rem' }}>No original version found</p>
+                  </div>
+                )}
+              </Col>
+            </Row>
+          </Card.Body>
+        </Card>
+
+        {/* PDF Type Toggle Buttons */}
+        <div className="mb-3 d-flex gap-2" style={{ flexShrink: 0 }}>
+          <Button
+            variant={pdfViewType === 'pdf' ? 'primary' : 'outline-primary'}
+            size="sm"
+            onClick={() => {
+              setPdfViewType('pdf');
+              // URLs will be reloaded by useEffect
+              if (currentVersionPDFUrl) {
+                URL.revokeObjectURL(currentVersionPDFUrl);
+                setCurrentVersionPDFUrl(null);
+              }
+              if (originalVersionPDFUrl) {
+                URL.revokeObjectURL(originalVersionPDFUrl);
+                setOriginalVersionPDFUrl(null);
+              }
+            }}
+            className="d-flex align-items-center"
+          >
+            <FileEarmarkPdf className="me-2" size={16} />
+            Assessment Instrument
+          </Button>
+          <Button
+            variant={pdfViewType === 'pdf-config' ? 'primary' : 'outline-primary'}
+            size="sm"
+            onClick={() => {
+              setPdfViewType('pdf-config');
+              // URLs will be reloaded by useEffect
+              if (currentVersionPDFUrl) {
+                URL.revokeObjectURL(currentVersionPDFUrl);
+                setCurrentVersionPDFUrl(null);
+              }
+              if (originalVersionPDFUrl) {
+                URL.revokeObjectURL(originalVersionPDFUrl);
+                setOriginalVersionPDFUrl(null);
+              }
+            }}
+            className="d-flex align-items-center"
+          >
+            <FileText className="me-2" size={16} />
+            Template Config
+          </Button>
         </div>
+
+        {/* PDF Comparison - Two Columns */}
+        <Row className="flex-grow-1" style={{ minHeight: '450px', margin: 0 }}>
+          {/* Left: Current Version */}
+          <Col xs={12} md={6} className="d-flex flex-column" style={{ padding: '0 8px', minHeight: '450px' }}>
+            <div className="mb-2">
+              <h6 className="mb-0">Current Version (v{currentTemplate.version || 'N/A'})</h6>
+            </div>
+            <div style={{ 
+              flex: 1, 
+              display: 'flex', 
+              flexDirection: 'column', 
+              minHeight: '450px',
+              border: '1px solid #dee2e6',
+              borderRadius: '0.375rem',
+              overflow: 'hidden',
+              backgroundColor: '#f8f9fa'
+            }}>
+              {loadingCurrentPDF ? (
+                <div style={{ 
+                  flex: 1, 
+                  display: 'flex', 
+                  alignItems: 'center', 
+                  justifyContent: 'center',
+                  minHeight: '450px'
+                }}>
+                  <div className="text-center">
+                    <Spinner animation="border" variant="primary" />
+                    <p className="mt-2 text-muted mb-0" style={{ fontSize: '0.875rem' }}>Loading PDF...</p>
+                  </div>
+                </div>
+              ) : currentVersionPDFUrl ? (
+                <iframe
+                  src={`${currentVersionPDFUrl}#toolbar=0`}
+                  style={{
+                    width: '100%',
+                    height: '100%',
+                    border: 'none',
+                    flex: 1,
+                    minHeight: '450px'
+                  }}
+                  title="Current Version PDF"
+                />
+              ) : (
+                <div style={{ 
+                  flex: 1, 
+                  display: 'flex', 
+                  alignItems: 'center', 
+                  justifyContent: 'center',
+                  padding: '20px',
+                  minHeight: '450px'
+                }}>
+                  <Alert variant="warning" className="mb-0">
+                    <strong>No PDF available</strong>
+                    <p className="mb-0 text-muted" style={{ fontSize: '0.875rem' }}>PDF preview is not available for this version.</p>
+                  </Alert>
+                </div>
+              )}
+            </div>
+          </Col>
+
+          {/* Right: Original Version */}
+          <Col xs={12} md={6} className="d-flex flex-column" style={{ padding: '0 8px', minHeight: '450px' }}>
+            <div className="mb-2">
+              <h6 className="mb-0">Original Version {originalVersion ? `(v${originalVersion.version || 'N/A'})` : ''}</h6>
+            </div>
+            <div style={{ 
+              flex: 1, 
+              display: 'flex', 
+              flexDirection: 'column', 
+              minHeight: '450px',
+              border: '1px solid #dee2e6',
+              borderRadius: '0.375rem',
+              overflow: 'hidden',
+              backgroundColor: '#f8f9fa'
+            }}>
+              {loadingOriginalVersion || loadingOriginalPDF ? (
+                <div style={{ 
+                  flex: 1, 
+                  display: 'flex', 
+                  alignItems: 'center', 
+                  justifyContent: 'center',
+                  minHeight: '450px'
+                }}>
+                  <div className="text-center">
+                    <Spinner animation="border" variant="primary" />
+                    <p className="mt-2 text-muted mb-0" style={{ fontSize: '0.875rem' }}>Loading original version...</p>
+                  </div>
+                </div>
+              ) : originalVersionPDFUrl ? (
+                <iframe
+                  src={`${originalVersionPDFUrl}#toolbar=0`}
+                  style={{
+                    width: '100%',
+                    height: '100%',
+                    border: 'none',
+                    flex: 1,
+                    minHeight: '450px'
+                  }}
+                  title="Original Version PDF"
+                />
+              ) : (
+                <div style={{ 
+                  flex: 1, 
+                  display: 'flex', 
+                  alignItems: 'center', 
+                  justifyContent: 'center',
+                  padding: '20px',
+                  minHeight: '450px'
+                }}>
+                  <Alert variant="warning" className="mb-0">
+                    <strong>No PDF available</strong>
+                    <p className="mb-0 text-muted" style={{ fontSize: '0.875rem' }}>PDF preview is not available for the original version.</p>
+                  </Alert>
+                </div>
+              )}
+            </div>
+          </Col>
+        </Row>
       </div>
     );
   };
@@ -1053,7 +1456,7 @@ const TemplateDetailModal = ({ show, onHide, template, onCreateVersion }) => {
     <Modal 
       show={show} 
       onHide={onHide} 
-      size="lg" 
+      size="xl" 
       centered 
       className="template-detail-modal"
       dialogClassName="template-detail-modal-dialog"
@@ -1093,8 +1496,8 @@ const TemplateDetailModal = ({ show, onHide, template, onCreateVersion }) => {
       <Modal.Body 
         className="p-0 template-detail-body" 
         style={{ 
-          height: '70vh',
-          maxHeight: '70vh',
+          height: '75vh',
+          maxHeight: '75vh',
           overflowY: 'hidden',
           display: 'flex',
           flexDirection: 'column',
@@ -1350,6 +1753,54 @@ const TemplateDetailModal = ({ show, onHide, template, onCreateVersion }) => {
             )}
           </Button>
         )}
+        {template?.status === 'DISABLED' && (
+          <Button
+            variant="success"
+            onClick={handleEnableTemplate}
+            disabled={enabling}
+            className="d-flex align-items-center justify-content-center"
+            style={{
+              backgroundColor: '#28a745',
+              borderColor: '#28a745',
+              color: 'white',
+              fontWeight: 500,
+              padding: '0.5rem 1.5rem',
+              borderRadius: '0.375rem',
+              transition: 'all 0.3s ease',
+              opacity: enabling ? 0.6 : 1
+            }}
+            onMouseEnter={(e) => {
+              if (!enabling) {
+                e.currentTarget.style.backgroundColor = '#218838'
+                e.currentTarget.style.borderColor = '#218838'
+                e.currentTarget.style.transform = 'translateY(-1px)'
+                e.currentTarget.style.boxShadow = '0 4px 8px rgba(40, 167, 69, 0.3)'
+              }
+            }}
+            onMouseLeave={(e) => {
+              if (!enabling) {
+                e.currentTarget.style.backgroundColor = '#28a745'
+                e.currentTarget.style.borderColor = '#28a745'
+                e.currentTarget.style.transform = 'translateY(0)'
+                e.currentTarget.style.boxShadow = 'none'
+              }
+            }}
+          >
+            {enabling ? (
+              <>
+                <Spinner animation="border" size="sm" className="me-2" />
+                <span className="d-none d-sm-inline">Enabling...</span>
+                <span className="d-inline d-sm-none">Enabling...</span>
+              </>
+            ) : (
+              <>
+                <CheckCircle className="me-2" size={16} />
+                <span className="d-none d-sm-inline">Enable Template</span>
+                <span className="d-inline d-sm-none">Enable</span>
+              </>
+            )}
+          </Button>
+        )}
         {onCreateVersion && (
           <Button
             variant="primary"
@@ -1383,6 +1834,20 @@ const TemplateDetailModal = ({ show, onHide, template, onCreateVersion }) => {
           </Button>
         )}
       </Modal.Footer>
+
+      {/* Version PDF Modal */}
+      <PDFModal
+        show={selectedVersionForPDF !== null && versionPDFUrl !== null}
+        onHide={() => {
+          setSelectedVersionForPDF(null);
+          if (versionPDFUrl) {
+            URL.revokeObjectURL(versionPDFUrl);
+          }
+          setVersionPDFUrl(null);
+        }}
+        pdfUrl={versionPDFUrl || ''}
+        title={selectedVersionForPDF ? `Version ${selectedVersionForPDF.version || 'N/A'} - ${selectedVersionForPDF.name || 'Template'}` : 'Template PDF'}
+      />
     </Modal>
   );
 };

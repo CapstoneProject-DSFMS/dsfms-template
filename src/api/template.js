@@ -148,7 +148,19 @@ const templateAPI = {
   disableTemplate: async (templateId) => {
     try {
       const response = await apiClient.patch(`/templates/${templateId}/status`, {
-        status: 'DISABLE'
+        status: 'DISABLED'
+      });
+      return response.data;
+    } catch (error) {
+      throw error;
+    }
+  },
+
+  // Enable template
+  enableTemplate: async (templateId) => {
+    try {
+      const response = await apiClient.patch(`/templates/${templateId}/status`, {
+        status: 'PUBLISHED'
       });
       return response.data;
     } catch (error) {

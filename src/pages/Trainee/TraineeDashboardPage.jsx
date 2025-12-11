@@ -99,7 +99,7 @@ const TraineeDashboardPage = () => {
   const COLORS = ['#28a745', '#dc3545'];
 
   return (
-    <Container fluid className="py-4">
+    <Container fluid className="py-3 py-md-4 px-3 px-md-4">
       {/* Quick Actions */}
       <Row className="mb-4">
         <Col>
@@ -108,13 +108,13 @@ const TraineeDashboardPage = () => {
               <h5 className="mb-0 text-white">Quick Actions</h5>
             </Card.Header>
             <Card.Body>
-              <Row>
+              <Row className="align-items-stretch">
                 {quickActions.map((action, index) => {
                   const IconComponent = action.icon;
                   return (
-                    <Col lg={6} xl={3} className="mb-3 mb-xl-0" key={index}>
+                    <Col xs={12} sm={6} lg={6} xl={3} className="mb-3 mb-xl-0 d-flex" key={index}>
                       <Card 
-                        className="h-100 border-0 shadow-sm d-flex flex-column"
+                        className="h-100 w-100 border-0 shadow-sm d-flex flex-column"
                         style={{ 
                           cursor: 'pointer',
                           transition: 'all 0.3s ease',
@@ -130,20 +130,20 @@ const TraineeDashboardPage = () => {
                           e.currentTarget.style.boxShadow = '0 2px 10px rgba(0,0,0,0.1)';
                         }}
                       >
-                        <Card.Body className="p-4 d-flex flex-column h-100">
-                          <div className="d-flex align-items-start mb-3">
+                        <Card.Body className="p-3 p-md-4 d-flex flex-column h-100">
+                          <div className="d-flex align-items-start mb-2 mb-md-3">
                             <div 
-                              className={`bg-${action.color} text-white rounded-circle d-flex align-items-center justify-content-center me-3 flex-shrink-0`}
-                              style={{ width: '48px', height: '48px' }}
+                              className={`bg-${action.color} text-white rounded-circle d-flex align-items-center justify-content-center me-2 me-md-3 flex-shrink-0`}
+                              style={{ width: '40px', height: '40px' }}
                             >
-                              <IconComponent size={24} />
+                              <IconComponent size={20} />
                             </div>
                             <div className="flex-grow-1">
-                              <h5 className="mb-1" style={{ fontSize: '1rem', lineHeight: '1.3' }}>{action.title}</h5>
+                              <h5 className="mb-1" style={{ fontSize: '0.95rem', lineHeight: '1.3' }}>{action.title}</h5>
                             </div>
-                            <ArrowRight size={20} className="text-muted flex-shrink-0" />
+                            <ArrowRight size={18} className="text-muted flex-shrink-0 d-none d-sm-block" />
                           </div>
-                          <p className="text-muted mb-0" style={{ fontSize: '0.875rem', lineHeight: '1.4' }}>{action.description}</p>
+                          <p className="text-muted mb-0 mt-auto" style={{ fontSize: '0.8125rem', lineHeight: '1.4' }}>{action.description}</p>
                         </Card.Body>
                       </Card>
                     </Col>
@@ -168,20 +168,20 @@ const TraineeDashboardPage = () => {
         <>
           {/* Assessment Progress and Ongoing Training */}
           <Row className="mb-4">
-            <Col lg={6} className="mb-4">
+            <Col xs={12} md={6} lg={6} className="mb-3 mb-md-4">
               <Card className="border-0 shadow-sm">
                 <Card.Header className="bg-primary text-white border-0">
-                  <h5 className="mb-0 text-white">Training Progress</h5>
-                </Card.Header>
-                <Card.Body className="d-flex flex-column justify-content-center">
-                  <div className="text-center py-4">
-                    <div className="mb-3">
-                      <div className="display-4 text-primary fw-bold">{completionPercentage}%</div>
-                      <p className="text-muted mb-0">Overall Progress</p>
-                    </div>
+                  <h5 className="mb-0 text-white" style={{ fontSize: '1rem' }}>Training Progress</h5>
+            </Card.Header>
+            <Card.Body className="d-flex flex-column justify-content-center">
+                  <div className="text-center py-3 py-md-4">
+                    <div className="mb-2 mb-md-3">
+                      <div className="display-4 text-primary fw-bold" style={{ fontSize: 'clamp(2rem, 5vw, 3.5rem)' }}>{completionPercentage}%</div>
+                      <p className="text-muted mb-0" style={{ fontSize: '0.875rem' }}>Overall Progress</p>
+                </div>
                     <div className="progress mb-3" style={{ height: '20px' }}>
-                      <div 
-                        className="progress-bar bg-primary" 
+                  <div 
+                    className="progress-bar bg-primary" 
                         style={{ width: `${completionPercentage}%` }}
                         role="progressbar"
                         aria-valuenow={completionPercentage}
@@ -190,27 +190,27 @@ const TraineeDashboardPage = () => {
                       >
                         {completionPercentage}%
                       </div>
-                    </div>
+                </div>
                     {dashboardData.assessmentProgress && (
-                      <p className="text-muted small mb-0">
+                <p className="text-muted small mb-0">
                         {dashboardData.assessmentProgress.approvedCount} of {dashboardData.assessmentProgress.totalAssigned} assessments completed
-                      </p>
+                </p>
                     )}
-                  </div>
-                </Card.Body>
-              </Card>
-            </Col>
+              </div>
+            </Card.Body>
+          </Card>
+        </Col>
 
-            <Col lg={6} className="mb-4">
+            <Col xs={12} md={6} lg={6} className="mb-3 mb-md-4">
               <Card className="border-0 shadow-sm">
                 <Card.Header className="bg-primary text-white border-0">
-                  <h5 className="mb-0 text-white d-flex align-items-center">
-                    <BarChartIcon className="me-2" size={20} />
+                  <h5 className="mb-0 text-white d-flex align-items-center" style={{ fontSize: '1rem' }}>
+                    <BarChartIcon className="me-2" size={18} />
                     Ongoing Training
                   </h5>
                 </Card.Header>
-                <Card.Body style={{ padding: '20px' }}>
-                  <ResponsiveContainer width="100%" height={250}>
+                <Card.Body style={{ padding: '15px' }}>
+                  <ResponsiveContainer width="100%" height={200}>
                     <BarChart data={ongoingTrainingData}>
                       <CartesianGrid strokeDasharray="3 3" />
                       <XAxis dataKey="name" />
@@ -226,16 +226,16 @@ const TraineeDashboardPage = () => {
 
           {/* Assessment Ratios */}
           <Row className="mb-4">
-            <Col lg={6} className="mb-4">
+            <Col xs={12} md={6} lg={6} className="mb-3 mb-md-4">
               <Card className="border-0 shadow-sm">
                 <Card.Header className="bg-primary text-white border-0">
-                  <h5 className="mb-0 text-white d-flex align-items-center">
-                    <PieChartIcon className="me-2" size={20} />
+                  <h5 className="mb-0 text-white d-flex align-items-center" style={{ fontSize: '1rem' }}>
+                    <PieChartIcon className="me-2" size={18} />
                     Assessment Results
                   </h5>
                 </Card.Header>
-                <Card.Body style={{ padding: '20px' }}>
-                  <ResponsiveContainer width="100%" height={400}>
+                <Card.Body style={{ padding: '15px' }}>
+                  <ResponsiveContainer width="100%" height={280}>
                     <PieChart>
                       <Pie
                         data={assessmentRatiosData}
@@ -243,7 +243,7 @@ const TraineeDashboardPage = () => {
                         cy="50%"
                         labelLine={false}
                         label={({ name, ratio }) => `${name}: ${(ratio * 100).toFixed(1)}%`}
-                        outerRadius={120}
+                        outerRadius={80}
                         fill="#8884d8"
                         dataKey="value"
                         nameKey="name"
@@ -263,20 +263,20 @@ const TraineeDashboardPage = () => {
               </Card>
             </Col>
 
-            <Col lg={6} className="mb-4">
+            <Col xs={12} md={6} lg={6} className="mb-3 mb-md-4">
               <Card className="border-0 shadow-sm">
                 <Card.Header className="bg-primary text-white border-0">
-                  <h5 className="mb-0">Assessments Required Confirmations</h5>
-                </Card.Header>
-                <Card.Body className="d-flex flex-column justify-content-center">
-                  <div className="text-center py-4">
+                  <h5 className="mb-0 text-white" style={{ fontSize: '1rem' }}>Assessments Required Confirmations</h5>
+            </Card.Header>
+            <Card.Body className="d-flex flex-column justify-content-center">
+                  <div className="text-center py-3 py-md-4">
                     {dashboardData.assessmentProgress && dashboardData.assessmentProgress.totalAssigned > 0 ? (
                       <>
-                        <div className="mb-3">
-                          <div className="display-4 text-primary fw-bold">
+                        <div className="mb-2 mb-md-3">
+                          <div className="display-4 text-primary fw-bold" style={{ fontSize: 'clamp(2rem, 5vw, 3.5rem)' }}>
                             {dashboardData.assessmentProgress.approvedCount}
                           </div>
-                          <p className="text-muted mb-0">of {dashboardData.assessmentProgress.totalAssigned} assessments completed</p>
+                          <p className="text-muted mb-0" style={{ fontSize: '0.875rem' }}>of {dashboardData.assessmentProgress.totalAssigned} assessments completed</p>
                         </div>
                         <p className="text-muted small mb-3">
                           {dashboardData.assessmentProgress.totalAssigned - dashboardData.assessmentProgress.approvedCount} assessments pending
@@ -284,28 +284,28 @@ const TraineeDashboardPage = () => {
                       </>
                     ) : (
                       <>
-                        <ClipboardCheck size={48} className="text-muted mb-3" />
-                        <h6 className="text-muted">No assessments pending</h6>
-                        <p className="text-muted small mb-3">
-                          View and complete signature required assessments.
-                        </p>
+                <ClipboardCheck size={48} className="text-muted mb-3" />
+                <h6 className="text-muted">No assessments pending</h6>
+                <p className="text-muted small mb-3">
+                  View and complete signature required assessments.
+                </p>
                       </>
                     )}
-                    <Button 
-                      variant="outline-primary" 
-                      size="sm"
-                      onClick={() => navigate(ROUTES.ASSESSMENTS_SIGNATURE_REQUIRED)}
-                      className="d-flex align-items-center justify-content-center mx-auto"
-                    >
-                      <ClipboardCheck size={16} className="me-2" />
-                      Go to Assessments
-                      <ArrowRight size={16} className="ms-2" />
-                    </Button>
-                  </div>
-                </Card.Body>
-              </Card>
-            </Col>
-          </Row>
+                <Button 
+                  variant="outline-primary" 
+                  size="sm"
+                      onClick={() => navigate(ROUTES.ASSESSMENTS_MY_ASSESSMENTS)}
+                  className="d-flex align-items-center justify-content-center mx-auto"
+                >
+                  <ClipboardCheck size={16} className="me-2" />
+                  Go to Assessments
+                  <ArrowRight size={16} className="ms-2" />
+                </Button>
+              </div>
+            </Card.Body>
+          </Card>
+        </Col>
+      </Row>
         </>
       )}
     </Container>

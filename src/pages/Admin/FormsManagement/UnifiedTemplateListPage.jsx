@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { Container, Row, Col, Card, Button, Badge } from 'react-bootstrap';
-import { Upload, FileText, FileEarmark, Eye, CheckCircle, Clock, Building, Person } from 'react-bootstrap-icons';
+import { Upload, FileText, FileEarmark, Eye, CheckCircle, Clock, Building, Person, Ban } from 'react-bootstrap-icons';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { ROUTES } from '../../../constants/routes';
 import { toast } from 'react-toastify';
@@ -213,7 +213,8 @@ const UnifiedTemplateListPage = () => {
       'DRAFT': { variant: 'secondary', icon: FileText, text: 'DRAFT' },
       'ARCHIVED': { variant: 'dark', icon: FileText, text: 'ARCHIVED' },
       'DENIED': { variant: 'danger', icon: Clock, text: 'REJECTED' },
-      'REJECTED': { variant: 'danger', icon: Clock, text: 'REJECTED' }
+      'REJECTED': { variant: 'danger', icon: Clock, text: 'REJECTED' },
+      'DISABLED': { variant: 'dark', icon: Ban, text: 'DISABLED' }
     };
     
     const config = statusConfig[status] || statusConfig['DRAFT'];
@@ -271,7 +272,8 @@ const UnifiedTemplateListPage = () => {
     { value: 'DRAFT', label: 'Draft' },
     { value: 'PENDING', label: 'Pending' },
     { value: 'PUBLISHED', label: 'Published' },
-    { value: 'REJECTED', label: 'Rejected' }
+    { value: 'REJECTED', label: 'Rejected' },
+    { value: 'DISABLED', label: 'Disabled' }
   ];
 
   if (loading) {
@@ -592,6 +594,7 @@ const UnifiedTemplateListPage = () => {
                 setTimeout(() => setSelectedTemplate(null), 300);
               }}
               template={selectedTemplate}
+              onTemplateStatusChange={loadTemplates}
             />
 
             {/* Published Templates Modal for Create Version */}

@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { Container, Row, Col, Card, Button, Badge } from 'react-bootstrap';
-import { FileText, FileEarmark, Pencil, Clock, Building, Person, ArrowLeft } from 'react-bootstrap-icons';
+import { Container, Row, Col, Card, Button, Badge, Modal, Alert } from 'react-bootstrap';
+import { FileText, FileEarmark, Pencil, Clock, Building, Person, ArrowLeft, ExclamationTriangle, Trash } from 'react-bootstrap-icons';
 import { useNavigate } from 'react-router-dom';
 import { ROUTES } from '../../../constants/routes';
 import { toast } from 'react-toastify';
@@ -16,6 +16,8 @@ const YourDraftsPage = () => {
   const [drafts, setDrafts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [deletingDraftId, setDeletingDraftId] = useState(null);
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [draftToDelete, setDraftToDelete] = useState(null);
 
   useEffect(() => {
     if (user?.id) {
@@ -132,17 +134,32 @@ const YourDraftsPage = () => {
     }
   };
 
-  const handleDeleteDraft = async (draftId, draftName) => {
+  const handleOpenDeleteModal = (draft) => {
+    setDraftToDelete(draft);
+    setShowDeleteModal(true);
+  };
+
+  const handleCloseDeleteModal = () => {
+    setShowDeleteModal(false);
+    setDraftToDelete(null);
+  };
+
+  const handleConfirmDelete = async () => {
+    if (!draftToDelete) return;
+
     try {
-      setDeletingDraftId(draftId);
-      const response = await templateAPI.deleteDraft(draftId);
+      setDeletingDraftId(draftToDelete.id);
+      const response = await templateAPI.deleteDraft(draftToDelete.id);
       
       // Show success message from API response
-      const message = response?.message || `Draft "${draftName}" deleted successfully`;
+      const message = response?.message || `Draft "${draftToDelete.name}" deleted successfully`;
       toast.success(message);
       
       // Remove draft from list
-      setDrafts(prevDrafts => prevDrafts.filter(draft => draft.id !== draftId));
+      setDrafts(prevDrafts => prevDrafts.filter(draft => draft.id !== draftToDelete.id));
+      
+      // Close modal
+      handleCloseDeleteModal();
     } catch (error) {
       const errorMessage = error?.response?.data?.message || error.message || 'Failed to delete draft';
       toast.error(errorMessage);
@@ -342,7 +359,7 @@ const YourDraftsPage = () => {
                             variant="secondary"
                             size="sm"
                             className="d-flex align-items-center justify-content-center"
-                            onClick={() => handleDeleteDraft(draft.id, draft.name)}
+                            onClick={() => handleOpenDeleteModal(draft)}
                             disabled={deletingDraftId === draft.id}
                             style={{
                               minWidth: '44px',
@@ -394,6 +411,82 @@ const YourDraftsPage = () => {
           )}
         </Card.Body>
       </Card>
+
+      {/* Delete Draft Warning Modal */}
+      <Modal show={showDeleteModal} onHide={handleCloseDeleteModal} centered>
+        <Modal.Header closeButton className="border-bottom">
+          <Modal.Title className="d-flex align-items-center text-danger">
+            <ExclamationTriangle className="me-2" size={20} />
+            Delete Draft
+          </Modal.Title>
+        </Modal.Header>
+        
+        <Modal.Body className="p-4">
+          <Alert variant="warning" className="mb-3">
+            <ExclamationTriangle className="me-2" size={16} />
+            <strong>Warning:</strong> This action cannot be undone.
+          </Alert>
+          
+          <div className="mb-3">
+            <p className="mb-2">
+              Are you sure you want to delete the draft <strong>"{draftToDelete?.name}"</strong>?
+            </p>
+            
+            {draftToDelete && (
+              <div className="bg-light p-3 rounded">
+                <div className="row">
+                  <div className="col-md-6">
+                    <small className="text-muted">Draft Name:</small>
+                    <div className="fw-semibold">{draftToDelete.name}</div>
+                  </div>
+                  <div className="col-md-6">
+                    <small className="text-muted">Version:</small>
+                    <div className="fw-semibold">v{draftToDelete.version}</div>
+                  </div>
+                  {draftToDelete.description && (
+                    <div className="col-12 mt-2">
+                      <small className="text-muted">Description:</small>
+                      <div className="text-muted small">{draftToDelete.description}</div>
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
+          </div>
+          
+          <p className="text-muted small mb-0">
+            Once deleted, this draft cannot be recovered. All associated data will be permanently removed.
+          </p>
+        </Modal.Body>
+
+        <Modal.Footer className="border-0 p-4">
+          <Button 
+            variant="outline-secondary" 
+            onClick={handleCloseDeleteModal} 
+            disabled={deletingDraftId === draftToDelete?.id}
+          >
+            Cancel
+          </Button>
+          
+          <Button
+            variant="danger"
+            onClick={handleConfirmDelete}
+            disabled={deletingDraftId === draftToDelete?.id}
+          >
+            {deletingDraftId === draftToDelete?.id ? (
+              <>
+                <span className="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
+                Deleting...
+              </>
+            ) : (
+              <>
+                <Trash className="me-2" size={16} />
+                Delete Draft
+              </>
+            )}
+          </Button>
+        </Modal.Footer>
+      </Modal>
     </Container>
   );
 };

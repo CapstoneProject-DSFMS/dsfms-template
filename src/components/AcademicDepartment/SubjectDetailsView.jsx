@@ -15,6 +15,7 @@ import {
 import { useNavigate, useLocation } from 'react-router-dom';
 import { PermissionWrapper } from '../Common';
 import { PERMISSION_IDS } from '../../constants/permissionIds';
+import { useAuth } from '../../hooks/useAuth';
 import { ROUTES } from '../../constants/routes';
 import { LoadingSkeleton, SortIcon } from '../Common';
 import useTableSort from '../../hooks/useTableSort';
@@ -31,6 +32,7 @@ import '../../styles/scrollable-table.css';
 const SubjectDetailsView = ({ subjectId, courseId }) => {
   const navigate = useNavigate();
   const location = useLocation();
+  const { user } = useAuth();
   const [subject, setSubject] = useState(null);
   const [trainers, setTrainers] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -371,6 +373,7 @@ const SubjectDetailsView = ({ subjectId, courseId }) => {
                   Trainers
                 </Nav.Link>
               </Nav.Item>
+              {user && user.role !== 'TRAINEE' && (
               <Nav.Item>
                 <Nav.Link 
                   eventKey="assessment-events" 
@@ -388,6 +391,7 @@ const SubjectDetailsView = ({ subjectId, courseId }) => {
                   All Related Assessment Events
                 </Nav.Link>
               </Nav.Item>
+              )}
             </Nav>
             {activeTab === 'trainers' && (
               <PermissionWrapper 
@@ -570,6 +574,7 @@ const SubjectDetailsView = ({ subjectId, courseId }) => {
               </Tab.Pane>
 
               {/* Assessment Events Tab */}
+              {user && user.role !== 'TRAINEE' && (
               <Tab.Pane eventKey="assessment-events" style={{ height: '100%' }}>
                 <AssessmentEventsList
                   subjectId={subjectId}
@@ -580,6 +585,7 @@ const SubjectDetailsView = ({ subjectId, courseId }) => {
                   }}
                 />
               </Tab.Pane>
+              )}
 
             </Tab.Content>
           </Card.Body>

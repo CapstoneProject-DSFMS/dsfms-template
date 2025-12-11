@@ -10,7 +10,7 @@ import { PermissionWrapper } from '../../../components/Common';
 import { PERMISSION_IDS } from '../../../constants/permissionIds';
 import { departmentAPI } from '../../../api/department';
 import templateAPI from '../../../api/template';
-import { readTemplateMetaFromStorage } from '../../../utils/templateBuilder';
+import { readTemplateMetaFromStorage, convertBackendToFrontendSections } from '../../../utils/templateBuilder';
 
 const FormEditorPage = () => {
   const navigate = useNavigate();
@@ -135,7 +135,9 @@ const FormEditorPage = () => {
               departmentId: freshMeta.departmentId,
             });
             if (templateData.sections && Array.isArray(templateData.sections)) {
-              setInitialSections(templateData.sections);
+              // Convert backend format (parentId UUID) → frontend format (parentTempId string)
+              const frontendSections = convertBackendToFrontendSections(templateData.sections);
+              setInitialSections(frontendSections);
             }
           } catch (error) {
             console.error('Error handling update rejected flow:', error);

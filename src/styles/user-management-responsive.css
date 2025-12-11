@@ -57,6 +57,15 @@
   transition: padding 0.25s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
+/* Email column - always have max-width and ellipsis to prevent overlap */
+.user-management-page .user-management-table-wrapper .table th:nth-child(3),
+.user-management-page .user-management-table-wrapper .table td:nth-child(3) {
+  max-width: 200px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
 .user-management-page .user-management-table-wrapper .table th {
   font-size: var(--table-font-size);
 }
@@ -136,12 +145,18 @@
     white-space: nowrap !important; /* Keep nowrap - NO wrapping */
     overflow: hidden;
     text-overflow: ellipsis;
-    max-width: 120px; /* Fixed width, no transition */
+    max-width: 150px; /* Increased from 120px to prevent overlap */
   }
   
   .sidebar-collapsed-active .user-management-page .user-management-table-wrapper .table th:nth-child(2),
   .sidebar-collapsed-active .user-management-page .user-management-table-wrapper .table th:nth-child(3) {
     white-space: nowrap !important; /* Keep nowrap */
+  }
+  
+  /* Ensure role column has minimum width to prevent being squeezed */
+  .sidebar-collapsed-active .user-management-page .user-management-table-wrapper .table td:nth-child(4), /* Role */
+  .sidebar-collapsed-active .user-management-page .user-management-table-wrapper .table th:nth-child(4) {
+    min-width: 100px; /* Ensure role badge has enough space */
   }
 
   /* Badge - MINIMAL change, no transition */
