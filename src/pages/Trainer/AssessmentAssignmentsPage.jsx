@@ -1,21 +1,21 @@
 import React, { useState, useEffect } from 'react';
-import { Container, Card, Table, Spinner, Alert, Button } from 'react-bootstrap';
+import { Container, Card, Table, Spinner, Alert, Button, Row, Col, Badge } from 'react-bootstrap';
 import { useParams, useLocation, useNavigate, useSearchParams } from 'react-router-dom';
 import { ROUTES } from '../../constants/routes';
-import { ArrowLeft } from 'react-bootstrap-icons';
+import { ArrowLeft, FileEarmarkPdf } from 'react-bootstrap-icons';
 import { assessmentAPI } from '../../api';
 import { toast } from 'react-toastify';
 import { PDFModal } from '../../components/Common';
 
 const statusDisplayMap = {
-  NOT_STARTED: { variant: 'secondary', text: 'Not Started' },
-  ON_GOING: { variant: 'info', text: 'On Going' },
-  APPROVED: { variant: 'success', text: 'Approved' },
-  COMPLETED: { variant: 'success', text: 'Completed' },
-  PENDING: { variant: 'warning', text: 'Pending' },
-  DRAFT: { variant: 'primary', text: 'Draft' },
-  SUBMITTED: { variant: 'dark', text: 'Submitted' },
-  CANCELLED: { variant: 'danger', text: 'Cancelled' }
+  NOT_STARTED: { variant: 'secondary', text: 'NOT STARTED' },
+  ON_GOING: { variant: 'info', text: 'ON GOING' },
+  APPROVED: { variant: 'success', text: 'APPROVED' },
+  COMPLETED: { variant: 'success', text: 'COMPLETED' },
+  PENDING: { variant: 'warning', text: 'PENDING' },
+  DRAFT: { variant: 'primary', text: 'DRAFT' },
+  SUBMITTED: { variant: 'dark', text: 'SUBMITTED' },
+  CANCELLED: { variant: 'danger', text: 'CANCELLED' }
 };
 
 const getStatusBadge = (status) => {
@@ -41,7 +41,8 @@ const AssessmentAssignmentsPage = () => {
     loading: true,
     error: null,
     info: location.state || null,
-    assessments: []
+    assessments: [],
+    eventInfo: null
   });
   const [showPDFModal, setShowPDFModal] = useState(false);
   const [selectedPDFUrl, setSelectedPDFUrl] = useState(null);
@@ -71,7 +72,8 @@ const AssessmentAssignmentsPage = () => {
           info: {
             name: location.state.eventInfo?.entityInfo?.name || location.state.name,
             code: location.state.eventInfo?.entityInfo?.code || location.state.code
-          }
+          },
+          eventInfo: location.state.eventInfo || null
         });
         return;
       }
@@ -124,7 +126,8 @@ const AssessmentAssignmentsPage = () => {
             info: {
               name: response.eventInfo?.entityInfo?.name || response.eventInfo?.name,
               code: response.eventInfo?.entityInfo?.code || ''
-            }
+            },
+            eventInfo: response.eventInfo || null
           });
         } else {
           // If API doesn't return expected data structure, show empty state
@@ -195,6 +198,31 @@ const AssessmentAssignmentsPage = () => {
     setSelectedPDFUrl(null);
   };
 
+  // Calculate pass/fail statistics
+  const calculateStats = () => {
+    const total = state.assessments.length;
+    let passed = 0;
+    let failed = 0;
+    
+    state.assessments.forEach(assessment => {
+      if (assessment.status === 'APPROVED' || assessment.status === 'COMPLETED') {
+        const score = assessment.resultScore || 0;
+        if (score >= 70) {
+          passed++;
+        } else {
+          failed++;
+        }
+      } else if (assessment.status === 'REJECTED' || assessment.status === 'CANCELLED') {
+        failed++;
+      }
+    });
+    
+    return { total, passed, failed };
+  };
+
+  const stats = calculateStats();
+  const eventInfo = state.eventInfo || location.state?.eventInfo;
+
   return (
     <Container fluid className="py-4">
       <div className="d-flex align-items-center mb-3 flex-wrap gap-3">
@@ -207,15 +235,76 @@ const AssessmentAssignmentsPage = () => {
           Back
         </Button>
         <div>
-          <h4 className="mb-1">{entityType === 'course' ? 'Course Assessments' : 'Subject Assessments'}</h4>
-          {state.info && (
-            <p className="text-muted mb-0">
-              {state.info.name}
-              {state.info.code ? ` · ${state.info.code}` : ''}
-            </p>
-          )}
+          <h4 className="mb-1">Assessment Event Details</h4>
         </div>
       </div>
+
+      {/* General Information Section */}
+      {!state.loading && !state.error && (
+        <Card className="shadow-sm mb-4">
+          <Card.Header className="bg-primary text-white">
+            <h5 className="mb-0">General Information</h5>
+          </Card.Header>
+          <Card.Body>
+            <Row>
+              <Col md={6}>
+                <div className="mb-3">
+                  <h6 className="mb-2 fw-bold" style={{ fontSize: '1rem', color: '#333' }}>Event Details</h6>
+                  <p className="mb-0 fw-semibold">
+                    {eventInfo?.name || state.assessments[0]?.name || '—'}
+                  </p>
+                  {eventInfo?.occuranceDate || eventInfo?.occurrenceDate || state.assessments[0]?.occuranceDate ? (
+                    <div className="mt-2">
+                      <span className="text-muted">
+                        {formatDateTime(eventInfo?.occuranceDate || eventInfo?.occurrenceDate || state.assessments[0]?.occuranceDate).date}
+                      </span>
+                    </div>
+                  ) : null}
+                </div>
+              </Col>
+              <Col md={6}>
+                <div className="mb-3">
+                  <h6 className="mb-2 fw-bold" style={{ fontSize: '1rem', color: '#333' }}>
+                    {entityType === 'course' ? 'Course' : 'Subject'} Details
+                  </h6>
+                  <p className="mb-0 fw-semibold">
+                    {state.info?.name || '—'}
+                    {state.info?.code ? (
+                      <Badge bg="secondary" className="ms-2">{state.info.code}</Badge>
+                    ) : null}
+                  </p>
+                </div>
+              </Col>
+            </Row>
+            <Row>
+              <Col md={6}>
+                <div className="mb-3">
+                  <h6 className="mb-2 fw-bold" style={{ fontSize: '1rem', color: '#333' }}>
+                    Trainers in Assessments
+                  </h6>
+                  <p className="mb-0 text-muted">Trainer information will be displayed here</p>
+                </div>
+              </Col>
+              <Col md={6}>
+                <div className="mb-3">
+                  <h6 className="mb-2 fw-bold" style={{ fontSize: '1rem', color: '#333' }}>Total Pass/Fail</h6>
+                  <div className="d-flex gap-3">
+                    <div>
+                      <Badge bg="success" className="px-3 py-2 fs-6">Passed: {stats.passed}</Badge>
+                    </div>
+                    <div>
+                      <Badge bg="danger" className="px-3 py-2 fs-6">Failed: {stats.failed}</Badge>
+                    </div>
+                    <div>
+                      <Badge bg="info" className="px-3 py-2 fs-6">Total: {stats.total}</Badge>
+                    </div>
+                  </div>
+                </div>
+              </Col>
+            </Row>
+          </Card.Body>
+        </Card>
+      )}
 
       <Card className="shadow-sm">
         <Card.Body>
@@ -236,13 +325,13 @@ const AssessmentAssignmentsPage = () => {
               <Table hover responsive className="mb-0">
                 <thead>
                   <tr>
-                    <th>Assessment</th>
+                    <th>Assessment Form</th>
                     <th>Trainee</th>
-                    <th>Date</th>
+                    <th>Occurrence date</th>
                     <th>Status</th>
                     <th>Score</th>
                     <th>Result</th>
-                    <th>PDF</th>
+                    <th>Preview</th>
                     <th className="text-center">Action</th>
                   </tr>
                 </thead>
@@ -270,8 +359,10 @@ const AssessmentAssignmentsPage = () => {
                                   variant="primary"
                                   size="sm"
                                   onClick={() => handleViewPDF(item.pdfUrl)}
+                                  className="d-flex align-items-center"
                                 >
-                                  View
+                                  <FileEarmarkPdf className="me-1" size={14} />
+                                  Preview
                                 </Button>
                               ) : (
                                 <span className="text-muted">—</span>
@@ -287,7 +378,7 @@ const AssessmentAssignmentsPage = () => {
                                     variant="primary"
                                     onClick={() => handleAssessTrainee(item)}
                                   >
-                                    Assess
+                                    View Form
                                   </Button>
                                 ) : (
                                   <span className="text-muted">—</span>

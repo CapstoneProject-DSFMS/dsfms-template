@@ -299,6 +299,22 @@ const assessmentAPI = {
       throw error;
     }
   },
+
+  /**
+   * Get assessments by event ID
+   * @param {string} eventId - Assessment Event ID
+   * @param {Object} params - Query parameters (page, limit, etc.)
+   * @returns {Promise} Assessments response
+   */
+  getAssessmentsByEventId: async (eventId, params = {}) => {
+    try {
+      const response = await apiClient.get(`/assessments/events/${eventId}/assessments`, { params });
+      return response.data;
+    } catch (error) {
+      console.error('Error fetching assessments by event ID:', error);
+      throw error;
+    }
+  },
 };
 
 export default assessmentAPI;

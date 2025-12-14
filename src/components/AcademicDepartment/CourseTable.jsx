@@ -1,6 +1,6 @@
 import React from 'react';
 import { Table, Badge } from 'react-bootstrap';
-import { Calendar, GeoAlt, FileText } from 'react-bootstrap-icons';
+import { Calendar, GeoAlt } from 'react-bootstrap-icons';
 import { LoadingSkeleton, SortIcon } from '../Common';
 import useTableSort from '../../hooks/useTableSort';
 
@@ -118,9 +118,6 @@ const CourseTable = ({
             <SortableHeader columnKey="venue" className="show-mobile">
               Venue
             </SortableHeader>
-            <SortableHeader columnKey="note" className="show-mobile">
-              Note
-            </SortableHeader>
             <SortableHeader columnKey="status" className="show-mobile">
               Status
             </SortableHeader>
@@ -187,20 +184,18 @@ const CourseTable = ({
                 </div>
               </td>
               <td className="show-mobile">
-                <div className="d-flex align-items-center">
-                  <FileText size={14} className="me-1 text-muted" />
-                  <span className="text-dark" style={{ maxWidth: '150px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                    {course.note || 'N/A'}
-                  </span>
-                </div>
-              </td>
-              <td className="show-mobile">
                 <Badge 
-                  bg={course.status === 'ACTIVE' ? 'success' : course.status === 'ARCHIVED' ? 'warning' : 'secondary'}
+                  bg={
+                    course.status === 'ACTIVE' || course.status === 'ON_GOING' ? 'success' : 
+                    course.status === 'ARCHIVED' ? 'warning' : 
+                    course.status === 'PLANNED' ? 'info' : 
+                    'secondary'
+                  }
                   className="px-2 py-1"
                   style={{ 
                     fontSize: '0.75rem',
-                    width: 'fit-content'
+                    width: 'fit-content',
+                    textTransform: 'uppercase'
                   }}
                 >
                   {course.status || 'N/A'}

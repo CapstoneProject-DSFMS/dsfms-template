@@ -1,58 +1,41 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { Container, Row, Col, Table, Nav, Tab, Badge, Spinner, Button } from 'react-bootstrap';
 import { 
-  ArrowLeft, 
   CheckCircle,
   XCircle,
   Clock,
   Eye,
-  X
+  X,
+  Gear,
+  CheckCircleFill
 } from 'react-bootstrap-icons';
 import { useNavigate } from 'react-router-dom';
 import { LoadingSkeleton, SearchBar } from '../../components/Common';
 import useTableSort from '../../hooks/useTableSort';
 import { ROUTES } from '../../constants/routes';
 import assessmentAPI from '../../api/assessment';
+import { groupAssessmentsByEvent } from '../../utils/assessmentEventUtils';
 import '../../styles/scrollable-table.css';
 import '../../styles/department-head.css';
 
-// Assessment Row Component
-const AssessmentRow = ({ assessment, index, onView }) => {
-  const getStatusBadge = (status) => {
-    const statusConfig = {
-      SUBMITTED: { variant: 'warning', icon: Clock, label: 'SUBMITTED' },
-      APPROVED: { variant: 'success', icon: CheckCircle, label: 'APPROVED' },
-      REJECTED: { variant: 'danger', icon: XCircle, label: 'REJECTED' },
-      CANCELLED: { variant: 'secondary', icon: X, label: 'CANCELLED' }
-    };
-    
-    const config = statusConfig[status] || statusConfig.SUBMITTED;
-    const IconComponent = config.icon;
-    
-    return (
-      <Badge bg={config.variant} className="d-flex align-items-center">
-        <IconComponent size={12} className="me-1" />
-        {config.label}
-      </Badge>
-    );
-  };
-
+// Event Row Component for Processing Tab
+const ProcessingEventRow = ({ event, index, onView }) => {
   const formatDate = (dateString) => {
     if (!dateString) return 'N/A';
-    const date = new Date(dateString);
-    return date.toLocaleDateString('en-US', {
-      year: 'numeric',
-      month: 'short',
-      day: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit'
-    });
+    try {
+      const date = new Date(dateString);
+      return date.toLocaleDateString('en-US', {
+        year: 'numeric',
+        month: 'long',
+        day: 'numeric'
+      });
+    } catch (error) {
+      return dateString;
+    }
   };
 
-  const getResultText = (resultText) => {
-    if (!resultText) return 'N/A';
-    return resultText.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
-  };
+  // Use pre-calculated counts from enriched event
+  const { totalAssessments, submittedCount, reviewedCount } = event;
 
   return (
     <tr 
@@ -67,44 +50,103 @@ const AssessmentRow = ({ assessment, index, onView }) => {
         e.currentTarget.style.backgroundColor = index % 2 === 0 ? 'white' : 'var(--bs-neutral-50)';
       }}
     >
-      <td className="align-middle show-mobile">
+      <td className="align-middle">
         <div>
-          <div className="fw-medium">{assessment.name}</div>
-          <small className="text-muted">{assessment.template?.name || 'N/A'}</small>
+          <div className="fw-medium">{event.eventName}</div>
+          <small className="text-muted">{event.templateName}</small>
         </div>
       </td>
-      <td className="align-middle show-mobile">
-        <div>
-          <div className="fw-medium">{assessment.trainee?.fullName || 'N/A'}</div>
-          <small className="text-muted">{assessment.trainee?.email || 'N/A'}</small>
+      <td className="align-middle">
+        <Badge bg="info" className="fs-6">
+          {submittedCount}/{totalAssessments}
+        </Badge>
+      </td>
+      <td className="align-middle">
+        <Badge bg="secondary" className="fs-6">
+          {reviewedCount}/{totalAssessments}
+        </Badge>
+      </td>
+      <td className="align-middle">
+        <div className="text-muted">
+          {formatDate(event.occurrenceDate)}
         </div>
       </td>
-      <td className="align-middle show-mobile">
-        <div className="text-muted small">
-          {formatDate(assessment.submittedAt || assessment.createdAt)}
-        </div>
-      </td>
-      <td className="align-middle show-mobile">
-        {getStatusBadge(assessment.status)}
-      </td>
-      <td className="align-middle hide-mobile">
-        <div className="fw-medium">
-          {assessment.resultScore !== null && assessment.resultScore !== undefined 
-            ? `${assessment.resultScore}%` 
-            : 'N/A'}
-        </div>
-      </td>
-      <td className="align-middle hide-mobile">
-        <div className="text-muted small">
-          {getResultText(assessment.resultText)}
-        </div>
-      </td>
-      <td className="align-middle text-center show-mobile">
+      <td className="align-middle text-center">
         <Button
           variant="outline-primary"
           size="sm"
-          onClick={() => onView(assessment)}
-          className="d-flex align-items-center"
+          onClick={() => onView(event)}
+          className="d-flex align-items-center mx-auto"
+          style={{ width: 'fit-content' }}
+        >
+          <Eye className="me-1" size={14} />
+          View Detail
+        </Button>
+      </td>
+    </tr>
+  );
+};
+
+// Event Row Component for Completed Tab
+const CompletedEventRow = ({ event, index, onView }) => {
+  const formatDate = (dateString) => {
+    if (!dateString) return 'N/A';
+    try {
+      const date = new Date(dateString);
+      return date.toLocaleDateString('en-US', {
+        year: 'numeric',
+        month: 'long',
+        day: 'numeric'
+      });
+    } catch (error) {
+      return dateString;
+    }
+  };
+
+  // Use pre-calculated counts from enriched event
+  const { totalAssessments, reviewedCount, cancelledCount } = event;
+
+  return (
+    <tr 
+      className={`${index % 2 === 0 ? 'bg-white' : 'bg-neutral-50'} transition-all`}
+      style={{
+        transition: 'background-color 0.2s ease'
+      }}
+      onMouseEnter={(e) => {
+        e.currentTarget.style.backgroundColor = 'var(--bs-neutral-100)';
+      }}
+      onMouseLeave={(e) => {
+        e.currentTarget.style.backgroundColor = index % 2 === 0 ? 'white' : 'var(--bs-neutral-50)';
+      }}
+    >
+      <td className="align-middle">
+        <div>
+          <div className="fw-medium">{event.eventName}</div>
+          <small className="text-muted">{event.templateName}</small>
+        </div>
+      </td>
+      <td className="align-middle">
+        <Badge bg="secondary" className="fs-6">
+          {reviewedCount}/{totalAssessments}
+        </Badge>
+      </td>
+      <td className="align-middle">
+        <Badge bg="warning" className="fs-6">
+          {cancelledCount}/{totalAssessments}
+        </Badge>
+      </td>
+      <td className="align-middle">
+        <div className="text-muted">
+          {formatDate(event.occurrenceDate)}
+        </div>
+      </td>
+      <td className="align-middle text-center">
+        <Button
+          variant="outline-primary"
+          size="sm"
+          onClick={() => onView(event)}
+          className="d-flex align-items-center mx-auto"
+          style={{ width: 'fit-content' }}
         >
           <Eye className="me-1" size={14} />
           View Detail
@@ -120,7 +162,7 @@ const AssessmentReviewRequestsPage = () => {
   const [assessments, setAssessments] = useState([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
-  const [activeTab, setActiveTab] = useState('SUBMITTED');
+  const [mainTab, setMainTab] = useState('processing'); // 'processing' or 'completed'
 
   // Fetch assessments from API
   useEffect(() => {
@@ -131,7 +173,7 @@ const AssessmentReviewRequestsPage = () => {
     try {
       setLoading(true);
       const response = await assessmentAPI.getDepartmentAssessments();
-      setAssessments(response.assessments || []);
+      setAssessments(response?.assessments || []);
     } catch (error) {
       console.error('Error fetching assessments:', error);
       setAssessments([]);
@@ -140,66 +182,114 @@ const AssessmentReviewRequestsPage = () => {
     }
   };
 
-  // Filter assessments by status
-  const getAssessmentsByStatus = (status) => {
-    return assessments.filter(assessment => assessment.status === status);
-  };
+  // Group all assessments by event
+  const allEvents = useMemo(() => {
+    return groupAssessmentsByEvent(assessments);
+  }, [assessments]);
 
-  // Get filtered and searched assessments for current tab
-  const getFilteredAssessments = () => {
-    let filtered = getAssessmentsByStatus(activeTab);
-    
-    if (searchTerm) {
-      const searchLower = searchTerm.toLowerCase();
-      filtered = filtered.filter(assessment => {
-        return (
-          assessment.name?.toLowerCase().includes(searchLower) ||
-          assessment.trainee?.fullName?.toLowerCase().includes(searchLower) ||
-          assessment.trainee?.email?.toLowerCase().includes(searchLower) ||
-          assessment.course?.name?.toLowerCase().includes(searchLower) ||
-          assessment.course?.code?.toLowerCase().includes(searchLower) ||
-          assessment.template?.name?.toLowerCase().includes(searchLower)
-        );
-      });
-    }
-    
-    return filtered;
-  };
+  // Separate events into Processing and Completed and enrich with counts
+  const { processingEvents, completedEvents } = useMemo(() => {
+    const processing = [];
+    const completed = [];
 
-  const filteredAssessments = getFilteredAssessments();
-  
-  // Use table sort hook with filtered assessments
-  const { sortedData, sortConfig, handleSort } = useTableSort(filteredAssessments);
+    allEvents.forEach(event => {
+      const totalAssessments = event.assessments.length;
+      const submittedCount = event.assessments.filter(a => a.status === 'SUBMITTED').length;
+      const reviewedCount = event.assessments.filter(a => 
+        a.status === 'APPROVED' || a.status === 'REJECTED'
+      ).length;
+      const cancelledCount = event.assessments.filter(a => a.status === 'CANCELLED').length;
+      const approvedCount = event.assessments.filter(a => a.status === 'APPROVED').length;
+      const rejectedCount = event.assessments.filter(a => a.status === 'REJECTED').length;
 
-  const handleView = (assessment) => {
-    navigate(ROUTES.ASSESSMENTS_SECTIONS(assessment.id));
-  };
+      // Add counts to event for sorting
+      const enrichedEvent = {
+        ...event,
+        totalAssessments,
+        submittedCount,
+        reviewedCount,
+        cancelledCount,
+        approvedCount,
+        rejectedCount
+      };
+      
+      if (submittedCount > 0) {
+        processing.push(enrichedEvent);
+      } else {
+        completed.push(enrichedEvent);
+      }
+    });
 
-  const getStatusCounts = () => {
     return {
-      SUBMITTED: getAssessmentsByStatus('SUBMITTED').length,
-      APPROVED: getAssessmentsByStatus('APPROVED').length,
-      REJECTED: getAssessmentsByStatus('REJECTED').length,
-      CANCELLED: getAssessmentsByStatus('CANCELLED').length
+      processingEvents: processing,
+      completedEvents: completed
     };
+  }, [allEvents]);
+
+  // Filter events by search term
+  const filterEventsBySearch = (events) => {
+    if (!searchTerm) return events;
+    
+    const searchLower = searchTerm.toLowerCase();
+    return events.filter(event => {
+      return (
+        event.eventName?.toLowerCase().includes(searchLower) ||
+        event.templateName?.toLowerCase().includes(searchLower)
+      );
+    });
   };
 
-  const statusCounts = getStatusCounts();
+  // Get filtered events for current tab
+  const getFilteredEvents = () => {
+    if (mainTab === 'processing') {
+      return filterEventsBySearch(processingEvents);
+    } else {
+      return filterEventsBySearch(completedEvents);
+    }
+  };
+
+  const filteredEvents = getFilteredEvents();
+
+  const finalFilteredEvents = filteredEvents;
+
+  // Use table sort hook
+  const { sortedData: sortedEvents, sortConfig, handleSort } = useTableSort(finalFilteredEvents);
+
+  const handleViewEvent = (event) => {
+    // Determine event type based on whether it has submitted forms
+    const hasSubmitted = event.submittedCount > 0;
+    const eventType = hasSubmitted ? 'processing' : 'completed';
+    
+    // Navigate with event type in state
+    navigate(ROUTES.DEPARTMENT_REVIEW_EVENT_DETAIL(event.eventId), {
+      state: { eventType }
+    });
+  };
+
+
+  // Auto-switch to Completed if no processing events have submitted
+  useEffect(() => {
+    if (mainTab === 'processing' && processingEvents.length === 0 && completedEvents.length > 0) {
+      setMainTab('completed');
+    }
+  }, [processingEvents.length, completedEvents.length, mainTab]);
 
   const SortableHeader = ({ columnKey, children, className = "", nestedKey = null }) => {
     const sortKey = nestedKey ? `${columnKey}.${nestedKey}` : columnKey;
-    const isActive = sortConfig.key === sortKey;
+    const isActive = sortConfig?.key === sortKey;
     const direction = isActive ? sortConfig.direction : null;
     
     return (
       <th 
         className={`fw-semibold ${className}`}
-        onClick={() => handleSort(sortKey)}
+        onClick={() => handleSort && handleSort(sortKey)}
         style={{ 
-          cursor: 'pointer',
+          cursor: handleSort ? 'pointer' : 'default',
           backgroundColor: 'var(--bs-primary)',
           color: 'white',
-          borderColor: 'var(--bs-primary)'
+          borderColor: 'var(--bs-primary)',
+          textTransform: 'uppercase',
+          letterSpacing: '0.5px'
         }}
       >
         <div className="d-flex align-items-center">
@@ -234,182 +324,177 @@ const AssessmentReviewRequestsPage = () => {
       {/* Header */}
       <Row className="align-items-center mb-3">
         <Col xs={12}>
-          <div className="d-flex align-items-center mb-3">
-            <button 
-              className="btn btn-link p-0 me-3"
-              onClick={() => navigate('/department-head/dashboard')}
-            >
-              <ArrowLeft size={20} />
-            </button>
-            <div>
-              <h2 className="mb-1">Assessment Review Requests</h2>
-              <p className="text-muted mb-0">Review and approve/deny assessment requests from your department</p>
-            </div>
+          <div className="mb-3">
+            <h2 className="mb-1">Assessment Review Requests</h2>
+            <p className="text-muted mb-0">Review and approve/deny assessment requests from your department</p>
           </div>
         </Col>
       </Row>
 
-      {/* Tabs */}
-      <Tab.Container activeKey={activeTab} onSelect={setActiveTab}>
+      {/* Main Tabs */}
+      <Tab.Container activeKey={mainTab} onSelect={setMainTab}>
         <div className="bg-primary rounded-top">
           <div className="border-bottom py-2 px-3">
             <Nav variant="tabs" className="border-0">
-                <Nav.Item>
-                  <Nav.Link 
-                    eventKey="SUBMITTED" 
-                    className="d-flex align-items-center"
-                    style={{ 
-                      border: 'none',
-                      backgroundColor: 'transparent',
-                      color: '#ffffff',
-                      fontWeight: activeTab === 'SUBMITTED' ? '600' : '400',
-                      opacity: activeTab === 'SUBMITTED' ? '1' : '0.7',
-                      borderRadius: '4px 4px 0 0'
-                    }}
-                  >
-                    <Clock className="me-2" size={16} />
-                    Submitted ({statusCounts.SUBMITTED})
-                  </Nav.Link>
-                </Nav.Item>
-                <Nav.Item>
-                  <Nav.Link 
-                    eventKey="APPROVED" 
-                    className="d-flex align-items-center"
-                    style={{ 
-                      border: 'none',
-                      backgroundColor: 'transparent',
-                      color: '#ffffff',
-                      fontWeight: activeTab === 'APPROVED' ? '600' : '400',
-                      opacity: activeTab === 'APPROVED' ? '1' : '0.7',
-                      borderRadius: '4px 4px 0 0'
-                    }}
-                  >
-                    <CheckCircle className="me-2" size={16} />
-                    Approved ({statusCounts.APPROVED})
-                  </Nav.Link>
-                </Nav.Item>
-                <Nav.Item>
-                  <Nav.Link 
-                    eventKey="REJECTED" 
-                    className="d-flex align-items-center"
-                    style={{ 
-                      border: 'none',
-                      backgroundColor: 'transparent',
-                      color: '#ffffff',
-                      fontWeight: activeTab === 'REJECTED' ? '600' : '400',
-                      opacity: activeTab === 'REJECTED' ? '1' : '0.7',
-                      borderRadius: '4px 4px 0 0'
-                    }}
-                  >
-                    <XCircle className="me-2" size={16} />
-                    Rejected ({statusCounts.REJECTED})
-                  </Nav.Link>
-                </Nav.Item>
-                <Nav.Item>
-                  <Nav.Link 
-                    eventKey="CANCELLED" 
-                    className="d-flex align-items-center"
-                    style={{ 
-                      border: 'none',
-                      backgroundColor: 'transparent',
-                      color: '#ffffff',
-                      fontWeight: activeTab === 'CANCELLED' ? '600' : '400',
-                      opacity: activeTab === 'CANCELLED' ? '1' : '0.7',
-                      borderRadius: '4px 4px 0 0'
-                    }}
-                  >
-                    <X className="me-2" size={16} />
-                    Cancelled ({statusCounts.CANCELLED})
-                  </Nav.Link>
-                </Nav.Item>
+              <Nav.Item>
+                <Nav.Link 
+                  eventKey="processing" 
+                  className="d-flex align-items-center"
+                  style={{ 
+                    border: 'none',
+                    backgroundColor: 'transparent',
+                    color: '#ffffff',
+                    fontWeight: mainTab === 'processing' ? '600' : '400',
+                    opacity: mainTab === 'processing' ? '1' : '0.7',
+                    borderRadius: '4px 4px 0 0'
+                  }}
+                >
+                  <Gear className="me-2" size={16} />
+                  Processing ({processingEvents.length})
+                </Nav.Link>
+              </Nav.Item>
+              <Nav.Item>
+                <Nav.Link 
+                  eventKey="completed" 
+                  className="d-flex align-items-center"
+                  style={{ 
+                    border: 'none',
+                    backgroundColor: 'transparent',
+                    color: '#ffffff',
+                    fontWeight: mainTab === 'completed' ? '600' : '400',
+                    opacity: mainTab === 'completed' ? '1' : '0.7',
+                    borderRadius: '4px 4px 0 0'
+                  }}
+                >
+                  <CheckCircleFill className="me-2" size={16} />
+                  Completed ({completedEvents.length})
+                </Nav.Link>
+              </Nav.Item>
             </Nav>
           </div>
+
         </div>
 
-        <div>
-          <Tab.Content>
-              <Tab.Pane eventKey={activeTab}>
-                {/* Search and Filters */}
-                <Row className="mb-3 form-mobile-stack search-filter-section p-3">
-                  <Col xs={12} lg={6} md={5} className="mb-2 mb-lg-0">
-                    <SearchBar
-                      placeholder="Search by assessment name, trainee name, course, or email..."
-                      value={searchTerm}
-                      onChange={setSearchTerm}
-                      className="search-bar-mobile"
-                    />
-                  </Col>
-                  <Col xs={12} lg={6} md={7}>
-                    <div className="text-end text-mobile-center">
-                      <small className="text-muted">
-                        {filteredAssessments.length} assessment{filteredAssessments.length !== 1 ? 's' : ''}
-                      </small>
-                    </div>
-                  </Col>
-                </Row>
+        <div style={{ flex: 1, overflow: 'hidden', display: 'flex', flexDirection: 'column' }}>
+          <Tab.Content style={{ flex: 1, overflow: 'hidden', display: 'flex', flexDirection: 'column' }}>
+            <Tab.Pane 
+              eventKey={mainTab}
+              style={{ 
+                flex: 1, 
+                overflow: 'hidden', 
+                display: 'flex', 
+                flexDirection: 'column',
+                padding: 0
+              }}
+            >
+              {/* Search and Filters */}
+              <Row className="mb-3 form-mobile-stack search-filter-section p-3" style={{ flexShrink: 0 }}>
+                <Col xs={12} lg={6} md={5} className="mb-2 mb-lg-0">
+                  <SearchBar
+                    placeholder="Search by assessment event name or template name..."
+                    value={searchTerm}
+                    onChange={setSearchTerm}
+                    className="search-bar-mobile"
+                  />
+                </Col>
+                <Col xs={12} lg={6} md={7}>
+                  <div className="text-end text-mobile-center">
+                    <small className="text-muted">
+                      {finalFilteredEvents.length} event{finalFilteredEvents.length !== 1 ? 's' : ''}
+                    </small>
+                  </div>
+                </Col>
+              </Row>
 
-                {/* Table */}
-                {loading ? (
-                  <div className="p-3">
-                    <LoadingSkeleton rows={5} columns={8} />
+              {/* Table */}
+              {finalFilteredEvents.length === 0 ? (
+                <div className="text-center py-5" style={{ flex: 1 }}>
+                  <div className="text-muted">
+                    <h5>No events found</h5>
+                    <p>
+                      No assessment events found in {mainTab} tab.
+                    </p>
                   </div>
-                ) : filteredAssessments.length === 0 ? (
-                  <div className="text-center py-5">
-                    <div className="text-muted">
-                      <h5>No assessments found</h5>
-                      <p>No assessments with status "{activeTab}" found.</p>
-                    </div>
-                  </div>
-                ) : (
-                  <div className="scrollable-table-container admin-table" style={{ maxHeight: '70vh', overflowY: 'auto' }}>
-                    <Table hover className="mb-0 table-mobile-responsive" style={{ fontSize: '0.875rem' }}>
-                      <thead className="sticky-header">
-                        <tr>
-                          <SortableHeader columnKey="name" className="show-mobile">
-                            Assessment
-                          </SortableHeader>
-                          <SortableHeader columnKey="trainee" nestedKey="fullName" className="show-mobile">
-                            Trainee
-                          </SortableHeader>
-                          <SortableHeader columnKey="submittedAt" className="show-mobile">
-                            Date & Time
-                          </SortableHeader>
-                          <SortableHeader columnKey="status" className="show-mobile">
-                            Status
-                          </SortableHeader>
-                          <SortableHeader columnKey="resultScore" className="hide-mobile">
-                            Score
-                          </SortableHeader>
-                          <SortableHeader columnKey="resultText" className="hide-mobile">
-                            Result
-                          </SortableHeader>
-                          <th 
-                            className="fw-semibold text-center show-mobile"
-                            style={{
-                              backgroundColor: 'var(--bs-primary)',
-                              color: 'white',
-                              borderColor: 'var(--bs-primary)'
-                            }}
-                          >
-                            Action
-                          </th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {sortedData.map((assessment, index) => (
-                          <AssessmentRow
-                            key={assessment.id}
-                            assessment={assessment}
-                            index={index}
-                            onView={handleView}
-                          />
-                        ))}
-                      </tbody>
-                    </Table>
-                  </div>
-                )}
-              </Tab.Pane>
-            </Tab.Content>
+                </div>
+              ) : (
+                <div 
+                  className="scrollable-table-container admin-table" 
+                  style={{ 
+                    flex: 1,
+                    overflowY: 'auto',
+                    overflowX: 'auto'
+                  }}
+                >
+                  <Table hover className="mb-0 table-mobile-responsive" style={{ fontSize: '0.875rem' }}>
+                    <thead className="sticky-header">
+                      <tr>
+                        <SortableHeader columnKey="eventName">
+                          Assessment Event Name
+                        </SortableHeader>
+                        {mainTab === 'processing' ? (
+                          <>
+                            <SortableHeader columnKey="submittedCount">
+                              Total Submitted Form
+                            </SortableHeader>
+                            <SortableHeader columnKey="reviewedCount">
+                              Total Reviewed Form
+                            </SortableHeader>
+                          </>
+                        ) : (
+                          <>
+                            <SortableHeader columnKey="reviewedCount">
+                              Total Reviewed Form
+                            </SortableHeader>
+                            <SortableHeader columnKey="cancelledCount">
+                              Total Cancelled Form
+                            </SortableHeader>
+                          </>
+                        )}
+                        <SortableHeader columnKey="occurrenceDate" nestedKey="occurrenceDate">
+                          Occurrence Date
+                        </SortableHeader>
+                        <th 
+                          className="fw-semibold text-center"
+                          style={{
+                            backgroundColor: 'var(--bs-primary)',
+                            color: 'white',
+                            borderColor: 'var(--bs-primary)',
+                            textTransform: 'uppercase',
+                            letterSpacing: '0.5px'
+                          }}
+                        >
+                          Details
+                        </th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {sortedEvents.map((event, index) => {
+                        if (mainTab === 'processing') {
+                          return (
+                            <ProcessingEventRow
+                              key={event.eventId}
+                              event={event}
+                              index={index}
+                              onView={handleViewEvent}
+                            />
+                          );
+                        } else {
+                          return (
+                            <CompletedEventRow
+                              key={event.eventId}
+                              event={event}
+                              index={index}
+                              onView={handleViewEvent}
+                            />
+                          );
+                        }
+                      })}
+                    </tbody>
+                  </Table>
+                </div>
+              )}
+            </Tab.Pane>
+          </Tab.Content>
         </div>
       </Tab.Container>
     </Container>

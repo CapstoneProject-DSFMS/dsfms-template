@@ -443,7 +443,7 @@ const Sidebar = ({ collapsed, onClose }) => {
                         }
                       }}
                     >
-                      Department
+                      Departments
                     </span>
                     <ChevronDown
                       size={16}

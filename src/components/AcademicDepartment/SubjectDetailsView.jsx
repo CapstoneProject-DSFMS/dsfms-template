@@ -10,13 +10,18 @@ import {
   PersonCheckFill,
   Calendar,
   ArrowLeft,
-  CalendarEvent
+  CalendarEvent,
+  Airplane,
+  FileEarmarkText,
+  People
 } from 'react-bootstrap-icons';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { PermissionWrapper } from '../Common';
 import { PERMISSION_IDS } from '../../constants/permissionIds';
 import { useAuth } from '../../hooks/useAuth';
+import { usePermissions } from '../../hooks/usePermissions';
 import { ROUTES } from '../../constants/routes';
+import { isDepartmentHead } from '../../utils/sidebarUtils';
 import { LoadingSkeleton, SortIcon } from '../Common';
 import useTableSort from '../../hooks/useTableSort';
 import TrainerActions from './TrainerActions';
@@ -26,6 +31,7 @@ import EditTrainerModal from './EditTrainerModal';
 import AddTrainerModal from './AddTrainerModal';
 import AssessmentEventsList from './AssessmentEventsList';
 import AssessmentEventDetailModal from './AssessmentEventDetailModal';
+import TraineeListInSubject from '../DepartmentHead/SubjectDetail/TraineeListInSubject';
 import subjectAPI from '../../api/subject';
 import '../../styles/scrollable-table.css';
 
@@ -33,6 +39,10 @@ const SubjectDetailsView = ({ subjectId, courseId }) => {
   const navigate = useNavigate();
   const location = useLocation();
   const { user } = useAuth();
+  const { hasPermission } = usePermissions();
+  
+  // Check if user is Department Head
+  const isDeptHead = isDepartmentHead(user);
   const [subject, setSubject] = useState(null);
   const [trainers, setTrainers] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -253,23 +263,48 @@ const SubjectDetailsView = ({ subjectId, courseId }) => {
   };
 
   const handleBack = () => {
-    // Prioritize courseId prop, then location.state, then document.referrer, then subject.courseId
-    if (courseId) {
-      navigate(ROUTES.ACADEMIC_COURSE_DETAIL(courseId));
-    } else if (location.state?.courseId) {
-      navigate(ROUTES.ACADEMIC_COURSE_DETAIL(location.state.courseId));
-    } else if (document.referrer) {
-      // Extract course ID from referrer URL if possible
-      const referrerMatch = document.referrer.match(/\/course-detail\/([^/]+)/);
-      if (referrerMatch) {
-        navigate(ROUTES.ACADEMIC_COURSE_DETAIL(referrerMatch[1]));
+    // Determine route based on role
+    let backRoute;
+    
+    if (isDeptHead) {
+      // Department Head route
+      if (courseId) {
+        backRoute = `${ROUTES.DEPARTMENT_MY_DETAILS}/${courseId}`;
+      } else if (location.state?.courseId) {
+        backRoute = `${ROUTES.DEPARTMENT_MY_DETAILS}/${location.state.courseId}`;
+      } else if (subject?.courseId) {
+        backRoute = `${ROUTES.DEPARTMENT_MY_DETAILS}/${subject.courseId}`;
+      }
+    } else {
+      // Academic Department route
+      if (courseId) {
+        backRoute = ROUTES.ACADEMIC_COURSE_DETAIL(courseId);
+      } else if (location.state?.courseId) {
+        backRoute = ROUTES.ACADEMIC_COURSE_DETAIL(location.state.courseId);
+      } else if (subject?.courseId) {
+        backRoute = ROUTES.ACADEMIC_COURSE_DETAIL(subject.courseId);
+      }
+    }
+    
+    if (backRoute) {
+      navigate(backRoute);
+    } else {
+      // Fallback: try to extract from referrer or go back
+      if (document.referrer) {
+        const referrerMatch = document.referrer.match(/\/(course-detail|my-department-details)\/([^/]+)/);
+        if (referrerMatch) {
+          const courseIdFromRef = referrerMatch[2];
+          if (isDeptHead) {
+            navigate(`${ROUTES.DEPARTMENT_MY_DETAILS}/${courseIdFromRef}`);
+          } else {
+            navigate(ROUTES.ACADEMIC_COURSE_DETAIL(courseIdFromRef));
+          }
+        } else {
+          navigate(-1);
+        }
       } else {
         navigate(-1);
       }
-    } else if (subject?.courseId) {
-      navigate(ROUTES.ACADEMIC_COURSE_DETAIL(subject.courseId));
-    } else {
-      navigate(-1);
     }
   };
 
@@ -305,12 +340,8 @@ const SubjectDetailsView = ({ subjectId, courseId }) => {
         <div className="d-flex align-items-center">
           <Button variant="outline-secondary" onClick={handleBack} className="me-3">
             <ArrowLeft className="me-2" size={16} />
-            Back to Course
+            Back
           </Button>
-          <div>
-            <h2 className="mb-1">{subject.name}</h2>
-            <p className="text-muted mb-0">Subject Code: {subject.code}</p>
-          </div>
         </div>
         <div className="d-flex gap-2"> {/* Added div for buttons */}
           {subject?.status === 'PLANNED' && (
@@ -324,15 +355,6 @@ const SubjectDetailsView = ({ subjectId, courseId }) => {
               </Button>
             </PermissionWrapper>
           )}
-          <PermissionWrapper
-            permission={PERMISSION_IDS.ARCHIVE_SUBJECT}
-            fallback={null}
-          >
-            <Button variant="outline-danger" onClick={() => setShowDisableSubject(true)} className="d-flex align-items-center" size="sm">
-              <Trash size={16} className="me-1" />
-              Archive Subject
-            </Button>
-          </PermissionWrapper>
         </div>
       </div>
 
@@ -372,9 +394,28 @@ const SubjectDetailsView = ({ subjectId, courseId }) => {
                   }}
                 >
                   <PersonCheckFill className="me-2" size={16} />
-                  Trainers
+                  Trainers In Assessment
                 </Nav.Link>
               </Nav.Item>
+              {hasPermission(PERMISSION_IDS.ENROLL_SINGLE_TRAINEE) && (
+              <Nav.Item>
+                <Nav.Link 
+                  eventKey="trainees" 
+                  className="d-flex align-items-center"
+                  style={{ 
+                    border: 'none',
+                    backgroundColor: 'transparent',
+                    color: '#ffffff',
+                    fontWeight: activeTab === 'trainees' ? '600' : '400',
+                    opacity: activeTab === 'trainees' ? '1' : '0.7',
+                    borderRadius: '4px 4px 0 0'
+                  }}
+                >
+                  <People className="me-2" size={16} />
+                  Trainee Roster
+                </Nav.Link>
+              </Nav.Item>
+              )}
               {user && user.role !== 'TRAINEE' && (
               <Nav.Item>
                 <Nav.Link 
@@ -390,7 +431,7 @@ const SubjectDetailsView = ({ subjectId, courseId }) => {
                   }}
                 >
                   <CalendarEvent className="me-2" size={16} />
-                  All Related Assessment Events
+                  Assessment Events
                 </Nav.Link>
               </Nav.Item>
               )}
@@ -434,28 +475,199 @@ const SubjectDetailsView = ({ subjectId, courseId }) => {
                 <div className="p-4">
                   <Row>
                     <Col md={6}>
-                      <p><strong>Name:</strong> {subject.name}</p>
-                      <p><strong>Code:</strong> {subject.code}</p>
-                      <p><strong>Description:</strong> {subject.description}</p>
-                      <p><strong>Method:</strong> {subject.method}</p>
-                      <p><strong>Duration:</strong> {subject.duration} days</p>
+                      <div className="mb-3">
+                        <h6 className="mb-2" style={{ 
+                          color: '#456882', 
+                          fontWeight: '800', 
+                          fontSize: '1.15rem',
+                          letterSpacing: '0.5px',
+                          textTransform: 'uppercase'
+                        }}>Name</h6>
+                        <p className="mb-0 text-dark" style={{ fontSize: '0.9rem' }}>{subject.name}</p>
+                      </div>
+                      <div className="mb-3">
+                        <h6 className="mb-2" style={{ 
+                          color: '#456882', 
+                          fontWeight: '800', 
+                          fontSize: '1.15rem',
+                          letterSpacing: '0.5px',
+                          textTransform: 'uppercase'
+                        }}>Code</h6>
+                        <Badge bg="secondary" className="px-2 py-1">
+                          {subject.code}
+                        </Badge>
+                      </div>
+                      <div className="mb-3">
+                        <h6 className="mb-2" style={{ 
+                          color: '#456882', 
+                          fontWeight: '800', 
+                          fontSize: '1.15rem',
+                          letterSpacing: '0.5px',
+                          textTransform: 'uppercase'
+                        }}>Description</h6>
+                        <p className="mb-0 text-dark" style={{ fontSize: '0.9rem' }}>{subject.description || 'N/A'}</p>
+                      </div>
+                      <div className="mb-3">
+                        <h6 className="mb-2" style={{ 
+                          color: '#456882', 
+                          fontWeight: '800', 
+                          fontSize: '1.15rem',
+                          letterSpacing: '0.5px',
+                          textTransform: 'uppercase'
+                        }}>Method</h6>
+                        <Badge bg="info" className="px-2 py-1">
+                          {subject.method || 'N/A'}
+                        </Badge>
+                      </div>
+                      <div className="mb-3">
+                        <h6 className="mb-2" style={{ 
+                          color: '#456882', 
+                          fontWeight: '800', 
+                          fontSize: '1.15rem',
+                          letterSpacing: '0.5px',
+                          textTransform: 'uppercase'
+                        }}>Duration</h6>
+                        <div className="d-flex align-items-center">
+                          <Clock size={16} className="me-2 text-primary" />
+                          <span className="text-dark" style={{ fontSize: '0.9rem' }}>{subject.duration} days</span>
+                        </div>
+                      </div>
+                      <div className="mb-3">
+                        <h6 className="mb-2" style={{ 
+                          color: '#456882', 
+                          fontWeight: '800', 
+                          fontSize: '1.15rem',
+                          letterSpacing: '0.5px',
+                          textTransform: 'uppercase'
+                        }}>Is Simulator</h6>
+                        <div className="d-flex align-items-center">
+                          {subject.isSIM || subject.is_sim ? (
+                            <div className="d-flex align-items-center" style={{
+                              padding: '0.5rem 1rem',
+                              backgroundColor: '#d1ecf1',
+                              border: '2px solid #0dcaf0',
+                              borderRadius: '8px',
+                              color: '#055160',
+                              fontWeight: '600',
+                              width: 'fit-content'
+                            }}>
+                              <Airplane size={18} className="me-2" />
+                              <span>Yes</span>
+                            </div>
+                          ) : (
+                            <div className="d-flex align-items-center" style={{
+                              padding: '0.5rem 1rem',
+                              backgroundColor: '#f8f9fa',
+                              border: '2px solid #dee2e6',
+                              borderRadius: '8px',
+                              color: '#6c757d',
+                              fontWeight: '600',
+                              width: 'fit-content'
+                            }}>
+                              <span>No</span>
+                            </div>
+                          )}
+                        </div>
+                      </div>
                     </Col>
                     <Col md={6}>
-                      <p><strong>Type:</strong> {subject.type}</p>
-                      <p><strong>Pass Score:</strong> {subject.passScore}</p>
-                      <p><strong>Room:</strong> {subject.roomName}</p>
-                      <p><strong>Time Slot:</strong> {subject.timeSlot}</p>
-                      <p><strong>Start Date:</strong> {new Date(subject.startDate).toLocaleDateString()}</p>
-                      <p><strong>End Date:</strong> {new Date(subject.endDate).toLocaleDateString()}</p>
+                      <div className="mb-3">
+                        <h6 className="mb-2" style={{ 
+                          color: '#456882', 
+                          fontWeight: '800', 
+                          fontSize: '1.15rem',
+                          letterSpacing: '0.5px',
+                          textTransform: 'uppercase'
+                        }}>Type</h6>
+                        <Badge bg="info" className="px-2 py-1">
+                          {subject.type || 'N/A'}
+                        </Badge>
+                      </div>
+                      <div className="mb-3">
+                        <h6 className="mb-2" style={{ 
+                          color: '#456882', 
+                          fontWeight: '800', 
+                          fontSize: '1.15rem',
+                          letterSpacing: '0.5px',
+                          textTransform: 'uppercase'
+                        }}>Pass Score</h6>
+                        <span className="text-dark" style={{ fontSize: '0.9rem' }}>{subject.passScore || 'N/A'}</span>
+                      </div>
+                      <div className="mb-3">
+                        <h6 className="mb-2" style={{ 
+                          color: '#456882', 
+                          fontWeight: '800', 
+                          fontSize: '1.15rem',
+                          letterSpacing: '0.5px',
+                          textTransform: 'uppercase'
+                        }}>Room</h6>
+                        <span className="text-dark" style={{ fontSize: '0.9rem' }}>{subject.roomName || 'N/A'}</span>
+                      </div>
+                      <div className="mb-3">
+                        <h6 className="mb-2" style={{ 
+                          color: '#456882', 
+                          fontWeight: '800', 
+                          fontSize: '1.15rem',
+                          letterSpacing: '0.5px',
+                          textTransform: 'uppercase'
+                        }}>Time Slot</h6>
+                        <span className="text-dark" style={{ fontSize: '0.9rem' }}>{subject.timeSlot || 'N/A'}</span>
+                      </div>
+                      <div className="mb-3">
+                        <h6 className="mb-2" style={{ 
+                          color: '#456882', 
+                          fontWeight: '800', 
+                          fontSize: '1.15rem',
+                          letterSpacing: '0.5px',
+                          textTransform: 'uppercase'
+                        }}>Start Date</h6>
+                        <div className="d-flex align-items-center">
+                          <Calendar size={16} className="me-2 text-primary" />
+                          <span className="text-dark" style={{ fontSize: '0.9rem' }}>{new Date(subject.startDate).toLocaleDateString()}</span>
+                        </div>
+                      </div>
+                      <div className="mb-3">
+                        <h6 className="mb-2" style={{ 
+                          color: '#456882', 
+                          fontWeight: '800', 
+                          fontSize: '1.15rem',
+                          letterSpacing: '0.5px',
+                          textTransform: 'uppercase'
+                        }}>End Date</h6>
+                        <div className="d-flex align-items-center">
+                          <Calendar size={16} className="me-2 text-primary" />
+                          <span className="text-dark" style={{ fontSize: '0.9rem' }}>{new Date(subject.endDate).toLocaleDateString()}</span>
+                        </div>
+                      </div>
                     </Col>
                   </Row>
-                  {subject.remarkNote && (
-                    <Row>
-                      <Col xs={12}>
-                        <p><strong>Remark Note:</strong> {subject.remarkNote}</p>
-                      </Col>
-                    </Row>
-                  )}
+                  <Row>
+                    <Col xs={12}>
+                      <div className="mb-3">
+                        <h6 className="mb-2 d-flex align-items-center" style={{ 
+                          color: '#456882', 
+                          fontWeight: '800', 
+                          fontSize: '1.15rem',
+                          letterSpacing: '0.5px',
+                          textTransform: 'uppercase'
+                        }}>
+                          <FileEarmarkText className="me-2" size={18} />
+                          Remark Note
+                        </h6>
+                        <div style={{
+                          padding: '1rem',
+                          backgroundColor: '#fff3cd',
+                          border: '1px solid #ffc107',
+                          borderRadius: '8px',
+                          minHeight: '60px'
+                        }}>
+                          <p className="mb-0 text-dark" style={{ fontSize: '0.9rem' }}>
+                            {subject.remarkNote || 'No remark note available'}
+                          </p>
+                        </div>
+                      </div>
+                    </Col>
+                  </Row>
                 </div>
               </Tab.Pane>
 
@@ -574,6 +786,16 @@ const SubjectDetailsView = ({ subjectId, courseId }) => {
                   </Table>
                 </div>
               </Tab.Pane>
+
+              {/* Trainee Roster Tab */}
+              {hasPermission(PERMISSION_IDS.ENROLL_SINGLE_TRAINEE) && (
+              <Tab.Pane eventKey="trainees" style={{ height: '100%' }}>
+                <TraineeListInSubject 
+                  subjectId={subjectId} 
+                  courseId={courseId}
+                />
+              </Tab.Pane>
+              )}
 
               {/* Assessment Events Tab */}
               {user && user.role !== 'TRAINEE' && (

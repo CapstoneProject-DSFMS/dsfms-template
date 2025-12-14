@@ -185,6 +185,9 @@ const InPageCourseDetail = ({ course, department } = {}) => {
     // If this is trainee view, navigate back to enrolled courses
     if (isTraineeView) {
       navigate(ROUTES.COURSES_ENROLLED);
+    } else if (isDeptHead) {
+      // Navigate back to department dashboard for Department Head view
+      navigate(ROUTES.DEPARTMENT_MY_DETAILS);
     } else {
       // Navigate back to department details for academic view
       if (department?.id) {
@@ -226,7 +229,16 @@ const InPageCourseDetail = ({ course, department } = {}) => {
   }
 
   const handleViewSubject = (subjectId) => {
-    navigate(`/academic/course/${courseId}/subject/${subjectId}`); // Keep old route for now (academic-specific)
+    if (isDeptHead) {
+      // Department Head route
+      navigate(ROUTES.SUBJECTS_IN_COURSE(courseId, subjectId));
+    } else if (isTraineeView) {
+      // Trainee route
+      navigate(`/${traineeId}/course/${courseId}/subject/${subjectId}`);
+    } else {
+      // Academic Department route
+      navigate(`/academic/course/${courseId}/subject/${subjectId}`);
+    }
   };
 
   const handleEditSubject = () => {
@@ -277,7 +289,13 @@ const InPageCourseDetail = ({ course, department } = {}) => {
   };
 
   const handleEnrollTrainees = () => {
-    navigate(`/academic/course/${courseDetails?.id}/enroll-trainees`); // Keep old route for now (academic-specific)
+    if (isDeptHead || isTraineeView) {
+      // Use common route for Department Head and Trainee
+      navigate(`/courses/${courseDetails?.id}/enroll-trainees`);
+    } else {
+      // Academic Department route
+      navigate(`/academic/course/${courseDetails?.id}/enroll-trainees`);
+    }
   };
 
   // Modal handlers
@@ -486,7 +504,6 @@ const InPageCourseDetail = ({ course, department } = {}) => {
           <h4 className="mb-0 text-primary">
             <strong>{courseDetails?.name || 'Loading...'}</strong> — {courseDetails?.code || ''}
           </h4>
-          <small className="text-muted">Course Details</small>
         </div>
       </div>
 
@@ -542,7 +559,7 @@ const InPageCourseDetail = ({ course, department } = {}) => {
               variant="outline-danger" 
               onClick={() => setShowDeleteBatchEnrollments(true)}
             >
-              <Trash size={14} className="me-1" /> Delete All Subject Enrollments In Course by BatchCode
+              <Trash size={14} className="me-1" /> Delete Enrollment Batch
             </Button>
           </PermissionWrapper>
         </div>
@@ -621,11 +638,11 @@ const InPageCourseDetail = ({ course, department } = {}) => {
                     }}
                   >
                     <PersonCheck className="me-2" size={16} />
-                    Assign Trainer
+                    Trainers In Assessment
                   </Nav.Link>
                 </Nav.Item>
               )}
-              {!isTraineeView && !isDeptHead && (
+              {!isTraineeView && (
                 <Nav.Item>
                   <Nav.Link 
                     eventKey="assessment-events" 
@@ -640,7 +657,7 @@ const InPageCourseDetail = ({ course, department } = {}) => {
                     }}
                   >
                     <CalendarEvent className="me-2" size={16} />
-                    All Related Assessment Events
+                    Assessment Events
                   </Nav.Link>
                 </Nav.Item>
               )}
@@ -736,11 +753,28 @@ const InPageCourseDetail = ({ course, department } = {}) => {
                           fontSize: '1.15rem',
                           letterSpacing: '0.5px',
                           textTransform: 'uppercase'
-                        }}>Start Date</h6>
-                        <div className="d-flex align-items-center">
-                          <Calendar size={16} className="me-2 text-primary" />
-                          <span className="text-dark" style={{ fontSize: '0.9rem' }}>{courseDetails.startDate || 'N/A'}</span>
+                        }}>Start Date / End Date</h6>
+                        <div className="d-flex align-items-center flex-wrap">
+                          <div className="d-flex align-items-center me-4">
+                            <Calendar size={16} className="me-2 text-primary" />
+                            <span className="text-dark" style={{ fontSize: '0.9rem' }}>{courseDetails.startDate || 'N/A'}</span>
+                          </div>
+                          <span className="text-muted me-2">/</span>
+                          <div className="d-flex align-items-center">
+                            <Calendar size={16} className="me-2 text-primary" />
+                            <span className="text-dark" style={{ fontSize: '0.9rem' }}>{courseDetails.endDate || 'N/A'}</span>
+                          </div>
                         </div>
+                      </div>
+                      <div className="mb-4">
+                        <h6 className="mb-2" style={{ 
+                          color: '#456882', 
+                          fontWeight: '800', 
+                          fontSize: '1.15rem',
+                          letterSpacing: '0.5px',
+                          textTransform: 'uppercase'
+                        }}>Note</h6>
+                        <p className="mb-0 text-dark" style={{ fontSize: '0.9rem' }}>{courseDetails.note || 'N/A'}</p>
                       </div>
                     </Col>
 
@@ -799,19 +833,6 @@ const InPageCourseDetail = ({ course, department } = {}) => {
                         >
                           {courseDetails.status}
                         </Badge>
-                      </div>
-                      <div className="mb-4">
-                        <h6 className="mb-2" style={{ 
-                          color: '#456882', 
-                          fontWeight: '800', 
-                          fontSize: '1.15rem',
-                          letterSpacing: '0.5px',
-                          textTransform: 'uppercase'
-                        }}>End Date</h6>
-                        <div className="d-flex align-items-center">
-                          <Calendar size={16} className="me-2 text-primary" />
-                          <span className="text-dark" style={{ fontSize: '0.9rem' }}>{courseDetails.endDate || 'N/A'}</span>
-                        </div>
                       </div>
                     </Col>
                   </Row>
@@ -1024,7 +1045,7 @@ const InPageCourseDetail = ({ course, department } = {}) => {
               )}
 
               {/* Assessment Events Tab */}
-              {!isTraineeView && !isDeptHead && (
+              {!isTraineeView && (
                 <Tab.Pane eventKey="assessment-events" style={{ height: '100%' }}>
                   <AssessmentEventsList
                     courseId={courseId}

@@ -6,7 +6,6 @@ import {
   Plus, 
   Pencil, 
   Trash, 
-  People,
   Calendar,
   FileText,
   Person
@@ -350,25 +349,16 @@ const CourseDetailsView = ({ courseId }) => {
               <p className="text-muted mb-1 small">{course.description}</p>
               
               <Row className="g-2">
-                <Col md={4}>
+                <Col md={6}>
                   <div className="d-flex align-items-center">
                     <FileText className="me-2 text-primary" size={16} />
                     <div>
-                      <small className="text-muted">Total Subjects</small>
+                      <small className="text-muted">Total Courses</small>
                       <div className="fw-semibold small">{course.totalSubjects}</div>
                     </div>
                   </div>
                 </Col>
-                <Col md={4}>
-                  <div className="d-flex align-items-center">
-                    <People className="me-2 text-primary" size={16} />
-                    <div>
-                      <small className="text-muted">Total Trainers</small>
-                      <div className="fw-semibold small">{course.totalTrainers}</div>
-                    </div>
-                  </div>
-                </Col>
-                <Col md={4}>
+                <Col md={6}>
                   <div className="d-flex align-items-center">
                     <Person className="me-2 text-primary" size={16} />
                     <div>
