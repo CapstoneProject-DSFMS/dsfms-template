@@ -4,11 +4,39 @@ import PropTypes from 'prop-types';
 const AssessmentOverview = ({ assessmentInfo, roleInSubject, formatDate }) => {
   if (!assessmentInfo) return null;
 
+  // Get trainee display info - prioritize fullName, fallback to firstName + lastName
+  const traineeName = assessmentInfo.trainee?.fullName || 
+                      `${assessmentInfo.trainee?.firstName || ''} ${assessmentInfo.trainee?.lastName || ''}`.trim() || '—';
+  const traineeEid = assessmentInfo.trainee?.eid || '';
+  
+  // Get trainee profile info if available
+  const traineeProfile = assessmentInfo.trainee?.traineeProfile;
+  
+  // Build subValue with trainee profile information
+  let traineeSubValue = traineeEid;
+  if (traineeProfile) {
+    const profileParts = [];
+    if (traineeProfile.trainingBatch) {
+      profileParts.push(traineeProfile.trainingBatch);
+    }
+    if (traineeProfile.nation) {
+      profileParts.push(traineeProfile.nation);
+    }
+    if (traineeProfile.passportNo) {
+      profileParts.push(`Passport: ${traineeProfile.passportNo}`);
+    }
+    if (profileParts.length > 0) {
+      traineeSubValue = `${traineeEid ? `${traineeEid} · ` : ''}${profileParts.join(' · ')}`;
+    } else if (traineeEid) {
+      traineeSubValue = traineeEid;
+    }
+  }
+
   const summaryItems = [
     {
       label: 'Trainee',
-      value: `${assessmentInfo.trainee?.firstName || ''} ${assessmentInfo.trainee?.lastName || ''}`.trim() || '—',
-      subValue: assessmentInfo.trainee?.eid || ''
+      value: traineeName,
+      subValue: traineeSubValue
     },
     {
       label: 'Assessment Date',

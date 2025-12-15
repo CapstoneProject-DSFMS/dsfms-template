@@ -11,7 +11,7 @@ import courseAPI from '../../api/course';
 import subjectAPI from '../../api/subject';
 
 
-const EnrolledTraineesTable = ({ courseId, loading = false, refreshTrigger }) => {
+const EnrolledTraineesTable = ({ courseId, subjectId, loading = false, refreshTrigger }) => {
   const [enrolledTrainees, setEnrolledTrainees] = useState([]);
   const [loadingEnrolled, setLoadingEnrolled] = useState(true);
   const [showSubjectModal, setShowSubjectModal] = useState(false);
@@ -25,7 +25,7 @@ const EnrolledTraineesTable = ({ courseId, loading = false, refreshTrigger }) =>
   const { sortedData, sortConfig, handleSort } = useTableSort(enrolledTrainees);
 
   const loadEnrolledTrainees = useCallback(async () => {
-    if (!courseId) {
+    if (!courseId && !subjectId) {
       setEnrolledTrainees([]);
       setLoadingEnrolled(false);
       return;
@@ -33,11 +33,45 @@ const EnrolledTraineesTable = ({ courseId, loading = false, refreshTrigger }) =>
 
     setLoadingEnrolled(true);
     try {
-      // Call API to get enrolled trainees (only 1 API call)
-      const response = await courseAPI.getCourseTrainees(courseId);
-      
-      // Handle response format: { message: "...", data: { trainees: [...] } }
-      const traineesList = response?.data?.trainees || response?.trainees || [];
+      let traineesList = [];
+
+      if (subjectId) {
+        // Fetch trainees from subject
+        const response = await subjectAPI.getSubjectById(subjectId);
+        // Extract trainees from enrollmentsByBatch
+        const allTrainees = [];
+        if (response?.enrollmentsByBatch) {
+          response.enrollmentsByBatch.forEach(batch => {
+            if (batch.trainees && Array.isArray(batch.trainees)) {
+              batch.trainees.forEach(trainee => {
+                // Build full name
+                const nameParts = [
+                  trainee.firstName,
+                  trainee.middleName,
+                  trainee.lastName
+                ].filter(Boolean);
+                const fullName = nameParts.join(' ') || 'Unknown';
+
+                allTrainees.push({
+                  id: trainee.id,
+                  eid: trainee.eid || '',
+                  name: fullName,
+                  email: trainee.email || '',
+                  subjectCount: 1, // For subject view, always 1
+                  userId: trainee.id
+                });
+              });
+            }
+          });
+        }
+        traineesList = allTrainees;
+      } else if (courseId) {
+        // Call API to get enrolled trainees (only 1 API call)
+        const response = await courseAPI.getCourseTrainees(courseId);
+        
+        // Handle response format: { message: "...", data: { trainees: [...] } }
+        traineesList = response?.data?.trainees || response?.trainees || [];
+      }
       
       if (!Array.isArray(traineesList) || traineesList.length === 0) {
         setEnrolledTrainees([]);
@@ -53,15 +87,15 @@ const EnrolledTraineesTable = ({ courseId, loading = false, refreshTrigger }) =>
           trainee.middleName,
           trainee.lastName
         ].filter(Boolean);
-        const fullName = nameParts.join(' ') || 'Unknown';
+        const fullName = nameParts.join(' ') || trainee.name || 'Unknown';
         
         return {
           id: trainee.id,
           eid: trainee.eid || '',
           name: fullName,
           email: trainee.email || '',
-          subjectCount: trainee.subjectCount || 0,
-          userId: trainee.id
+          subjectCount: trainee.subjectCount || (subjectId ? 1 : 0),
+          userId: trainee.id || trainee.userId
         };
       });
       
@@ -73,16 +107,21 @@ const EnrolledTraineesTable = ({ courseId, loading = false, refreshTrigger }) =>
     } finally {
       setLoadingEnrolled(false);
     }
-  }, [courseId]);
+  }, [courseId, subjectId]);
 
   // Load enrolled trainees from API
   useEffect(() => {
-    if (courseId) {
+    if (courseId || subjectId) {
       loadEnrolledTrainees();
     }
-  }, [courseId, loadEnrolledTrainees, refreshTrigger]); // Include refreshTrigger to reload when it changes
+  }, [courseId, subjectId, loadEnrolledTrainees, refreshTrigger]); // Include refreshTrigger to reload when it changes
 
   const handleViewSubjects = async (trainee) => {
+    // For subject view, don't show subject modal (already in subject detail)
+    if (subjectId) {
+      return;
+    }
+    
     try {
       // Call API to get trainee enrollments for this course
       const response = await courseAPI.getTraineeEnrollments(courseId, trainee.userId);
@@ -421,9 +460,11 @@ const EnrolledTraineesTable = ({ courseId, loading = false, refreshTrigger }) =>
                   <SortableHeader columnKey="eid" className="show-mobile">
                     EID
                   </SortableHeader>
-                  <SortableHeader columnKey="subjects" className="show-mobile">
-                    Total Subject
-                  </SortableHeader>
+                  {!subjectId && (
+                    <SortableHeader columnKey="subjects" className="show-mobile">
+                      Total Subject
+                    </SortableHeader>
+                  )}
                   <th 
                     className="fw-semibold text-center show-mobile"
                     style={{
@@ -456,22 +497,24 @@ const EnrolledTraineesTable = ({ courseId, loading = false, refreshTrigger }) =>
                         {trainee.eid}
                       </Badge>
                     </td>
-                    <td className="show-mobile">
-                      <Badge 
-                        bg="info"
-                        className="px-2 py-1"
-                        style={{ 
-                          fontSize: '0.75rem',
-                          width: 'fit-content'
-                        }}
-                      >
-                        {trainee.subjectCount || 0} subjects
-                      </Badge>
-                    </td>
+                    {!subjectId && (
+                      <td className="show-mobile">
+                        <Badge 
+                          bg="info"
+                          className="px-2 py-1"
+                          style={{ 
+                            fontSize: '0.75rem',
+                            width: 'fit-content'
+                          }}
+                        >
+                          {trainee.subjectCount || 0} subjects
+                        </Badge>
+                      </td>
+                    )}
                     <td className="text-center show-mobile">
                       <EnrolledTraineeActions
                         trainee={trainee}
-                        onViewSubjects={handleViewSubjects}
+                        onViewSubjects={subjectId ? undefined : handleViewSubjects}
                         onRemoveTrainee={handleRemoveTrainee}
                       />
                     </td>

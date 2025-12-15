@@ -24,6 +24,7 @@ import AddTrainerModal from '../../components/AcademicDepartment/AddTrainerModal
 import RemoveTrainerModal from '../../components/AcademicDepartment/RemoveTrainerModal';
 import EditCourseTrainerModal from '../../components/AcademicDepartment/EditCourseTrainerModal';
 import TrainerActions from '../../components/AcademicDepartment/TrainerActions';
+import TrainersInAssessmentTable from '../../components/AcademicDepartment/TrainersInAssessmentTable';
 import '../../styles/scrollable-table.css';
 
 const InPageCourseDetail = ({ course, department } = {}) => {
@@ -38,6 +39,10 @@ const InPageCourseDetail = ({ course, department } = {}) => {
   
   // Check if user is Department Head
   const isDeptHead = isDepartmentHead(user);
+  
+  // Check if user has any trainer action permission (for showing Actions column)
+  const hasTrainerActionPermission = hasPermission(PERMISSION_IDS.ASSIGN_TRAINERS) || 
+                                      hasPermission(PERMISSION_IDS.REMOVE_TRAINERS);
   
   // Modal states
   const [showAddSubject, setShowAddSubject] = useState(false);
@@ -185,8 +190,25 @@ const InPageCourseDetail = ({ course, department } = {}) => {
     // If this is trainee view, navigate back to enrolled courses
     if (isTraineeView) {
       navigate(ROUTES.COURSES_ENROLLED);
-    } else if (isDeptHead) {
+    } 
+    // Check if we're in academic route
+    else if (location.pathname.startsWith('/academic/course-detail')) {
+      // Navigate back to department details for academic view
+      if (department?.id) {
+        navigate(`/academic/course/${department.id}`);
+      } else if (location.state?.departmentId) {
+        navigate(`/academic/course/${location.state.departmentId}`);
+      } else {
+        navigate('/academic/departments');
+      }
+    }
+    // Check if we're in department head route
+    else if (location.pathname.startsWith('/my-department-details')) {
       // Navigate back to department dashboard for Department Head view
+      navigate(ROUTES.DEPARTMENT_MY_DETAILS);
+    }
+    // Fallback: check isDeptHead
+    else if (isDeptHead) {
       navigate(ROUTES.DEPARTMENT_MY_DETAILS);
     } else {
       // Navigate back to department details for academic view
@@ -623,25 +645,23 @@ const InPageCourseDetail = ({ course, department } = {}) => {
                   </Nav.Link>
                 </Nav.Item>
               )}
-              {hasPermission(PERMISSION_IDS.ASSIGN_TRAINERS) && (
-                <Nav.Item>
-                  <Nav.Link 
-                    eventKey="assign-trainer" 
-                    className="d-flex align-items-center"
-                    style={{ 
-                      border: 'none',
-                      backgroundColor: 'transparent',
-                      color: '#ffffff',
-                      fontWeight: activeTab === 'assign-trainer' ? '600' : '400',
-                      opacity: activeTab === 'assign-trainer' ? '1' : '0.7',
-                      borderRadius: '4px 4px 0 0'
-                    }}
-                  >
-                    <PersonCheck className="me-2" size={16} />
-                    Trainers In Assessment
-                  </Nav.Link>
-                </Nav.Item>
-              )}
+              <Nav.Item>
+                <Nav.Link 
+                  eventKey="assign-trainer" 
+                  className="d-flex align-items-center"
+                  style={{ 
+                    border: 'none',
+                    backgroundColor: 'transparent',
+                    color: '#ffffff',
+                    fontWeight: activeTab === 'assign-trainer' ? '600' : '400',
+                    opacity: activeTab === 'assign-trainer' ? '1' : '0.7',
+                    borderRadius: '4px 4px 0 0'
+                  }}
+                >
+                  <PersonCheck className="me-2" size={16} />
+                  Trainers In Assessment
+                </Nav.Link>
+              </Nav.Item>
               {!isTraineeView && (
                 <Nav.Item>
                   <Nav.Link 
@@ -863,186 +883,17 @@ const InPageCourseDetail = ({ course, department } = {}) => {
               )}
 
               {/* Assign Trainer Tab */}
-              {hasPermission(PERMISSION_IDS.ASSIGN_TRAINERS) && (
-                <Tab.Pane eventKey="assign-trainer" style={{ height: '100%' }}>
-                  {/* Trainers Table */}
-                  {courseDetails?.instructors && courseDetails.instructors.length > 0 ? (
-                    <div className="scrollable-table-container admin-table trainer-table-scroll">
-                      <Table hover className="mb-0" style={{ fontSize: '0.875rem' }}>
-                        <thead className="sticky-header">
-                          <tr>
-                            <th 
-                              className="fw-semibold"
-                              style={{
-                                backgroundColor: 'var(--bs-primary)',
-                                color: 'white',
-                                borderColor: 'var(--bs-primary)',
-                                borderLeft: 'none',
-                                borderRight: 'none'
-                              }}
-                            >
-                              #
-                            </th>
-                            <th 
-                              className="fw-semibold"
-                              style={{
-                                backgroundColor: 'var(--bs-primary)',
-                                color: 'white',
-                                borderColor: 'var(--bs-primary)',
-                                borderLeft: 'none',
-                                borderRight: 'none'
-                              }}
-                            >
-                              EID
-                            </th>
-                            <th 
-                              className="fw-semibold"
-                              style={{
-                                backgroundColor: 'var(--bs-primary)',
-                                color: 'white',
-                                borderColor: 'var(--bs-primary)',
-                                borderLeft: 'none',
-                                borderRight: 'none'
-                              }}
-                            >
-                              Name
-                            </th>
-                            <th 
-                              className="fw-semibold"
-                              style={{
-                                backgroundColor: 'var(--bs-primary)',
-                                color: 'white',
-                                borderColor: 'var(--bs-primary)',
-                                borderLeft: 'none',
-                                borderRight: 'none'
-                              }}
-                            >
-                              Email
-                            </th>
-                            <th 
-                              className="fw-semibold"
-                              style={{
-                                backgroundColor: 'var(--bs-primary)',
-                                color: 'white',
-                                borderColor: 'var(--bs-primary)',
-                                borderLeft: 'none',
-                                borderRight: 'none'
-                              }}
-                            >
-                              Phone
-                            </th>
-                            <th 
-                              className="fw-semibold"
-                              style={{
-                                backgroundColor: 'var(--bs-primary)',
-                                color: 'white',
-                                borderColor: 'var(--bs-primary)',
-                                borderLeft: 'none',
-                                borderRight: 'none'
-                              }}
-                            >
-                              Role
-                            </th>
-                            <th 
-                              className="fw-semibold text-center"
-                              style={{
-                                backgroundColor: 'var(--bs-primary)',
-                                color: 'white',
-                                borderColor: 'var(--bs-primary)',
-                                borderLeft: 'none',
-                                borderRight: 'none'
-                              }}
-                            >
-                              Actions
-                            </th>
-                          </tr>
-                        </thead>
-                        <tbody>
-                          {courseDetails.instructors.map((trainer, index) => (
-                            <tr 
-                              key={trainer.id}
-                              className={`${index % 2 === 0 ? 'bg-white' : 'bg-neutral-50'} transition-all`}
-                              style={{
-                                transition: 'background-color 0.2s ease'
-                              }}
-                              onMouseEnter={(e) => {
-                                e.currentTarget.style.backgroundColor = 'var(--bs-neutral-100)';
-                              }}
-                              onMouseLeave={(e) => {
-                                e.currentTarget.style.backgroundColor = index % 2 === 0 ? 'white' : 'var(--bs-neutral-50)';
-                              }}
-                            >
-                              <td 
-                                className="align-middle"
-                                style={{ borderLeft: 'none', borderRight: 'none' }}
-                              >
-                                {index + 1}
-                              </td>
-                              <td 
-                                className="align-middle"
-                                style={{ borderLeft: 'none', borderRight: 'none' }}
-                              >
-                                <Badge bg="secondary" className="text-white">
-                                  {trainer.eid}
-                                </Badge>
-                              </td>
-                              <td 
-                                className="align-middle"
-                                style={{ borderLeft: 'none', borderRight: 'none' }}
-                              >
-                                <span className="fw-medium text-dark">
-                                  {trainer.firstName} {trainer.middleName} {trainer.lastName}
-                                </span>
-                              </td>
-                              <td 
-                                className="align-middle"
-                                style={{ borderLeft: 'none', borderRight: 'none' }}
-                              >
-                                <span className="text-dark">{trainer.email}</span>
-                              </td>
-                              <td 
-                                className="align-middle"
-                                style={{ borderLeft: 'none', borderRight: 'none' }}
-                              >
-                                <span className="text-dark">{trainer.phoneNumber}</span>
-                              </td>
-                              <td 
-                                className="align-middle"
-                                style={{ borderLeft: 'none', borderRight: 'none' }}
-                              >
-                                {trainer.roleInCourse && trainer.roleInCourse.length > 0 ? (
-                                  trainer.roleInCourse.map(role => (
-                                    <Badge key={role} bg="success" className="me-1">
-                                      {role}
-                                    </Badge>
-                                  ))
-                                ) : (
-                                  <span className="text-muted">-</span>
-                                )}
-                              </td>
-                              <td 
-                                className="align-middle text-center"
-                                style={{ borderLeft: 'none', borderRight: 'none' }}
-                              >
-                                <TrainerActions
-                                  trainer={trainer}
-                                  onEdit={() => handleEditTrainer(trainer.id)}
-                                  onDelete={() => handleRemoveTrainer(trainer.id)}
-                                  editPermission={PERMISSION_IDS.ASSIGN_TRAINERS}
-                                />
-                              </td>
-                            </tr>
-                          ))}
-                        </tbody>
-                      </Table>
-                    </div>
-                  ) : (
-                    <div className="alert alert-info">
-                      No trainers assigned yet. Click "Add Trainer" button to assign a trainer to this course.
-                    </div>
-                  )}
+              <Tab.Pane eventKey="assign-trainer" style={{ height: '100%' }}>
+                <TrainersInAssessmentTable
+                  trainers={courseDetails?.instructors || []}
+                  variant="course"
+                  onEdit={(trainerId) => handleEditTrainer(trainerId)}
+                  onDelete={(trainerId) => handleRemoveTrainer(trainerId)}
+                  hasActionPermission={hasTrainerActionPermission}
+                  editPermission={PERMISSION_IDS.ASSIGN_TRAINERS}
+                  emptyMessage="No trainers assigned yet."
+                />
               </Tab.Pane>
-              )}
 
               {/* Assessment Events Tab */}
               {!isTraineeView && (

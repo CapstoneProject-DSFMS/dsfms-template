@@ -25,13 +25,14 @@ import { isDepartmentHead } from '../../utils/sidebarUtils';
 import { LoadingSkeleton, SortIcon } from '../Common';
 import useTableSort from '../../hooks/useTableSort';
 import TrainerActions from './TrainerActions';
+import TrainersInAssessmentTable from './TrainersInAssessmentTable';
 import DisableSubjectModal from './DisableSubjectModal';
 import EditSubjectModal from './EditSubjectModal';
 import EditTrainerModal from './EditTrainerModal';
 import AddTrainerModal from './AddTrainerModal';
 import AssessmentEventsList from './AssessmentEventsList';
 import AssessmentEventDetailModal from './AssessmentEventDetailModal';
-import TraineeListInSubject from '../DepartmentHead/SubjectDetail/TraineeListInSubject';
+import EnrolledTraineesTable from './EnrolledTraineesTable';
 import subjectAPI from '../../api/subject';
 import '../../styles/scrollable-table.css';
 
@@ -43,6 +44,11 @@ const SubjectDetailsView = ({ subjectId, courseId }) => {
   
   // Check if user is Department Head
   const isDeptHead = isDepartmentHead(user);
+  
+  // Check if user has any trainer action permission (for showing Actions column)
+  const hasTrainerActionPermission = hasPermission(PERMISSION_IDS.ASSIGN_TRAINERS) || 
+                                      hasPermission(PERMISSION_IDS.REMOVE_TRAINERS);
+  
   const [subject, setSubject] = useState(null);
   const [trainers, setTrainers] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -600,7 +606,7 @@ const SubjectDetailsView = ({ subjectId, courseId }) => {
                           fontSize: '1.15rem',
                           letterSpacing: '0.5px',
                           textTransform: 'uppercase'
-                        }}>Room</h6>
+                        }}>Venue</h6>
                         <span className="text-dark" style={{ fontSize: '0.9rem' }}>{subject.roomName || 'N/A'}</span>
                       </div>
                       <div className="mb-3">
@@ -673,124 +679,25 @@ const SubjectDetailsView = ({ subjectId, courseId }) => {
 
               {/* Trainers Tab */}
               <Tab.Pane eventKey="trainers">
-                <div className="scrollable-table-container admin-table trainer-table-scroll">
-                  <Table hover className="mb-0" style={{ fontSize: '0.875rem' }}>
-                    <thead className="sticky-header">
-                      <tr>
-                        <th 
-                          className="fw-semibold"
-                          style={{
-                            backgroundColor: 'var(--bs-primary)',
-                            color: 'white',
-                            borderColor: 'var(--bs-primary)',
-                            borderLeft: 'none',
-                            borderRight: 'none'
-                          }}
-                        >
-                          EID
-                        </th>
-                        <th 
-                          className="fw-semibold"
-                          style={{
-                            backgroundColor: 'var(--bs-primary)',
-                            color: 'white',
-                            borderColor: 'var(--bs-primary)',
-                            borderLeft: 'none',
-                            borderRight: 'none'
-                          }}
-                        >
-                          Name
-                        </th>
-                        <th 
-                          className="fw-semibold"
-                          style={{
-                            backgroundColor: 'var(--bs-primary)',
-                            color: 'white',
-                            borderColor: 'var(--bs-primary)',
-                            borderLeft: 'none',
-                            borderRight: 'none'
-                          }}
-                        >
-                          Role
-                        </th>
-                        <th 
-                          className="fw-semibold text-center"
-                          style={{
-                            backgroundColor: 'var(--bs-primary)',
-                            color: 'white',
-                            borderColor: 'var(--bs-primary)',
-                            borderLeft: 'none',
-                            borderRight: 'none'
-                          }}
-                        >
-                          Actions
-                        </th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {sortedData.map((trainer, index) => {
-                        const roleInfo = formatRoleDisplay(trainer.role);
-                        return (
-                          <tr 
-                            key={trainer.id}
-                            className={`${index % 2 === 0 ? 'bg-white' : 'bg-neutral-50'} transition-all`}
-                            style={{
-                              transition: 'background-color 0.2s ease'
-                            }}
-                            onMouseEnter={(e) => {
-                              e.currentTarget.style.backgroundColor = 'var(--bs-neutral-100)';
-                            }}
-                            onMouseLeave={(e) => {
-                              e.currentTarget.style.backgroundColor = index % 2 === 0 ? 'white' : 'var(--bs-neutral-50)';
-                            }}
-                          >
-                            <td 
-                              className="align-middle"
-                              style={{ borderLeft: 'none', borderRight: 'none' }}
-                            >
-                              <Badge bg="secondary" className="text-white">
-                                {trainer.eid}
-                              </Badge>
-                            </td>
-                            <td 
-                              className="align-middle"
-                              style={{ borderLeft: 'none', borderRight: 'none' }}
-                            >
-                              <span className="fw-medium text-dark">{trainer.name}</span>
-                            </td>
-                            <td 
-                              className="align-middle"
-                              style={{ borderLeft: 'none', borderRight: 'none' }}
-                            >
-                              <Badge bg="success">
-                                {roleInfo.text}
-                              </Badge>
-                            </td>
-                            <td 
-                              className="align-middle text-center"
-                              style={{ borderLeft: 'none', borderRight: 'none' }}
-                            >
-                              <TrainerActions
-                                trainer={trainer}
-                                onEdit={() => {
-                                  setSelectedTrainer(trainer);
-                                  setShowEditTrainer(true);
-                                }}
-                                onDelete={handleRemoveTrainer}
-                              />
-                            </td>
-                          </tr>
-                        );
-                      })}
-                    </tbody>
-                  </Table>
-                </div>
+                <TrainersInAssessmentTable
+                  trainers={sortedData}
+                  variant="subject"
+                  onEdit={(trainer) => {
+                    setSelectedTrainer(trainer);
+                    setShowEditTrainer(true);
+                  }}
+                  onDelete={handleRemoveTrainer}
+                  hasActionPermission={hasTrainerActionPermission}
+                  editPermission={PERMISSION_IDS.ASSIGN_TRAINERS}
+                  formatRole={formatRoleDisplay}
+                  emptyMessage="No trainers assigned yet."
+                />
               </Tab.Pane>
 
               {/* Trainee Roster Tab */}
               {hasPermission(PERMISSION_IDS.ENROLL_SINGLE_TRAINEE) && (
               <Tab.Pane eventKey="trainees" style={{ height: '100%' }}>
-                <TraineeListInSubject 
+                <EnrolledTraineesTable 
                   subjectId={subjectId} 
                   courseId={courseId}
                 />

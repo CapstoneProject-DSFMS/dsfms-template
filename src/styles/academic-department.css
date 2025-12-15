@@ -1384,6 +1384,69 @@ div.subject-details .card {
   }
 }
 
+/* Tablet responsive (768px - 991px) - Fix alignment issues */
+@media (min-width: 768px) and (max-width: 991px) {
+  .course-table-responsive,
+  .department-table-container.course-table-responsive {
+    margin: 0 !important;
+    padding: 0 !important;
+    overflow-x: auto !important;
+    overflow-y: auto !important;
+    max-height: 550px;
+    width: 100%;
+    box-sizing: border-box;
+    position: relative;
+  }
+
+  /* Fix container alignment */
+  .card .p-0 .course-table-responsive,
+  .card .p-0 .department-table-container.course-table-responsive,
+  .card-body .course-table-responsive,
+  .card-body .department-table-container.course-table-responsive {
+    margin-left: 0 !important;
+    margin-right: 0 !important;
+    padding-left: 0 !important;
+    padding-right: 0 !important;
+  }
+
+  .course-table-responsive .table,
+  .department-table-container.course-table-responsive .table {
+    font-size: 0.85rem;
+    min-width: 100%;
+    width: 100%;
+    table-layout: auto;
+    margin: 0;
+    border-collapse: collapse;
+  }
+
+  .course-table-responsive .table th,
+  .course-table-responsive .table td,
+  .department-table-container.course-table-responsive .table th,
+  .department-table-container.course-table-responsive .table td {
+    padding: 0.6rem 0.5rem !important;
+    white-space: nowrap;
+    font-size: 0.85rem;
+  }
+
+  /* Ensure all columns are visible */
+  .department-table-container.course-table-responsive .table th,
+  .department-table-container.course-table-responsive .table td {
+    display: table-cell !important;
+  }
+
+  /* Sticky header adjustments */
+  .course-table-responsive .sticky-header th {
+    font-size: 0.8rem !important;
+    padding: 0.6rem 0.5rem !important;
+  }
+
+  /* Badge adjustments */
+  .course-table-responsive .table .badge {
+    font-size: 0.75rem !important;
+    padding: 0.3rem 0.5rem !important;
+  }
+}
+
 /* Tablet responsive (768px and below) */
 @media (max-width: 768px) {
   .course-table-responsive,

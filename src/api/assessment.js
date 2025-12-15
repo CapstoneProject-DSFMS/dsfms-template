@@ -280,6 +280,21 @@ const assessmentAPI = {
   },
 
   /**
+   * Get department assessment events (grouped events)
+   * @param {Object} params - Query parameters (page, limit, etc.)
+   * @returns {Promise} Department assessment events response
+   */
+  getDepartmentEvents: async (params = {}) => {
+    try {
+      const response = await apiClient.get('/assessments/department-events', { params });
+      return response.data;
+    } catch (error) {
+      console.error('Error fetching department assessment events:', error);
+      throw error;
+    }
+  },
+
+  /**
    * Approve or reject an assessment
    * @param {string} assessmentId - Assessment ID
    * @param {string} action - 'APPROVED' or 'REJECTED'
@@ -312,6 +327,48 @@ const assessmentAPI = {
       return response.data;
     } catch (error) {
       console.error('Error fetching assessments by event ID:', error);
+      throw error;
+    }
+  },
+
+  /**
+   * Get assessments for a course event
+   * @param {string} courseId - Course ID
+   * @param {string} templateId - Template ID
+   * @param {string} occuranceDate - Occurrence date in YYYY-MM-DD format
+   * @returns {Promise} Assessments response with eventInfo
+   */
+  getCourseEventAssessments: async (courseId, templateId, occuranceDate) => {
+    try {
+      const response = await apiClient.post('/assessments/events/course', {
+        courseId,
+        templateId,
+        occuranceDate
+      });
+      return response.data;
+    } catch (error) {
+      console.error('Error fetching course event assessments:', error);
+      throw error;
+    }
+  },
+
+  /**
+   * Get assessments for a subject event
+   * @param {string} subjectId - Subject ID
+   * @param {string} templateId - Template ID
+   * @param {string} occuranceDate - Occurrence date in YYYY-MM-DD format
+   * @returns {Promise} Assessments response with eventInfo
+   */
+  getSubjectEventAssessments: async (subjectId, templateId, occuranceDate) => {
+    try {
+      const response = await apiClient.post('/assessments/events/subject', {
+        subjectId,
+        templateId,
+        occuranceDate
+      });
+      return response.data;
+    } catch (error) {
+      console.error('Error fetching subject event assessments:', error);
       throw error;
     }
   },

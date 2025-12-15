@@ -1036,7 +1036,7 @@ body, html {
   /* Hide less important columns on tablet */
   .department-table-container.subject-table-scroll .table th:nth-child(5), /* Duration */
   .department-table-container.subject-table-scroll .table td:nth-child(5),
-  .department-table-container.subject-table-scroll .table th:nth-child(7), /* Room Name */
+  .department-table-container.subject-table-scroll .table th:nth-child(7), /* Venue */
   .department-table-container.subject-table-scroll .table td:nth-child(7) {
     display: none !important;
   }
@@ -1090,7 +1090,7 @@ body, html {
   .department-table-container.subject-table-scroll .table td:nth-child(5),
   .department-table-container.subject-table-scroll .table th:nth-child(6), /* End Date */
   .department-table-container.subject-table-scroll .table td:nth-child(6),
-  .department-table-container.subject-table-scroll .table th:nth-child(7), /* Room Name */
+  .department-table-container.subject-table-scroll .table th:nth-child(7), /* Venue */
   .department-table-container.subject-table-scroll .table td:nth-child(7) {
     display: none !important;
   }

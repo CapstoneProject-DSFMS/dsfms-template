@@ -7,9 +7,10 @@ import { LoadingSkeleton, SortIcon, PortalUnifiedDropdown, SearchBar } from '../
 import TrainerFilterPanel from '../TrainerFilterPanel';
 import useTableSort from '../../../hooks/useTableSort';
 import courseAPI from '../../../api/course';
+import subjectAPI from '../../../api/subject';
 import '../../../styles/scrollable-table.css';
 
-const TraineeList = ({ courseId }) => {
+const TraineeList = ({ courseId, subjectId }) => {
   const navigate = useNavigate();
   const [trainees, setTrainees] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -19,7 +20,7 @@ const TraineeList = ({ courseId }) => {
 
   useEffect(() => {
     const fetchTrainees = async () => {
-      if (!courseId) {
+      if (!courseId && !subjectId) {
         setLoading(false);
         setTrainees([]);
         return;
@@ -29,13 +30,50 @@ const TraineeList = ({ courseId }) => {
         setLoading(true);
         setError(null);
 
-        // Call API to get course trainees
-        const response = await courseAPI.getCourseTrainees(courseId);
-        
-        // Handle response format: { message: "...", data: { trainees: [...] } } or { trainees: [...] }
-        const traineesList = response?.data?.trainees || response?.trainees || [];
+        let traineesList = [];
 
-        // Map API response to component format - chỉ dùng data thật từ API
+        if (subjectId) {
+          // Fetch trainees from subject
+          const response = await subjectAPI.getSubjectById(subjectId);
+          // Extract trainees from enrollmentsByBatch
+          const allTrainees = [];
+          if (response?.enrollmentsByBatch) {
+            response.enrollmentsByBatch.forEach(batch => {
+              if (batch.trainees && Array.isArray(batch.trainees)) {
+                batch.trainees.forEach(trainee => {
+                  // Build full name
+                  const nameParts = [
+                    trainee.firstName,
+                    trainee.middleName,
+                    trainee.lastName
+                  ].filter(Boolean);
+                  const fullName = nameParts.join(' ') || null;
+
+                  allTrainees.push({
+                    id: trainee.id,
+                    name: fullName,
+                    email: trainee.email,
+                    employeeId: trainee.eid,
+                    department: trainee.department?.name || trainee.department,
+                    enrollmentDate: trainee.enrollmentDate || trainee.enrolledAt,
+                    status: trainee.status || batch.status,
+                    progress: trainee.progress,
+                    lastActivity: trainee.lastActivity || trainee.lastActivityDate,
+                    score: trainee.score,
+                    completionDate: trainee.completionDate
+                  });
+                });
+              }
+            });
+          }
+          traineesList = allTrainees;
+        } else if (courseId) {
+          // Fetch trainees from course
+          const response = await courseAPI.getCourseTrainees(courseId);
+          traineesList = response?.data?.trainees || response?.trainees || [];
+        }
+
+        // Map API response to component format
         const mappedTrainees = traineesList.map((trainee) => {
           // Build full name from firstName, middleName, lastName
           const nameParts = [
@@ -43,19 +81,21 @@ const TraineeList = ({ courseId }) => {
             trainee.middleName,
             trainee.lastName
           ].filter(Boolean);
-          const fullName = nameParts.join(' ') || null;
+          const fullName = nameParts.join(' ') || trainee.name || null;
 
           return {
             id: trainee.id,
             name: fullName,
             email: trainee.email,
-            employeeId: trainee.eid, // Employee ID từ API
+            employeeId: trainee.eid || trainee.employeeId, // Employee ID từ API
             department: trainee.department?.name || trainee.department, // Nếu API có
             enrollmentDate: trainee.enrollmentDate || trainee.enrolledAt, // Nếu API có
             status: trainee.status, // Nếu API có
             progress: trainee.progress, // Nếu API có
             lastActivity: trainee.lastActivity || trainee.lastActivityDate, // Nếu API có
-            subjectCount: trainee.subjectCount // Nếu API có
+            subjectCount: trainee.subjectCount, // Nếu API có
+            score: trainee.score, // For subject trainees
+            completionDate: trainee.completionDate // For subject trainees
           };
         }).filter(trainee => trainee.id); // Chỉ lấy trainees có id
 
@@ -70,7 +110,7 @@ const TraineeList = ({ courseId }) => {
     };
 
     fetchTrainees();
-  }, [courseId]);
+  }, [courseId, subjectId]);
 
   const getStatusBadge = (status) => {
     if (!status) return null;
@@ -78,14 +118,21 @@ const TraineeList = ({ courseId }) => {
     const statusUpper = String(status).toUpperCase();
     let config = { variant: 'secondary', text: status };
     
+    // Handle course statuses
     if (statusUpper === 'ACTIVE' || statusUpper === 'ENROLLED' || statusUpper === 'ONGOING') {
       config = { variant: 'success', text: 'Active' };
     } else if (statusUpper === 'COMPLETED' || statusUpper === 'COMPLETE') {
-      config = { variant: 'primary', text: 'Completed' };
+      config = { variant: 'success', text: 'Completed' };
     } else if (statusUpper === 'INACTIVE' || statusUpper === 'PENDING') {
-      config = { variant: 'warning', text: 'Inactive' };
+      config = { variant: 'warning', text: statusUpper === 'PENDING' ? 'Pending' : 'Inactive' };
     } else if (statusUpper === 'SUSPENDED' || statusUpper === 'CANCELLED') {
       config = { variant: 'danger', text: 'Suspended' };
+    } 
+    // Handle subject-specific statuses
+    else if (statusUpper === 'IN_PROGRESS' || statusUpper === 'IN PROGRESS') {
+      config = { variant: 'info', text: 'In Progress' };
+    } else if (statusUpper === 'FAILED') {
+      config = { variant: 'danger', text: 'Failed' };
     }
     
     return <Badge bg={config.variant}>{config.text}</Badge>;
@@ -228,7 +275,7 @@ const TraineeList = ({ courseId }) => {
       <Row className="mb-3 mt-4 form-mobile-stack search-filter-section">
         <Col xs={12} lg={6} md={5} className="mb-2 mb-lg-0">
           <SearchBar
-            placeholder="Search trainees..."
+            placeholder={subjectId ? "Search trainees in this subject..." : "Search trainees..."}
             value={searchTerm}
             onChange={setSearchTerm}
             className="search-bar-mobile"
@@ -243,6 +290,15 @@ const TraineeList = ({ courseId }) => {
             className="filter-panel-mobile"
           />
         </Col>
+        {subjectId && (
+          <Col xs={12} lg={3} md={3}>
+            <div className="text-end text-mobile-center">
+              <small className="text-muted">
+                {filteredTrainees.length} trainee{filteredTrainees.length !== 1 ? 's' : ''}
+              </small>
+            </div>
+          </Col>
+        )}
       </Row>
 
       {/* Table */}
@@ -274,8 +330,13 @@ const TraineeList = ({ courseId }) => {
               </SortableHeader>
               )}
               {trainees.some(t => t.progress != null) && (
-              <SortableHeader columnKey="progress" className="hide-mobile">
+              <SortableHeader columnKey="progress" className="show-mobile">
                 Progress
+              </SortableHeader>
+              )}
+              {trainees.some(t => t.score != null) && (
+              <SortableHeader columnKey="score" className="hide-mobile">
+                Score
               </SortableHeader>
               )}
               <th className="border-neutral-200 text-primary-custom fw-semibold text-center show-mobile">
@@ -339,12 +400,15 @@ const TraineeList = ({ courseId }) => {
                 </td>
                 )}
                 {trainees.some(t => t.progress != null) && (
-                <td className="border-neutral-200 align-middle hide-mobile">
+                <td className="border-neutral-200 align-middle show-mobile">
                     {trainee.progress != null && trainee.progress !== undefined ? (
-                  <div className="d-flex align-items-center">
-                    <div className="progress flex-grow-1 me-2" style={{ height: '8px' }}>
+                  <div>
+                    <div className="d-flex justify-content-between mb-1">
+                      <span className="fw-medium">{trainee.progress}%</span>
+                    </div>
+                    <div className="progress" style={{ height: '6px' }}>
                       <div 
-                        className="progress-bar" 
+                        className="progress-bar bg-primary" 
                         role="progressbar" 
                         style={{ width: `${trainee.progress}%` }}
                         aria-valuenow={trainee.progress} 
@@ -352,11 +416,19 @@ const TraineeList = ({ courseId }) => {
                         aria-valuemax="100"
                       ></div>
                     </div>
-                    <small className="text-muted">{trainee.progress}%</small>
                   </div>
                     ) : (
                       <span className="text-muted">-</span>
                     )}
+                </td>
+                )}
+                {trainees.some(t => t.score != null) && (
+                <td className="border-neutral-200 align-middle hide-mobile">
+                  {trainee.score ? (
+                    <span className="fw-bold text-success">{trainee.score}</span>
+                  ) : (
+                    <span className="text-muted">-</span>
+                  )}
                 </td>
                 )}
                 <td className="border-neutral-200 align-middle text-center">

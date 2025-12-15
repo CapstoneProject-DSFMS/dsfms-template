@@ -14,7 +14,6 @@ import { LoadingSkeleton, SearchBar } from '../../components/Common';
 import useTableSort from '../../hooks/useTableSort';
 import { ROUTES } from '../../constants/routes';
 import assessmentAPI from '../../api/assessment';
-import { groupAssessmentsByEvent } from '../../utils/assessmentEventUtils';
 import '../../styles/scrollable-table.css';
 import '../../styles/department-head.css';
 
@@ -159,64 +158,74 @@ const CompletedEventRow = ({ event, index, onView }) => {
 // Main Component
 const AssessmentReviewRequestsPage = () => {
   const navigate = useNavigate();
-  const [assessments, setAssessments] = useState([]);
+  const [events, setEvents] = useState([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [mainTab, setMainTab] = useState('processing'); // 'processing' or 'completed'
 
-  // Fetch assessments from API
+  // Fetch events from API
   useEffect(() => {
-    fetchAssessments();
+    fetchEvents();
   }, []);
 
-  const fetchAssessments = async () => {
+  const fetchEvents = async () => {
     try {
       setLoading(true);
-      const response = await assessmentAPI.getDepartmentAssessments();
-      setAssessments(response?.assessments || []);
+      const response = await assessmentAPI.getDepartmentEvents();
+      const eventsData = response?.data?.events || response?.events || [];
+      
+      // Map API response to component format and generate eventId
+      const mappedEvents = eventsData
+        .filter(event => event.status !== 'NOT_STARTED') // Filter out NOT_STARTED events
+        .map(event => {
+          // Generate eventId from templateId + occuranceDate (same format as before for compatibility)
+          const eventKey = `${event.templateInfo?.id || ''}|${event.occuranceDate || ''}`;
+          const eventId = encodeURIComponent(eventKey);
+          
+          // Calculate submittedCount: totalAssessments - totalReviewedForm - totalCancelledForm
+          const submittedCount = event.totalAssessments - event.totalReviewedForm - event.totalCancelledForm;
+          
+          return {
+            eventId,
+            eventKey,
+            eventName: event.name,
+            templateName: event.templateInfo?.name || 'Unknown Template',
+            templateId: event.templateInfo?.id,
+            occurrenceDate: event.occuranceDate || event.occurrenceDate,
+            status: event.status,
+            totalAssessments: event.totalAssessments,
+            totalTrainees: event.totalTrainees,
+            totalTrainers: event.totalTrainers,
+            submittedCount: submittedCount > 0 ? submittedCount : 0,
+            reviewedCount: event.totalReviewedForm || 0,
+            cancelledCount: event.totalCancelledForm || 0,
+            entityInfo: event.entityInfo,
+            templateInfo: event.templateInfo,
+            courseId: event.courseId,
+            subjectId: event.subjectId
+          };
+        });
+      
+      setEvents(mappedEvents);
     } catch (error) {
-      console.error('Error fetching assessments:', error);
-      setAssessments([]);
+      console.error('Error fetching events:', error);
+      setEvents([]);
     } finally {
       setLoading(false);
     }
   };
 
-  // Group all assessments by event
-  const allEvents = useMemo(() => {
-    return groupAssessmentsByEvent(assessments);
-  }, [assessments]);
-
-  // Separate events into Processing and Completed and enrich with counts
+  // Separate events into Processing and Completed
   const { processingEvents, completedEvents } = useMemo(() => {
     const processing = [];
     const completed = [];
 
-    allEvents.forEach(event => {
-      const totalAssessments = event.assessments.length;
-      const submittedCount = event.assessments.filter(a => a.status === 'SUBMITTED').length;
-      const reviewedCount = event.assessments.filter(a => 
-        a.status === 'APPROVED' || a.status === 'REJECTED'
-      ).length;
-      const cancelledCount = event.assessments.filter(a => a.status === 'CANCELLED').length;
-      const approvedCount = event.assessments.filter(a => a.status === 'APPROVED').length;
-      const rejectedCount = event.assessments.filter(a => a.status === 'REJECTED').length;
-
-      // Add counts to event for sorting
-      const enrichedEvent = {
-        ...event,
-        totalAssessments,
-        submittedCount,
-        reviewedCount,
-        cancelledCount,
-        approvedCount,
-        rejectedCount
-      };
-      
-      if (submittedCount > 0) {
-        processing.push(enrichedEvent);
+    events.forEach(event => {
+      // Event is in Processing if it has submitted forms (submittedCount > 0)
+      if (event.submittedCount > 0) {
+        processing.push(event);
       } else {
-        completed.push(enrichedEvent);
+        completed.push(event);
       }
     });
 
@@ -224,14 +233,14 @@ const AssessmentReviewRequestsPage = () => {
       processingEvents: processing,
       completedEvents: completed
     };
-  }, [allEvents]);
+  }, [events]);
 
   // Filter events by search term
-  const filterEventsBySearch = (events) => {
-    if (!searchTerm) return events;
+  const filterEventsBySearch = (eventsList) => {
+    if (!searchTerm) return eventsList;
     
     const searchLower = searchTerm.toLowerCase();
-    return events.filter(event => {
+    return eventsList.filter(event => {
       return (
         event.eventName?.toLowerCase().includes(searchLower) ||
         event.templateName?.toLowerCase().includes(searchLower)
@@ -262,7 +271,10 @@ const AssessmentReviewRequestsPage = () => {
     
     // Navigate with event type in state
     navigate(ROUTES.DEPARTMENT_REVIEW_EVENT_DETAIL(event.eventId), {
-      state: { eventType }
+      state: { 
+        eventType,
+        eventData: event // Pass full event data for detail page
+      }
     });
   };
 
