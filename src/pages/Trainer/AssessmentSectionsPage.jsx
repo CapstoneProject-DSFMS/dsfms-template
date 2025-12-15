@@ -351,7 +351,7 @@ const TrainerAssessmentSectionsPage = () => {
                 className="footer-btn"
                 onClick={handleToggleTraineeLock}
               >
-                {state.isTraineeLocked ? 'Open For Trainee' : 'Lock Trainee'}
+                {state.isTraineeLocked ? 'Unlock Form For Trainee' : 'Lock Trainee'}
               </Button>
             )}
             {isDepartmentHead && state.assessmentInfo?.status === 'SUBMITTED' && (

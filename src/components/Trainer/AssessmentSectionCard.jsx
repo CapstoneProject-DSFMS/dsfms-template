@@ -91,18 +91,11 @@ const AssessmentSectionCard = ({ section }) => {
                   <small className="text-uppercase text-muted">Edit By</small>
                   <span className="fw-semibold">{section.templateSection?.editBy || '—'}</span>
                 </div>
-                {section.templateSection?.editBy !== 'TRAINEE' && (
-                  <>
-                    <div className="flag-item">
-                      <small className="text-uppercase text-muted">Submittable</small>
-                      {getBooleanIcon(section.templateSection?.isSubmittable)}
-                    </div>
-                    {/* Toggle Dependent - Hidden per user request */}
-                    {/* <div className="flag-item">
-                      <small className="text-uppercase text-muted">Toggle Dependent</small>
-                      {getBooleanIcon(section.templateSection?.isToggleDependent)}
-                    </div> */}
-                  </>
+                {section.templateSection?.editBy !== 'TRAINEE' && section.templateSection?.isSubmittable && (
+                  <div className="flag-item" style={{ marginLeft: '8rem' }}>
+                    <small className="text-uppercase text-muted">Submittable</small>
+                    {getBooleanIcon(section.templateSection?.isSubmittable)}
+                  </div>
                 )}
               </div>
 

@@ -162,18 +162,6 @@ const AssessmentEventsList = ({ courseId, subjectId, onView }) => {
               >
                 Name
               </th>
-              {!subjectId && (
-                <th 
-                  className="fw-semibold text-start"
-                  style={{ 
-                    backgroundColor: 'var(--bs-primary)',
-                    color: 'white',
-                    borderColor: 'var(--bs-primary)'
-                  }}
-                >
-                  Subject
-                </th>
-              )}
               <th 
                 className="fw-semibold text-start"
                 style={{ 
@@ -182,7 +170,7 @@ const AssessmentEventsList = ({ courseId, subjectId, onView }) => {
                   borderColor: 'var(--bs-primary)'
                 }}
               >
-                Template
+                Template Name
               </th>
               <th 
                 className="fw-semibold text-start"
@@ -243,11 +231,6 @@ const AssessmentEventsList = ({ courseId, subjectId, onView }) => {
                 <td className="align-middle">
                   <span className="fw-medium">{event.name || '-'}</span>
                 </td>
-                {!subjectId && (
-                  <td className="align-middle">
-                    <span>{event.subject || '-'}</span>
-                  </td>
-                )}
                 <td className="align-middle">
                   <span>{event.templateInfo?.name || '-'}</span>
                 </td>

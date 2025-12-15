@@ -111,7 +111,7 @@ const UpcomingAssessmentsList = () => {
 
   const getStatusBadge = (status) => {
     const config = statusDisplayMap[status] || { variant: 'secondary', text: status || 'Unknown' };
-    return <Badge bg={config.variant}>{config.text}</Badge>;
+    return <Badge bg={config.variant}>{String(config.text).toUpperCase()}</Badge>;
   };
 
   const handleAccess = async (assessment) => {
@@ -358,16 +358,13 @@ const UpcomingAssessmentsList = () => {
             <thead className="sticky-header">
               <tr>
                 <SortableHeader columnKey="title" className="show-mobile">
-                  Assessment
-                </SortableHeader>
-                <SortableHeader columnKey={entityFilter === 'course' ? 'courseName' : 'subjectName'} className="show-mobile">
-                  {entityFilter === 'course' ? 'Course' : 'Subject'}
+                  Assessment Events
                 </SortableHeader>
                 <SortableHeader columnKey="traineeCount" className="show-mobile">
                   Trainees
                 </SortableHeader>
                 <SortableHeader columnKey="scheduledDate" className="show-mobile">
-                  Date
+                  Occurrence Date
                 </SortableHeader>
                 <SortableHeader columnKey="status" className="show-mobile">
                   Status
@@ -402,41 +399,6 @@ const UpcomingAssessmentsList = () => {
                       </div>
                     </td>
                     <td className="border-neutral-200 align-middle">
-                      {entityFilter === 'course' ? (
-                        assessment.courseName ? (
-                          <div className="d-flex align-items-center">
-                            <Book size={16} className="me-2 text-primary" />
-                            <div className="d-flex flex-column">
-                              <span className="fw-medium">{assessment.courseName}</span>
-                              {assessment.courseCode && (
-                                <small className="text-muted" style={{ fontSize: '0.75rem' }}>
-                                  {assessment.courseCode}
-                                </small>
-                              )}
-                            </div>
-                          </div>
-                        ) : (
-                          <span className="text-muted">-</span>
-                        )
-                      ) : (
-                        assessment.subjectName ? (
-                          <div className="d-flex align-items-center">
-                            <JournalText size={16} className="me-2 text-success" />
-                            <div className="d-flex flex-column">
-                              <span className="fw-medium">{assessment.subjectName}</span>
-                              {assessment.subjectCode && (
-                                <small className="text-muted" style={{ fontSize: '0.75rem' }}>
-                                  {assessment.subjectCode}
-                                </small>
-                              )}
-                            </div>
-                          </div>
-                        ) : (
-                          <span className="text-muted">-</span>
-                        )
-                      )}
-                    </td>
-                    <td className="border-neutral-200 align-middle">
                       <div className="d-flex align-items-center">
                         <Person size={16} className="me-2 text-muted" />
                         <span>{assessment.traineeCount} {assessment.traineeCount === 1 ? 'trainee' : 'trainees'}</span>
@@ -455,7 +417,7 @@ const UpcomingAssessmentsList = () => {
                           onClick={() => handleAccess(assessment)}
                           disabled={loading}
                         >
-                          {loading ? 'Processing...' : 'View all forms'}
+                          {loading ? 'Processing...' : 'View details'}
                         </button>
                       )}
                     </td>

@@ -1,6 +1,6 @@
 import React from 'react';
 import { Table, Badge } from 'react-bootstrap';
-import { People } from 'react-bootstrap-icons';
+import { People, Calendar } from 'react-bootstrap-icons';
 import { LoadingSkeleton, SortIcon } from '../Common';
 import useTableSort from '../../hooks/useTableSort';
 import SubjectActions from './SubjectActions';
@@ -119,14 +119,8 @@ const SubjectTable = ({ subjects = [], loading = false, onView, onEdit, onDelete
             <SortableHeader columnKey="method" className="show-mobile">
               Method
             </SortableHeader>
-            <SortableHeader columnKey="duration" className="show-mobile">
-              Duration
-            </SortableHeader>
             <SortableHeader columnKey="startDate" className="show-mobile">
-              Start Date
-            </SortableHeader>
-            <SortableHeader columnKey="endDate" className="show-mobile">
-              End Date
+              Start Date / End Date
             </SortableHeader>
             <SortableHeader columnKey="roomName" className="show-mobile">
               Room Name
@@ -201,19 +195,17 @@ const SubjectTable = ({ subjects = [], loading = false, onView, onEdit, onDelete
                 </Badge>
               </td>
               <td className="show-mobile">
-                <span className="text-dark">
-                  {subject.duration}
-                </span>
-              </td>
-              <td className="show-mobile">
-                <span className="text-dark">
-                  {subject.startDate}
-                </span>
-              </td>
-              <td className="show-mobile">
-                <span className="text-dark">
-                  {subject.endDate}
-                </span>
+                <div className="d-flex align-items-center flex-wrap">
+                  <div className="d-flex align-items-center me-2">
+                    <Calendar size={14} className="me-1 text-primary" />
+                    <span className="text-dark" style={{ fontSize: '0.875rem' }}>{subject.startDate || 'N/A'}</span>
+                  </div>
+                  <span className="text-muted me-2">/</span>
+                  <div className="d-flex align-items-center">
+                    <Calendar size={14} className="me-1 text-primary" />
+                    <span className="text-dark" style={{ fontSize: '0.875rem' }}>{subject.endDate || 'N/A'}</span>
+                  </div>
+                </div>
               </td>
               <td className="show-mobile">
                 <span className="text-dark">
@@ -237,9 +229,6 @@ const SubjectTable = ({ subjects = [], loading = false, onView, onEdit, onDelete
                     width: 'fit-content'
                   }}
                 >
-                  <span className="me-1" style={{ fontSize: '0.8rem' }}>
-                    {subject.status === 'ACTIVE' || subject.status === 'ON-GOING' || subject.status === 'ONGOING' ? '●' : '○'}
-                  </span>
                   {subject.status || 'N/A'}
                 </Badge>
               </td>

@@ -307,7 +307,7 @@ const Header = ({ onToggleSidebar }) => {
     }
     
     if (path.match(/^\/assessments\/sections\/[^/]+\/fields$/)) {
-      return 'Field';
+      return 'Section Details';
     }
     
     // Check for new function-based course enroll trainees (pattern: /courses/:courseId/enroll-trainees)
@@ -328,6 +328,11 @@ const Header = ({ onToggleSidebar }) => {
     // Check for new function-based my-department-details with courseId (pattern: /my-department-details/:courseId)
     if (path.match(/^\/my-department-details\/[^/]+$/) && !path.includes('/subjects/')) {
       return 'Course Details';
+    }
+    
+    // Check for assessment review requests event detail (pattern: /assessment-review-requests/events/:eventId)
+    if (path.match(/^\/assessment-review-requests\/events\/[^/]+$/)) {
+      return 'Assessment Event Details';
     }
     
     // Check for new function-based assessment review requests detail (pattern: /assessment-review-requests/:requestId)
@@ -372,7 +377,7 @@ const Header = ({ onToggleSidebar }) => {
 
     // Check for trainer assessment section fields (pattern: /trainer/assessments/sections/:sectionId/fields)
     if (path.match(/^\/trainer\/assessments\/sections\/[^/]+\/fields$/)) {
-      return 'Field';
+      return 'Section Details';
     }
 
     // Check for trainer assessment sections (pattern: /trainer/assessments/:assessmentId/sections)

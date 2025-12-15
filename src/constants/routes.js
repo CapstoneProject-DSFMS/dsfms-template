@@ -127,6 +127,7 @@ export const ROUTES = {
   DEPARTMENT_MY_DETAILS: '/my-department-details',
   DEPARTMENT_REVIEW_REQUESTS: '/assessment-review-requests',
   DEPARTMENT_REVIEW_REQUEST_DETAIL: (requestId) => `/assessment-review-requests/${requestId}`,
+  DEPARTMENT_REVIEW_EVENT_DETAIL: (eventId) => `/assessment-review-requests/events/${eventId}`,
 };
 
 // ============================================

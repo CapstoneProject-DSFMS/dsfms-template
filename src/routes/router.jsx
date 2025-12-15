@@ -53,8 +53,7 @@ import ResultApprovalNotePage from '../pages/Trainer/ResultApprovalNotePage';
 import DepartmentHeadDashboardPage from '../pages/DepartmentHead/DepartmentHeadDashboardPage';
 import MyDepartmentDetailsPage from '../pages/DepartmentHead/MyDepartmentDetailsPage';
 import AssessmentReviewRequestsPage from '../pages/DepartmentHead/AssessmentReviewRequestsPage';
-import CourseDetailsPage from '../pages/DepartmentHead/CourseDetailsPage';
-import DepartmentHeadSubjectDetailsPage from '../pages/DepartmentHead/SubjectDetailsPage';
+import AssessmentEventReviewDetailPage from '../pages/DepartmentHead/AssessmentEventReviewDetailPage';
 import DepartmentHeadTraineeDetailsPage from '../pages/DepartmentHead/TraineeDetailsPage';
 import { getCurrentBasename } from '../utils/navigation';
 import { ROUTES } from '../constants/routes';
@@ -390,7 +389,7 @@ export const router = createBrowserRouter(
                 <div className="p-4 text-center text-muted">You don't have permission to view subject details.</div>
               }
             >
-              <DepartmentHeadSubjectDetailsPage />
+              <SubjectDetailsWrapper />
             </PermissionRoute>
           ),
         },
@@ -682,7 +681,7 @@ export const router = createBrowserRouter(
                 <div className="p-4 text-center text-muted">You don't have permission to view course details.</div>
               }
             >
-              <CourseDetailsPage />
+              <InPageCourseDetail />
             </PermissionRoute>
           ),
         },
@@ -704,6 +703,10 @@ export const router = createBrowserRouter(
         {
           path: ':requestId',
           element: <AssessmentReviewRequestsPage />,
+        },
+        {
+          path: 'events/:eventId',
+          element: <AssessmentEventReviewDetailPage />,
         },
       ],
     },
@@ -1104,7 +1107,7 @@ export const router = createBrowserRouter(
                 <div className="p-4 text-center text-muted">You don't have permission to view course details.</div>
               }
             >
-              <CourseDetailsPage />
+              <InPageCourseDetail />
             </PermissionRoute>
           ),
         },
@@ -1125,7 +1128,7 @@ export const router = createBrowserRouter(
                 <div className="p-4 text-center text-muted">You don't have permission to view subject details.</div>
               }
             >
-              <DepartmentHeadSubjectDetailsPage />
+              <SubjectDetailsWrapper />
             </PermissionRoute>
           ),
         },

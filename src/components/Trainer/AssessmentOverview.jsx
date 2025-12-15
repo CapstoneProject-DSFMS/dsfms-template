@@ -21,7 +21,7 @@ const AssessmentOverview = ({ assessmentInfo, roleInSubject, formatDate }) => {
       subValue: ''
     },
     {
-      label: 'Role In Subject',
+      label: 'Your Role In Assessment',
       value: roleInSubject || '—',
       subValue: ''
     }
