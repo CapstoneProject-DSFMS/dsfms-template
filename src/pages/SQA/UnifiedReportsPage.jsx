@@ -422,7 +422,7 @@ const UnifiedReportsPage = ({ defaultTab, source = '/reports', onShowForm }) => 
 
                         {/* ACTIONS */}
                         <td className="align-middle text-center show-mobile">
-                          <PermissionWrapper permission={PERMISSION_IDS.VIEW_ALL_INCIDENT_FEEDBACK_REPORT} fallback={null}>
+                          <PermissionWrapper permission={PERMISSION_IDS.VIEW_INCIDENT_FEEDBACK_REPORT_DETAILS} fallback={null}>
                             <PortalUnifiedDropdown
                               align="end"
                               className="table-dropdown"
