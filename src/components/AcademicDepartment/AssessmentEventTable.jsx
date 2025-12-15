@@ -118,7 +118,6 @@ const AssessmentEventTable = ({
       case 'CANCELED':
         return 'danger';
       case 'ONGOING':
-      case 'IN_PROGRESS':
         return 'warning';
       default:
         return 'secondary';

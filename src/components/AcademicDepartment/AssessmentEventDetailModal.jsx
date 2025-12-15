@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { Modal, Button, Row, Col, Badge, Card, Tab, Nav, Table, Spinner, Alert } from 'react-bootstrap';
 import { 
   CalendarEvent, 
@@ -103,28 +103,52 @@ const AssessmentEventDetailModal = ({
   const [showPreviewModal, setShowPreviewModal] = useState(false);
   const [selectedTraineePdf, setSelectedTraineePdf] = useState(null);
   const [traineePdfUrl, setTraineePdfUrl] = useState(null);
-  const [loadingTraineePdf, setLoadingTraineePdf] = useState(false);
+
+  const loadAssessments = useCallback(async () => {
+    if (!event?.id) return;
+    
+    try {
+      setLoadingAssessments(true);
+      const response = await assessmentAPI.getAssessmentsByEventId(event.id);
+      const assessmentsData = response?.data?.assessments || response?.assessments || response?.data || [];
+      setAssessments(Array.isArray(assessmentsData) ? assessmentsData : []);
+    } catch {
+      // If API doesn't exist or returns 404, fall back to traineeRoster
+      if (event?.traineeRoster && Array.isArray(event.traineeRoster)) {
+        setAssessments(event.traineeRoster);
+      } else {
+        setAssessments([]);
+      }
+    } finally {
+      setLoadingAssessments(false);
+    }
+  }, [event?.id, event?.traineeRoster]);
 
   useEffect(() => {
     if (show && event?.id) {
       // Reset state when modal opens
       setActiveTab('overview');
-      setAssessments([]);
       setTemplatePdfUrl(null);
       
-      // Load assessments when modal opens for statistics in Overview tab
-      loadAssessments();
-    }
-  }, [show, event?.id]);
-
-  useEffect(() => {
-    if (activeTab === 'trainees') {
-      // Load assessments if not already loaded
-      if (assessments.length === 0 && !loadingAssessments) {
+      // Use traineeRoster from event if available, otherwise try loading via API
+      if (event?.traineeRoster && Array.isArray(event.traineeRoster)) {
+        setAssessments(event.traineeRoster);
+        setLoadingAssessments(false);
+      } else {
+        // Fallback to API if traineeRoster is not available
         loadAssessments();
       }
     }
-  }, [activeTab]);
+  }, [show, event?.id, event?.traineeRoster, loadAssessments]);
+
+  useEffect(() => {
+    if (activeTab === 'trainees') {
+      // If traineeRoster available in event, use it directly
+      if (event?.traineeRoster && Array.isArray(event.traineeRoster) && assessments.length === 0) {
+        setAssessments(event.traineeRoster);
+      }
+    }
+  }, [activeTab, event?.traineeRoster, assessments.length]);
 
   // Cleanup PDF URL on unmount
   useEffect(() => {
@@ -137,24 +161,6 @@ const AssessmentEventDetailModal = ({
       }
     };
   }, [templatePdfUrl, traineePdfUrl]);
-
-  const loadAssessments = async () => {
-    if (!event?.id) return;
-    
-    try {
-      setLoadingAssessments(true);
-      const response = await assessmentAPI.getAssessmentsByEventId(event.id);
-      const assessmentsData = response?.data?.assessments || response?.assessments || response?.data || [];
-      setAssessments(Array.isArray(assessmentsData) ? assessmentsData : []);
-    } catch (error) {
-      console.error('Error loading assessments:', error);
-      // If API doesn't exist or returns 404, set empty array (for now)
-      setAssessments([]);
-    } finally {
-      setLoadingAssessments(false);
-    }
-  };
-
 
   const handleTabSelect = (tab) => {
     setActiveTab(tab);
@@ -208,81 +214,48 @@ const AssessmentEventDetailModal = ({
   const tableData = useMemo(() => {
     if (!event) return [];
 
-    // Mock data for trainees
-    const mockAssessments = [
-      {
-        id: '1',
-        name: 'Assessment Form 1',
-        trainee: {
-          fullName: 'John Doe',
-          email: 'john.doe@example.com'
-        },
-        status: 'COMPLETED',
-        score: 85,
-        maxScore: 100,
-        occurrenceDate: event?.occuranceDate || event?.occurrenceDate || new Date().toISOString(),
-        pdfUrl: 'https://www.w3.org/WAI/ER/tests/xhtml/testfiles/resources/pdf/dummy.pdf'
-      },
-      {
-        id: '2',
-        name: 'Assessment Form 2',
-        trainee: {
-          fullName: 'Jane Smith',
-          email: 'jane.smith@example.com'
-        },
-        status: 'COMPLETED',
-        score: 65,
-        maxScore: 100,
-        occurrenceDate: event?.occuranceDate || event?.occurrenceDate || new Date().toISOString(),
-        pdfUrl: 'https://www.w3.org/WAI/ER/tests/xhtml/testfiles/resources/pdf/dummy.pdf'
-      },
-      {
-        id: '3',
-        name: 'Assessment Form 3',
-        trainee: {
-          fullName: 'Bob Johnson',
-          email: 'bob.johnson@example.com'
-        },
-        status: 'IN_PROGRESS',
-        score: 0,
-        maxScore: 100,
-        occurrenceDate: event?.occuranceDate || event?.occurrenceDate || new Date().toISOString(),
-        pdfUrl: null
-      }
-    ];
-
-    const displayAssessments = Array.isArray(assessments) && assessments.length > 0 ? assessments : mockAssessments;
+    // Use traineeRoster from event API response directly
+    const displayData = event?.traineeRoster && Array.isArray(event.traineeRoster) ? event.traineeRoster : assessments;
 
     // Prepare data for table sorting - always return an array
-    if (!Array.isArray(displayAssessments)) {
+    if (!Array.isArray(displayData)) {
       return [];
     }
 
-    return displayAssessments.map((assessment, index) => {
-      const traineeName = assessment.trainee?.fullName || 
-                        `${assessment.trainee?.firstName || ''} ${assessment.trainee?.lastName || ''}`.trim() ||
+    return displayData.map((item, index) => {
+      // Map traineeRoster fields to table display fields
+      const traineeName = item.traineeFullName || item.trainee?.fullName || 
+                        `${item.trainee?.firstName || ''} ${item.trainee?.lastName || ''}`.trim() ||
                         `Trainee ${index + 1}`;
-      const score = assessment.score || 0;
-      const maxScore = assessment.maxScore || 100;
-      const percentage = maxScore > 0 ? Math.round((score / maxScore) * 100) : 0;
-      const occurrenceDate = assessment.occurrenceDate || assessment.occuranceDate || event?.occuranceDate || event?.occurrenceDate || null;
+      const traineeEid = item.traineeEid || item.eid || '';
+      const assessmentFormName = item.assessmentFormName || item.assessmentForm || item.name || '-';
+      const status = item.status || 'NOT_STARTED';
+      const resultScore = item.resultScore || item.score || 0;
+      const resultText = item.resultText || item.result || null;
+      const occuranceDate = item.occuranceDate || item.occurrenceDate || event?.occuranceDate || event?.occurrenceDate || null;
+      const pdfUrl = item.pdfUrl || null;
       
       return {
-        id: assessment.id || index,
-        assessmentForm: assessment.name || assessment.assessmentFormName || `Assessment Form ${index + 1}`,
+        assessmentFormId: item.assessmentFormId || index,
+        id: item.assessmentFormId || index,
+        assessmentForm: assessmentFormName,
+        assessmentFormName: assessmentFormName,
         trainee: traineeName,
-        traineeEmail: assessment.trainee?.email || '-',
-        occurrenceDate: occurrenceDate,
-        status: assessment.status || 'NOT_STARTED',
-        score: score,
-        maxScore: maxScore,
-        percentage: percentage,
-        result: percentage >= 70 ? 'PASSED' : (percentage > 0 ? 'FAILED' : null),
-        pdfUrl: assessment.pdfUrl || assessment.pdf || null,
-        rawAssessment: assessment
+        traineeEid: traineeEid,
+        traineeEmail: traineeEid,
+        traineeFullName: traineeName,
+        occurrenceDate: occuranceDate,
+        occuranceDate: occuranceDate,
+        status: status,
+        score: resultScore,
+        resultScore: resultScore,
+        result: resultText,
+        resultText: resultText,
+        pdfUrl: pdfUrl,
+        percentage: resultScore > 0 ? resultScore : null
       };
     });
-  }, [assessments, event?.occuranceDate, event?.occurrenceDate, event]);
+  }, [event, assessments]);
 
   // Use table sort hook at top level - always ensure tableData is an array
   // This must be BEFORE any early returns to follow React hooks rules
@@ -299,7 +272,7 @@ const AssessmentEventDetailModal = ({
         month: 'long',
         day: 'numeric'
       });
-    } catch (error) {
+    } catch {
       return dateString;
     }
   };
@@ -321,7 +294,6 @@ const AssessmentEventDetailModal = ({
       case 'REJECTED':
         return 'danger';
       case 'ONGOING':
-      case 'IN_PROGRESS':
         return 'warning';
       default:
         return 'secondary';
@@ -345,7 +317,6 @@ const AssessmentEventDetailModal = ({
         icon = XCircle;
         text = 'Failed';
         break;
-      case 'IN_PROGRESS':
       case 'ONGOING':
         variant = 'warning';
         icon = Clock;
@@ -413,7 +384,7 @@ const AssessmentEventDetailModal = ({
         }
       } else if (status === 'REJECTED' || status === 'FAILED') {
         stats.failed++;
-      } else if (status === 'IN_PROGRESS' || status === 'ONGOING') {
+      } else if (status === 'ONGOING') {
         stats.inProgress++;
       } else if (status === 'PENDING') {
         stats.pending++;
@@ -429,9 +400,7 @@ const AssessmentEventDetailModal = ({
   const entityName = event.entityInfo?.name || '-';
   const entityCode = event.entityInfo?.code || '-';
   const templateName = event.templateInfo?.name || '-';
-  const templateId = event.templateInfo?.id || '-';
   const templateFormId = event.templateInfo?.formId || event.templateInfo?.id;
-  const templateIsActive = event.templateInfo?.isActive ?? false;
   
   // Check if there's subject info
   const hasSubject = entityType === 'subject';
@@ -823,11 +792,20 @@ const AssessmentEventDetailModal = ({
                   </thead>
                   <tbody>
                     {sortedData.map((item, index) => {
-                      const hasPdf = item.pdfUrl !== null;
+                      const hasPdf = item.pdfUrl !== null && item.pdfUrl !== undefined;
+                      
+                      // Support both assessment format and traineeRoster format from API
+                      const assessmentFormName = item.assessmentFormName || item.assessmentForm || '-';
+                      const traineeName = item.traineeFullName || item.trainee || '-';
+                      const traineeEid = item.traineeEid || item.traineeEmail || '';
+                      const occuranceDate = item.occuranceDate || item.occurrenceDate;
+                      const status = item.status || '-';
+                      const resultScore = item.resultScore || item.score;
+                      const resultText = item.resultText || item.result;
                       
                       return (
                         <tr 
-                          key={item.id}
+                          key={item.id || item.assessmentFormId || index}
                           className={`${index % 2 === 0 ? 'bg-white' : 'bg-neutral-50'} transition-all`}
                           style={{
                             transition: 'background-color 0.2s ease'
@@ -840,36 +818,36 @@ const AssessmentEventDetailModal = ({
                           }}
                         >
                           <td className="align-middle">
-                            <span className="fw-medium">{item.assessmentForm}</span>
+                            <span className="fw-medium">{assessmentFormName}</span>
                           </td>
                           <td className="align-middle">
                             <div className="d-flex align-items-center">
                               <Person className="me-2 text-primary" size={18} />
                               <div>
-                                <h6 className="mb-0 fw-medium">{item.trainee}</h6>
-                                <small className="text-muted">{item.traineeEmail}</small>
+                                <h6 className="mb-0 fw-medium">{traineeName}</h6>
+                                {traineeEid && <small className="text-muted">{traineeEid}</small>}
                               </div>
                             </div>
                           </td>
                           <td className="align-middle">
-                            <span>{formatDate(item.occurrenceDate)}</span>
+                            <span>{formatDate(occuranceDate)}</span>
                           </td>
                           <td className="align-middle">
-                            {getAssessmentStatusBadge(item.status)}
+                            {getAssessmentStatusBadge(status)}
                           </td>
                           <td className="align-middle">
-                            {item.status === 'COMPLETED' || item.status === 'APPROVED' ? (
-                              <span className={`fw-bold ${item.percentage >= 70 ? 'text-success' : item.percentage >= 60 ? 'text-warning' : 'text-danger'}`}>
-                                {item.score}/{item.maxScore} ({item.percentage}%)
+                            {resultScore !== null && resultScore !== undefined ? (
+                              <span className="fw-bold text-primary">
+                                {resultScore}
                               </span>
                             ) : (
                               <span className="text-muted">-</span>
                             )}
                           </td>
                           <td className="align-middle">
-                            {item.result ? (
-                              <Badge bg={item.result === 'PASSED' ? 'success' : 'danger'}>
-                                {item.result}
+                            {resultText ? (
+                              <Badge bg={resultText === 'PASSED' || resultText === 'PASS' ? 'success' : 'danger'}>
+                                {resultText}
                               </Badge>
                             ) : (
                               <span className="text-muted">-</span>
@@ -881,7 +859,7 @@ const AssessmentEventDetailModal = ({
                                 variant="outline-primary"
                                 size="sm"
                                 onClick={() => {
-                                  setSelectedTraineePdf(item.rawAssessment);
+                                  setSelectedTraineePdf(item);
                                   setTraineePdfUrl(item.pdfUrl);
                                 }}
                                 className="d-inline-flex align-items-center"
@@ -922,8 +900,8 @@ const AssessmentEventDetailModal = ({
           document.body.style.overflow = 'auto';
         }}
       >
-        <Modal.Header closeButton style={{ flexShrink: 0 }}>
-          <Modal.Title>Template Preview - {templateName}</Modal.Title>
+        <Modal.Header closeButton style={{ flexShrink: 0, backgroundColor: 'var(--bs-primary)', borderColor: 'var(--bs-primary)' }}>
+          <Modal.Title style={{ color: 'white' }}>Template Preview - {templateName}</Modal.Title>
         </Modal.Header>
         <Modal.Body style={{ 
           padding: 0, 
@@ -948,7 +926,7 @@ const AssessmentEventDetailModal = ({
               flex: 1
             }}>
               <iframe
-                src={templatePdfUrl}
+                src={templatePdfUrl + '#toolbar=0'}
                 width="100%"
                 height="100%"
                 style={{ 

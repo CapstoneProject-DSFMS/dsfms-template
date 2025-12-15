@@ -67,7 +67,7 @@ const SubjectList = ({ courseId }) => {
     
     if (statusUpper === 'COMPLETED' || statusUpper === 'COMPLETE') {
       config = { variant: 'success', text: 'Completed' };
-    } else if (statusUpper === 'ON_GOING' || statusUpper === 'ONGOING' || statusUpper === 'ON-GOING' || statusUpper === 'IN_PROGRESS') {
+    } else if (statusUpper === 'ON_GOING' || statusUpper === 'ONGOING' || statusUpper === 'ON-GOING') {
       config = { variant: 'info', text: 'In Progress' };
     } else if (statusUpper === 'PLANNED' || statusUpper === 'PENDING') {
       config = { variant: 'warning', text: 'Pending' };
