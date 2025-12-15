@@ -157,7 +157,9 @@ const UpcomingAssessmentsList = () => {
             code: response.eventInfo?.entityInfo?.code || assessment.entityCode,
             template: response.eventInfo?.name || assessment.templateInfo?.name,
             assessments: response.assessments, // Pass full assessment list from API
-            eventInfo: response.eventInfo // Pass event info
+            eventInfo: response.eventInfo, // Pass event info with courseInfo and templateInfo
+            numberOfTrainees: response.numberOfTrainees || response.assessments?.length || 0,
+            numberOfParticipatedTrainers: response.numberOfParticipatedTrainers || 0
           }
         });
       } else {

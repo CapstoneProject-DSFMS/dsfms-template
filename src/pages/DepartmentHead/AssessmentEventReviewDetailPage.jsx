@@ -20,7 +20,6 @@ import { ROUTES } from '../../constants/routes';
 import assessmentAPI from '../../api/assessment';
 import templateAPI from '../../api/template';
 import { LoadingSkeleton, SortIcon } from '../../components/Common';
-import { groupAssessmentsByEvent, findEventById } from '../../utils/assessmentEventUtils';
 import useTableSort from '../../hooks/useTableSort';
 import { toast } from 'react-toastify';
 import { Modal } from 'react-bootstrap';
@@ -54,6 +53,7 @@ const AssessmentEventReviewDetailPage = () => {
     if (eventId) {
       fetchEventData();
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [eventId]);
 
   const fetchEventData = async () => {
@@ -61,32 +61,87 @@ const AssessmentEventReviewDetailPage = () => {
       setLoading(true);
       setError(null);
 
-      // Fetch all department assessments
-      const response = await assessmentAPI.getDepartmentAssessments();
-      const allAssessments = response?.assessments || [];
-
-      // Group assessments by event and find the one matching eventId
-      const eventGroups = groupAssessmentsByEvent(allAssessments);
-      const event = findEventById(eventGroups, eventId);
-
-      if (!event) {
-        setError('Assessment event not found');
+      // Lấy eventData từ location.state (đã có từ trang list)
+      const eventDataFromState = location.state?.eventData;
+      
+      if (!eventDataFromState) {
+        setError('Event data not found. Please navigate from the Assessment Review Requests page.');
         return;
       }
 
-      setEventData(event);
-      setAssessments(event.assessments || []);
+      // Format occuranceDate từ ISO string hoặc Date object sang "YYYY-MM-DD"
+      let occuranceDate = null;
+      if (eventDataFromState.occurrenceDate) {
+        const date = new Date(eventDataFromState.occurrenceDate);
+        if (!isNaN(date.getTime())) {
+          occuranceDate = date.toISOString().split('T')[0]; // Format: YYYY-MM-DD
+        }
+      }
+
+      if (!occuranceDate) {
+        setError('Invalid occurrence date');
+        return;
+      }
+
+      let response;
       
-      // Detect event type if not provided in state
+      // Kiểm tra subjectId để quyết định gọi API nào
+      if (eventDataFromState.subjectId) {
+        // Subject event
+        if (!eventDataFromState.templateId) {
+          setError('Template ID is missing');
+          return;
+        }
+        response = await assessmentAPI.getSubjectEventAssessments(
+          eventDataFromState.subjectId,
+          eventDataFromState.templateId,
+          occuranceDate
+        );
+      } else if (eventDataFromState.courseId) {
+        // Course event
+        if (!eventDataFromState.templateId) {
+          setError('Template ID is missing');
+          return;
+        }
+        response = await assessmentAPI.getCourseEventAssessments(
+          eventDataFromState.courseId,
+          eventDataFromState.templateId,
+          occuranceDate
+        );
+      } else {
+        setError('Invalid event data: missing courseId or subjectId');
+        return;
+      }
+
+      // Set assessments từ response
+      setAssessments(response?.assessments || []);
+      
+      // Set eventData từ eventInfo trong response và eventDataFromState
+      const eventInfo = response?.eventInfo || {};
+      setEventData({
+        eventName: eventInfo.name || eventDataFromState.eventName,
+        occurrenceDate: eventInfo.occuranceDate || eventDataFromState.occurrenceDate,
+        templateName: eventInfo.templateInfo?.name || eventDataFromState.templateName,
+        templateId: eventInfo.templateId || eventDataFromState.templateId,
+        totalTrainees: response?.numberOfTrainees || eventDataFromState.totalTrainees,
+        totalTrainers: response?.numberOfParticipatedTrainers || eventDataFromState.totalTrainers,
+        courseInfo: eventInfo.courseInfo,
+        subjectInfo: eventInfo.subjectInfo,
+        templateInfo: eventInfo.templateInfo,
+        // Keep original fields for compatibility
+        totalAssessments: response?.assessments?.length || eventDataFromState.totalAssessments
+      });
+      
+      // Set eventType nếu chưa có
       if (!eventType) {
-        const hasSubmitted = event.assessments.some(a => a.status === 'SUBMITTED');
+        const hasSubmitted = (response?.assessments || []).some(a => a.status === 'SUBMITTED');
         setEventType(hasSubmitted ? 'processing' : 'completed');
-        // Set default subtab
         setFormsSubTab(hasSubmitted ? 'submitted' : 'approved');
       }
     } catch (error) {
       console.error('Error fetching event data:', error);
-      setError('Failed to load assessment event data');
+      const errorMessage = error.response?.data?.message || error.message || 'Failed to load assessment event data';
+      setError(errorMessage);
     } finally {
       setLoading(false);
     }
@@ -120,13 +175,14 @@ const AssessmentEventReviewDetailPage = () => {
         stats.submitted++;
       } else if (status === 'APPROVED') {
         stats.submitted++;
-        // Check if passed based on score
-        const score = assessment.resultScore || 0;
-        if (score >= 70) { // Assuming 70% is pass threshold
+        // Check if passed based on resultText only
+        const resultText = String(assessment.resultText || '').toUpperCase().trim();
+        if (resultText === 'PASSED' || resultText === 'PASS') {
           stats.passed++;
-        } else {
+        } else if (resultText === 'FAILED' || resultText === 'FAIL') {
           stats.failed++;
         }
+        // If resultText is empty or unknown, don't count as passed or failed
       } else if (status === 'REJECTED') {
         stats.submitted++;
         stats.failed++;
@@ -147,81 +203,36 @@ const AssessmentEventReviewDetailPage = () => {
         month: 'long',
         day: 'numeric'
       });
-    } catch (error) {
+    } catch {
       return dateString;
     }
   };
 
-  const getStatusBadge = (status) => {
+  const stats = calculateStatistics();
+
+  // Get assessment status badge - display original status from API
+  const getAssessmentStatusBadge = (status) => {
     const statusConfig = {
       SUBMITTED: { variant: 'warning', icon: Clock, label: 'SUBMITTED' },
       APPROVED: { variant: 'success', icon: CheckCircle, label: 'APPROVED' },
       REJECTED: { variant: 'danger', icon: XCircle, label: 'REJECTED' },
       CANCELLED: { variant: 'secondary', icon: X, label: 'CANCELLED' },
-      IN_PROGRESS: { variant: 'info', icon: Clock, label: 'IN PROGRESS' },
-      PENDING: { variant: 'info', icon: Clock, label: 'PENDING' }
+      IN_PROGRESS: { variant: 'info', icon: Clock, label: 'IN_PROGRESS' },
+      ONGOING: { variant: 'info', icon: Clock, label: 'ONGOING' },
+      COMPLETED: { variant: 'success', icon: CheckCircle, label: 'COMPLETED' },
+      PENDING: { variant: 'info', icon: Clock, label: 'PENDING' },
+      FAILED: { variant: 'danger', icon: XCircle, label: 'FAILED' },
+      NOT_STARTED: { variant: 'secondary', icon: ClipboardCheck, label: 'NOT_STARTED' }
     };
     
     const statusUpper = String(status || '').toUpperCase();
-    const config = statusConfig[statusUpper] || statusConfig.PENDING;
+    const config = statusConfig[statusUpper] || { variant: 'secondary', icon: ClipboardCheck, label: status || 'UNKNOWN' };
     const IconComponent = config.icon;
     
     return (
       <Badge bg={config.variant} className="d-flex align-items-center gap-1" style={{ width: 'fit-content' }}>
         <IconComponent size={12} />
         {config.label}
-      </Badge>
-    );
-  };
-
-  const stats = calculateStatistics();
-
-  // Get assessment status badge with Completed/In Progress/Pending text
-  const getAssessmentStatusBadge = (status) => {
-    const statusUpper = String(status || '').toUpperCase();
-    let variant, icon, text;
-    
-    switch (statusUpper) {
-      case 'COMPLETED':
-      case 'APPROVED':
-        variant = 'success';
-        icon = CheckCircle;
-        text = 'Completed';
-        break;
-      case 'REJECTED':
-      case 'FAILED':
-        variant = 'danger';
-        icon = XCircle;
-        text = 'Failed';
-        break;
-      case 'IN_PROGRESS':
-      case 'ONGOING':
-      case 'SUBMITTED':
-        variant = 'warning';
-        icon = Clock;
-        text = 'In Progress';
-        break;
-      case 'PENDING':
-        variant = 'info';
-        icon = Clock;
-        text = 'Pending';
-        break;
-      case 'NOT_STARTED':
-        variant = 'secondary';
-        icon = ClipboardCheck;
-        text = 'Not Started';
-        break;
-      default:
-        variant = 'secondary';
-        icon = ClipboardCheck;
-        text = status || 'Unknown';
-    }
-    
-    const IconComponent = icon;
-    return (
-      <Badge bg={variant} className="d-flex align-items-center gap-1" style={{ width: 'fit-content' }}>
-        <IconComponent size={12} />
-        {text}
       </Badge>
     );
   };
@@ -358,26 +369,21 @@ const AssessmentEventReviewDetailPage = () => {
 
   const { sortedData, sortConfig, handleSort } = useTableSort(tableData);
 
-  // Get course and subject info from assessments
+  // Get course and subject info from eventData (from API response)
   const getCourseSubjectInfo = () => {
-    if (!assessments || assessments.length === 0) return null;
-    
-    // Get first assessment to extract course/subject info (all assessments in event should have same course/subject)
-    const firstAssessment = assessments[0];
-    const course = firstAssessment?.course;
-    const subject = firstAssessment?.subject;
+    if (!eventData) return null;
     
     return {
-      course: course ? {
-        name: course.name,
-        code: course.code
+      course: eventData.courseInfo ? {
+        name: eventData.courseInfo.name,
+        code: eventData.courseInfo.code
       } : null,
-      subject: subject ? {
-        name: subject.name,
-        code: subject.code,
-        course: subject.course ? {
-          name: subject.course.name,
-          code: subject.course.code
+      subject: eventData.subjectInfo ? {
+        name: eventData.subjectInfo.name,
+        code: eventData.subjectInfo.code,
+        course: eventData.subjectInfo.course ? {
+          name: eventData.subjectInfo.course.name,
+          code: eventData.subjectInfo.course.code
         } : null
       } : null
     };
@@ -387,9 +393,19 @@ const AssessmentEventReviewDetailPage = () => {
 
   // Get template form ID from event data
   const getTemplateFormId = () => {
-    if (!assessments || assessments.length === 0) return null;
-    const firstAssessment = assessments[0];
-    return firstAssessment?.templateFormId || firstAssessment?.template?.formId || firstAssessment?.template?.id || null;
+    // Priority: templateInfo from API response > eventData templateId
+    if (eventData?.templateInfo?.id) {
+      return eventData.templateInfo.id;
+    }
+    if (eventData?.templateId) {
+      return eventData.templateId;
+    }
+    // Fallback: try to get from first assessment
+    if (assessments && assessments.length > 0) {
+      const firstAssessment = assessments[0];
+      return firstAssessment?.templateFormId || firstAssessment?.template?.formId || firstAssessment?.template?.id || null;
+    }
+    return null;
   };
 
   const handlePreviewTemplatePDF = async () => {
@@ -553,6 +569,15 @@ const AssessmentEventReviewDetailPage = () => {
                       </h6>
                       <Badge bg="info" className="fs-6">{eventData.totalTrainees}</Badge>
                     </div>
+                    {eventData.totalTrainers !== undefined && (
+                      <div className="mb-3">
+                        <h6 className="text-muted mb-1 d-flex align-items-center">
+                          <Person className="me-2" size={16} />
+                          Total Trainers
+                        </h6>
+                        <Badge bg="info" className="fs-6">{eventData.totalTrainers}</Badge>
+                      </div>
+                    )}
                     {courseSubjectInfo?.course && (
                       <div className="mb-3">
                         <h6 className="text-muted mb-1 d-flex align-items-center">
@@ -596,7 +621,7 @@ const AssessmentEventReviewDetailPage = () => {
                 <hr className="my-4" />
                 <Row>
                   <Col xs={12}>
-                    <h6 className="mb-3">Assessment Results</h6>
+                    <h6 className="mb-3 fw-bold" style={{ color: '#456882', fontSize: '1.1rem' }}>Assessment Results Overview</h6>
                   </Col>
                   <Col md={4}>
                     <Card className="h-100 border-success">
@@ -842,10 +867,8 @@ const AssessmentEventReviewDetailPage = () => {
                                   variant="outline-primary"
                                   size="sm"
                                   onClick={() => navigate(ROUTES.ASSESSMENTS_SECTIONS(item.id))}
-                                  className="d-inline-flex align-items-center"
                                 >
-                                  <FileEarmarkPdf className="me-1" size={14} />
-                                  Preview
+                                  View
                                 </Button>
                               </td>
                             </tr>

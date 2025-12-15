@@ -123,7 +123,7 @@ const SubjectTable = ({ subjects = [], loading = false, onView, onEdit, onDelete
               Start Date / End Date
             </SortableHeader>
             <SortableHeader columnKey="roomName" className="show-mobile">
-              Room Name
+              Venue
             </SortableHeader>
             <SortableHeader columnKey="trainees" className="show-mobile">
               Trainees

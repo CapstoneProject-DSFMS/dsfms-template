@@ -1,6 +1,6 @@
 import React from 'react';
-import { Dropdown, Form, Button } from 'react-bootstrap';
-import { Funnel, X } from 'react-bootstrap-icons';
+import { Dropdown, Form } from 'react-bootstrap';
+import { Funnel } from 'react-bootstrap-icons';
 
 const CourseFilterPanel = ({ 
   uniqueLevels, 
@@ -75,16 +75,6 @@ const CourseFilterPanel = ({
         <div className="mb-4" style={{ paddingLeft: '1.5rem', paddingTop: '1rem' }}>
           <div className="d-flex justify-content-between align-items-center mb-2">
             <label className="form-label small fw-semibold mb-0">Levels</label>
-            {selectedLevels.length > 0 && (
-              <Button
-                variant="link"
-                size="sm"
-                className="p-0 text-danger"
-                onClick={() => onLevelToggle('clear')}
-              >
-                <X size={12} />
-              </Button>
-            )}
           </div>
           <div className="max-height-150 overflow-auto">
             {uniqueLevels.map(level => (
@@ -105,16 +95,6 @@ const CourseFilterPanel = ({
         <div className="mb-3" style={{ paddingLeft: '1.5rem', paddingBottom: '1rem' }}>
           <div className="d-flex justify-content-between align-items-center mb-2">
             <label className="form-label small fw-semibold mb-0">Statuses</label>
-            {selectedStatuses.length > 0 && (
-              <Button
-                variant="link"
-                size="sm"
-                className="p-0 text-danger"
-                onClick={() => onStatusToggle('clear')}
-              >
-                <X size={12} />
-              </Button>
-            )}
           </div>
           <div className="max-height-150 overflow-auto">
             {uniqueStatuses.map(status => (
@@ -130,21 +110,6 @@ const CourseFilterPanel = ({
             ))}
           </div>
         </div>
-
-        {/* Clear All Filters */}
-        {hasActiveFilters && (
-          <div className="border-top pt-3" style={{ paddingLeft: '1.5rem', paddingRight: '1.5rem' }}>
-            <Button
-              variant="outline-danger"
-              size="sm"
-              className="w-100"
-              onClick={onClearFilters}
-            >
-              <X className="me-1" size={12} />
-              Clear All Filters
-            </Button>
-          </div>
-        )}
 
       </Dropdown.Menu>
     </Dropdown>

@@ -265,7 +265,7 @@ const TraineeSubjectDetailView = ({ traineeId, courseId, subjectId }) => {
                 <div className="d-flex align-items-center">
                   <GeoAlt className="text-muted me-3" size={18} />
                   <div>
-                    <div className="fw-semibold">Room</div>
+                    <div className="fw-semibold">Venue</div>
                     <div className="text-muted">{subject.roomName}</div>
                   </div>
                 </div>

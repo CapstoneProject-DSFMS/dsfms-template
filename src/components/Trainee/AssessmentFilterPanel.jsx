@@ -1,6 +1,6 @@
 import React from 'react';
-import { Dropdown, Form, Button } from 'react-bootstrap';
-import { Funnel, X } from 'react-bootstrap-icons';
+import { Dropdown, Form } from 'react-bootstrap';
+import { Funnel } from 'react-bootstrap-icons';
 
 const AssessmentFilterPanel = ({ 
   uniqueTypes, 
@@ -78,16 +78,6 @@ const AssessmentFilterPanel = ({
         <div className="mb-4" style={{ paddingLeft: '1.5rem', paddingTop: '1rem' }}>
           <div className="d-flex justify-content-between align-items-center mb-2">
             <label className="form-label small fw-semibold mb-0">Types</label>
-            {selectedTypes.length > 0 && (
-              <Button
-                variant="link"
-                size="sm"
-                className="p-0 text-danger"
-                onClick={() => onTypeToggle('clear')}
-              >
-                <X size={12} />
-              </Button>
-            )}
           </div>
           <div className="max-height-150 overflow-auto">
             {uniqueTypes.map(type => (
@@ -108,16 +98,6 @@ const AssessmentFilterPanel = ({
         <div className="mb-4" style={{ paddingLeft: '1.5rem' }}>
           <div className="d-flex justify-content-between align-items-center mb-2">
             <label className="form-label small fw-semibold mb-0">Status</label>
-            {selectedStatuses.length > 0 && (
-              <Button
-                variant="link"
-                size="sm"
-                className="p-0 text-danger"
-                onClick={() => onStatusToggle('clear')}
-              >
-                <X size={12} />
-              </Button>
-            )}
           </div>
           <div className="max-height-150 overflow-auto">
             {uniqueStatuses.map(status => (
@@ -138,16 +118,6 @@ const AssessmentFilterPanel = ({
         <div className="mb-3" style={{ paddingLeft: '1.5rem', paddingBottom: '1rem' }}>
           <div className="d-flex justify-content-between align-items-center mb-2">
             <label className="form-label small fw-semibold mb-0">Priority</label>
-            {selectedPriorities.length > 0 && (
-              <Button
-                variant="link"
-                size="sm"
-                className="p-0 text-danger"
-                onClick={() => onPriorityToggle('clear')}
-              >
-                <X size={12} />
-              </Button>
-            )}
           </div>
           <div className="max-height-150 overflow-auto">
             {uniquePriorities.map(priority => (
@@ -163,21 +133,6 @@ const AssessmentFilterPanel = ({
             ))}
           </div>
         </div>
-
-        {/* Clear All Filters */}
-        {hasActiveFilters && (
-          <div className="border-top pt-3" style={{ paddingLeft: '1.5rem', paddingRight: '1.5rem' }}>
-            <Button
-              variant="outline-danger"
-              size="sm"
-              className="w-100"
-              onClick={onClearFilters}
-            >
-              <X className="me-1" size={12} />
-              Clear All Filters
-            </Button>
-          </div>
-        )}
 
       </Dropdown.Menu>
     </Dropdown>

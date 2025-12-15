@@ -313,13 +313,13 @@ const AddSubjectModal = ({ show, onClose, onSave, loading = false, courseId, cou
             </Col>
             <Col md={6}>
               <Form.Group className="mb-3">
-                <Form.Label>Room Name</Form.Label>
+                <Form.Label>Venue</Form.Label>
                 <Form.Control
                   type="text"
                   name="roomName"
                   value={formData.roomName}
                   onChange={handleInputChange}
-                  placeholder="Enter room name"
+                  placeholder="Enter venue"
                 />
               </Form.Group>
             </Col>
