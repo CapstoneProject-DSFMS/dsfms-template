@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { Form, Row, Col, Button, Card, Badge, Alert, Modal } from 'react-bootstrap';
 import { Save, Eye, X } from 'react-bootstrap-icons';
 import { toast } from 'react-toastify';
@@ -39,13 +39,12 @@ const CreateBulkAssessmentEventForm = ({ onSuccess }) => {
   const [showConfirmation, setShowConfirmation] = useState(false);
   const [pendingSubmitData, setPendingSubmitData] = useState(null);
 
-  // Load departments from public API (no permission required)
+  // Load departments (with authentication)
   useEffect(() => {
     const loadDepartments = async () => {
       try {
         setLoadingDepartments(true);
-        const departmentsData = await departmentAPI.getPublicDepartments();
-        
+        const departmentsData = await departmentAPI.getDepartments();
         // Filter only ACTIVE departments
         const activeDepartments = departmentsData.filter(dept => dept.isActive === true);
         setDepartments(activeDepartments);
@@ -116,7 +115,7 @@ const CreateBulkAssessmentEventForm = ({ onSuccess }) => {
         }
         
         // Filter courses with status PLANNED, ONGOING, or FINISHED
-        const filteredCourses = coursesData.filter(c => c.status === 'PLANNED' || c.status === 'ON_GOING' || c.status === 'FINISHED');
+        const filteredCourses = coursesData.filter(c => c.status === 'PLANNED' || c.status === 'ON_GOING' || c.status === 'COMPLETED');
         setCourses(filteredCourses);
         
         // Extract subjects from courses (if each course has subjects array)
@@ -139,8 +138,8 @@ const CreateBulkAssessmentEventForm = ({ onSuccess }) => {
           index === self.findIndex(s => s.id === subject.id)
         );
         
-        // Filter subjects with status PLANNED, ONGOING, or FINISHED
-        const filteredSubjects = uniqueSubjects.filter(s => s.status === 'PLANNED' || s.status === 'ON_GOING' || s.status === 'FINISHED');
+        // Filter subjects with status PLANNED, ONGOING, or COMPLETED
+        const filteredSubjects = uniqueSubjects.filter(s => s.status === 'PLANNED' || s.status === 'ON_GOING' || s.status === 'COMPLETED');
         setSubjects(filteredSubjects);
         
         // DON'T reset subjectId here - let user choose subjects after loading
@@ -160,57 +159,61 @@ const CreateBulkAssessmentEventForm = ({ onSuccess }) => {
     loadCoursesAndSubjects();
   }, [formData.departmentId]);
 
-  // Load trainees when course or subject changes
+  // Load trainees when course or subject changes (with debounce)
   useEffect(() => {
-    const loadTrainees = async () => {
-      if (!formData.courseId && !formData.subjectId) {
-        setTrainees([]);
-        setFormData(prev => ({ ...prev, excludeTraineeIds: [] }));
-        return;
-      }
-
-      try {
-        setLoadingTrainees(true);
-        let traineesData = [];
-
-        if (formData.courseId && !formData.subjectId) {
-          // Load from course
-          const response = await courseAPI.getCourseTrainees(formData.courseId);
-          traineesData = response?.trainees || response?.data?.trainees || [];
-        } else if (formData.subjectId) {
-          // Load from subject
-          const response = await subjectAPI.getSubjectById(formData.subjectId);
-          // Extract trainees from enrollmentsByBatch
-          const allTrainees = [];
-          if (response?.enrollmentsByBatch) {
-            response.enrollmentsByBatch.forEach(batch => {
-              if (batch.trainees && Array.isArray(batch.trainees)) {
-                batch.trainees.forEach(trainee => {
-                  allTrainees.push({
-                    id: trainee.id,
-                    eid: trainee.eid,
-                    firstName: trainee.firstName,
-                    lastName: trainee.lastName,
-                    email: trainee.email
-                  });
-                });
-              }
-            });
-          }
-          traineesData = allTrainees;
+    const timer = setTimeout(() => {
+      const loadTrainees = async () => {
+        if (!formData.courseId && !formData.subjectId) {
+          setTrainees([]);
+          setFormData(prev => ({ ...prev, excludeTraineeIds: [] }));
+          return;
         }
 
-        setTrainees(traineesData);
-      } catch (error) {
-        console.error('Error loading trainees:', error);
-        toast.error('Failed to load trainees');
-        setTrainees([]);
-      } finally {
-        setLoadingTrainees(false);
-      }
-    };
+        try {
+          setLoadingTrainees(true);
+          let traineesData = [];
 
-    loadTrainees();
+          if (formData.courseId && !formData.subjectId) {
+            // Load from course
+            const response = await courseAPI.getCourseTrainees(formData.courseId);
+            traineesData = response?.trainees || response?.data?.trainees || [];
+          } else if (formData.subjectId) {
+            // Load from subject
+            const response = await subjectAPI.getSubjectById(formData.subjectId);
+            // Extract trainees from enrollmentsByBatch
+            const allTrainees = [];
+            if (response?.enrollmentsByBatch) {
+              response.enrollmentsByBatch.forEach(batch => {
+                if (batch.trainees && Array.isArray(batch.trainees)) {
+                  batch.trainees.forEach(trainee => {
+                    allTrainees.push({
+                      id: trainee.id,
+                      eid: trainee.eid,
+                      firstName: trainee.firstName,
+                      lastName: trainee.lastName,
+                      email: trainee.email
+                    });
+                  });
+                }
+              });
+            }
+            traineesData = allTrainees;
+          }
+
+          setTrainees(traineesData);
+        } catch (error) {
+          console.error('Error loading trainees:', error);
+          toast.error('Failed to load trainees');
+          setTrainees([]);
+        } finally {
+          setLoadingTrainees(false);
+        }
+      };
+
+      loadTrainees();
+    }, 300); // Debounce 300ms to avoid rapid API calls
+
+    return () => clearTimeout(timer);
   }, [formData.courseId, formData.subjectId]);
 
   const getTraineeName = (trainee) => {
@@ -219,6 +222,85 @@ const CreateBulkAssessmentEventForm = ({ onSuccess }) => {
     const middleName = trainee.middleName || '';
     return `${firstName} ${middleName} ${lastName}`.trim() || trainee.eid || 'Unknown';
   };
+
+  // Memoize filtered subjects to avoid re-filtering on every render
+  const filteredSubjects = useMemo(() => {
+    if (!formData.courseId) return [];
+    return subjects.filter(s => s.courseId === formData.courseId);
+  }, [subjects, formData.courseId]);
+
+  // Memoize subject options to avoid re-mapping on every render
+  const subjectOptions = useMemo(() => {
+    return filteredSubjects.map(subject => ({
+      value: subject.id,
+      label: `${subject.name} (${subject.code})`
+    }));
+  }, [filteredSubjects]);
+
+  // TraineeItem component with React.memo to prevent unnecessary re-renders
+  const TraineeItem = React.memo(({ trainee, isExcluded, onToggle }) => (
+    <div
+      key={trainee.id}
+      className={`border rounded cursor-pointer ${isExcluded ? 'bg-primary' : 'bg-light'}`}
+      onClick={() => onToggle(trainee.id)}
+      style={{
+        padding: '0.5rem',
+        cursor: 'pointer',
+        transition: 'all 0.2s ease',
+        backgroundColor: isExcluded ? 'var(--bs-primary)' : 'var(--bs-light)',
+        color: isExcluded ? '#ffffff' : 'var(--bs-dark)',
+        minHeight: '48px',
+        display: 'flex',
+        alignItems: 'center',
+        userSelect: 'none'
+      }}
+      onMouseEnter={(e) => {
+        if (!isExcluded) {
+          e.currentTarget.style.backgroundColor = '#e9ecef';
+        }
+      }}
+      onMouseLeave={(e) => {
+        if (!isExcluded) {
+          e.currentTarget.style.backgroundColor = 'var(--bs-light)';
+        }
+      }}
+    >
+      <div className="d-flex align-items-center justify-content-between w-100 gap-2" style={{ flexWrap: 'wrap' }}>
+        <div style={{ flex: '1 1 auto', minWidth: '0px' }}>
+          <strong style={{ color: isExcluded ? '#ffffff' : 'inherit', wordBreak: 'break-word', fontSize: '0.95rem' }}>
+            {getTraineeName(trainee)}
+          </strong>
+          {trainee.eid && (
+            <Badge
+              bg={isExcluded ? 'light' : 'secondary'}
+              style={{
+                marginLeft: '0.5rem',
+                color: isExcluded ? 'var(--bs-primary)' : '#ffffff',
+                fontSize: '0.7rem',
+                padding: '0.35rem 0.6rem'
+              }}
+            >
+              {trainee.eid}
+            </Badge>
+          )}
+        </div>
+        {isExcluded && (
+          <Badge
+            bg="light"
+            style={{
+              color: 'var(--bs-primary)',
+              fontSize: '0.7rem',
+              whiteSpace: 'nowrap',
+              flex: '0 0 auto',
+              padding: '0.35rem 0.6rem'
+            }}
+          >
+            Excluded
+          </Badge>
+        )}
+      </div>
+    </div>
+  ));
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
@@ -565,15 +647,7 @@ const CreateBulkAssessmentEventForm = ({ onSuccess }) => {
               onChange={handleInputChange}
               disabled={isSubmitting || loadingSubjects || !formData.courseId}
               placeholder={!formData.courseId ? 'Select a course first' : 'Select a subject (optional)'}
-              options={formData.courseId 
-                ? subjects
-                    .filter(s => s.courseId === formData.courseId)
-                    .map(subject => ({
-                      value: subject.id,
-                      label: `${subject.name} (${subject.code})`
-                    }))
-                : []
-              }
+              options={subjectOptions}
             />
             {!formData.courseId && (
               <Form.Text className="text-muted">
@@ -653,7 +727,7 @@ const CreateBulkAssessmentEventForm = ({ onSuccess }) => {
                 No trainees found for the selected {formData.courseId ? 'course' : 'subject'}.
               </Alert>
             ) : (
-              <div style={{ 
+              <div style={{
                 maxHeight: 'clamp(200px, 40vh, 400px)',
                 overflowY: 'auto',
                 overflowX: 'hidden',
@@ -664,72 +738,14 @@ const CreateBulkAssessmentEventForm = ({ onSuccess }) => {
               }}>
                 <div style={{ padding: '0.75rem' }}>
                   <div className="d-flex flex-column gap-2">
-                    {trainees.map(trainee => {
-                      const isExcluded = formData.excludeTraineeIds?.includes(trainee.id);
-                      return (
-                        <div
-                          key={trainee.id}
-                          className={`border rounded cursor-pointer ${isExcluded ? 'bg-primary' : 'bg-light'}`}
-                          onClick={() => handleTraineeToggle(trainee.id)}
-                          style={{ 
-                            padding: '0.5rem',
-                            cursor: 'pointer',
-                            transition: 'all 0.2s ease',
-                            backgroundColor: isExcluded ? 'var(--bs-primary)' : 'var(--bs-light)',
-                            color: isExcluded ? '#ffffff' : 'var(--bs-dark)',
-                            minHeight: '48px',
-                            display: 'flex',
-                            alignItems: 'center',
-                            userSelect: 'none'
-                          }}
-                          onMouseEnter={(e) => {
-                            if (!isExcluded) {
-                              e.currentTarget.style.backgroundColor = '#e9ecef';
-                            }
-                          }}
-                          onMouseLeave={(e) => {
-                            if (!isExcluded) {
-                              e.currentTarget.style.backgroundColor = 'var(--bs-light)';
-                            }
-                          }}
-                        >
-                          <div className="d-flex align-items-center justify-content-between w-100 gap-2" style={{ flexWrap: 'wrap' }}>
-                            <div style={{ flex: '1 1 auto', minWidth: '0px' }}>
-                              <strong style={{ color: isExcluded ? '#ffffff' : 'inherit', wordBreak: 'break-word', fontSize: '0.95rem' }}>
-                                {getTraineeName(trainee)}
-                              </strong>
-                              {trainee.eid && (
-                                <Badge 
-                                  bg={isExcluded ? 'light' : 'secondary'} 
-                                  style={{ 
-                                    marginLeft: '0.5rem',
-                                    color: isExcluded ? 'var(--bs-primary)' : '#ffffff',
-                                    fontSize: '0.7rem',
-                                    padding: '0.35rem 0.6rem'
-                                  }}
-                                >
-                                  {trainee.eid}
-                                </Badge>
-                              )}
-                            </div>
-                            {isExcluded && (
-                              <Badge 
-                                bg="light" 
-                                style={{ 
-                                  color: 'var(--bs-primary)', 
-                                  fontSize: '0.7rem',
-                                  whiteSpace: 'nowrap',
-                                  flex: '0 0 auto',
-                                  padding: '0.35rem 0.6rem'
-                                }}
-                              >
-                                Excluded
-                              </Badge>
-                            )}
-                          </div>
-                        </div>
-                      );
-                    })}
+                    {trainees.map(trainee => (
+                      <TraineeItem
+                        key={trainee.id}
+                        trainee={trainee}
+                        isExcluded={formData.excludeTraineeIds?.includes(trainee.id)}
+                        onToggle={handleTraineeToggle}
+                      />
+                    ))}
                   </div>
                 </div>
               </div>

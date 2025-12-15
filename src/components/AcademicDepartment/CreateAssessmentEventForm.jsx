@@ -35,13 +35,12 @@ const CreateAssessmentEventForm = ({ onSuccess }) => {
   const [loadingSubjects, setLoadingSubjects] = useState(true);
   const [loadingTrainees, setLoadingTrainees] = useState(false);
 
-  // Load departments from public API (no permission required)
+  // Load departments (with authentication)
   useEffect(() => {
     const loadDepartments = async () => {
       try {
         setLoadingDepartments(true);
-        const departmentsData = await departmentAPI.getPublicDepartments();
-        
+        const departmentsData = await departmentAPI.getDepartments();
         // Filter only ACTIVE departments
         const activeDepartments = departmentsData.filter(dept => dept.isActive === true);
         setDepartments(activeDepartments);
@@ -135,8 +134,8 @@ const CreateAssessmentEventForm = ({ onSuccess }) => {
           index === self.findIndex(s => s.id === subject.id)
         );
         
-        // Filter subjects with status PLANNED, ON_GOING, or FINISHED
-        const filteredSubjects = uniqueSubjects.filter(s => s.status === 'PLANNED' || s.status === 'ON_GOING' || s.status === 'FINISHED');
+        // Filter subjects with status COMPLETED
+        const filteredSubjects = uniqueSubjects.filter(s => s.status === 'COMPLETED');
         setSubjects(filteredSubjects);
         
         // Reset course and subject selection when department changes

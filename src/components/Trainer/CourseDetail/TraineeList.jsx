@@ -129,7 +129,7 @@ const TraineeList = ({ courseId, subjectId }) => {
       config = { variant: 'danger', text: 'Suspended' };
     } 
     // Handle subject-specific statuses
-    else if (statusUpper === 'IN_PROGRESS' || statusUpper === 'IN PROGRESS') {
+    else if (statusUpper === 'ONGOING' || statusUpper === 'ON GOING' || statusUpper === 'ON_GOING') {
       config = { variant: 'info', text: 'In Progress' };
     } else if (statusUpper === 'FAILED') {
       config = { variant: 'danger', text: 'Failed' };

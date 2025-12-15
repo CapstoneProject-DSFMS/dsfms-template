@@ -9,6 +9,7 @@ const BulkImportSubjectsModal = ({ show, onClose, onImport, loading: externalLoa
   const [uploadedFile, setUploadedFile] = useState(null);
   const [previewData, setPreviewData] = useState([]);
   const [errors, setErrors] = useState([]);
+  const [validationErrors, setValidationErrors] = useState([]);
   const [isImporting, setIsImporting] = useState(false);
   const fileInputRef = useRef(null);
   
@@ -31,7 +32,7 @@ const BulkImportSubjectsModal = ({ show, onClose, onImport, loading: externalLoa
     'method',         // enum - Training Method (E_LEARNING|CLASSROOM|ERO)
     'duration',       // integer - Duration in days
     'type',           // enum - Subject Type (UNLIMIT|RECURRENT)
-    'room_name',      // varchar - Venue
+    'room_name',      // varchar - Room Name
     'remark_note',    // varchar - Remark Note
     'time_slot',      // varchar - Time Slot
     'pass_score',     // float - Pass Score
@@ -116,20 +117,17 @@ const BulkImportSubjectsModal = ({ show, onClose, onImport, loading: externalLoa
 
         // Process data
         const subjects = dataRows.map((row, index) => {
-          // ALWAYS use courseId from props if available (importing from Course Detail page)
-          // Only use course_id from file if courseId prop is not provided
-          const courseIdToUse = courseId 
-            ? courseId 
-            : (headers.includes('course_id') 
-                ? row[headers.indexOf('course_id')]?.toString().trim() || ''
-                : '');
+          // Get course_id from file if exists, otherwise use courseId from props
+          const courseIdFromFile = headers.includes('course_id') 
+            ? row[headers.indexOf('course_id')]?.toString().trim() || ''
+            : (courseId || '');
 
           const subject = {
             id: `temp_${index}`,
             rowNumber: index + 2,
             code: row[headers.indexOf('code')]?.toString().trim() || '',
             name: row[headers.indexOf('name')]?.toString().trim() || '',
-            course_id: courseIdToUse,
+            course_id: courseIdFromFile,
             description: row[headers.indexOf('description')]?.toString().trim() || '',
             method: row[headers.indexOf('method')]?.toString().trim() || 'THEORY',
             duration: row[headers.indexOf('duration')]?.toString().trim() || '',
@@ -139,47 +137,33 @@ const BulkImportSubjectsModal = ({ show, onClose, onImport, loading: externalLoa
             time_slot: row[headers.indexOf('time_slot')]?.toString().trim() || '',
             pass_score: row[headers.indexOf('pass_score')]?.toString().trim() || '',
             // Handle dates - preserve original format (could be Date object, number, or string)
-            // Note: Excel may parse dates differently based on locale (MM/DD vs DD/MM)
-            // Recommended format: YYYY-MM-DD to avoid ambiguity
             start_date: (() => {
               const dateValue = row[headers.indexOf('start_date')];
               if (!dateValue) return '';
-              // If it's a Date object, convert to ISO string (YYYY-MM-DD)
+              // If it's a Date object, convert to ISO string
               if (dateValue instanceof Date) {
-                return dateValue.toISOString().split('T')[0];
+                return dateValue.toISOString().split('T')[0]; // YYYY-MM-DD format
               }
               // If it's a number (Excel serial number), keep as number for formatDate to handle
               if (typeof dateValue === 'number') {
                 return dateValue;
               }
-              // If it's a string, try to parse it properly
-              const dateStr = String(dateValue).trim();
-              // If already in YYYY-MM-DD format, return as is
-              if (dateStr.match(/^\d{4}-\d{2}-\d{2}$/)) {
-                return dateStr;
-              }
-              // Otherwise, return as string (will be parsed later)
-              return dateStr;
+              // Otherwise, treat as string
+              return String(dateValue).trim();
             })(),
             end_date: (() => {
               const dateValue = row[headers.indexOf('end_date')];
               if (!dateValue) return '';
-              // If it's a Date object, convert to ISO string (YYYY-MM-DD)
+              // If it's a Date object, convert to ISO string
               if (dateValue instanceof Date) {
-                return dateValue.toISOString().split('T')[0];
+                return dateValue.toISOString().split('T')[0]; // YYYY-MM-DD format
               }
               // If it's a number (Excel serial number), keep as number for formatDate to handle
               if (typeof dateValue === 'number') {
                 return dateValue;
               }
-              // If it's a string, try to parse it properly
-              const dateStr = String(dateValue).trim();
-              // If already in YYYY-MM-DD format, return as is
-              if (dateStr.match(/^\d{4}-\d{2}-\d{2}$/)) {
-                return dateStr;
-              }
-              // Otherwise, return as string (will be parsed later)
-              return dateStr;
+              // Otherwise, treat as string
+              return String(dateValue).trim();
             })(),
             is_sim: headers.includes('is_sim') || headers.includes('issim')
               ? row[headers.indexOf(headers.includes('is_sim') ? 'is_sim' : 'issim')]
@@ -296,7 +280,7 @@ const BulkImportSubjectsModal = ({ show, onClose, onImport, loading: externalLoa
               }
               
               return parsedDate;
-            } catch {
+            } catch (error) {
               return null;
             }
           };
@@ -370,8 +354,9 @@ const BulkImportSubjectsModal = ({ show, onClose, onImport, loading: externalLoa
         }).filter(subject => subject.code || subject.name); // Remove completely empty rows
 
         setPreviewData(subjects);
+        setValidationErrors([]);
 
-      } catch {
+      } catch (error) {
         setErrors(['Failed to parse Excel file. Please check the file format.']);
       }
     };
@@ -509,7 +494,7 @@ const BulkImportSubjectsModal = ({ show, onClose, onImport, loading: externalLoa
           
           // Return ISO datetime string: YYYY-MM-DDTHH:mm:ss.sssZ
           return parsedDate.toISOString();
-        } catch {
+        } catch (error) {
           return null;
         }
       };
@@ -688,6 +673,7 @@ const BulkImportSubjectsModal = ({ show, onClose, onImport, loading: externalLoa
     setUploadedFile(null);
     setPreviewData([]);
     setErrors([]);
+    setValidationErrors([]);
     setDragActive(false);
     // Don't reset isImporting here - let finally block handle it
     // This ensures spinner stays visible during import
@@ -702,177 +688,55 @@ const BulkImportSubjectsModal = ({ show, onClose, onImport, loading: externalLoa
     }
   };
 
-  // Format date for display in preview table (handles Excel serial numbers and various date formats)
-  // Recommended format: YYYY-MM-DD (ISO format) to avoid MM/DD vs DD/MM confusion
-  const formatDateForDisplay = (dateValue) => {
-    if (!dateValue || dateValue === '' || dateValue === 'N/A') {
-      return '-';
-    }
-    
-    try {
-      let parsedDate;
-      
-      // Handle different input formats
-      if (typeof dateValue === 'number') {
-        // Excel serial number: days since 1900-01-01
-        // Convert to JavaScript Date
-        if (dateValue >= 1 && dateValue <= 100000) {
-          parsedDate = new Date((dateValue - 25569) * 86400 * 1000);
-        } else {
-          parsedDate = new Date(dateValue);
-        }
-      } else if (typeof dateValue === 'string') {
-        const dateStr = dateValue.trim();
-        
-        // Check if it's a numeric string that could be an Excel serial number
-        if (/^\d+$/.test(dateStr)) {
-          const numericValue = parseInt(dateStr);
-          if (numericValue >= 1 && numericValue <= 100000) {
-            // Excel serial number
-            parsedDate = new Date((numericValue - 25569) * 86400 * 1000);
-          } else {
-            parsedDate = new Date(dateStr);
-          }
-        } else if (dateStr.match(/^\d{4}-\d{2}-\d{2}$/)) {
-          // YYYY-MM-DD format (recommended - no ambiguity)
-          parsedDate = new Date(dateStr + 'T00:00:00.000Z');
-        } else if (dateStr.includes('/')) {
-          // Handle DD/MM/YYYY or MM/DD/YYYY format
-          const parts = dateStr.split('/');
-          if (parts.length === 3) {
-            const part1 = parseInt(parts[0]);
-            const part2 = parseInt(parts[1]);
-            const part3 = parseInt(parts[2]);
-            
-            // Heuristic: if first part > 12, it's likely DD/MM/YYYY
-            // Otherwise, assume DD/MM/YYYY (more common in non-US locales)
-            if (part1 > 12) {
-              // Definitely DD/MM/YYYY (e.g., 13/06/2026)
-              parsedDate = new Date(part3, part2 - 1, part1);
-            } else if (part2 > 12) {
-              // Definitely MM/DD/YYYY (e.g., 1/13/2026)
-              parsedDate = new Date(part3, part1 - 1, part2);
-            } else {
-              // Ambiguous: assume DD/MM/YYYY (more common in international contexts)
-              // e.g., 1/6/2026 = 1st June 2026 (not January 6th)
-              parsedDate = new Date(part3, part2 - 1, part1);
-            }
-          } else {
-            parsedDate = new Date(dateStr);
-          }
-        } else if (dateStr.includes('-')) {
-          // Handle DD-MM-YYYY format
-          const parts = dateStr.split('-');
-          if (parts.length === 3) {
-            if (parts[0].length === 4) {
-              // YYYY-MM-DD format
-              parsedDate = new Date(parts[0], parts[1] - 1, parts[2]);
-            } else {
-              // DD-MM-YYYY format
-              parsedDate = new Date(parts[2], parts[1] - 1, parts[0]);
-            }
-          } else {
-            parsedDate = new Date(dateStr);
-          }
-        } else {
-          // Try to parse as date string
-          parsedDate = new Date(dateStr);
-        }
-      } else if (dateValue instanceof Date) {
-        parsedDate = dateValue;
-      } else {
-        parsedDate = new Date(dateValue);
-      }
-      
-      // Validate parsed date
-      if (isNaN(parsedDate.getTime())) {
-        return String(dateValue); // Return original if can't parse
-      }
-      
-      // Format as DD/MM/YYYY for display (consistent format)
-      const day = String(parsedDate.getDate()).padStart(2, '0');
-      const month = String(parsedDate.getMonth() + 1).padStart(2, '0');
-      const year = parsedDate.getFullYear();
-      return `${day}/${month}/${year}`;
-    } catch {
-      return String(dateValue); // Return original if error
-    }
-  };
-
   const downloadTemplate = () => {
-    // Get columns for template - exclude course_id if courseId prop is provided
-    const templateColumns = courseId 
-      ? allColumns.filter(col => col !== 'course_id')
-      : allColumns;
-    
-    // Helper function to create a row based on template columns
-    const createRow = (data) => {
-      return templateColumns.map(col => {
-        if (col === 'course_id') {
-          return courseId || '550e8400-e29b-41d4-a716-446655440000';
-        }
-        return data[col] || '';
-      });
-    };
-    
-    // Sample data objects
-    const sampleData1 = {
-      code: 'MATH101',
-      name: 'Mathematics',
-      course_id: courseId || '550e8400-e29b-41d4-a716-446655440000',
-      description: 'Basic mathematics course covering algebra and geometry',
-      method: 'CLASSROOM',
-      duration: '14',
-      type: 'UNLIMIT',
-      room_name: 'Room A101',
-      remark_note: 'This is a required course for all students',
-      time_slot: '09:00-17:00',
-      pass_score: '70.0',
-      start_date: '2025-01-15', // Format: YYYY-MM-DD (recommended)
-      end_date: '2025-01-29', // Format: YYYY-MM-DD (recommended)
-      is_sim: false
-    };
-    
-    const sampleData2 = {
-      code: 'PHYS101',
-      name: 'Physics',
-      course_id: courseId || '550e8400-e29b-41d4-a716-446655440000',
-      description: 'Introduction to physics concepts and principles',
-      method: 'E_LEARNING',
-      duration: '7',
-      type: 'RECURRENT',
-      room_name: 'Lab B201',
-      remark_note: 'Hands-on experiments and demonstrations',
-      time_slot: '14:00-18:00',
-      pass_score: '75.0',
-      start_date: '2025-02-01', // Format: YYYY-MM-DD (recommended)
-      end_date: '2025-02-08', // Format: YYYY-MM-DD (recommended)
-      is_sim: false
-    };
-    
-    const sampleData3 = {
-      code: 'SAFETY301',
-      name: 'Safety Procedures',
-      course_id: courseId || '550e8400-e29b-41d4-a716-446655440000',
-      description: 'Emergency response and safety protocols training',
-      method: 'ERO',
-      duration: '5',
-      type: 'UNLIMIT',
-      room_name: 'Training Hall B',
-      remark_note: 'Hands-on practical training required',
-      time_slot: '08:00-16:00',
-      pass_score: '80.0',
-      start_date: '2025-03-01', // Format: YYYY-MM-DD (recommended)
-      end_date: '2025-03-06', // Format: YYYY-MM-DD (recommended)
-      is_sim: false
-    };
-    
     // Create sample data for template based on database schema
     const templateData = [
-      templateColumns, // Header row
-      createRow(sampleData1),
-      createRow(sampleData2),
-      createRow(sampleData3)
+      allColumns, // Header row
+      [
+        'MATH101', // code
+        'Mathematics', // name
+        courseId || '550e8400-e29b-41d4-a716-446655440000', // course_id (UUID format)
+        'Basic mathematics course covering algebra and geometry', // description
+        'CLASSROOM', // method (BE expects E_LEARNING|CLASSROOM|ERO)
+        '14', // duration
+        'UNLIMIT', // type (BE expects UNLIMIT|RECURRENT)
+        'Room A101', // room_name
+        'This is a required course for all students', // remark_note
+        '09:00-17:00', // time_slot
+        '70.0', // pass_score
+        '2025-01-15', // start_date
+        '2025-01-29' // end_date
+      ],
+      [
+        'PHYS101', // code
+        'Physics', // name
+        courseId || '550e8400-e29b-41d4-a716-446655440000', // course_id (UUID format)
+        'Introduction to physics concepts and principles', // description
+        'E_LEARNING', // method (BE expects E_LEARNING|CLASSROOM|ERO)
+        '7', // duration
+        'RECURRENT', // type (BE expects UNLIMIT|RECURRENT)
+        'Lab B201', // room_name
+        'Hands-on experiments and demonstrations', // remark_note
+        '14:00-18:00', // time_slot
+        '75.0', // pass_score
+        '2025-02-01', // start_date
+        '2025-02-08' // end_date
+      ],
+      [
+        'SAFETY301', // code
+        'Safety Procedures', // name
+        courseId || '550e8400-e29b-41d4-a716-446655440000', // course_id (UUID format)
+        'Emergency response and safety protocols training', // description
+        'ERO', // method (BE expects E_LEARNING|CLASSROOM|ERO)
+        '5', // duration
+        'UNLIMIT', // type (BE expects UNLIMIT|RECURRENT)
+        'Training Hall B', // room_name
+        'Hands-on practical training required', // remark_note
+        '08:00-16:00', // time_slot
+        '80.0', // pass_score
+        '2025-03-01', // start_date
+        '2025-03-06' // end_date
+      ]
     ];
 
     const ws = XLSX.utils.aoa_to_sheet(templateData);
@@ -947,11 +811,7 @@ const BulkImportSubjectsModal = ({ show, onClose, onImport, loading: externalLoa
                 </small>
                 <br />
                 <small className="text-muted">
-                  <strong>Optional columns:</strong> Description, Method (E_LEARNING|CLASSROOM|ERO), Duration, Type (UNLIMIT|RECURRENT), Venue, Remark Note, Time Slot, Pass Score, Start Date, End Date
-                </small>
-                <br />
-                <small className="text-muted">
-                  <strong>Date format:</strong> Use YYYY-MM-DD format (e.g., 2026-06-01) to avoid confusion. Other formats (DD/MM/YYYY, MM/DD/YYYY) are also supported but may be interpreted differently.
+                  <strong>Optional columns:</strong> Description, Method (E_LEARNING|CLASSROOM|ERO), Duration, Type (UNLIMIT|RECURRENT), Room Name, Remark Note, Time Slot, Pass Score, Start Date, End Date
                 </small>
               </div>
               <div className="d-flex align-items-center gap-2">
@@ -996,13 +856,13 @@ const BulkImportSubjectsModal = ({ show, onClose, onImport, loading: externalLoa
                       <th style={{ minWidth: '50px' }}>NO.</th>
                       <th style={{ minWidth: '120px' }}>CODE</th>
                       <th style={{ minWidth: '200px' }}>NAME</th>
-                      {!courseId && <th style={{ minWidth: '200px' }}>COURSE ID</th>}
+                      <th style={{ minWidth: '200px' }}>COURSE ID</th>
                       <th style={{ minWidth: '150px' }}>METHOD</th>
                       <th style={{ minWidth: '100px' }}>DURATION</th>
                       <th style={{ minWidth: '120px' }}>TYPE</th>
                       <th style={{ minWidth: '100px' }}>PASS SCORE</th>
                       <th style={{ minWidth: '150px' }}>DESCRIPTION</th>
-                      <th style={{ minWidth: '150px' }}>VENUE</th>
+                      <th style={{ minWidth: '150px' }}>ROOM NAME</th>
                       <th style={{ minWidth: '150px' }}>TIME SLOT</th>
                       <th style={{ minWidth: '150px' }}>START DATE</th>
                       <th style={{ minWidth: '150px' }}>END DATE</th>
@@ -1017,7 +877,7 @@ const BulkImportSubjectsModal = ({ show, onClose, onImport, loading: externalLoa
                         <td>{subject.rowNumber || index + 1}</td>
                         <td>{subject.code || '-'}</td>
                         <td>{subject.name || '-'}</td>
-                        {!courseId && <td>{subject.course_id || '-'}</td>}
+                        <td>{subject.course_id || '-'}</td>
                         <td>{subject.method || '-'}</td>
                         <td>{subject.duration || '-'}</td>
                         <td>{subject.type || '-'}</td>
@@ -1025,8 +885,8 @@ const BulkImportSubjectsModal = ({ show, onClose, onImport, loading: externalLoa
                         <td>{subject.description || '-'}</td>
                         <td>{subject.room_name || '-'}</td>
                         <td>{subject.time_slot || '-'}</td>
-                        <td>{formatDateForDisplay(subject.start_date)}</td>
-                        <td>{formatDateForDisplay(subject.end_date)}</td>
+                        <td>{subject.start_date || '-'}</td>
+                        <td>{subject.end_date || '-'}</td>
                         <td className="text-center">
                           {getStatusIcon(subject.hasError ? 'invalid' : 'valid')}
                         </td>

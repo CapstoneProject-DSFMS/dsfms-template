@@ -94,7 +94,6 @@ const AssessmentEventsList = ({ courseId, subjectId, onView }) => {
       case 'CANCELED':
         return 'danger';
       case 'ONGOING':
-      case 'IN_PROGRESS':
         return 'warning';
       default:
         return 'secondary';

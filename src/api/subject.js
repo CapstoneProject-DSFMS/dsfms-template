@@ -344,6 +344,17 @@ const subjectAPI = {
     } catch (error) {
       throw error;
     }
+  },
+
+  // Get trainees enrolled in a subject
+  getSubjectTrainees: async (subjectId) => {
+    try {
+      const response = await apiClient.get(`/subjects/${subjectId}/trainees`);
+      // Handle nested data structure: { message: "...", data: { trainees: [...], totalItems: ... } }
+      return response.data?.data || response.data;
+    } catch (error) {
+      throw error;
+    }
   }
 };
 

@@ -36,35 +36,24 @@ const EnrolledTraineesTable = ({ courseId, subjectId, loading = false, refreshTr
       let traineesList = [];
 
       if (subjectId) {
-        // Fetch trainees from subject
-        const response = await subjectAPI.getSubjectById(subjectId);
-        // Extract trainees from enrollmentsByBatch
-        const allTrainees = [];
-        if (response?.enrollmentsByBatch) {
-          response.enrollmentsByBatch.forEach(batch => {
-            if (batch.trainees && Array.isArray(batch.trainees)) {
-              batch.trainees.forEach(trainee => {
-                // Build full name
-                const nameParts = [
-                  trainee.firstName,
-                  trainee.middleName,
-                  trainee.lastName
-                ].filter(Boolean);
-                const fullName = nameParts.join(' ') || 'Unknown';
-
-                allTrainees.push({
-                  id: trainee.id,
-                  eid: trainee.eid || '',
-                  name: fullName,
-                  email: trainee.email || '',
-                  subjectCount: 1, // For subject view, always 1
-                  userId: trainee.id
-                });
-              });
-            }
-          });
-        }
-        traineesList = allTrainees;
+        // Fetch trainees directly from /subjects/{subjectId}/trainees API
+        const response = await subjectAPI.getSubjectTrainees(subjectId);
+        // Extract trainees from response
+        const traineesData = response?.trainees || response?.data?.trainees || [];
+        
+        // Map trainees to table format
+        traineesList = traineesData.map((trainee) => ({
+          id: trainee.id,
+          eid: trainee.eid || '',
+          name: `${trainee.firstName || ''}${trainee.middleName ? ' ' + trainee.middleName : ''} ${trainee.lastName || ''}`.trim() || 'Unknown',
+          firstName: trainee.firstName || '',
+          middleName: trainee.middleName || null,
+          lastName: trainee.lastName || '',
+          email: trainee.email || '',
+          batchCode: trainee.batchCode || '', // Get batchCode directly from trainee object
+          subjectCount: 1,
+          userId: trainee.id
+        }));
       } else if (courseId) {
         // Call API to get enrolled trainees (only 1 API call)
         const response = await courseAPI.getCourseTrainees(courseId);
@@ -94,6 +83,7 @@ const EnrolledTraineesTable = ({ courseId, subjectId, loading = false, refreshTr
           eid: trainee.eid || '',
           name: fullName,
           email: trainee.email || '',
+          batchCode: trainee.batchCode || '',
           subjectCount: trainee.subjectCount || (subjectId ? 1 : 0),
           userId: trainee.id || trainee.userId
         };
@@ -460,21 +450,32 @@ const EnrolledTraineesTable = ({ courseId, subjectId, loading = false, refreshTr
                   <SortableHeader columnKey="eid" className="show-mobile">
                     EID
                   </SortableHeader>
-                  {!subjectId && (
+                  {subjectId ? (
+                    <>
+                      <SortableHeader columnKey="email" className="show-mobile">
+                        Email
+                      </SortableHeader>
+                      <SortableHeader columnKey="batchCode" className="show-mobile">
+                        Batch Code
+                      </SortableHeader>
+                    </>
+                  ) : (
                     <SortableHeader columnKey="subjects" className="show-mobile">
                       Total Subject
                     </SortableHeader>
                   )}
-                  <th 
-                    className="fw-semibold text-center show-mobile"
-                    style={{
-                      backgroundColor: 'var(--bs-primary)',
-                      color: 'white',
-                      borderColor: 'var(--bs-primary)'
-                    }}
-                  >
-                    Actions
-                  </th>
+                  {!subjectId && (
+                    <th 
+                      className="fw-semibold text-center show-mobile"
+                      style={{
+                        backgroundColor: 'var(--bs-primary)',
+                        color: 'white',
+                        borderColor: 'var(--bs-primary)'
+                      }}
+                    >
+                      Actions
+                    </th>
+                  )}
                 </tr>
               </thead>
               <tbody>
@@ -497,7 +498,16 @@ const EnrolledTraineesTable = ({ courseId, subjectId, loading = false, refreshTr
                         {trainee.eid}
                       </Badge>
                     </td>
-                    {!subjectId && (
+                    {subjectId ? (
+                      <>
+                        <td className="show-mobile">
+                          <small>{trainee.email || '-'}</small>
+                        </td>
+                        <td className="show-mobile">
+                          <small>{trainee.batchCode || '-'}</small>
+                        </td>
+                      </>
+                    ) : (
                       <td className="show-mobile">
                         <Badge 
                           bg="info"
@@ -511,13 +521,15 @@ const EnrolledTraineesTable = ({ courseId, subjectId, loading = false, refreshTr
                         </Badge>
                       </td>
                     )}
-                    <td className="text-center show-mobile">
-                      <EnrolledTraineeActions
-                        trainee={trainee}
-                        onViewSubjects={subjectId ? undefined : handleViewSubjects}
-                        onRemoveTrainee={handleRemoveTrainee}
-                      />
-                    </td>
+                    {!subjectId && (
+                      <td className="text-center show-mobile">
+                        <EnrolledTraineeActions
+                          trainee={trainee}
+                          onViewSubjects={subjectId ? undefined : handleViewSubjects}
+                          onRemoveTrainee={handleRemoveTrainee}
+                        />
+                      </td>
+                    )}
                   </tr>
                 ))}
               </tbody>
