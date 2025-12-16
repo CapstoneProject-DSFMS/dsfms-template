@@ -878,11 +878,6 @@ body, html {
   .department-table-container {
     max-height: 100px;
   }
-  
-  .subject-table-scroll {
-    height: 300px !important;
-    max-height: 300px !important;
-  }
 }
 
 /* Dropdown styles moved to dropdown-unified.css */
@@ -918,8 +913,6 @@ body, html {
 
 /* Specific scroll styles for Subject and Trainee tables in tabs */
 .subject-table-scroll {
-  height: 200px !important; /* Reduced from 100% to fixed height */
-  max-height: 200px !important;
   overflow-y: auto !important;
   overflow-x: visible !important;
   position: relative !important;

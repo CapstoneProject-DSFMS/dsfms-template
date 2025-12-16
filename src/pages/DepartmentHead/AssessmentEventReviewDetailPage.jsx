@@ -1,7 +1,19 @@
-import React, { useState, useEffect, useMemo } from 'react';
-import { Container, Row, Col, Card, Badge, Button, Table, Spinner, Alert, Tab, Nav } from 'react-bootstrap';
-import { 
-  ArrowLeft, 
+import React, { useState, useEffect, useMemo } from "react";
+import {
+  Container,
+  Row,
+  Col,
+  Card,
+  Badge,
+  Button,
+  Table,
+  Spinner,
+  Alert,
+  Tab,
+  Nav,
+} from "react-bootstrap";
+import {
+  ArrowLeft,
   Eye,
   CheckCircle,
   XCircle,
@@ -13,18 +25,18 @@ import {
   X,
   FileEarmarkPdf,
   Person,
-  ClipboardCheck
-} from 'react-bootstrap-icons';
-import { useNavigate, useParams, useLocation } from 'react-router-dom';
-import { ROUTES } from '../../constants/routes';
-import assessmentAPI from '../../api/assessment';
-import templateAPI from '../../api/template';
-import { LoadingSkeleton, SortIcon } from '../../components/Common';
-import useTableSort from '../../hooks/useTableSort';
-import { toast } from 'react-toastify';
-import { Modal } from 'react-bootstrap';
-import '../../styles/department-head.css';
-import '../../styles/scrollable-table.css';
+  ClipboardCheck,
+} from "react-bootstrap-icons";
+import { useNavigate, useParams, useLocation } from "react-router-dom";
+import { ROUTES } from "../../constants/routes";
+import assessmentAPI from "../../api/assessment";
+import templateAPI from "../../api/template";
+import { LoadingSkeleton, SortIcon } from "../../components/Common";
+import useTableSort from "../../hooks/useTableSort";
+import { toast } from "react-toastify";
+import { Modal } from "react-bootstrap";
+import "../../styles/department-head.css";
+import "../../styles/scrollable-table.css";
 
 const AssessmentEventReviewDetailPage = () => {
   const { eventId } = useParams();
@@ -34,11 +46,11 @@ const AssessmentEventReviewDetailPage = () => {
   const [eventData, setEventData] = useState(null);
   const [assessments, setAssessments] = useState([]);
   const [error, setError] = useState(null);
-  const [activeTab, setActiveTab] = useState('overview');
+  const [activeTab, setActiveTab] = useState("overview");
   const [showTemplatePreview, setShowTemplatePreview] = useState(false);
   const [templatePdfUrl, setTemplatePdfUrl] = useState(null);
   const [loadingPDF, setLoadingPDF] = useState(false);
-  
+
   // Get event type from location state or detect from data
   const [eventType, setEventType] = useState(() => {
     return location.state?.eventType || null; // Will be set after fetching data
@@ -46,7 +58,11 @@ const AssessmentEventReviewDetailPage = () => {
   const [formsSubTab, setFormsSubTab] = useState(() => {
     // Default subtab based on event type if available
     const type = location.state?.eventType;
-    return type === 'processing' ? 'submitted' : type === 'completed' ? 'approved' : 'submitted';
+    return type === "processing"
+      ? "submitted"
+      : type === "completed"
+      ? "approved"
+      : "submitted";
   });
 
   useEffect(() => {
@@ -63,9 +79,11 @@ const AssessmentEventReviewDetailPage = () => {
 
       // Lấy eventData từ location.state (đã có từ trang list)
       const eventDataFromState = location.state?.eventData;
-      
+
       if (!eventDataFromState) {
-        setError('Event data not found. Please navigate from the Assessment Review Requests page.');
+        setError(
+          "Event data not found. Please navigate from the Assessment Review Requests page."
+        );
         return;
       }
 
@@ -74,22 +92,22 @@ const AssessmentEventReviewDetailPage = () => {
       if (eventDataFromState.occurrenceDate) {
         const date = new Date(eventDataFromState.occurrenceDate);
         if (!isNaN(date.getTime())) {
-          occuranceDate = date.toISOString().split('T')[0]; // Format: YYYY-MM-DD
+          occuranceDate = date.toISOString().split("T")[0]; // Format: YYYY-MM-DD
         }
       }
 
       if (!occuranceDate) {
-        setError('Invalid occurrence date');
+        setError("Invalid occurrence date");
         return;
       }
 
       let response;
-      
+
       // Kiểm tra subjectId để quyết định gọi API nào
       if (eventDataFromState.subjectId) {
         // Subject event
         if (!eventDataFromState.templateId) {
-          setError('Template ID is missing');
+          setError("Template ID is missing");
           return;
         }
         response = await assessmentAPI.getSubjectEventAssessments(
@@ -100,7 +118,7 @@ const AssessmentEventReviewDetailPage = () => {
       } else if (eventDataFromState.courseId) {
         // Course event
         if (!eventDataFromState.templateId) {
-          setError('Template ID is missing');
+          setError("Template ID is missing");
           return;
         }
         response = await assessmentAPI.getCourseEventAssessments(
@@ -109,44 +127,54 @@ const AssessmentEventReviewDetailPage = () => {
           occuranceDate
         );
       } else {
-        setError('Invalid event data: missing courseId or subjectId');
+        setError("Invalid event data: missing courseId or subjectId");
         return;
       }
 
       // Set assessments từ response
       setAssessments(response?.assessments || []);
-      
+
       // Set eventData từ eventInfo trong response và eventDataFromState
       const eventInfo = response?.eventInfo || {};
       setEventData({
         eventName: eventInfo.name || eventDataFromState.eventName,
-        occurrenceDate: eventInfo.occuranceDate || eventDataFromState.occurrenceDate,
-        templateName: eventInfo.templateInfo?.name || eventDataFromState.templateName,
+        occurrenceDate:
+          eventInfo.occuranceDate || eventDataFromState.occurrenceDate,
+        templateName:
+          eventInfo.templateInfo?.name || eventDataFromState.templateName,
         templateId: eventInfo.templateId || eventDataFromState.templateId,
-        totalTrainees: response?.numberOfTrainees || eventDataFromState.totalTrainees,
-        totalTrainers: response?.numberOfParticipatedTrainers || eventDataFromState.totalTrainers,
+        totalTrainees:
+          response?.numberOfTrainees || eventDataFromState.totalTrainees,
+        totalTrainers:
+          response?.numberOfParticipatedTrainers ||
+          eventDataFromState.totalTrainers,
         courseInfo: eventInfo.courseInfo,
         subjectInfo: eventInfo.subjectInfo,
         templateInfo: eventInfo.templateInfo,
         // Keep original fields for compatibility
-        totalAssessments: response?.assessments?.length || eventDataFromState.totalAssessments
+        totalAssessments:
+          response?.assessments?.length || eventDataFromState.totalAssessments,
       });
-      
+
       // Set eventType nếu chưa có
       if (!eventType) {
-        const hasSubmitted = (response?.assessments || []).some(a => a.status === 'SUBMITTED');
-        setEventType(hasSubmitted ? 'processing' : 'completed');
-        setFormsSubTab(hasSubmitted ? 'submitted' : 'approved');
+        const hasSubmitted = (response?.assessments || []).some(
+          (a) => a.status === "SUBMITTED"
+        );
+        setEventType(hasSubmitted ? "processing" : "completed");
+        setFormsSubTab(hasSubmitted ? "submitted" : "approved");
       }
     } catch (error) {
-      console.error('Error fetching event data:', error);
-      const errorMessage = error.response?.data?.message || error.message || 'Failed to load assessment event data';
+      console.error("Error fetching event data:", error);
+      const errorMessage =
+        error.response?.data?.message ||
+        error.message ||
+        "Failed to load assessment event data";
       setError(errorMessage);
     } finally {
       setLoading(false);
     }
   };
-
 
   // Calculate statistics
   const calculateStatistics = () => {
@@ -156,7 +184,7 @@ const AssessmentEventReviewDetailPage = () => {
         submitted: 0,
         passed: 0,
         failed: 0,
-        pending: 0
+        pending: 0,
       };
     }
 
@@ -165,25 +193,27 @@ const AssessmentEventReviewDetailPage = () => {
       submitted: 0,
       passed: 0,
       failed: 0,
-      pending: 0
+      pending: 0,
     };
 
-    assessments.forEach(assessment => {
-      const status = String(assessment.status || '').toUpperCase();
-      
-      if (status === 'SUBMITTED') {
+    assessments.forEach((assessment) => {
+      const status = String(assessment.status || "").toUpperCase();
+
+      if (status === "SUBMITTED") {
         stats.submitted++;
-      } else if (status === 'APPROVED') {
+      } else if (status === "APPROVED") {
         stats.submitted++;
         // Check if passed based on resultText only
-        const resultText = String(assessment.resultText || '').toUpperCase().trim();
-        if (resultText === 'PASSED' || resultText === 'PASS') {
+        const resultText = String(assessment.resultText || "")
+          .toUpperCase()
+          .trim();
+        if (resultText === "PASSED" || resultText === "PASS") {
           stats.passed++;
-        } else if (resultText === 'FAILED' || resultText === 'FAIL') {
+        } else if (resultText === "FAILED" || resultText === "FAIL") {
           stats.failed++;
         }
         // If resultText is empty or unknown, don't count as passed or failed
-      } else if (status === 'REJECTED') {
+      } else if (status === "REJECTED") {
         stats.submitted++;
         stats.failed++;
       } else {
@@ -195,13 +225,13 @@ const AssessmentEventReviewDetailPage = () => {
   };
 
   const formatDate = (dateString) => {
-    if (!dateString) return 'N/A';
+    if (!dateString) return "N/A";
     try {
       const date = new Date(dateString);
-      return date.toLocaleDateString('en-US', {
-        year: 'numeric',
-        month: 'long',
-        day: 'numeric'
+      return date.toLocaleDateString("en-US", {
+        year: "numeric",
+        month: "long",
+        day: "numeric",
       });
     } catch {
       return dateString;
@@ -213,24 +243,36 @@ const AssessmentEventReviewDetailPage = () => {
   // Get assessment status badge - display original status from API
   const getAssessmentStatusBadge = (status) => {
     const statusConfig = {
-      SUBMITTED: { variant: 'warning', icon: Clock, label: 'SUBMITTED' },
-      APPROVED: { variant: 'success', icon: CheckCircle, label: 'APPROVED' },
-      REJECTED: { variant: 'danger', icon: XCircle, label: 'REJECTED' },
-      CANCELLED: { variant: 'secondary', icon: X, label: 'CANCELLED' },
-      IN_PROGRESS: { variant: 'info', icon: Clock, label: 'IN_PROGRESS' },
-      ONGOING: { variant: 'info', icon: Clock, label: 'ONGOING' },
-      COMPLETED: { variant: 'success', icon: CheckCircle, label: 'COMPLETED' },
-      PENDING: { variant: 'info', icon: Clock, label: 'PENDING' },
-      FAILED: { variant: 'danger', icon: XCircle, label: 'FAILED' },
-      NOT_STARTED: { variant: 'secondary', icon: ClipboardCheck, label: 'NOT_STARTED' }
+      SUBMITTED: { variant: "warning", icon: Clock, label: "SUBMITTED" },
+      APPROVED: { variant: "success", icon: CheckCircle, label: "APPROVED" },
+      REJECTED: { variant: "danger", icon: XCircle, label: "REJECTED" },
+      CANCELLED: { variant: "secondary", icon: X, label: "CANCELLED" },
+      IN_PROGRESS: { variant: "info", icon: Clock, label: "IN_PROGRESS" },
+      ONGOING: { variant: "info", icon: Clock, label: "ONGOING" },
+      COMPLETED: { variant: "success", icon: CheckCircle, label: "COMPLETED" },
+      PENDING: { variant: "info", icon: Clock, label: "PENDING" },
+      FAILED: { variant: "danger", icon: XCircle, label: "FAILED" },
+      NOT_STARTED: {
+        variant: "secondary",
+        icon: ClipboardCheck,
+        label: "NOT_STARTED",
+      },
     };
-    
-    const statusUpper = String(status || '').toUpperCase();
-    const config = statusConfig[statusUpper] || { variant: 'secondary', icon: ClipboardCheck, label: status || 'UNKNOWN' };
+
+    const statusUpper = String(status || "").toUpperCase();
+    const config = statusConfig[statusUpper] || {
+      variant: "secondary",
+      icon: ClipboardCheck,
+      label: status || "UNKNOWN",
+    };
     const IconComponent = config.icon;
-    
+
     return (
-      <Badge bg={config.variant} className="d-flex align-items-center gap-1" style={{ width: 'fit-content' }}>
+      <Badge
+        bg={config.variant}
+        className="d-flex align-items-center gap-1"
+        style={{ width: "fit-content" }}
+      >
         <IconComponent size={12} />
         {config.label}
       </Badge>
@@ -238,7 +280,13 @@ const AssessmentEventReviewDetailPage = () => {
   };
 
   // SortableHeader component
-  const SortableHeader = ({ columnKey, children, className = "", sortConfig, onSort }) => {
+  const SortableHeader = ({
+    columnKey,
+    children,
+    className = "",
+    sortConfig,
+    onSort,
+  }) => {
     const isActive = sortConfig?.key === columnKey;
     const direction = isActive ? sortConfig?.direction : null;
 
@@ -246,60 +294,58 @@ const AssessmentEventReviewDetailPage = () => {
       <th
         className={`fw-semibold ${className}`}
         style={{
-          cursor: 'pointer',
-          userSelect: 'none',
-          transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
-          position: 'relative',
-          overflow: 'hidden',
-          backgroundColor: 'var(--bs-primary)',
-          color: 'white',
-          borderColor: 'var(--bs-primary)',
-          textTransform: 'uppercase'
+          cursor: "pointer",
+          userSelect: "none",
+          transition: "all 0.3s cubic-bezier(0.4, 0, 0.2, 1)",
+          position: "relative",
+          overflow: "hidden",
+          backgroundColor: "var(--bs-primary)",
+          color: "white",
+          borderColor: "var(--bs-primary)",
+          textTransform: "uppercase",
         }}
         onClick={() => onSort(columnKey)}
         onMouseEnter={(e) => {
-          e.target.style.backgroundColor = '#214760';
-          e.target.style.transform = 'translateY(-1px)';
-          e.target.style.boxShadow = '0 2px 8px rgba(0, 0, 0, 0.15)';
+          e.target.style.backgroundColor = "#214760";
+          e.target.style.transform = "translateY(-1px)";
+          e.target.style.boxShadow = "0 2px 8px rgba(0, 0, 0, 0.15)";
         }}
         onMouseLeave={(e) => {
-          e.target.style.backgroundColor = 'var(--bs-primary)';
-          e.target.style.transform = 'translateY(0)';
-          e.target.style.boxShadow = 'none';
+          e.target.style.backgroundColor = "var(--bs-primary)";
+          e.target.style.transform = "translateY(0)";
+          e.target.style.boxShadow = "none";
         }}
       >
         <div className="d-flex align-items-center justify-content-between position-relative">
-          <span style={{
-            transition: 'all 0.3s ease',
-            fontWeight: isActive ? '700' : '600',
-            color: 'white'
-          }}>
+          <span
+            style={{
+              transition: "all 0.3s ease",
+              fontWeight: isActive ? "700" : "600",
+              color: "white",
+            }}
+          >
             {children}
           </span>
           <div
             className="ms-2 d-flex align-items-center"
             style={{
-              minWidth: '20px',
-              justifyContent: 'center'
+              minWidth: "20px",
+              justifyContent: "center",
             }}
           >
-            <SortIcon
-              direction={direction}
-              size={14}
-              color="white"
-            />
+            <SortIcon direction={direction} size={14} color="white" />
           </div>
         </div>
         {isActive && (
           <div
             style={{
-              position: 'absolute',
+              position: "absolute",
               bottom: 0,
               left: 0,
               right: 0,
-              height: '2px',
-              background: 'rgba(255, 255, 255, 0.5)',
-              animation: 'slideIn 0.3s ease-out'
+              height: "2px",
+              background: "rgba(255, 255, 255, 0.5)",
+              animation: "slideIn 0.3s ease-out",
             }}
           />
         )}
@@ -310,22 +356,23 @@ const AssessmentEventReviewDetailPage = () => {
   // Filter assessments by subtab
   const filteredAssessments = useMemo(() => {
     if (!assessments || assessments.length === 0) return [];
-    
-    if (activeTab !== 'forms') return assessments;
-    
-    return assessments.filter(assessment => {
-      const status = String(assessment.status || '').toUpperCase();
-      
-      if (eventType === 'processing') {
-        if (formsSubTab === 'submitted') return status === 'SUBMITTED';
-        if (formsSubTab === 'reviewed') return status === 'APPROVED' || status === 'REJECTED';
-        if (formsSubTab === 'cancelled') return status === 'CANCELLED';
-      } else if (eventType === 'completed') {
-        if (formsSubTab === 'approved') return status === 'APPROVED';
-        if (formsSubTab === 'rejected') return status === 'REJECTED';
-        if (formsSubTab === 'cancelled') return status === 'CANCELLED';
+
+    if (activeTab !== "forms") return assessments;
+
+    return assessments.filter((assessment) => {
+      const status = String(assessment.status || "").toUpperCase();
+
+      if (eventType === "processing") {
+        if (formsSubTab === "submitted") return status === "SUBMITTED";
+        if (formsSubTab === "reviewed")
+          return status === "APPROVED" || status === "REJECTED";
+        if (formsSubTab === "cancelled") return status === "CANCELLED";
+      } else if (eventType === "completed") {
+        if (formsSubTab === "approved") return status === "APPROVED";
+        if (formsSubTab === "rejected") return status === "REJECTED";
+        if (formsSubTab === "cancelled") return status === "CANCELLED";
       }
-      
+
       return true;
     });
   }, [assessments, activeTab, formsSubTab, eventType]);
@@ -333,36 +380,43 @@ const AssessmentEventReviewDetailPage = () => {
   // Prepare table data for sorting
   const tableData = useMemo(() => {
     if (!filteredAssessments || filteredAssessments.length === 0) return [];
-    
+
     return filteredAssessments.map((assessment, index) => {
-      const traineeName = assessment.trainee?.fullName || 
-                        `${assessment.trainee?.firstName || ''} ${assessment.trainee?.lastName || ''}`.trim() ||
-                        `Trainee ${index + 1}`;
-      const traineeEmail = assessment.trainee?.email || '-';
+      const traineeName =
+        assessment.trainee?.fullName ||
+        `${assessment.trainee?.firstName || ""} ${
+          assessment.trainee?.lastName || ""
+        }`.trim() ||
+        `Trainee ${index + 1}`;
+      const traineeEmail = assessment.trainee?.email || "-";
       const score = assessment.resultScore || 0;
       const maxScore = 100; // Default max score
-      const percentage = maxScore > 0 ? Math.round((score / maxScore) * 100) : 0;
-      
+      const percentage =
+        maxScore > 0 ? Math.round((score / maxScore) * 100) : 0;
+
       // Determine result
       let result = null;
-      if (assessment.status === 'APPROVED') {
-        result = score >= 70 ? 'PASSED' : 'FAILED';
-      } else if (assessment.status === 'REJECTED') {
-        result = 'FAILED';
+      if (assessment.status === "APPROVED") {
+        result = score >= 70 ? "PASSED" : "FAILED";
+      } else if (assessment.status === "REJECTED") {
+        result = "FAILED";
       }
-      
+
       return {
         id: assessment.id,
         assessmentForm: assessment.name || `Assessment Form ${index + 1}`,
         trainee: traineeName,
         traineeEmail: traineeEmail,
-        occurrenceDate: eventData?.occurrenceDate || assessment.occurrenceDate || assessment.createdAt,
+        occurrenceDate:
+          eventData?.occurrenceDate ||
+          assessment.occurrenceDate ||
+          assessment.createdAt,
         status: assessment.status,
         score: score,
         maxScore: maxScore,
         percentage: percentage,
         result: result,
-        rawAssessment: assessment
+        rawAssessment: assessment,
       };
     });
   }, [filteredAssessments, eventData]);
@@ -372,20 +426,26 @@ const AssessmentEventReviewDetailPage = () => {
   // Get course and subject info from eventData (from API response)
   const getCourseSubjectInfo = () => {
     if (!eventData) return null;
-    
+
     return {
-      course: eventData.courseInfo ? {
-        name: eventData.courseInfo.name,
-        code: eventData.courseInfo.code
-      } : null,
-      subject: eventData.subjectInfo ? {
-        name: eventData.subjectInfo.name,
-        code: eventData.subjectInfo.code,
-        course: eventData.subjectInfo.course ? {
-          name: eventData.subjectInfo.course.name,
-          code: eventData.subjectInfo.course.code
-        } : null
-      } : null
+      course: eventData.courseInfo
+        ? {
+            name: eventData.courseInfo.name,
+            code: eventData.courseInfo.code,
+          }
+        : null,
+      subject: eventData.subjectInfo
+        ? {
+            name: eventData.subjectInfo.name,
+            code: eventData.subjectInfo.code,
+            course: eventData.subjectInfo.course
+              ? {
+                  name: eventData.subjectInfo.course.name,
+                  code: eventData.subjectInfo.course.code,
+                }
+              : null,
+          }
+        : null,
     };
   };
 
@@ -403,32 +463,37 @@ const AssessmentEventReviewDetailPage = () => {
     // Fallback: try to get from first assessment
     if (assessments && assessments.length > 0) {
       const firstAssessment = assessments[0];
-      return firstAssessment?.templateFormId || firstAssessment?.template?.formId || firstAssessment?.template?.id || null;
+      return (
+        firstAssessment?.templateFormId ||
+        firstAssessment?.template?.formId ||
+        firstAssessment?.template?.id ||
+        null
+      );
     }
     return null;
   };
 
   const handlePreviewTemplatePDF = async () => {
     const templateFormId = getTemplateFormId();
-    
+
     if (!templateFormId) {
-      toast.error('Template information is not available');
+      toast.error("Template information is not available");
       return;
     }
 
     try {
       setLoadingPDF(true);
       setShowTemplatePreview(true);
-      
+
       // Get PDF blob from API
       const pdfBlob = await templateAPI.getTemplatePDF(templateFormId);
-      
+
       // Create object URL for PDF
       const url = URL.createObjectURL(pdfBlob);
       setTemplatePdfUrl(url);
     } catch (error) {
-      console.error('Error loading template PDF:', error);
-      toast.error('Failed to load template PDF preview');
+      console.error("Error loading template PDF:", error);
+      toast.error("Failed to load template PDF preview");
       setShowTemplatePreview(false);
     } finally {
       setLoadingPDF(false);
@@ -457,10 +522,11 @@ const AssessmentEventReviewDetailPage = () => {
   if (error || !eventData) {
     return (
       <Container fluid className="py-4">
-        <Alert variant="danger">
-          {error || 'Assessment event not found'}
-        </Alert>
-        <Button variant="outline-primary" onClick={() => navigate(ROUTES.DEPARTMENT_REVIEW_REQUESTS)}>
+        <Alert variant="danger">{error || "Assessment event not found"}</Alert>
+        <Button
+          variant="outline-primary"
+          onClick={() => navigate(ROUTES.DEPARTMENT_REVIEW_REQUESTS)}
+        >
           <ArrowLeft className="me-2" size={16} />
           Back to Review Requests
         </Button>
@@ -476,7 +542,7 @@ const AssessmentEventReviewDetailPage = () => {
           <button
             className="btn btn-link p-0 mb-3 text-decoration-none"
             onClick={() => navigate(ROUTES.DEPARTMENT_REVIEW_REQUESTS)}
-            style={{ color: 'var(--bs-primary)' }}
+            style={{ color: "var(--bs-primary)" }}
           >
             <ArrowLeft className="me-2" size={20} />
             Back
@@ -491,16 +557,16 @@ const AssessmentEventReviewDetailPage = () => {
             <div className="border-bottom py-2 px-3">
               <Nav variant="tabs" className="border-0">
                 <Nav.Item>
-                  <Nav.Link 
+                  <Nav.Link
                     eventKey="overview"
                     className="d-flex align-items-center"
-                    style={{ 
-                      border: 'none',
-                      backgroundColor: 'transparent',
-                      color: '#ffffff',
-                      fontWeight: activeTab === 'overview' ? '600' : '400',
-                      opacity: activeTab === 'overview' ? '1' : '0.7',
-                      borderRadius: '4px 4px 0 0'
+                    style={{
+                      border: "none",
+                      backgroundColor: "transparent",
+                      color: "#ffffff",
+                      fontWeight: activeTab === "overview" ? "600" : "400",
+                      opacity: activeTab === "overview" ? "1" : "0.7",
+                      borderRadius: "4px 4px 0 0",
                     }}
                   >
                     <FileText className="me-2" size={16} />
@@ -508,16 +574,16 @@ const AssessmentEventReviewDetailPage = () => {
                   </Nav.Link>
                 </Nav.Item>
                 <Nav.Item>
-                  <Nav.Link 
+                  <Nav.Link
                     eventKey="forms"
                     className="d-flex align-items-center"
-                    style={{ 
-                      border: 'none',
-                      backgroundColor: 'transparent',
-                      color: '#ffffff',
-                      fontWeight: activeTab === 'forms' ? '600' : '400',
-                      opacity: activeTab === 'forms' ? '1' : '0.7',
-                      borderRadius: '4px 4px 0 0'
+                    style={{
+                      border: "none",
+                      backgroundColor: "transparent",
+                      color: "#ffffff",
+                      fontWeight: activeTab === "forms" ? "600" : "400",
+                      opacity: activeTab === "forms" ? "1" : "0.7",
+                      borderRadius: "4px 4px 0 0",
                     }}
                   >
                     <Book className="me-2" size={16} />
@@ -535,19 +601,52 @@ const AssessmentEventReviewDetailPage = () => {
                 <Row>
                   <Col md={6}>
                     <div className="mb-3">
-                      <h6 className="text-muted mb-1">Event Name</h6>
-                      <p className="mb-0 fw-semibold">{eventData.eventName}</p>
+                      <h6
+                        className="fw-bold text-primary mb-2"
+                        style={{
+                          fontSize: "1.1rem",
+                          backgroundColor: "#f0f8ff",
+                          padding: "6px 10px",
+                          borderRadius: "6px",
+                          border: "1px solid #cce7ff",
+                        }}
+                      >
+                        Event Name
+                      </h6>
+                      <p className="m-1 fw-semibold">{eventData.eventName}</p>
                     </div>
                     <div className="mb-3">
-                      <h6 className="text-muted mb-1 d-flex align-items-center">
+                      <h6
+                        className="fw-bold text-primary mb-2"
+                        style={{
+                          fontSize: "1.1rem",
+                          backgroundColor: "#f0f8ff",
+                          padding: "6px 10px",
+                          borderRadius: "6px",
+                          border: "1px solid #cce7ff",
+                        }}
+                      >
                         <Calendar className="me-2" size={16} />
                         Occurrence Date
                       </h6>
                       <span>{formatDate(eventData.occurrenceDate)}</span>
                     </div>
                     <div className="mb-3">
-                      <h6 className="text-muted mb-1">Assessment Instrument (Template) Name</h6>
-                      <p className="mb-0 fw-semibold">{eventData.templateName}</p>
+                      <h6
+                        className="fw-bold text-primary mb-2"
+                        style={{
+                          fontSize: "1.1rem",
+                          backgroundColor: "#f0f8ff",
+                          padding: "6px 10px",
+                          borderRadius: "6px",
+                          border: "1px solid #cce7ff",
+                        }}
+                      >
+                        Assessment Instrument (Template) Name
+                      </h6>
+                      <p className="m-1 fw-semibold">
+                        {eventData.templateName}
+                      </p>
                       {getTemplateFormId() && (
                         <Button
                           variant="outline-primary"
@@ -563,31 +662,62 @@ const AssessmentEventReviewDetailPage = () => {
                   </Col>
                   <Col md={6}>
                     <div className="mb-3">
-                      <h6 className="text-muted mb-1 d-flex align-items-center">
+                      <h6
+                        className="fw-bold text-primary mb-2"
+                        style={{
+                          fontSize: "1.1rem",
+                          backgroundColor: "#f0f8ff",
+                          padding: "6px 10px",
+                          borderRadius: "6px",
+                          border: "1px solid #cce7ff",
+                        }}
+                      >
                         <People className="me-2" size={16} />
                         Total Trainees
                       </h6>
-                      <Badge bg="info" className="fs-6">{eventData.totalTrainees}</Badge>
+                      <Badge>{eventData.totalTrainees} trainees</Badge>
                     </div>
                     {eventData.totalTrainers !== undefined && (
                       <div className="mb-3">
-                        <h6 className="text-muted mb-1 d-flex align-items-center">
+                        <h6
+                          className="fw-bold text-primary mb-2"
+                          style={{
+                            fontSize: "1.1rem",
+                            backgroundColor: "#f0f8ff",
+                            padding: "6px 10px",
+                            borderRadius: "6px",
+                            border: "1px solid #cce7ff",
+                          }}
+                        >
                           <Person className="me-2" size={16} />
                           Total Trainers
                         </h6>
-                        <Badge bg="info" className="fs-6">{eventData.totalTrainers}</Badge>
+                        <Badge>{eventData.totalTrainers} trainers</Badge>
                       </div>
                     )}
                     {courseSubjectInfo?.course && (
                       <div className="mb-3">
-                        <h6 className="text-muted mb-1 d-flex align-items-center">
+                        <h6
+                          className="fw-bold text-primary mb-2"
+                          style={{
+                            fontSize: "1.1rem",
+                            backgroundColor: "#f0f8ff",
+                            padding: "6px 10px",
+                            borderRadius: "6px",
+                            border: "1px solid #cce7ff",
+                          }}
+                        >
                           <Book className="me-2" size={16} />
                           Course Information
                         </h6>
                         <div>
-                          <span className="fw-semibold">{courseSubjectInfo.course.name}</span>
+                          <span className="fw-semibold">
+                            {courseSubjectInfo.course.name}
+                          </span>
                           {courseSubjectInfo.course.code && (
-                            <span className="text-muted ms-2">({courseSubjectInfo.course.code})</span>
+                            <span className="text-muted ms-2">
+                              ({courseSubjectInfo.course.code})
+                            </span>
                           )}
                         </div>
                       </div>
@@ -599,15 +729,22 @@ const AssessmentEventReviewDetailPage = () => {
                           Subject Information
                         </h6>
                         <div>
-                          <span className="fw-semibold">{courseSubjectInfo.subject.name}</span>
+                          <span className="fw-semibold">
+                            {courseSubjectInfo.subject.name}
+                          </span>
                           {courseSubjectInfo.subject.code && (
-                            <span className="text-muted ms-2">({courseSubjectInfo.subject.code})</span>
+                            <span className="text-muted ms-2">
+                              ({courseSubjectInfo.subject.code})
+                            </span>
                           )}
                           {courseSubjectInfo.subject.course && (
                             <div className="text-muted small mt-1">
-                              From course: {courseSubjectInfo.subject.course.name}
+                              From course:{" "}
+                              {courseSubjectInfo.subject.course.name}
                               {courseSubjectInfo.subject.course.code && (
-                                <span className="ms-1">({courseSubjectInfo.subject.course.code})</span>
+                                <span className="ms-1">
+                                  ({courseSubjectInfo.subject.course.code})
+                                </span>
                               )}
                             </div>
                           )}
@@ -616,34 +753,159 @@ const AssessmentEventReviewDetailPage = () => {
                     )}
                   </Col>
                 </Row>
-                
+
                 {/* Pass/Fail Statistics */}
                 <hr className="my-4" />
                 <Row>
                   <Col xs={12}>
-                    <h6 className="mb-3 fw-bold" style={{ color: '#456882', fontSize: '1.1rem' }}>Assessment Results Overview</h6>
+                    <h6
+                      className="mb-3 fw-bold"
+                      style={{ color: "#456882", fontSize: "1.1rem" }}
+                    >
+                      Assessment Results Overview
+                    </h6>
                   </Col>
-                  <Col md={4}>
-                    <Card className="h-100 border-success">
-                      <Card.Body className="text-center">
-                        <h3 className="text-success mb-2">{stats.passed}</h3>
-                        <p className="text-muted mb-0">Passed</p>
+                  <Col md={4} className="mb-3">
+                    <Card
+                      className="h-100 border-success shadow-sm"
+                      style={{
+                        transition: "all 0.3s ease",
+                        cursor: "pointer",
+                        backgroundColor: "#d4edda", // Solid success background
+                        border: "2px solid var(--bs-success)",
+                        position: "relative",
+                        overflow: "hidden",
+                      }}
+                      onMouseEnter={(e) => {
+                        e.currentTarget.style.transform =
+                          "translateY(-8px) scale(1.05)";
+                        e.currentTarget.style.boxShadow =
+                          "0 12px 30px rgba(40, 167, 69, 0.4)";
+                        e.currentTarget.style.borderColor = "#28a745";
+                      }}
+                      onMouseLeave={(e) => {
+                        e.currentTarget.style.transform =
+                          "translateY(0) scale(1)";
+                        e.currentTarget.style.boxShadow =
+                          "0 4px 12px rgba(0,0,0,0.1)";
+                        e.currentTarget.style.borderColor = "var(--bs-success)";
+                      }}
+                    >
+                      <Card.Body className="text-center position-relative">
+                        <div
+                          className="mb-2"
+                          style={{
+                            fontSize: "3rem",
+                            fontWeight: "bold",
+                            color: "#155724",
+                            textShadow: "0 2px 4px rgba(0,0,0,0.1)",
+                            animation: "pulse 2s infinite",
+                          }}
+                        >
+                          {stats.passed}
+                        </div>
+                        <p
+                          className="text-muted mb-0 fw-semibold"
+                          style={{ fontSize: "1rem" }}
+                        >
+                          Passed
+                        </p>
                       </Card.Body>
                     </Card>
                   </Col>
-                  <Col md={4}>
-                    <Card className="h-100 border-danger">
-                      <Card.Body className="text-center">
-                        <h3 className="text-danger mb-2">{stats.failed}</h3>
-                        <p className="text-muted mb-0">Failed</p>
+                  <Col md={4} className="mb-3">
+                    <Card
+                      className="h-100 border-danger shadow-sm"
+                      style={{
+                        transition: "all 0.3s ease",
+                        cursor: "pointer",
+                        backgroundColor: "#f8d7da", // Solid danger background
+                        border: "2px solid var(--bs-danger)",
+                        position: "relative",
+                        overflow: "hidden",
+                      }}
+                      onMouseEnter={(e) => {
+                        e.currentTarget.style.transform =
+                          "translateY(-8px) scale(1.05)";
+                        e.currentTarget.style.boxShadow =
+                          "0 12px 30px rgba(220, 53, 69, 0.4)";
+                        e.currentTarget.style.borderColor = "#dc3545";
+                      }}
+                      onMouseLeave={(e) => {
+                        e.currentTarget.style.transform =
+                          "translateY(0) scale(1)";
+                        e.currentTarget.style.boxShadow =
+                          "0 4px 12px rgba(0,0,0,0.1)";
+                        e.currentTarget.style.borderColor = "var(--bs-danger)";
+                      }}
+                    >
+                      <Card.Body className="text-center position-relative">
+                        <div
+                          className="mb-2"
+                          style={{
+                            fontSize: "3rem",
+                            fontWeight: "bold",
+                            color: "#721c24",
+                            textShadow: "0 2px 4px rgba(0,0,0,0.1)",
+                            animation: "pulse 2s infinite",
+                          }}
+                        >
+                          {stats.failed}
+                        </div>
+                        <p
+                          className="text-muted mb-0 fw-semibold"
+                          style={{ fontSize: "1rem" }}
+                        >
+                          Failed
+                        </p>
                       </Card.Body>
                     </Card>
                   </Col>
-                  <Col md={4}>
-                    <Card className="h-100 border-primary">
-                      <Card.Body className="text-center">
-                        <h3 className="text-primary mb-2">{stats.total}</h3>
-                        <p className="text-muted mb-0">Total Forms</p>
+                  <Col md={4} className="mb-3">
+                    <Card
+                      className="h-100 border-primary shadow-sm"
+                      style={{
+                        transition: "all 0.3s ease",
+                        cursor: "pointer",
+                        backgroundColor: "#ccedffff", // Solid primary background
+                        border: "2px solid var(--bs-primary)",
+                        position: "relative",
+                        overflow: "hidden",
+                      }}
+                      onMouseEnter={(e) => {
+                        e.currentTarget.style.transform =
+                          "translateY(-8px) scale(1.05)";
+                        e.currentTarget.style.boxShadow =
+                          "0 12px 30px rgba(0, 123, 255, 0.4)";
+                        e.currentTarget.style.borderColor = "#007bff";
+                      }}
+                      onMouseLeave={(e) => {
+                        e.currentTarget.style.transform =
+                          "translateY(0) scale(1)";
+                        e.currentTarget.style.boxShadow =
+                          "0 4px 12px rgba(0,0,0,0.1)";
+                        e.currentTarget.style.borderColor = "var(--bs-primary)";
+                      }}
+                    >
+                      <Card.Body className="text-center position-relative">
+                        <div
+                          className="mb-2"
+                          style={{
+                            fontSize: "3rem",
+                            fontWeight: "bold",
+                            color: "#04234fff",
+                            textShadow: "0 2px 4px rgba(0,0,0,0.1)",
+                            animation: "pulse 2s infinite",
+                          }}
+                        >
+                          {stats.total}
+                        </div>
+                        <p
+                          className="text-muted mb-0 fw-semibold"
+                          style={{ fontSize: "1rem" }}
+                        >
+                          Total Forms
+                        </p>
                       </Card.Body>
                     </Card>
                   </Col>
@@ -656,113 +918,196 @@ const AssessmentEventReviewDetailPage = () => {
               <Card.Body className="p-0">
                 {/* Subtabs for Assessment Forms */}
                 {eventType && (
-                  <div className="border-bottom p-3" style={{ backgroundColor: '#f8f9fa' }}>
+                  <div
+                    className="border-bottom p-3"
+                    style={{ backgroundColor: "#f8f9fa" }}
+                  >
                     <Nav variant="tabs" className="border-0">
-                      {eventType === 'processing' ? (
+                      {eventType === "processing" ? (
                         <>
                           <Nav.Item>
-                            <Nav.Link 
+                            <Nav.Link
                               eventKey="submitted"
-                              onClick={() => setFormsSubTab('submitted')}
-                              active={formsSubTab === 'submitted'}
-                              style={{ 
-                                cursor: 'pointer',
-                                color: formsSubTab === 'submitted' ? 'var(--bs-primary)' : '#6c757d',
-                                fontWeight: formsSubTab === 'submitted' ? '600' : '400',
-                                border: 'none',
-                                borderBottom: formsSubTab === 'submitted' ? '2px solid var(--bs-primary)' : '2px solid transparent'
+                              onClick={() => setFormsSubTab("submitted")}
+                              active={formsSubTab === "submitted"}
+                              style={{
+                                cursor: "pointer",
+                                color:
+                                  formsSubTab === "submitted"
+                                    ? "var(--bs-primary)"
+                                    : "#6c757d",
+                                fontWeight:
+                                  formsSubTab === "submitted" ? "600" : "400",
+                                border: "none",
+                                borderBottom:
+                                  formsSubTab === "submitted"
+                                    ? "2px solid var(--bs-primary)"
+                                    : "2px solid transparent",
                               }}
                             >
                               <Clock className="me-1" size={14} />
-                              Submitted ({assessments.filter(a => a.status === 'SUBMITTED').length})
+                              Submitted (
+                              {
+                                assessments.filter(
+                                  (a) => a.status === "SUBMITTED"
+                                ).length
+                              }
+                              )
                             </Nav.Link>
                           </Nav.Item>
                           <Nav.Item>
-                            <Nav.Link 
+                            <Nav.Link
                               eventKey="reviewed"
-                              onClick={() => setFormsSubTab('reviewed')}
-                              active={formsSubTab === 'reviewed'}
-                              style={{ 
-                                cursor: 'pointer',
-                                color: formsSubTab === 'reviewed' ? 'var(--bs-primary)' : '#6c757d',
-                                fontWeight: formsSubTab === 'reviewed' ? '600' : '400',
-                                border: 'none',
-                                borderBottom: formsSubTab === 'reviewed' ? '2px solid var(--bs-primary)' : '2px solid transparent'
+                              onClick={() => setFormsSubTab("reviewed")}
+                              active={formsSubTab === "reviewed"}
+                              style={{
+                                cursor: "pointer",
+                                color:
+                                  formsSubTab === "reviewed"
+                                    ? "var(--bs-primary)"
+                                    : "#6c757d",
+                                fontWeight:
+                                  formsSubTab === "reviewed" ? "600" : "400",
+                                border: "none",
+                                borderBottom:
+                                  formsSubTab === "reviewed"
+                                    ? "2px solid var(--bs-primary)"
+                                    : "2px solid transparent",
                               }}
                             >
                               <CheckCircle className="me-1" size={14} />
-                              Reviewed ({assessments.filter(a => a.status === 'APPROVED' || a.status === 'REJECTED').length})
+                              Reviewed (
+                              {
+                                assessments.filter(
+                                  (a) =>
+                                    a.status === "APPROVED" ||
+                                    a.status === "REJECTED"
+                                ).length
+                              }
+                              )
                             </Nav.Link>
                           </Nav.Item>
                           <Nav.Item>
-                            <Nav.Link 
+                            <Nav.Link
                               eventKey="cancelled"
-                              onClick={() => setFormsSubTab('cancelled')}
-                              active={formsSubTab === 'cancelled'}
-                              style={{ 
-                                cursor: 'pointer',
-                                color: formsSubTab === 'cancelled' ? 'var(--bs-primary)' : '#6c757d',
-                                fontWeight: formsSubTab === 'cancelled' ? '600' : '400',
-                                border: 'none',
-                                borderBottom: formsSubTab === 'cancelled' ? '2px solid var(--bs-primary)' : '2px solid transparent'
+                              onClick={() => setFormsSubTab("cancelled")}
+                              active={formsSubTab === "cancelled"}
+                              style={{
+                                cursor: "pointer",
+                                color:
+                                  formsSubTab === "cancelled"
+                                    ? "var(--bs-primary)"
+                                    : "#6c757d",
+                                fontWeight:
+                                  formsSubTab === "cancelled" ? "600" : "400",
+                                border: "none",
+                                borderBottom:
+                                  formsSubTab === "cancelled"
+                                    ? "2px solid var(--bs-primary)"
+                                    : "2px solid transparent",
                               }}
                             >
                               <X className="me-1" size={14} />
-                              Cancelled ({assessments.filter(a => a.status === 'CANCELLED').length})
+                              Cancelled (
+                              {
+                                assessments.filter(
+                                  (a) => a.status === "CANCELLED"
+                                ).length
+                              }
+                              )
                             </Nav.Link>
                           </Nav.Item>
                         </>
                       ) : (
                         <>
                           <Nav.Item>
-                            <Nav.Link 
+                            <Nav.Link
                               eventKey="approved"
-                              onClick={() => setFormsSubTab('approved')}
-                              active={formsSubTab === 'approved'}
-                              style={{ 
-                                cursor: 'pointer',
-                                color: formsSubTab === 'approved' ? 'var(--bs-primary)' : '#6c757d',
-                                fontWeight: formsSubTab === 'approved' ? '600' : '400',
-                                border: 'none',
-                                borderBottom: formsSubTab === 'approved' ? '2px solid var(--bs-primary)' : '2px solid transparent'
+                              onClick={() => setFormsSubTab("approved")}
+                              active={formsSubTab === "approved"}
+                              style={{
+                                cursor: "pointer",
+                                color:
+                                  formsSubTab === "approved"
+                                    ? "var(--bs-primary)"
+                                    : "#6c757d",
+                                fontWeight:
+                                  formsSubTab === "approved" ? "600" : "400",
+                                border: "none",
+                                borderBottom:
+                                  formsSubTab === "approved"
+                                    ? "2px solid var(--bs-primary)"
+                                    : "2px solid transparent",
                               }}
                             >
                               <CheckCircle className="me-1" size={14} />
-                              Approved ({assessments.filter(a => a.status === 'APPROVED').length})
+                              Approved (
+                              {
+                                assessments.filter(
+                                  (a) => a.status === "APPROVED"
+                                ).length
+                              }
+                              )
                             </Nav.Link>
                           </Nav.Item>
                           <Nav.Item>
-                            <Nav.Link 
+                            <Nav.Link
                               eventKey="rejected"
-                              onClick={() => setFormsSubTab('rejected')}
-                              active={formsSubTab === 'rejected'}
-                              style={{ 
-                                cursor: 'pointer',
-                                color: formsSubTab === 'rejected' ? 'var(--bs-primary)' : '#6c757d',
-                                fontWeight: formsSubTab === 'rejected' ? '600' : '400',
-                                border: 'none',
-                                borderBottom: formsSubTab === 'rejected' ? '2px solid var(--bs-primary)' : '2px solid transparent'
+                              onClick={() => setFormsSubTab("rejected")}
+                              active={formsSubTab === "rejected"}
+                              style={{
+                                cursor: "pointer",
+                                color:
+                                  formsSubTab === "rejected"
+                                    ? "var(--bs-primary)"
+                                    : "#6c757d",
+                                fontWeight:
+                                  formsSubTab === "rejected" ? "600" : "400",
+                                border: "none",
+                                borderBottom:
+                                  formsSubTab === "rejected"
+                                    ? "2px solid var(--bs-primary)"
+                                    : "2px solid transparent",
                               }}
                             >
                               <XCircle className="me-1" size={14} />
-                              Rejected ({assessments.filter(a => a.status === 'REJECTED').length})
+                              Rejected (
+                              {
+                                assessments.filter(
+                                  (a) => a.status === "REJECTED"
+                                ).length
+                              }
+                              )
                             </Nav.Link>
                           </Nav.Item>
                           <Nav.Item>
-                            <Nav.Link 
+                            <Nav.Link
                               eventKey="cancelled"
-                              onClick={() => setFormsSubTab('cancelled')}
-                              active={formsSubTab === 'cancelled'}
-                              style={{ 
-                                cursor: 'pointer',
-                                color: formsSubTab === 'cancelled' ? 'var(--bs-primary)' : '#6c757d',
-                                fontWeight: formsSubTab === 'cancelled' ? '600' : '400',
-                                border: 'none',
-                                borderBottom: formsSubTab === 'cancelled' ? '2px solid var(--bs-primary)' : '2px solid transparent'
+                              onClick={() => setFormsSubTab("cancelled")}
+                              active={formsSubTab === "cancelled"}
+                              style={{
+                                cursor: "pointer",
+                                color:
+                                  formsSubTab === "cancelled"
+                                    ? "var(--bs-primary)"
+                                    : "#6c757d",
+                                fontWeight:
+                                  formsSubTab === "cancelled" ? "600" : "400",
+                                border: "none",
+                                borderBottom:
+                                  formsSubTab === "cancelled"
+                                    ? "2px solid var(--bs-primary)"
+                                    : "2px solid transparent",
                               }}
                             >
                               <X className="me-1" size={14} />
-                              Cancelled ({assessments.filter(a => a.status === 'CANCELLED').length})
+                              Cancelled (
+                              {
+                                assessments.filter(
+                                  (a) => a.status === "CANCELLED"
+                                ).length
+                              }
+                              )
                             </Nav.Link>
                           </Nav.Item>
                         </>
@@ -770,40 +1115,68 @@ const AssessmentEventReviewDetailPage = () => {
                     </Nav>
                   </div>
                 )}
-                
+
                 {filteredAssessments.length === 0 ? (
-                  <Alert variant="info" className="m-3 mb-0">
-                    No assessment forms found for this {formsSubTab} filter.
+                  <Alert variant="info" className="m-3">
+                    No {formsSubTab} assessment forms found.
                   </Alert>
                 ) : (
                   <div className="table-responsive">
-                    <Table hover className="mb-0 table-mobile-responsive" style={{ fontSize: '0.875rem' }}>
+                    <Table
+                      hover
+                      className="mb-0 table-mobile-responsive"
+                      style={{ fontSize: "0.875rem" }}
+                    >
                       <thead className="sticky-header">
                         <tr>
-                          <SortableHeader columnKey="assessmentForm" sortConfig={sortConfig} onSort={handleSort}>
+                          <SortableHeader
+                            columnKey="assessmentForm"
+                            sortConfig={sortConfig}
+                            onSort={handleSort}
+                          >
                             Assessment Form
                           </SortableHeader>
-                          <SortableHeader columnKey="trainee" sortConfig={sortConfig} onSort={handleSort}>
+                          <SortableHeader
+                            columnKey="trainee"
+                            sortConfig={sortConfig}
+                            onSort={handleSort}
+                          >
                             Trainee
                           </SortableHeader>
-                          <SortableHeader columnKey="occurrenceDate" sortConfig={sortConfig} onSort={handleSort}>
+                          <SortableHeader
+                            columnKey="occurrenceDate"
+                            sortConfig={sortConfig}
+                            onSort={handleSort}
+                          >
                             Occurrence Date
                           </SortableHeader>
-                          <SortableHeader columnKey="status" sortConfig={sortConfig} onSort={handleSort}>
+                          <SortableHeader
+                            columnKey="status"
+                            sortConfig={sortConfig}
+                            onSort={handleSort}
+                          >
                             Status
                           </SortableHeader>
-                          <SortableHeader columnKey="score" sortConfig={sortConfig} onSort={handleSort}>
+                          <SortableHeader
+                            columnKey="score"
+                            sortConfig={sortConfig}
+                            onSort={handleSort}
+                          >
                             Score
                           </SortableHeader>
-                          <SortableHeader columnKey="result" sortConfig={sortConfig} onSort={handleSort}>
+                          <SortableHeader
+                            columnKey="result"
+                            sortConfig={sortConfig}
+                            onSort={handleSort}
+                          >
                             Result
                           </SortableHeader>
-                          <th 
+                          <th
                             className="fw-semibold text-center"
                             style={{
-                              backgroundColor: 'var(--bs-primary)',
-                              color: 'white',
-                              borderColor: 'var(--bs-primary)'
+                              backgroundColor: "var(--bs-primary)",
+                              color: "white",
+                              borderColor: "var(--bs-primary)",
                             }}
                           >
                             Preview
@@ -813,28 +1186,43 @@ const AssessmentEventReviewDetailPage = () => {
                       <tbody>
                         {sortedData.map((item, index) => {
                           return (
-                            <tr 
+                            <tr
                               key={item.id}
-                              className={`${index % 2 === 0 ? 'bg-white' : 'bg-neutral-50'} transition-all`}
+                              className={`${
+                                index % 2 === 0 ? "bg-white" : "bg-neutral-50"
+                              } transition-all`}
                               style={{
-                                transition: 'background-color 0.2s ease'
+                                transition: "background-color 0.2s ease",
                               }}
                               onMouseEnter={(e) => {
-                                e.currentTarget.style.backgroundColor = 'var(--bs-neutral-100)';
+                                e.currentTarget.style.backgroundColor =
+                                  "var(--bs-neutral-100)";
                               }}
                               onMouseLeave={(e) => {
-                                e.currentTarget.style.backgroundColor = index % 2 === 0 ? 'white' : 'var(--bs-neutral-50)';
+                                e.currentTarget.style.backgroundColor =
+                                  index % 2 === 0
+                                    ? "white"
+                                    : "var(--bs-neutral-50)";
                               }}
                             >
                               <td className="align-middle">
-                                <span className="fw-medium">{item.assessmentForm}</span>
+                                <span className="fw-medium">
+                                  {item.assessmentForm}
+                                </span>
                               </td>
                               <td className="align-middle">
                                 <div className="d-flex align-items-center">
-                                  <Person className="me-2 text-primary" size={18} />
+                                  <Person
+                                    className="me-2 text-primary"
+                                    size={18}
+                                  />
                                   <div>
-                                    <h6 className="mb-0 fw-medium">{item.trainee}</h6>
-                                    <small className="text-muted">{item.traineeEmail}</small>
+                                    <h6 className="mb-0 fw-medium">
+                                      {item.trainee}
+                                    </h6>
+                                    <small className="text-muted">
+                                      {item.traineeEmail}
+                                    </small>
                                   </div>
                                 </div>
                               </td>
@@ -845,9 +1233,19 @@ const AssessmentEventReviewDetailPage = () => {
                                 {getAssessmentStatusBadge(item.status)}
                               </td>
                               <td className="align-middle">
-                                {item.status === 'COMPLETED' || item.status === 'APPROVED' ? (
-                                  <span className={`fw-bold ${item.percentage >= 70 ? 'text-success' : item.percentage >= 60 ? 'text-warning' : 'text-danger'}`}>
-                                    {item.score}/{item.maxScore} ({item.percentage}%)
+                                {item.status === "COMPLETED" ||
+                                item.status === "APPROVED" ? (
+                                  <span
+                                    className={`fw-bold ${
+                                      item.percentage >= 70
+                                        ? "text-success"
+                                        : item.percentage >= 60
+                                        ? "text-warning"
+                                        : "text-danger"
+                                    }`}
+                                  >
+                                    {item.score}/{item.maxScore} (
+                                    {item.percentage}%)
                                   </span>
                                 ) : (
                                   <span className="text-muted">-</span>
@@ -855,7 +1253,13 @@ const AssessmentEventReviewDetailPage = () => {
                               </td>
                               <td className="align-middle">
                                 {item.result ? (
-                                  <Badge bg={item.result === 'PASSED' ? 'success' : 'danger'}>
+                                  <Badge
+                                    bg={
+                                      item.result === "PASSED"
+                                        ? "success"
+                                        : "danger"
+                                    }
+                                  >
                                     {item.result}
                                   </Badge>
                                 ) : (
@@ -866,7 +1270,11 @@ const AssessmentEventReviewDetailPage = () => {
                                 <Button
                                   variant="outline-primary"
                                   size="sm"
-                                  onClick={() => navigate(ROUTES.ASSESSMENTS_SECTIONS(item.id))}
+                                  onClick={() =>
+                                    navigate(
+                                      ROUTES.ASSESSMENTS_SECTIONS(item.id)
+                                    )
+                                  }
                                 >
                                   View
                                 </Button>
@@ -885,18 +1293,23 @@ const AssessmentEventReviewDetailPage = () => {
       </Tab.Container>
 
       {/* Template PDF Preview Modal */}
-      <Modal 
-        show={showTemplatePreview} 
+      <Modal
+        show={showTemplatePreview}
         onHide={handleCloseTemplatePreview}
         size="lg"
         centered
       >
         <Modal.Header closeButton>
-          <Modal.Title>Template Preview - {eventData?.templateName}</Modal.Title>
+          <Modal.Title>
+            Template Preview - {eventData?.templateName}
+          </Modal.Title>
         </Modal.Header>
-        <Modal.Body style={{ minHeight: '500px', padding: 0 }}>
+        <Modal.Body style={{ minHeight: "500px", padding: 0 }}>
           {loadingPDF ? (
-            <div className="d-flex justify-content-center align-items-center" style={{ minHeight: '500px' }}>
+            <div
+              className="d-flex justify-content-center align-items-center"
+              style={{ minHeight: "500px" }}
+            >
               <Spinner animation="border" variant="primary" />
               <span className="ms-2">Loading PDF...</span>
             </div>
@@ -904,14 +1317,17 @@ const AssessmentEventReviewDetailPage = () => {
             <iframe
               src={templatePdfUrl}
               style={{
-                width: '100%',
-                height: '600px',
-                border: 'none'
+                width: "100%",
+                height: "600px",
+                border: "none",
               }}
               title="Template PDF Preview"
             />
           ) : (
-            <div className="d-flex justify-content-center align-items-center" style={{ minHeight: '500px' }}>
+            <div
+              className="d-flex justify-content-center align-items-center"
+              style={{ minHeight: "500px" }}
+            >
               <p className="text-muted">Failed to load PDF</p>
             </div>
           )}

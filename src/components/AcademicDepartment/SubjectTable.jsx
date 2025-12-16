@@ -1,17 +1,27 @@
-import React from 'react';
-import { Table, Badge } from 'react-bootstrap';
-import { People, Calendar } from 'react-bootstrap-icons';
-import { LoadingSkeleton, SortIcon } from '../Common';
-import useTableSort from '../../hooks/useTableSort';
-import SubjectActions from './SubjectActions';
-import { mapApiSubjectsToTable, getStatusBadgeColor, getMethodBadgeColor } from '../../utils/subjectDataMapper';
+import React from "react";
+import { Table, Badge } from "react-bootstrap";
+import { People, Calendar } from "react-bootstrap-icons";
+import { LoadingSkeleton, SortIcon } from "../Common";
+import useTableSort from "../../hooks/useTableSort";
+import SubjectActions from "./SubjectActions";
+import {
+  mapApiSubjectsToTable,
+  getStatusBadgeColor,
+  getMethodBadgeColor,
+} from "../../utils/subjectDataMapper";
 
-
-const SubjectTable = ({ subjects = [], loading = false, onView, onEdit, onDelete }) => {
+const SubjectTable = ({
+  subjects = [],
+  loading = false,
+  onView,
+  onEdit,
+  onDelete,
+}) => {
   // Map API subjects to table format
   const mappedApiSubjects = mapApiSubjectsToTable(subjects);
-  
-  const { sortedData, sortConfig, handleSort } = useTableSort(mappedApiSubjects);
+
+  const { sortedData, sortConfig, handleSort } =
+    useTableSort(mappedApiSubjects);
 
   if (loading) {
     return <LoadingSkeleton rows={4} columns={5} />;
@@ -36,68 +46,66 @@ const SubjectTable = ({ subjects = [], loading = false, onView, onEdit, onDelete
       <th
         className={`fw-semibold text-start ${className}`}
         style={{
-          cursor: 'pointer',
-          userSelect: 'none',
-          transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
-          position: 'relative',
-          overflow: 'hidden',
-          minWidth: '80px',
-          maxWidth: '150px',
-          backgroundColor: 'var(--bs-primary)',
-          color: 'white',
-          borderColor: 'var(--bs-primary)'
+          cursor: "pointer",
+          userSelect: "none",
+          transition: "all 0.3s cubic-bezier(0.4, 0, 0.2, 1)",
+          position: "relative",
+          overflow: "hidden",
+          minWidth: "80px",
+          maxWidth: "150px",
+          backgroundColor: "var(--bs-primary)",
+          color: "white",
+          borderColor: "var(--bs-primary)",
         }}
         onClick={() => handleSort(columnKey)}
         onMouseEnter={(e) => {
-          e.target.style.backgroundColor = '#214760';
-          e.target.style.transform = 'translateY(-1px)';
-          e.target.style.boxShadow = '0 2px 8px rgba(0, 0, 0, 0.15)';
+          e.target.style.backgroundColor = "#214760";
+          e.target.style.transform = "translateY(-1px)";
+          e.target.style.boxShadow = "0 2px 8px rgba(0, 0, 0, 0.15)";
         }}
         onMouseLeave={(e) => {
-          e.target.style.backgroundColor = 'var(--bs-primary)';
-          e.target.style.transform = 'translateY(0)';
-          e.target.style.boxShadow = 'none';
+          e.target.style.backgroundColor = "var(--bs-primary)";
+          e.target.style.transform = "translateY(0)";
+          e.target.style.boxShadow = "none";
         }}
       >
         <div className="d-flex align-items-center justify-content-between position-relative w-100">
-          <span style={{
-            transition: 'all 0.3s ease',
-            fontWeight: '700',
-            textTransform: 'uppercase',
-            letterSpacing: '0.5px',
-            flex: '1',
-            whiteSpace: 'nowrap',
-            overflow: 'hidden',
-            textOverflow: 'ellipsis',
-            color: 'white'
-          }}>
+          <span
+            style={{
+              transition: "all 0.3s ease",
+              fontWeight: "700",
+              textTransform: "uppercase",
+              letterSpacing: "0.5px",
+              flex: "1",
+              whiteSpace: "nowrap",
+              overflow: "hidden",
+              textOverflow: "ellipsis",
+              color: "white",
+            }}
+          >
             {children}
           </span>
           <div
             className="d-flex align-items-center"
             style={{
-              minWidth: '20px',
-              justifyContent: 'center',
-              flexShrink: 0
+              minWidth: "20px",
+              justifyContent: "center",
+              flexShrink: 0,
             }}
           >
-            <SortIcon
-              direction={direction}
-              size={14}
-              color="white"
-            />
+            <SortIcon direction={direction} size={14} color="white" />
           </div>
         </div>
         {isActive && (
           <div
             style={{
-              position: 'absolute',
+              position: "absolute",
               bottom: 0,
               left: 0,
               right: 0,
-              height: '2px',
-              background: 'rgba(255, 255, 255, 0.5)',
-              animation: 'slideIn 0.3s ease-out'
+              height: "2px",
+              background: "rgba(255, 255, 255, 0.5)",
+              animation: "slideIn 0.3s ease-out",
             }}
           />
         )}
@@ -106,8 +114,19 @@ const SubjectTable = ({ subjects = [], loading = false, onView, onEdit, onDelete
   };
 
   return (
-    <div className="department-table-container subject-table-scroll" style={{ overflowX: 'hidden' }}>
-      <Table hover className="mb-0 table-mobile-responsive" style={{ tableLayout: 'fixed', width: '100%' }}>
+    <div
+      className="department-table-container subject-table-scroll"
+      style={{
+        overflowX: "hidden",
+        height: "1000px !important",
+        overflowY: "auto",
+      }}
+    >
+      <Table
+        hover
+        className="mb-0 table-mobile-responsive"
+        style={{ tableLayout: "fixed", width: "100%" }}
+      >
         <thead className="sticky-header bg-gradient-primary-custom">
           <tr>
             <SortableHeader columnKey="name" className="show-mobile">
@@ -131,17 +150,27 @@ const SubjectTable = ({ subjects = [], loading = false, onView, onEdit, onDelete
             <SortableHeader columnKey="status" className="show-mobile">
               Status
             </SortableHeader>
-            <th className="border-neutral-200 text-primary-custom fw-bold letter-spacing px-3 py-3 text-center show-mobile" style={{ minWidth: '80px', maxWidth: '150px', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+            <th
+              className="border-neutral-200 text-primary-custom fw-bold letter-spacing px-3 py-3 text-center show-mobile"
+              style={{
+                minWidth: "80px",
+                maxWidth: "150px",
+                textTransform: "uppercase",
+                letterSpacing: "0.5px",
+              }}
+            >
               <div className="d-flex align-items-center justify-content-center position-relative w-100">
-                <span style={{
-                  transition: 'all 0.3s ease',
-                  fontWeight: '700', // Bold for uppercase text
-                  textTransform: 'uppercase', // Ensure uppercase
-                  letterSpacing: '0.5px', // Better readability
-                  whiteSpace: 'nowrap',
-                  overflow: 'hidden',
-                  textOverflow: 'ellipsis'
-                }}>
+                <span
+                  style={{
+                    transition: "all 0.3s ease",
+                    fontWeight: "700", // Bold for uppercase text
+                    textTransform: "uppercase", // Ensure uppercase
+                    letterSpacing: "0.5px", // Better readability
+                    whiteSpace: "nowrap",
+                    overflow: "hidden",
+                    textOverflow: "ellipsis",
+                  }}
+                >
                   Actions
                 </span>
               </div>
@@ -152,42 +181,48 @@ const SubjectTable = ({ subjects = [], loading = false, onView, onEdit, onDelete
           {sortedData.map((subject) => (
             <tr key={subject.id}>
               <td className="show-mobile">
-                <div 
+                <div
                   className="fw-semibold text-primary-custom cursor-pointer"
                   onClick={() => onView && onView(subject.id)}
-                  style={{ cursor: 'pointer' }}
+                  style={{ cursor: "pointer" }}
                 >
                   {subject.name}
                 </div>
               </td>
-              <td className="show-mobile" style={{ maxWidth: '120px', overflow: 'hidden' }}>
-                <Badge 
-                  bg="secondary" 
+              <td
+                className="show-mobile"
+                style={{ maxWidth: "120px", overflow: "hidden" }}
+              >
+                <Badge
+                  bg="secondary"
                   className="px-2 py-1"
-                  style={{ 
-                    fontSize: '0.75rem',
-                    maxWidth: '100%',
-                    overflow: 'hidden',
-                    textOverflow: 'ellipsis',
-                    whiteSpace: 'nowrap',
-                    display: 'inline-block'
+                  style={{
+                    fontSize: "0.75rem",
+                    maxWidth: "100%",
+                    overflow: "hidden",
+                    textOverflow: "ellipsis",
+                    whiteSpace: "nowrap",
+                    display: "inline-block",
                   }}
                   title={subject.code}
                 >
                   {subject.code}
                 </Badge>
               </td>
-              <td className="show-mobile" style={{ maxWidth: '120px', overflow: 'hidden' }}>
-                <Badge 
-                  bg={getMethodBadgeColor(subject.method)} 
+              <td
+                className="show-mobile"
+                style={{ maxWidth: "120px", overflow: "hidden" }}
+              >
+                <Badge
+                  bg={getMethodBadgeColor(subject.method)}
                   className="px-2 py-1"
-                  style={{ 
-                    fontSize: '0.75rem',
-                    maxWidth: '100%',
-                    overflow: 'hidden',
-                    textOverflow: 'ellipsis',
-                    whiteSpace: 'nowrap',
-                    display: 'inline-block'
+                  style={{
+                    fontSize: "0.75rem",
+                    maxWidth: "100%",
+                    overflow: "hidden",
+                    textOverflow: "ellipsis",
+                    whiteSpace: "nowrap",
+                    display: "inline-block",
                   }}
                   title={subject.method}
                 >
@@ -198,38 +233,44 @@ const SubjectTable = ({ subjects = [], loading = false, onView, onEdit, onDelete
                 <div className="d-flex align-items-center flex-wrap">
                   <div className="d-flex align-items-center me-2">
                     <Calendar size={14} className="me-1 text-primary" />
-                    <span className="text-dark" style={{ fontSize: '0.875rem' }}>{subject.startDate || 'N/A'}</span>
+                    <span
+                      className="text-dark"
+                      style={{ fontSize: "0.875rem" }}
+                    >
+                      {subject.startDate || "N/A"}
+                    </span>
                   </div>
                   <span className="text-muted me-2">/</span>
                   <div className="d-flex align-items-center">
                     <Calendar size={14} className="me-1 text-primary" />
-                    <span className="text-dark" style={{ fontSize: '0.875rem' }}>{subject.endDate || 'N/A'}</span>
+                    <span
+                      className="text-dark"
+                      style={{ fontSize: "0.875rem" }}
+                    >
+                      {subject.endDate || "N/A"}
+                    </span>
                   </div>
                 </div>
               </td>
               <td className="show-mobile">
-                <span className="text-dark">
-                  {subject.roomName}
-                </span>
+                <span className="text-dark">{subject.roomName}</span>
               </td>
               <td className="show-mobile">
                 <div className="d-flex align-items-center">
                   <People size={14} className="me-1 text-muted" />
-                  <span className="text-dark">
-                    {subject.trainees || 0}
-                  </span>
+                  <span className="text-dark">{subject.trainees || 0}</span>
                 </div>
               </td>
               <td className="show-mobile">
-                <Badge 
+                <Badge
                   bg={getStatusBadgeColor(subject.status)}
                   className="px-2 py-1"
-                  style={{ 
-                    fontSize: '0.75rem',
-                    width: 'fit-content'
+                  style={{
+                    fontSize: "0.75rem",
+                    width: "fit-content",
                   }}
                 >
-                  {subject.status || 'N/A'}
+                  {subject.status || "N/A"}
                 </Badge>
               </td>
               <td className="text-center show-mobile">
@@ -249,5 +290,3 @@ const SubjectTable = ({ subjects = [], loading = false, onView, onEdit, onDelete
 };
 
 export default SubjectTable;
-
-
