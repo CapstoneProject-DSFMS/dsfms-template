@@ -7,7 +7,7 @@ const UpcomingAssessmentsPage = () => {
   const tabs = [
     {
       id: 'upcoming-assessments',
-      title: 'Upcoming Assessments',
+      title: 'Upcoming Assessment Events',
       icon: CalendarEvent,
       component: <UpcomingAssessmentsList />
     }
@@ -23,10 +23,10 @@ const UpcomingAssessmentsPage = () => {
             <Card.Header className="bg-primary text-white p-3">
               <div className="d-flex align-items-center">
                 <CalendarEvent size={20} className="me-2" />
-                <h5 className="mb-0">Upcoming Assessments</h5>
+                <h5 className="mb-0">Upcoming Assessment Events</h5>
               </div>
             </Card.Header>
-            <Card.Body className="p-0">
+            <Card.Body className="p-4">
               {activeTabData && activeTabData.component}
             </Card.Body>
           </Card>

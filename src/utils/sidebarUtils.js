@@ -41,14 +41,14 @@ const NAV_ITEMS = [
   },
   {
     id: 'users',
-    label: 'User Management',
+    label: 'Users',
     path: ROUTES.USERS,
     icon: 'people',
     permissions: [PERMISSION_IDS.VIEW_ALL_USERS], // View All Users
   },
   {
     id: 'roles',
-    label: 'Role Management',
+    label: 'Roles',
     path: ROUTES.ROLES,
     icon: 'shield',
     permissions: [PERMISSION_IDS.VIEW_ALL_ROLES], // View All Roles
@@ -63,7 +63,7 @@ const NAV_ITEMS = [
   },
   {
     id: 'forms',
-    label: 'Template List',
+    label: 'Templates',
     path: ROUTES.TEMPLATES,
     icon: 'fileText',
     // Permissions are handled by customPermissionLogic
@@ -94,27 +94,27 @@ const NAV_ITEMS = [
   },
   {
     id: 'enrolled-courses',
-    label: 'Enrolled Course List',
+    label: 'Enrolled Courses',
     path: ROUTES.COURSES_ENROLLED,
     icon: 'book',
     roleOnly: ['TRAINEE'],
   },
   {
     id: 'all-assessments',
-    label: 'All Assessments',
+    label: 'All Assessment Events',
     path: ROUTES.ASSESSMENTS_MY_ASSESSMENTS,
     icon: 'checkCircle',
     roleOnly: ['TRAINEE'],
     children: [
       {
         id: 'your-assessments',
-        label: 'Your Assessments',
+        label: 'Your Assessment Events',
         path: ROUTES.ASSESSMENTS_MY_ASSESSMENTS,
         roleOnly: ['TRAINEE'],
       },
       {
         id: 'signature-required',
-        label: 'Signature Required List',
+        label: 'Signature Required Forms',
         path: ROUTES.ASSESSMENTS_SIGNATURE_REQUIRED,
         roleOnly: ['TRAINEE'],
       },
@@ -129,14 +129,14 @@ const NAV_ITEMS = [
   },
   {
     id: 'assigned-assessments',
-    label: 'Assigned Assessments',
+    label: 'Assigned Assessment Events',
     path: ROUTES.ASSESSMENTS_UPCOMING,
     icon: 'clock',
     roleOnly: ['TRAINER'],
   },
   {
     id: 'instructed-courses',
-    label: 'Instructed Course',
+    label: 'Assigned Courses',
     path: ROUTES.COURSES_INSTRUCTED,
     icon: 'book',
     roleOnly: ['TRAINER'],
@@ -157,7 +157,7 @@ const NAV_ITEMS = [
   },
   {
     id: 'incidents-feedback',
-    label: 'Incidents / Feedback Report',
+    label: 'Incidents / Feedback Reports',
     path: ROUTES.REPORTS,
     icon: 'exclamationTriangle',
     permissions: [

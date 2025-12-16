@@ -350,7 +350,7 @@ export const router = createBrowserRouter(
                 <div className="p-4 text-center text-muted">You don't have permission to view course details.</div>
               }
             >
-              <TrainerCourseDetailPage />
+              <InPageCourseDetail />
             </PermissionRoute>
           ),
         },
@@ -1036,7 +1036,7 @@ export const router = createBrowserRouter(
                 <div className="p-4 text-center text-muted">You don't have permission to view course details.</div>
               }
             >
-              <TrainerCourseDetailPage />
+              <InPageCourseDetail />
             </PermissionRoute>
           ),
         },

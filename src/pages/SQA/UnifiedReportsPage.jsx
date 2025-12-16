@@ -246,7 +246,7 @@ const UnifiedReportsPage = ({ defaultTab, source = '/reports', onShowForm }) => 
               <div className="d-flex align-items-center justify-content-between">
                 <div className="d-flex align-items-center gap-2">
                   <div>
-                    <h4 className="mb-0 text-white">Issue List</h4>
+                    <h4 className="mb-0 text-white">Incident / Feedback Reports</h4>
                   </div>
                 </div>
                 {source === '/reports/create' && onShowForm && (
@@ -261,7 +261,7 @@ const UnifiedReportsPage = ({ defaultTab, source = '/reports', onShowForm }) => 
                       className="d-flex align-items-center"
                     >
                       <Plus className="me-2" size={16} />
-                      Create Report
+                      Create Incident/Feedback Report
                     </Button>
                   </PermissionWrapper>
                 )}

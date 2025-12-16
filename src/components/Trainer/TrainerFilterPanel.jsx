@@ -78,7 +78,7 @@ const TrainerFilterPanel = ({
                 key={status}
                 type="checkbox"
                 id={`status-${status}`}
-                label={status}
+                label={status?.replace(/_/g, ' ') || status}
                 checked={selectedStatuses.includes(status)}
                 onChange={() => onStatusToggle(status)}
                 className="mb-1"

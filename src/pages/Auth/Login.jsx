@@ -1,12 +1,5 @@
 import { useState, useEffect } from "react";
-import {
-  Container,
-  Row,
-  Col,
-  Form,
-  Button,
-  Spinner,
-} from "react-bootstrap";
+import { Container, Row, Col, Form, Button, Spinner } from "react-bootstrap";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../../hooks/useAuth";
 import { useFirstAccessibleRoute } from "../../hooks/useFirstAccessibleRoute";
@@ -28,10 +21,16 @@ function Login() {
   // Redirect if already authenticated (after login or page refresh)
   useEffect(() => {
     // Only navigate if authenticated, route is ready, and not already on the correct route
-    if (isAuthenticated && !isLoading && !isRouteLoading && firstRoute && firstRoute !== ROUTES.DASHBOARD) {
+    if (
+      isAuthenticated &&
+      !isLoading &&
+      !isRouteLoading &&
+      firstRoute &&
+      firstRoute !== ROUTES.DASHBOARD
+    ) {
       const currentPath = window.location.pathname;
       // Only navigate if not already on the target route (avoid unnecessary navigation)
-      if (currentPath !== firstRoute && !currentPath.startsWith('/login')) {
+      if (currentPath !== firstRoute && !currentPath.startsWith("/login")) {
         navigate(firstRoute, { replace: true });
       }
     }
@@ -59,7 +58,7 @@ function Login() {
 
     try {
       const result = await login({ email, password });
-      
+
       if (result.success) {
         // After successful login, wait for user state and permissions to update
         // The useEffect hook above will automatically handle navigation when firstRoute is ready
@@ -67,24 +66,31 @@ function Login() {
         setTimeout(() => {
           // Double-check if navigation already happened via useEffect
           const currentPath = window.location.pathname;
-          if (currentPath === '/login' || currentPath === '/') {
+          if (currentPath === "/login" || currentPath === "/") {
             // Navigation hasn't happened yet, use role-based fallback
             const loginUserRole = result.user?.role || result.role?.name;
-            const normalizedRole = typeof loginUserRole === 'string' 
-              ? loginUserRole.toUpperCase().replace(/\s+/g, '_')
-              : null;
-            
-            if (normalizedRole === 'TRAINEE') {
-              navigate('/trainee/dashboard', { replace: true });
-            } else if (normalizedRole === 'ACADEMIC_DEPARTMENT' || normalizedRole === 'ACADEMIC_DEPT') {
-              navigate('/academic/dashboard', { replace: true });
-            } else if (normalizedRole === 'ADMINISTRATOR' || normalizedRole === 'ADMIN') {
+            const normalizedRole =
+              typeof loginUserRole === "string"
+                ? loginUserRole.toUpperCase().replace(/\s+/g, "_")
+                : null;
+
+            if (normalizedRole === "TRAINEE") {
+              navigate("/trainee/dashboard", { replace: true });
+            } else if (
+              normalizedRole === "ACADEMIC_DEPARTMENT" ||
+              normalizedRole === "ACADEMIC_DEPT"
+            ) {
+              navigate("/academic/dashboard", { replace: true });
+            } else if (
+              normalizedRole === "ADMINISTRATOR" ||
+              normalizedRole === "ADMIN"
+            ) {
               navigate(ROUTES.MAIN_MENU, { replace: true });
-            } else if (normalizedRole === 'TRAINER') {
+            } else if (normalizedRole === "TRAINER") {
               // Trainer doesn't have a dashboard, use first available route
               navigate(ROUTES.ASSESSMENTS_UPCOMING, { replace: true });
-            } else if (normalizedRole === 'DEPARTMENT_HEAD') {
-              navigate('/department-head/dashboard', { replace: true });
+            } else if (normalizedRole === "DEPARTMENT_HEAD") {
+              navigate("/department-head/dashboard", { replace: true });
             } else {
               // Last resort: try main menu
               navigate(ROUTES.MAIN_MENU, { replace: true });
@@ -92,7 +98,9 @@ function Login() {
           }
         }, 800);
       } else {
-        toast.error(result.error || "Email or password is incorrect. Please try again.");
+        toast.error(
+          result.error || "Email or password is incorrect. Please try again."
+        );
       }
     } catch {
       toast.error("Login failed. Please try again.");
@@ -241,34 +249,34 @@ function Login() {
 
                   <h1
                     className="text-white fw-bold mb-2 mobile-title"
-                    style={{ 
+                    style={{
                       lineHeight: "1.1",
-                      textShadow: "0 2px 4px rgba(0, 0, 0, 0.5)"
+                      textShadow: "0 2px 4px rgba(0, 0, 0, 0.5)",
                     }}
                   >
                     AVIATION
                     <br />
                     ACADEMY
                   </h1>
-                  <p 
-                    className="text-white mb-2 mobile-subtitle" 
-                    style={{ 
+                  <p
+                    className="text-white mb-2 mobile-subtitle"
+                    style={{
                       opacity: 0.9,
-                      textShadow: "0 1px 2px rgba(0, 0, 0, 0.5)"
+                      textShadow: "0 1px 2px rgba(0, 0, 0, 0.5)",
                     }}
                   >
                     Where Your Dream Destinations Become Reality.
                   </p>
-                  <p 
-                    className="text-white-50 mobile-description" 
-                    style={{ 
-                      opacity: 0.8
+                  <p
+                    className="text-white-50 mobile-description"
+                    style={{
+                      opacity: 0.8,
                     }}
                   >
-                    Embark on a journey where every corner of the world is within your reach.
+                    Embark on a journey where every corner of the world is
+                    within your reach.
                   </p>
                 </div>
-
 
                 <Form onSubmit={handleSubmit}>
                   <Form.Group className="mb-3" controlId="email">
@@ -423,7 +431,8 @@ function Login() {
                   {/* Demo credentials info */}
                   <div className="text-center">
                     <small className="text-white-50 d-block mb-2">
-Enhance Your Examinations Through DSFMS                    </small>
+                      Enhance Your Examinations Through DSFMS{" "}
+                    </small>
                   </div>
                 </Form>
               </div>
@@ -487,7 +496,7 @@ Enhance Your Examinations Through DSFMS                    </small>
       `}</style>
 
       {/* Forgot Password Modal */}
-      <ForgotPasswordModal 
+      <ForgotPasswordModal
         show={showForgotPasswordModal}
         onHide={() => setShowForgotPasswordModal(false)}
       />
