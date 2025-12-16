@@ -317,7 +317,7 @@ const TraineeSignatureRequiredList = ({ traineeId }) => {
                   }}
                 >
                   <Book className="me-2" size={16} />
-                  Course
+                  Course Assessments
                 </Nav.Link>
               </Nav.Item>
               <Nav.Item>
@@ -334,7 +334,7 @@ const TraineeSignatureRequiredList = ({ traineeId }) => {
                   }}
                 >
                   <FileText className="me-2" size={16} />
-                  Subject
+                  Subject Assessments
                 </Nav.Link>
               </Nav.Item>
             </Nav>
@@ -344,7 +344,7 @@ const TraineeSignatureRequiredList = ({ traineeId }) => {
             {assessments.length === 0 ? (
               <div className="text-center py-5">
                 <Pen size={48} className="text-muted mb-3" />
-                <p className="text-muted mb-0">No signature required assessments</p>
+                <p className="text-muted mb-0">No Signature Confirmation Required Assessment Forms.</p>
               </div>
             ) : (
               <div className="scrollable-table-container admin-table">
