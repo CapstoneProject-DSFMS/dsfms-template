@@ -92,7 +92,7 @@ const DepartmentRow = ({ department, index, onView, onToggleStatus }) => {
           <span className="me-1" style={{ fontSize: '0.8rem' }}>
             {getStatusIcon(department.status)}
           </span>
-          {department.status}
+          {department.status?.replace(/_/g, ' ')}
         </Badge>
       </td>
       

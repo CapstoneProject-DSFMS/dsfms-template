@@ -254,7 +254,7 @@ const ReportsManagement = () => {
                         width: 'fit-content'
                       }}
                     >
-                      {report.status}
+                      {report.status?.replace(/_/g, ' ')}
                     </Badge>
                   </td>
                   

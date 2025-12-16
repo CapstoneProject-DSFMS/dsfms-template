@@ -236,7 +236,7 @@ const SQAAuditManagement = () => {
                           width: 'fit-content'
                         }}
                       >
-                        {audit.status}
+                        {audit.status?.replace(/_/g, ' ')}
                       </Badge>
                     </td>
                     
@@ -393,7 +393,7 @@ const SQAAuditManagement = () => {
                           width: 'fit-content'
                         }}
                       >
-                        {car.status}
+                        {car.status?.replace(/_/g, ' ')}
                       </Badge>
                     </td>
                     

@@ -828,7 +828,7 @@ const InPageCourseDetail = ({ course, department } = {}) => {
                           bg={courseDetails.status === 'ACTIVE' ? 'success' : courseDetails.status === 'ARCHIVED' ? 'warning' : 'secondary'}
                           className="px-2 py-1"
                         >
-                          {courseDetails.status}
+                          {courseDetails.status?.replace(/_/g, ' ')}
                         </Badge>
                       </div>
                     </Col>

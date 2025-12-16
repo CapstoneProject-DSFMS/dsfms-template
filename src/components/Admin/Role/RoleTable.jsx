@@ -141,7 +141,7 @@ const RoleTable = ({
                   <span className="me-1" style={{ fontSize: '0.8rem' }}>
                     {role.status === 'Active' ? '●' : '○'}
                   </span>
-                  {role.status}
+                  {role.status?.replace(/_/g, ' ')}
                 </Badge>
               </td>
               <td className="show-mobile">{role.assignedUsers}</td>

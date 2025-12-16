@@ -270,7 +270,7 @@ const SubjectTable = ({
                     width: "fit-content",
                   }}
                 >
-                  {subject.status || "N/A"}
+                  {subject.status?.replace(/_/g, ' ') || "N/A"}
                 </Badge>
               </td>
               <td className="text-center show-mobile">

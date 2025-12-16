@@ -203,7 +203,7 @@ const AssessmentManagement = () => {
                         width: 'fit-content'
                       }}
                     >
-                      {assessment.status}
+                      {assessment.status?.replace(/_/g, ' ')}
                     </Badge>
                   </td>
                   
