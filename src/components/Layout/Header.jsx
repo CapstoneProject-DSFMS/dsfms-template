@@ -195,7 +195,7 @@ const Header = ({ onToggleSidebar }) => {
       '/trainer/assess': 'Assessment Events',
       '/trainer/assessments': 'Assessment Form Sections',
       '/trainer/instructed-courses': 'Assigned Courses',
-      '/trainer/courses': 'Course Details',
+      '/trainer/courses': 'Courses',
       '/trainer/configure-signature': 'Configure Signature',
       '/trainer/section-completion': 'Section Completion',
       '/trainer/assessment-details': 'Assessment Result Details',
@@ -294,7 +294,7 @@ const Header = ({ onToggleSidebar }) => {
     
     // Check for new function-based course routes (pattern: /courses/:courseId)
     if (path.match(/^\/courses\/[^/]+$/) && !path.includes('/enroll-trainees') && !path.includes('/subjects/')) {
-      return 'Course Details';
+      return 'My Courses';
     }
     
     // Check for new function-based assessment routes

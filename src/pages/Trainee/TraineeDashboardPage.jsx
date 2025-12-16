@@ -1,23 +1,39 @@
-import React, { useState, useEffect } from 'react';
-import { Container, Row, Col, Card, Button, Spinner } from 'react-bootstrap';
-import { Person, Book, ClipboardCheck, ExclamationTriangle, ArrowRight, BarChart as BarChartIcon, PieChart as PieChartIcon } from 'react-bootstrap-icons';
-import { useNavigate } from 'react-router-dom';
-import { ROUTES } from '../../constants/routes';
-import dashboardAPI from '../../api/dashboard';
-import { toast } from 'react-toastify';
-import { 
-  BarChart, 
-  Bar, 
-  PieChart, 
-  Pie, 
-  Cell, 
-  ResponsiveContainer, 
-  XAxis, 
-  YAxis, 
-  CartesianGrid, 
-  Tooltip, 
-  Legend 
-} from 'recharts';
+import React, { useState, useEffect } from "react";
+import {
+  Container,
+  Row,
+  Col,
+  Card,
+  Button,
+  Spinner,
+  ProgressBar,
+} from "react-bootstrap";
+import {
+  Person,
+  Book,
+  ClipboardCheck,
+  ExclamationTriangle,
+  ArrowRight,
+  BarChart as BarChartIcon,
+  PieChart as PieChartIcon,
+} from "react-bootstrap-icons";
+import { useNavigate } from "react-router-dom";
+import { ROUTES } from "../../constants/routes";
+import dashboardAPI from "../../api/dashboard";
+import { toast } from "react-toastify";
+import {
+  BarChart,
+  Bar,
+  PieChart,
+  Pie,
+  Cell,
+  ResponsiveContainer,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  Legend,
+} from "recharts";
 
 const TraineeDashboardPage = () => {
   const navigate = useNavigate();
@@ -25,7 +41,7 @@ const TraineeDashboardPage = () => {
   const [dashboardData, setDashboardData] = useState({
     assessmentProgress: null,
     ongoingTraining: null,
-    assessmentRatios: null
+    assessmentRatios: null,
   });
 
   useEffect(() => {
@@ -36,11 +52,13 @@ const TraineeDashboardPage = () => {
         setDashboardData({
           assessmentProgress: response.assessmentProgress || null,
           ongoingTraining: response.ongoingTraining || null,
-          assessmentRatios: response.assessmentRatios || null
+          assessmentRatios: response.assessmentRatios || null,
         });
       } catch (error) {
-        console.error('Error fetching trainee dashboard data:', error);
-        toast.error(error.response?.data?.message || 'Failed to load dashboard data');
+        console.error("Error fetching trainee dashboard data:", error);
+        toast.error(
+          error.response?.data?.message || "Failed to load dashboard data"
+        );
       } finally {
         setLoading(false);
       }
@@ -51,52 +69,63 @@ const TraineeDashboardPage = () => {
 
   const quickActions = [
     {
-      title: 'Academic Details',
-      description: 'Track your learning progress and achievements',
-      icon: Person,
-      path: ROUTES.TRAINEE_ACADEMIC_DETAILS,
-      color: 'primary'
-    },
-    {
-      title: 'Your Courses',
-      description: 'Check your enrolled courses and progress',
+      title: "Your Courses",
+      description: "Check your enrolled courses and progress",
       icon: Book,
       path: ROUTES.COURSES_ENROLLED,
-      color: 'success'
+      color: "success",
     },
     {
-      title: 'All Assessments',
-      description: 'View pending assessments and tasks',
+      title: "All Assessments",
+      description: "View pending assessments and tasks",
       icon: ClipboardCheck,
       path: ROUTES.ASSESSMENTS_MY_ASSESSMENTS,
-      color: 'warning'
+      color: "warning",
     },
     {
-      title: 'Create Issue Report',
-      description: 'Report issues or provide feedback',
+      title: "Create Issue Report",
+      description: "Report issues or provide feedback",
       icon: ExclamationTriangle,
       path: ROUTES.REPORTS_CREATE,
-      color: 'danger'
-    }
+      color: "danger",
+    },
   ];
 
   // Calculate completion percentage
-  const completionPercentage = dashboardData.assessmentProgress 
-    ? Math.round(dashboardData.assessmentProgress.completionRate * 100) 
+  const completionPercentage = dashboardData.assessmentProgress
+    ? Math.round(dashboardData.assessmentProgress.completionRate * 100)
     : 0;
 
   // Prepare data for charts
-  const ongoingTrainingData = dashboardData.ongoingTraining ? [
-    { name: 'Courses', value: dashboardData.ongoingTraining.ongoingCourses },
-    { name: 'Subjects', value: dashboardData.ongoingTraining.ongoingSubjects }
-  ] : [];
+  const ongoingTrainingData = dashboardData.ongoingTraining
+    ? [
+        {
+          name: "Courses",
+          value: dashboardData.ongoingTraining.ongoingCourses,
+        },
+        {
+          name: "Subjects",
+          value: dashboardData.ongoingTraining.ongoingSubjects,
+        },
+      ]
+    : [];
 
-  const assessmentRatiosData = dashboardData.assessmentRatios ? [
-    { name: 'Pass', value: dashboardData.assessmentRatios.passCount, ratio: dashboardData.assessmentRatios.passRatio },
-    { name: 'Fail', value: dashboardData.assessmentRatios.failCount, ratio: dashboardData.assessmentRatios.failRatio }
-  ] : [];
+  const assessmentRatiosData = dashboardData.assessmentRatios
+    ? [
+        {
+          name: "Pass",
+          value: dashboardData.assessmentRatios.passCount,
+          ratio: dashboardData.assessmentRatios.passRatio,
+        },
+        {
+          name: "Fail",
+          value: dashboardData.assessmentRatios.failCount,
+          ratio: dashboardData.assessmentRatios.failRatio,
+        },
+      ]
+    : [];
 
-  const COLORS = ['#28a745', '#dc3545'];
+  const COLORS = ["#28a745", "#dc3545"];
 
   return (
     <Container fluid className="py-3 py-md-4 px-3 px-md-4">
@@ -112,38 +141,63 @@ const TraineeDashboardPage = () => {
                 {quickActions.map((action, index) => {
                   const IconComponent = action.icon;
                   return (
-                    <Col xs={12} sm={6} lg={6} xl={3} className="mb-3 mb-xl-0 d-flex" key={index}>
-                      <Card 
+                    <Col
+                      xs={12}
+                      sm={6}
+                      lg={4}
+                      xl={4}
+                      className="mb-3 mb-xl-0 d-flex"
+                      key={index}
+                    >
+                      <Card
                         className="h-100 w-100 border-0 shadow-sm d-flex flex-column"
-                        style={{ 
-                          cursor: 'pointer',
-                          transition: 'all 0.3s ease',
-                          minHeight: '150px'
+                        style={{
+                          cursor: "pointer",
+                          transition: "all 0.3s ease",
+                          minHeight: "150px",
                         }}
                         onClick={() => navigate(action.path)}
                         onMouseEnter={(e) => {
-                          e.currentTarget.style.transform = 'translateY(-5px)';
-                          e.currentTarget.style.boxShadow = '0 8px 25px rgba(0,0,0,0.15)';
+                          e.currentTarget.style.transform = "translateY(-5px)";
+                          e.currentTarget.style.boxShadow =
+                            "0 8px 25px rgba(0,0,0,0.15)";
                         }}
                         onMouseLeave={(e) => {
-                          e.currentTarget.style.transform = 'translateY(0)';
-                          e.currentTarget.style.boxShadow = '0 2px 10px rgba(0,0,0,0.1)';
+                          e.currentTarget.style.transform = "translateY(0)";
+                          e.currentTarget.style.boxShadow =
+                            "0 2px 10px rgba(0,0,0,0.1)";
                         }}
                       >
                         <Card.Body className="p-3 p-md-4 d-flex flex-column h-100">
                           <div className="d-flex align-items-start mb-2 mb-md-3">
-                            <div 
+                            <div
                               className={`bg-${action.color} text-white rounded-circle d-flex align-items-center justify-content-center me-2 me-md-3 flex-shrink-0`}
-                              style={{ width: '40px', height: '40px' }}
+                              style={{ width: "40px", height: "40px" }}
                             >
                               <IconComponent size={20} />
                             </div>
                             <div className="flex-grow-1">
-                              <h5 className="mb-1" style={{ fontSize: '0.95rem', lineHeight: '1.3' }}>{action.title}</h5>
+                              <h5
+                                className="mb-1"
+                                style={{
+                                  fontSize: "0.95rem",
+                                  lineHeight: "1.3",
+                                }}
+                              >
+                                {action.title}
+                              </h5>
                             </div>
-                            <ArrowRight size={18} className="text-muted flex-shrink-0 d-none d-sm-block" />
+                            <ArrowRight
+                              size={18}
+                              className="text-muted flex-shrink-0 d-none d-sm-block"
+                            />
                           </div>
-                          <p className="text-muted mb-0 mt-auto" style={{ fontSize: '0.8125rem', lineHeight: '1.4' }}>{action.description}</p>
+                          <p
+                            className="text-muted mb-0 mt-auto"
+                            style={{ fontSize: "0.8125rem", lineHeight: "1.4" }}
+                          >
+                            {action.description}
+                          </p>
                         </Card.Body>
                       </Card>
                     </Col>
@@ -166,75 +220,106 @@ const TraineeDashboardPage = () => {
         </Row>
       ) : (
         <>
-          {/* Assessment Progress and Ongoing Training */}
-          <Row className="mb-4">
-            <Col xs={12} md={6} lg={6} className="mb-3 mb-md-4">
+          <Row className="mt-3">
+            <Col>
               <Card className="border-0 shadow-sm">
-                <Card.Header className="bg-primary text-white border-0">
-                  <h5 className="mb-0 text-white" style={{ fontSize: '1rem' }}>Training Progress</h5>
-            </Card.Header>
-            <Card.Body className="d-flex flex-column justify-content-center">
-                  <div className="text-center py-3 py-md-4">
-                    <div className="mb-2 mb-md-3">
-                      <div className="display-4 text-primary fw-bold" style={{ fontSize: 'clamp(2rem, 5vw, 3.5rem)' }}>{completionPercentage}%</div>
-                      <p className="text-muted mb-0" style={{ fontSize: '0.875rem' }}>Overall Progress</p>
-                </div>
-                    <div className="progress mb-3" style={{ height: '20px' }}>
-                  <div 
-                    className="progress-bar bg-primary" 
-                        style={{ width: `${completionPercentage}%` }}
-                        role="progressbar"
-                        aria-valuenow={completionPercentage}
-                        aria-valuemin="0"
-                        aria-valuemax="100"
-                      >
-                        {completionPercentage}%
-                      </div>
-                </div>
-                    {dashboardData.assessmentProgress && (
-                <p className="text-muted small mb-0">
-                        {dashboardData.assessmentProgress.approvedCount} of {dashboardData.assessmentProgress.totalAssigned} assessments completed
-                </p>
-                    )}
-              </div>
-            </Card.Body>
-          </Card>
-        </Col>
+                <Card.Header className="bg-primary text-white">
+                  <h5 className="mb-0">Overall Training Progress</h5>
+                </Card.Header>
+                <Card.Body>
+                  <div className="text-center mb-3">
+                    <h2 className="text-primary mb-1">
+                      {completionPercentage}%
+                    </h2>
+                    <p className="text-muted mb-0">
+                      Complete your assessment events to improve progress
+                    </p>
+                  </div>
+                  <ProgressBar
+                    now={completionPercentage}
+                    variant="primary"
+                    style={{ height: "12px" }}
+                    className="mb-3"
+                  />
+                  <Row className="text-center">
+                    <Col>
+                      <small className="text-muted">
+                        {dashboardData.assessmentProgress && (
+                          <p className="text-muted small mb-0">
+                            {dashboardData.assessmentProgress.approvedCount} of{" "}
+                            {dashboardData.assessmentProgress.totalAssigned}{" "}
+                            assessments completed
+                          </p>
+                        )}
+                      </small>
+                    </Col>
+                  </Row>
+                </Card.Body>
+              </Card>
+            </Col>
+          </Row>
 
+          {/* Charts Section */}
+          <Row className="mt-3">
             <Col xs={12} md={6} lg={6} className="mb-3 mb-md-4">
               <Card className="border-0 shadow-sm">
                 <Card.Header className="bg-primary text-white border-0">
-                  <h5 className="mb-0 text-white d-flex align-items-center" style={{ fontSize: '1rem' }}>
+                  <h5
+                    className="mb-0 text-white d-flex align-items-center"
+                    style={{ fontSize: "1rem" }}
+                  >
                     <BarChartIcon className="me-2" size={18} />
                     Ongoing Training
                   </h5>
                 </Card.Header>
-                <Card.Body style={{ padding: '15px' }}>
-                  <ResponsiveContainer width="100%" height={200}>
+                <Card.Body style={{ padding: "15px" }}>
+                  <ResponsiveContainer width="100%" height={280}>
                     <BarChart data={ongoingTrainingData}>
                       <CartesianGrid strokeDasharray="3 3" />
                       <XAxis dataKey="name" />
-                      <YAxis />
-                      <Tooltip />
+                      <YAxis allowDecimals={false} />
+                      <Tooltip 
+                        content={({ active, payload }) => {
+                          if (active && payload && payload.length) {
+                            return (
+                              <div style={{
+                                backgroundColor: "#fff",
+                                padding: "10px 15px",
+                                border: "1px solid #ccc",
+                                borderRadius: "4px",
+                                boxShadow: "0 2px 8px rgba(0,0,0,0.15)"
+                              }}>
+                                <p style={{ margin: "0 0 5px 0", fontWeight: "bold" }}>
+                                  {payload[0].payload.name}
+                                </p>
+                                <p style={{ margin: "0", color: "#1b3c53" }}>
+                                  Count: {payload[0].value}
+                                </p>
+                              </div>
+                            );
+                          }
+                          return null;
+                        }}
+                      />
                       <Bar dataKey="value" fill="#1b3c53" />
                     </BarChart>
                   </ResponsiveContainer>
                 </Card.Body>
               </Card>
             </Col>
-          </Row>
 
-          {/* Assessment Ratios */}
-          <Row className="mb-4">
             <Col xs={12} md={6} lg={6} className="mb-3 mb-md-4">
               <Card className="border-0 shadow-sm">
                 <Card.Header className="bg-primary text-white border-0">
-                  <h5 className="mb-0 text-white d-flex align-items-center" style={{ fontSize: '1rem' }}>
+                  <h5
+                    className="mb-0 text-white d-flex align-items-center"
+                    style={{ fontSize: "1rem" }}
+                  >
                     <PieChartIcon className="me-2" size={18} />
                     Assessment Results
                   </h5>
                 </Card.Header>
-                <Card.Body style={{ padding: '15px' }}>
+                <Card.Body style={{ padding: "15px" }}>
                   <ResponsiveContainer width="100%" height={280}>
                     <PieChart>
                       <Pie
@@ -242,70 +327,94 @@ const TraineeDashboardPage = () => {
                         cx="50%"
                         cy="50%"
                         labelLine={false}
-                        label={({ name, ratio }) => `${name}: ${(ratio * 100).toFixed(1)}%`}
+                        label={({ name, ratio }) =>
+                          `${name}: ${(ratio * 100).toFixed(1)}%`
+                        }
                         outerRadius={80}
                         fill="#8884d8"
                         dataKey="value"
                         nameKey="name"
                       >
                         {assessmentRatiosData.map((entry, index) => (
-                          <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                          <Cell
+                            key={`cell-${index}`}
+                            fill={COLORS[index % COLORS.length]}
+                          />
                         ))}
                       </Pie>
                       <Tooltip />
-                      <Legend 
+                      <Legend
                         verticalAlign="bottom"
-                        wrapperStyle={{ paddingTop: '20px' }}
+                        wrapperStyle={{ paddingTop: "20px" }}
                       />
                     </PieChart>
                   </ResponsiveContainer>
                 </Card.Body>
               </Card>
             </Col>
+          </Row>
 
-            <Col xs={12} md={6} lg={6} className="mb-3 mb-md-4">
+          {/* Assessment Ratios */}
+          <Row className="mt-3">
+            <Col xs={12} md={12} lg={12} className="mb-3 mb-md-4">
               <Card className="border-0 shadow-sm">
                 <Card.Header className="bg-primary text-white border-0">
-                  <h5 className="mb-0 text-white" style={{ fontSize: '1rem' }}>Assessments Required Confirmations</h5>
-            </Card.Header>
-            <Card.Body className="d-flex flex-column justify-content-center">
+                  <h5 className="mb-0 text-white" style={{ fontSize: "1rem" }}>
+                    Assessments Required Confirmations
+                  </h5>
+                </Card.Header>
+                <Card.Body className="d-flex flex-column justify-content-center">
                   <div className="text-center py-3 py-md-4">
-                    {dashboardData.assessmentProgress && dashboardData.assessmentProgress.totalAssigned > 0 ? (
+                    {dashboardData.assessmentProgress &&
+                    dashboardData.assessmentProgress.totalAssigned > 0 ? (
                       <>
                         <div className="mb-2 mb-md-3">
-                          <div className="display-4 text-primary fw-bold" style={{ fontSize: 'clamp(2rem, 5vw, 3.5rem)' }}>
+                          <div
+                            className="display-4 text-primary fw-bold"
+                            style={{ fontSize: "clamp(2rem, 5vw, 3.5rem)" }}
+                          >
                             {dashboardData.assessmentProgress.approvedCount}
                           </div>
-                          <p className="text-muted mb-0" style={{ fontSize: '0.875rem' }}>of {dashboardData.assessmentProgress.totalAssigned} assessments completed</p>
+                          <p
+                            className="text-muted mb-0"
+                            style={{ fontSize: "0.875rem" }}
+                          >
+                            of {dashboardData.assessmentProgress.totalAssigned}{" "}
+                            assessments completed
+                          </p>
                         </div>
                         <p className="text-muted small mb-3">
-                          {dashboardData.assessmentProgress.totalAssigned - dashboardData.assessmentProgress.approvedCount} assessments pending
+                          {dashboardData.assessmentProgress.totalAssigned -
+                            dashboardData.assessmentProgress.approvedCount}{" "}
+                          assessments pending
                         </p>
                       </>
                     ) : (
                       <>
-                <ClipboardCheck size={48} className="text-muted mb-3" />
-                <h6 className="text-muted">No assessments pending</h6>
-                <p className="text-muted small mb-3">
-                  View and complete signature required assessments.
-                </p>
+                        <ClipboardCheck size={48} className="text-muted mb-3" />
+                        <h6 className="text-muted">No assessments pending</h6>
+                        <p className="text-muted small mb-3">
+                          View and complete signature required assessments.
+                        </p>
                       </>
                     )}
-                <Button 
-                  variant="outline-primary" 
-                  size="sm"
-                      onClick={() => navigate(ROUTES.ASSESSMENTS_MY_ASSESSMENTS)}
-                  className="d-flex align-items-center justify-content-center mx-auto"
-                >
-                  <ClipboardCheck size={16} className="me-2" />
-                  Go to Assessments
-                  <ArrowRight size={16} className="ms-2" />
-                </Button>
-              </div>
-            </Card.Body>
-          </Card>
-        </Col>
-      </Row>
+                    <Button
+                      variant="outline-primary"
+                      size="sm"
+                      onClick={() =>
+                        navigate(ROUTES.ASSESSMENTS_MY_ASSESSMENTS)
+                      }
+                      className="d-flex align-items-center justify-content-center mx-auto"
+                    >
+                      <ClipboardCheck size={16} className="me-2" />
+                      Go to Assessments
+                      <ArrowRight size={16} className="ms-2" />
+                    </Button>
+                  </div>
+                </Card.Body>
+              </Card>
+            </Col>
+          </Row>
         </>
       )}
     </Container>

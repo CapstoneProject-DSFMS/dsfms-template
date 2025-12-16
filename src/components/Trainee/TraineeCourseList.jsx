@@ -23,6 +23,7 @@ const courseTableStyles = `
     border-bottom: none !important;
     border-left: none !important;
     border-right: none !important;
+    margin: 0 20px 0 20px !important;
   }
   .course-list-table-no-borders .table tbody tr {
     border-bottom: 1px solid #f0f0f0 !important;
