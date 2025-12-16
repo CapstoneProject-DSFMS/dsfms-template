@@ -222,7 +222,7 @@ const TraineeYourAssessmentsEnhanced = () => {
                   }}
                 >
                   <Book className="me-2" size={16} />
-                  Assessments By Course
+                  Course Assessments
                 </Nav.Link>
               </Nav.Item>
               <Nav.Item>
@@ -239,7 +239,7 @@ const TraineeYourAssessmentsEnhanced = () => {
                   }}
                 >
                   <FileText className="me-2" size={16} />
-                  Assessments By Subject
+                  Subject Assessments
                 </Nav.Link>
               </Nav.Item>
             </Nav>
