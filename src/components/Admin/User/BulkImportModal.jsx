@@ -62,14 +62,8 @@ const BulkImportModal = ({ show, onClose, onImport, loading = false }) => {
       // Extract roles array from response
       const rolesArray = rolesData?.roles || rolesData || [];
       
-      console.log('📦 Roles fetched from API:', {
-        rolesCount: rolesArray.length,
-        roles: rolesArray.map(r => ({ id: r.id, name: r.name }))
-      });
-      
       setRoles(rolesArray);
     } catch (error) {
-      console.error('Failed to fetch roles:', error);
       setErrors(['Failed to load roles. Please refresh the page.']);
       setRoles([]);
     } finally {
@@ -136,19 +130,9 @@ const BulkImportModal = ({ show, onClose, onImport, loading = false }) => {
       // If it's already a Date object
       if (dateString instanceof Date) {
         date = dateString;
-        console.log('📅 formatDateToISO - Date object input:', {
-          input: dateString.toString(),
-          iso: dateString.toISOString()
-        });
       } else {
         // Try to parse the date string
         const dateStr = dateString.toString().trim();
-        
-        console.log('📅 formatDateToISO - String input:', {
-          input: dateStr,
-          includes_slash: dateStr.includes('/'),
-          includes_dash: dateStr.includes('-')
-        });
         
         // Skip empty or invalid strings
         if (!dateStr || dateStr === '' || dateStr === 'null' || dateStr === 'undefined') {
@@ -180,12 +164,6 @@ const BulkImportModal = ({ show, onClose, onImport, loading = false }) => {
                 year = (currentCentury - 100) + year;  // 98 → 1998
               }
             }
-            
-            console.log('📅 formatDateToISO - Parsing MM/DD/YYYY:', {
-              input: dateStr,
-              parts: parts,
-              parsed: { year, month, day }
-            });
             date = new Date(year, month - 1, day);
           }
         } else if (dateStr.includes('-')) {
@@ -197,11 +175,6 @@ const BulkImportModal = ({ show, onClose, onImport, loading = false }) => {
               const year = parseInt(parts[0], 10);
               const month = parseInt(parts[1], 10);
               const day = parseInt(parts[2], 10);
-              console.log('📅 formatDateToISO - Parsing YYYY-MM-DD:', {
-                input: dateStr,
-                parts: parts,
-                parsed: { year, month, day }
-              });
               date = new Date(year, month - 1, day);
             } else {
               // DD-MM-YYYY format - CONVERT TO NUMBERS!
@@ -221,18 +194,11 @@ const BulkImportModal = ({ show, onClose, onImport, loading = false }) => {
                   year = (currentCentury - 100) + year;
                 }
               }
-              
-              console.log('📅 formatDateToISO - Parsing DD-MM-YYYY:', {
-                input: dateStr,
-                parts: parts,
-                parsed: { year, month, day }
-              });
               date = new Date(year, month - 1, day);
             }
           }
         } else {
           // Try direct parsing
-          console.log('📅 formatDateToISO - Direct parsing:', dateStr);
           date = new Date(dateStr);
         }
       }
@@ -251,7 +217,6 @@ const BulkImportModal = ({ show, onClose, onImport, loading = false }) => {
       // Return ISO datetime string (YYYY-MM-DDTHH:mm:ss.sssZ)
       return date.toISOString();
     } catch (error) {
-      console.error('Error formatting date:', error, 'Input:', dateString);
       return '';
     }
   };
@@ -302,59 +267,22 @@ const BulkImportModal = ({ show, onClose, onImport, loading = false }) => {
   // Smart role mapping function
   const findRoleId = (roleName) => {
     if (!roleName || !roles.length) {
-      console.warn('⚠️ findRoleId: No roleName or roles not loaded', { roleName, rolesCount: roles.length });
       return null;
     }
     
     const normalizedInput = normalizeRoleName(roleName);
     
-    console.log('🔍 Finding role:', { 
-      input: roleName, 
-      normalized: normalizedInput,
-      availableRoles: roles.map(r => ({ 
-        name: r.name, 
-        normalized: normalizeRoleName(r.name),
-        id: r.id
-      }))
-    });
-    
     // Direct match first - normalize both input and role names
     // This should match "DEPARTMENT_HEAD" with "DEPARTMENT HEAD" after normalization
     const directMatch = roles.find(role => {
       const normalizedRoleName = normalizeRoleName(role.name);
-      const isMatch = normalizedRoleName === normalizedInput;
-      if (isMatch) {
-        console.log('✅ Direct match:', {
-          input: roleName,
-          inputNormalized: normalizedInput,
-          dbRole: role.name,
-          dbRoleNormalized: normalizedRoleName,
-          match: isMatch
-        });
-      }
-      return isMatch;
+      return normalizedRoleName === normalizedInput;
     });
-    
     if (directMatch) {
-      console.log('✅ Direct match found:', directMatch.name, directMatch.id);
       return directMatch.id;
     }
     
     // If direct match fails, try partial match (for variations like ADMIN -> ADMINISTRATOR)
-    // But first, let's check if the issue is with normalization
-    console.log('⚠️ Direct match failed, checking normalization...');
-    roles.forEach(role => {
-      const normalizedRoleName = normalizeRoleName(role.name);
-      if (normalizedRoleName === normalizedInput) {
-        console.log('🔍 Found potential match:', {
-          input: roleName,
-          inputNormalized: normalizedInput,
-          dbRole: role.name,
-          dbRoleNormalized: normalizedRoleName,
-          match: normalizedRoleName === normalizedInput
-        });
-      }
-    });
     
     // Partial match for common variations (only for special cases like ADMIN -> ADMINISTRATOR)
     const partialMatches = {
@@ -373,7 +301,6 @@ const BulkImportModal = ({ show, onClose, onImport, loading = false }) => {
         return normalizedRoleName === mappedName;
       });
       if (mappedRole) {
-        console.log('✅ Partial match found:', mappedRole.name, mappedRole.id);
         return mappedRole.id;
       }
     }
@@ -381,32 +308,14 @@ const BulkImportModal = ({ show, onClose, onImport, loading = false }) => {
     // Fuzzy match - normalize both sides for comparison (fallback)
     const fuzzyMatch = roles.find(role => {
       const normalizedRoleName = normalizeRoleName(role.name);
-      const isFuzzyMatch = normalizedRoleName.includes(normalizedInput) ||
-                           normalizedInput.includes(normalizedRoleName);
-      if (isFuzzyMatch) {
-        console.log('🔍 Fuzzy match candidate:', {
-          input: roleName,
-          inputNormalized: normalizedInput,
-          dbRole: role.name,
-          dbRoleNormalized: normalizedRoleName
-        });
-      }
-      return isFuzzyMatch;
+      return normalizedRoleName.includes(normalizedInput) ||
+             normalizedInput.includes(normalizedRoleName);
     });
     
     if (fuzzyMatch) {
-      console.log('✅ Fuzzy match found:', fuzzyMatch.name, fuzzyMatch.id);
       return fuzzyMatch.id;
     }
     
-    console.warn('❌ No role match found for:', {
-      input: roleName,
-      normalized: normalizedInput,
-      availableRoles: roles.map(r => ({
-        name: r.name,
-        normalized: normalizeRoleName(r.name)
-      }))
-    });
     return null;
   };
 
@@ -572,10 +481,7 @@ const BulkImportModal = ({ show, onClose, onImport, loading = false }) => {
       return;
     }
 
-    console.log('📋 Processing file with roles loaded:', {
-      rolesCount: roles.length,
-      roles: roles.map(r => r.name)
-    });
+
 
     const reader = new FileReader();
     reader.onload = (e) => {
@@ -602,21 +508,8 @@ const BulkImportModal = ({ show, onClose, onImport, loading = false }) => {
           return row.some(cell => cell !== null && cell !== undefined && cell !== '' && String(cell).trim() !== '');
         });
 
-        console.log('📊 File parsing results:', {
-          totalRowsParsed: jsonData.length,
-          nonEmptyRowsFound: nonEmptyRows.length,
-          firstRow: jsonData[0],
-          sampleRows: jsonData.slice(0, 3)
-        });
-
         if (nonEmptyRows.length < 2) {
           setErrors(['File must contain at least a header row and one data row. Please check if your file has empty rows or formatting issues.']);
-          console.error('❌ File validation failed:', {
-            totalRows: jsonData.length,
-            nonEmptyRows: nonEmptyRows.length,
-            firstFewRows: jsonData.slice(0, 3),
-            allRows: jsonData
-          });
           return;
         }
 
@@ -629,11 +522,6 @@ const BulkImportModal = ({ show, onClose, onImport, loading = false }) => {
         // Check again after filtering data rows
         if (dataRows.length === 0) {
           setErrors(['File must contain at least one data row with content. Please check if your data rows are empty or have formatting issues.']);
-          console.error('No valid data rows found after filtering:', {
-            totalRows: jsonData.length,
-            nonEmptyRows: nonEmptyRows.length,
-            dataRowsAfterFilter: dataRows.length
-          });
           return;
         }
 
@@ -703,8 +591,6 @@ const BulkImportModal = ({ show, onClose, onImport, loading = false }) => {
         // Process data rows
         // IMPORTANT: Check if roles are loaded before processing
         if (roles.length === 0) {
-          console.warn('⚠️ Roles not loaded yet, validation may fail');
-          // Don't block file processing, but warn user
           setValidationErrors(['⚠️ Roles are still loading. Role validation may fail. Please wait and try again if you see role errors.']);
         }
 
@@ -733,16 +619,6 @@ const BulkImportModal = ({ show, onClose, onImport, loading = false }) => {
                   const day = String(dateObj.getDate()).padStart(2, '0');
                   const year = dateObj.getFullYear();
                   value = `${month}/${day}/${year}`;
-                  
-                  // Debug: log date conversion
-                  if (mappedHeader === 'date_of_birth' || mappedHeader === 'enrollment_date') {
-                    console.log('📅 Excel Date Conversion:', {
-                      field: mappedHeader,
-                      rawDateObject: dateObj.toISOString(),
-                      convertedString: value,
-                      row: index + 1
-                    });
-                  }
                 } else if (typeof row[colIndex] === 'number') {
                   value = row[colIndex].toString();
                 } else {
@@ -782,25 +658,11 @@ const BulkImportModal = ({ show, onClose, onImport, loading = false }) => {
                 const roleId = findRoleId(value);
                 if (!roleId) {
                   hasError = true;
-                  // Show normalized comparison for debugging
-                  const normalizedInput = normalizeRoleName(value);
-                  const availableNormalized = roles.map(r => ({
-                    original: r.name,
-                    normalized: normalizeRoleName(r.name)
-                  }));
-                  console.error('❌ Role validation failed:', {
-                    input: value,
-                    normalizedInput: normalizedInput,
-                    availableRoles: roles.map(r => r.name),
-                    availableNormalized: availableNormalized
-                  });
                   rowErrors.push(`Invalid role: "${value}". Available roles: ${roles.map(r => r.name).join(', ')}`);
                 } else {
-                  console.log('✅ Role validated successfully:', value, '→', roleId);
                 }
               } else {
                 // Roles not loaded yet, show warning but don't mark as error
-                console.warn('⚠️ Roles not loaded, cannot validate role:', value);
               }
             }
 
@@ -952,25 +814,11 @@ const BulkImportModal = ({ show, onClose, onImport, loading = false }) => {
 
         // Only add date fields if they are valid
         const dob = formatDateToISO(user.date_of_birth);
-        console.log('🔍 DOB Debug:', {
-          input: user.date_of_birth,
-          inputType: typeof user.date_of_birth,
-          isDateObject: user.date_of_birth instanceof Date,
-          formatted: dob,
-          user: user.first_name + ' ' + user.last_name
-        });
         if (dob) {
           traineeProfile.dob = dob;
         }
 
         const enrollmentDate = formatDateToISO(user.enrollment_date);
-        console.log('🔍 Enrollment Date Debug:', {
-          input: user.enrollment_date,
-          inputType: typeof user.enrollment_date,
-          isDateObject: user.enrollment_date instanceof Date,
-          formatted: enrollmentDate,
-          user: user.first_name + ' ' + user.last_name
-        });
         if (enrollmentDate) {
           traineeProfile.enrollmentDate = enrollmentDate;
         } else {

@@ -77,7 +77,7 @@ const UserRow = ({ user, index, onView, onEdit, onDisable }) => {
           <span className="me-1" style={{ fontSize: '0.8rem' }}>
             {getStatusIcon(user.status)}
           </span>
-          {user.status}
+          {user.status?.replace(/_/g, ' ')}
         </Badge>
       </td>
       

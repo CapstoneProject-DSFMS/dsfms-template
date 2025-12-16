@@ -375,7 +375,7 @@ const AssessmentAssignmentsPage = () => {
                         )}
                         {eventInfo.courseInfo.status && (
                           <Badge bg={eventInfo.courseInfo.status === 'ON_GOING' ? 'success' : 'secondary'} className="me-1">
-                            {eventInfo.courseInfo.status}
+                            {eventInfo.courseInfo.status.replace(/_/g, ' ')}
                           </Badge>
                         )}
                       </div>
@@ -476,7 +476,7 @@ const AssessmentAssignmentsPage = () => {
                           <div className="mb-1">
                             <span className="fw-bold" style={{ color: '#456882', fontSize: '0.9rem' }}>Status:</span>{' '}
                             <Badge bg={eventInfo.templateInfo.status === 'PUBLISHED' ? 'success' : 'secondary'} className="ms-1">
-                              {eventInfo.templateInfo.status}
+                              {eventInfo.templateInfo.status.replace(/_/g, ' ')}
                             </Badge>
                           </div>
                         )}

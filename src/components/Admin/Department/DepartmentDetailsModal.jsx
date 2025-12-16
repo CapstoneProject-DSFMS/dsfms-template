@@ -39,7 +39,7 @@ const DepartmentDetailsModal = ({ show, department, onClose }) => {
               bg={department.status === 'ACTIVE' ? 'success' : 'secondary'}
               className="px-3 py-2 fs-6"
             >
-              {department.status}
+              {department.status?.replace(/_/g, ' ')}
             </Badge>
           </Col>
         </Row>
