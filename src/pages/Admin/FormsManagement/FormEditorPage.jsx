@@ -222,8 +222,8 @@ const FormEditorPage = () => {
   const loadDepartments = async () => {
     try {
       setLoadingDepartments(true);
-      // Use public API (no permission required)
-      const departmentsData = await departmentAPI.getPublicDepartments();
+      // Load departments
+      const departmentsData = await departmentAPI.getDepartments();
       setDepartments(departmentsData);
     } catch (error) {
       console.error('Error loading departments:', error);

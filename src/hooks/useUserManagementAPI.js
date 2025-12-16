@@ -44,7 +44,7 @@ export const useUserManagementAPI = () => {
         const transformedUsers = usersArray.map(user => ({
           id: user.id,
           eid: user.eid,
-          fullName: [user.firstName, user.middleName, user.lastName].filter(Boolean).join(' '),
+          fullName: [user.lastName, user.middleName, user.firstName].filter(Boolean).join(' '),
           firstName: user.firstName,
           middleName: user.middleName,
           lastName: user.lastName,
@@ -138,7 +138,7 @@ export const useUserManagementAPI = () => {
       const transformedUser = {
         id: userDetail.id,
         eid: userDetail.eid,
-        fullName: [userDetail.firstName, userDetail.middleName, userDetail.lastName].filter(Boolean).join(' '),
+        fullName: [userDetail.lastName, userDetail.middleName, userDetail.firstName].filter(Boolean).join(' '),
         firstName: userDetail.firstName,
         middleName: userDetail.middleName,
         lastName: userDetail.lastName,
@@ -182,7 +182,7 @@ export const useUserManagementAPI = () => {
       const transformedUser = {
         id: userDetail.id,
         eid: userDetail.eid,
-        fullName: [userDetail.firstName, userDetail.middleName, userDetail.lastName].filter(Boolean).join(' '),
+        fullName: [userDetail.lastName, userDetail.middleName, userDetail.firstName].filter(Boolean).join(' '),
         firstName: userDetail.firstName,
         middleName: userDetail.middleName,
         lastName: userDetail.lastName,
@@ -422,7 +422,7 @@ export const useUserManagementAPI = () => {
       const transformedUsers = usersArray.map(user => ({
         id: user.id,
         eid: user.eid,
-        fullName: [user.firstName, user.middleName, user.lastName].filter(Boolean).join(' '),
+        fullName: [user.lastName, user.middleName, user.firstName].filter(Boolean).join(' '),
         firstName: user.firstName,
         middleName: user.middleName,
         lastName: user.lastName,
@@ -555,7 +555,7 @@ export const useUserManagementAPI = () => {
       const transformedUsers = usersArray.map(user => ({
         id: user.id,
         eid: user.eid,
-        fullName: [user.firstName, user.middleName, user.lastName].filter(Boolean).join(' '),
+        fullName: [user.lastName, user.middleName, user.firstName].filter(Boolean).join(' '),
         firstName: user.firstName,
         middleName: user.middleName,
         lastName: user.lastName,

@@ -108,9 +108,6 @@ const UserTable = ({ users, loading, onView, onEdit, onDisable }) => {
             <SortableHeader columnKey="role" className="show-mobile">
               Role
             </SortableHeader>
-            <SortableHeader columnKey="department" className="hide-mobile">
-              Department
-            </SortableHeader>
             <SortableHeader columnKey="status" className="show-mobile">
               Status
             </SortableHeader>

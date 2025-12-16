@@ -269,49 +269,8 @@ const SubjectDetailsView = ({ subjectId, courseId }) => {
   };
 
   const handleBack = () => {
-    // Determine route based on role
-    let backRoute;
-    
-    if (isDeptHead) {
-      // Department Head route
-      if (courseId) {
-        backRoute = `${ROUTES.DEPARTMENT_MY_DETAILS}/${courseId}`;
-      } else if (location.state?.courseId) {
-        backRoute = `${ROUTES.DEPARTMENT_MY_DETAILS}/${location.state.courseId}`;
-      } else if (subject?.courseId) {
-        backRoute = `${ROUTES.DEPARTMENT_MY_DETAILS}/${subject.courseId}`;
-      }
-    } else {
-      // Academic Department route
-      if (courseId) {
-        backRoute = ROUTES.ACADEMIC_COURSE_DETAIL(courseId);
-      } else if (location.state?.courseId) {
-        backRoute = ROUTES.ACADEMIC_COURSE_DETAIL(location.state.courseId);
-      } else if (subject?.courseId) {
-        backRoute = ROUTES.ACADEMIC_COURSE_DETAIL(subject.courseId);
-      }
-    }
-    
-    if (backRoute) {
-      navigate(backRoute);
-    } else {
-      // Fallback: try to extract from referrer or go back
-      if (document.referrer) {
-        const referrerMatch = document.referrer.match(/\/(course-detail|my-department-details)\/([^/]+)/);
-        if (referrerMatch) {
-          const courseIdFromRef = referrerMatch[2];
-          if (isDeptHead) {
-            navigate(`${ROUTES.DEPARTMENT_MY_DETAILS}/${courseIdFromRef}`);
-          } else {
-            navigate(ROUTES.ACADEMIC_COURSE_DETAIL(courseIdFromRef));
-          }
-        } else {
-          navigate(-1);
-        }
-      } else {
-        navigate(-1);
-      }
-    }
+    // Simply go back to the previous page in browser history
+    navigate(-1);
   };
 
   // Show loading state

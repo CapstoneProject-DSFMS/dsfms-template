@@ -191,32 +191,9 @@ const InPageCourseDetail = ({ course, department } = {}) => {
     if (isTraineeView) {
       navigate(ROUTES.COURSES_ENROLLED);
     } 
-    // Check if we're in academic route
-    else if (location.pathname.startsWith('/academic/course-detail')) {
-      // Navigate back to department details for academic view
-      if (department?.id) {
-        navigate(`/academic/course/${department.id}`);
-      } else if (location.state?.departmentId) {
-        navigate(`/academic/course/${location.state.departmentId}`);
-      } else {
-        navigate('/academic/departments');
-      }
-    }
-    // Check if we're in department head route
-    else if (location.pathname.startsWith('/my-department-details')) {
-      // Navigate back to department dashboard for Department Head view
-      navigate(ROUTES.DEPARTMENT_MY_DETAILS);
-    }
-    // Fallback: check isDeptHead
-    else if (isDeptHead) {
-      navigate(ROUTES.DEPARTMENT_MY_DETAILS);
-    } else {
-      // Navigate back to department details for academic view
-      if (department?.id) {
-        navigate(`/academic/course/${department.id}`);
-      } else {
-        navigate('/academic/departments');
-      }
+    // For all other views, simply go back in browser history
+    else {
+      navigate(-1);
     }
   };
 

@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+    import React, { useState, useEffect } from 'react';
 import { Modal, Form, Button, Row, Col } from 'react-bootstrap';
 import { X, Save, Eye } from 'react-bootstrap-icons';
 
@@ -203,7 +203,16 @@ const DepartmentModal = ({ show, department, mode, onSave, onClose, availableUse
                     borderWidth: '2px'
                   }}
                 >
-                  <option value="">Select department head</option>
+                  {formData.departmentHeadId && availableUsers.find(u => u.id === formData.departmentHeadId) ? (
+                    <option value={formData.departmentHeadId}>
+                      {availableUsers.find(u => u.id === formData.departmentHeadId) && (() => {
+                        const currentHead = availableUsers.find(u => u.id === formData.departmentHeadId);
+                        return `${currentHead.lastName}${currentHead.middleName ? ' ' + currentHead.middleName : ''} ${currentHead.firstName}`;
+                      })()}
+                    </option>
+                  ) : (
+                    <option value="">Select department head</option>
+                  )}
                   {availableUsers.map(user => (
                     <option key={user.id} value={user.id}>
                       {user.lastName}{user.middleName ? ' ' + user.middleName : ''} {user.firstName} ({user.eid})
