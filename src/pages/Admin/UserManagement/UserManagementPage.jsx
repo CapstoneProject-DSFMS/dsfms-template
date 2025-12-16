@@ -89,7 +89,20 @@ const UserManagementPage = () => {
   // Show error toast when error state changes
   React.useEffect(() => {
     if (error) {
-      toast.error(error);
+      const renderMessage = (msg) => (
+        <div style={{ whiteSpace: 'pre-wrap', wordBreak: 'break-word' }}>
+          {msg}
+        </div>
+      );
+
+      if (Array.isArray(error)) {
+        const errorMessage = error.join('\n');
+        toast.error(renderMessage(errorMessage), { autoClose: 6000 });
+      } else if (typeof error === 'string' && error.includes('\n')) {
+        toast.error(renderMessage(error), { autoClose: 6000 });
+      } else {
+        toast.error(error);
+      }
     }
   }, [error]);
 

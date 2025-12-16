@@ -93,6 +93,39 @@ const BulkImportModal = ({ show, onClose, onImport, loading = false }) => {
   };
 
   // Format date to ISO string
+  const formatValidationErrors = (error) => {
+    // Try to extract validation errors from API response
+    const errorData = error?.response?.data;
+    
+    if (!errorData) {
+      return [error.message || 'Failed to import users. Please try again.'];
+    }
+    
+    // If there are detailed validation errors
+    if (errorData.errors && Array.isArray(errorData.errors)) {
+      const formattedErrors = errorData.errors.map(err => {
+        // Extract user index and field name from path like "users.3.traineeProfile.enrollmentDate"
+        const pathMatch = err.path?.match(/users\.(\d+)\..*?\.(\w+)$/);
+        let userIndex = 'Unknown';
+        let fieldName = '';
+        
+        if (pathMatch) {
+          userIndex = parseInt(pathMatch[1]) + 1; // Convert to 1-based index
+          fieldName = pathMatch[2];
+          // Convert camelCase to Title Case
+          fieldName = fieldName.replace(/([A-Z])/g, ' $1').toUpperCase().trim();
+        }
+        
+        return `Row ${userIndex} - ${fieldName || err.path}: ${err.message}`;
+      });
+      
+      return formattedErrors;
+    }
+    
+    // Fallback to general message
+    return [errorData.message || 'Failed to import users. Please try again.'];
+  };
+
   const formatDateToISO = (dateString) => {
     if (!dateString) return '';
     
@@ -103,9 +136,19 @@ const BulkImportModal = ({ show, onClose, onImport, loading = false }) => {
       // If it's already a Date object
       if (dateString instanceof Date) {
         date = dateString;
+        console.log('📅 formatDateToISO - Date object input:', {
+          input: dateString.toString(),
+          iso: dateString.toISOString()
+        });
       } else {
         // Try to parse the date string
         const dateStr = dateString.toString().trim();
+        
+        console.log('📅 formatDateToISO - String input:', {
+          input: dateStr,
+          includes_slash: dateStr.includes('/'),
+          includes_dash: dateStr.includes('-')
+        });
         
         // Skip empty or invalid strings
         if (!dateStr || dateStr === '' || dateStr === 'null' || dateStr === 'undefined') {
@@ -117,23 +160,79 @@ const BulkImportModal = ({ show, onClose, onImport, loading = false }) => {
           // Format: MM/DD/YYYY or DD/MM/YYYY
           const parts = dateStr.split('/');
           if (parts.length === 3) {
-            // Assume MM/DD/YYYY format
-            date = new Date(parts[2], parts[0] - 1, parts[1]);
+            // Assume MM/DD/YYYY format - CONVERT TO NUMBERS!
+            let year = parseInt(parts[2], 10);
+            const month = parseInt(parts[0], 10);
+            const day = parseInt(parts[1], 10);
+            
+            // Convert 2-digit year to 4-digit year using windowing
+            // Standard convention: 00-25 = 2000-2025, 26-99 = 1926-1999
+            if (year < 100) {
+              const currentYear = new Date().getFullYear();
+              const currentCentury = Math.floor(currentYear / 100) * 100;
+              const currentYearInCentury = currentYear % 100;
+              
+              // If year <= current year in century, assume current century (20xx)
+              // Otherwise assume previous century (19xx)
+              if (year <= currentYearInCentury) {
+                year = currentCentury + year;  // 25 → 2025
+              } else {
+                year = (currentCentury - 100) + year;  // 98 → 1998
+              }
+            }
+            
+            console.log('📅 formatDateToISO - Parsing MM/DD/YYYY:', {
+              input: dateStr,
+              parts: parts,
+              parsed: { year, month, day }
+            });
+            date = new Date(year, month - 1, day);
           }
         } else if (dateStr.includes('-')) {
           // Format: YYYY-MM-DD or DD-MM-YYYY
           const parts = dateStr.split('-');
           if (parts.length === 3) {
             if (parts[0].length === 4) {
-              // YYYY-MM-DD format
-              date = new Date(parts[0], parts[1] - 1, parts[2]);
+              // YYYY-MM-DD format - CONVERT TO NUMBERS!
+              const year = parseInt(parts[0], 10);
+              const month = parseInt(parts[1], 10);
+              const day = parseInt(parts[2], 10);
+              console.log('📅 formatDateToISO - Parsing YYYY-MM-DD:', {
+                input: dateStr,
+                parts: parts,
+                parsed: { year, month, day }
+              });
+              date = new Date(year, month - 1, day);
             } else {
-              // DD-MM-YYYY format
-              date = new Date(parts[2], parts[1] - 1, parts[0]);
+              // DD-MM-YYYY format - CONVERT TO NUMBERS!
+              let year = parseInt(parts[2], 10);
+              const month = parseInt(parts[1], 10);
+              const day = parseInt(parts[0], 10);
+              
+              // Convert 2-digit year to 4-digit year using windowing
+              if (year < 100) {
+                const currentYear = new Date().getFullYear();
+                const currentCentury = Math.floor(currentYear / 100) * 100;
+                const currentYearInCentury = currentYear % 100;
+                
+                if (year <= currentYearInCentury) {
+                  year = currentCentury + year;
+                } else {
+                  year = (currentCentury - 100) + year;
+                }
+              }
+              
+              console.log('📅 formatDateToISO - Parsing DD-MM-YYYY:', {
+                input: dateStr,
+                parts: parts,
+                parsed: { year, month, day }
+              });
+              date = new Date(year, month - 1, day);
             }
           }
         } else {
           // Try direct parsing
+          console.log('📅 formatDateToISO - Direct parsing:', dateStr);
           date = new Date(dateStr);
         }
       }
@@ -626,6 +725,24 @@ const BulkImportModal = ({ show, onClose, onImport, loading = false }) => {
               if (row[colIndex] !== null && row[colIndex] !== undefined) {
                 if (typeof row[colIndex] === 'string') {
                   value = normalizeText(row[colIndex]);
+                } else if (row[colIndex] instanceof Date) {
+                  // Handle Date objects from Excel (when cellDates: true)
+                  // Convert to MM/DD/YYYY format for consistent parsing
+                  const dateObj = row[colIndex];
+                  const month = String(dateObj.getMonth() + 1).padStart(2, '0');
+                  const day = String(dateObj.getDate()).padStart(2, '0');
+                  const year = dateObj.getFullYear();
+                  value = `${month}/${day}/${year}`;
+                  
+                  // Debug: log date conversion
+                  if (mappedHeader === 'date_of_birth' || mappedHeader === 'enrollment_date') {
+                    console.log('📅 Excel Date Conversion:', {
+                      field: mappedHeader,
+                      rawDateObject: dateObj.toISOString(),
+                      convertedString: value,
+                      row: index + 1
+                    });
+                  }
                 } else if (typeof row[colIndex] === 'number') {
                   value = row[colIndex].toString();
                 } else {
@@ -835,11 +952,25 @@ const BulkImportModal = ({ show, onClose, onImport, loading = false }) => {
 
         // Only add date fields if they are valid
         const dob = formatDateToISO(user.date_of_birth);
+        console.log('🔍 DOB Debug:', {
+          input: user.date_of_birth,
+          inputType: typeof user.date_of_birth,
+          isDateObject: user.date_of_birth instanceof Date,
+          formatted: dob,
+          user: user.first_name + ' ' + user.last_name
+        });
         if (dob) {
           traineeProfile.dob = dob;
         }
 
         const enrollmentDate = formatDateToISO(user.enrollment_date);
+        console.log('🔍 Enrollment Date Debug:', {
+          input: user.enrollment_date,
+          inputType: typeof user.enrollment_date,
+          isDateObject: user.enrollment_date instanceof Date,
+          formatted: enrollmentDate,
+          user: user.first_name + ' ' + user.last_name
+        });
         if (enrollmentDate) {
           traineeProfile.enrollmentDate = enrollmentDate;
         } else {
@@ -857,7 +988,8 @@ const BulkImportModal = ({ show, onClose, onImport, loading = false }) => {
       await onImport(usersToImport);
       handleClose();
     } catch (error) {
-      setErrors([error.message || 'Failed to import users. Please try again.']);
+      const formattedErrors = formatValidationErrors(error);
+      setErrors(formattedErrors);
     }
   };
 
@@ -973,20 +1105,46 @@ const BulkImportModal = ({ show, onClose, onImport, loading = false }) => {
 
         {/* Error Messages */}
         {errors.length > 0 && (
-          <div className="alert alert-danger mb-3">
+          <div 
+            className="alert alert-danger mb-3"
+            style={{
+              borderRadius: '8px',
+              borderLeft: '4px solid #dc3545',
+              padding: '1rem',
+              backgroundColor: '#f8d7da'
+            }}
+          >
+            <h6 className="text-danger mb-3" style={{ fontWeight: 'bold' }}>
+              ⚠️ Import Failed - Please fix the following errors:
+            </h6>
             <ul className="mb-0">
               {errors.map((error, index) => (
-                <li key={index}>{error}</li>
+                <li key={index} style={{ marginBottom: '0.5rem', color: '#721c24' }}>
+                  <strong>{error}</strong>
+                </li>
               ))}
             </ul>
           </div>
         )}
 
         {validationErrors.length > 0 && (
-          <Alert variant="warning" className="mb-3">
+          <Alert 
+            variant="warning" 
+            className="mb-3"
+            style={{
+              borderRadius: '8px',
+              borderLeft: '4px solid #856404',
+              padding: '1rem'
+            }}
+          >
+            <h6 className="text-warning mb-3" style={{ fontWeight: 'bold' }}>
+              ⚠️ Validation Issues - Please review:
+            </h6>
             <ul className="mb-0">
               {validationErrors.map((error, index) => (
-                <li key={index}>{error}</li>
+                <li key={index} style={{ marginBottom: '0.5rem', color: '#856404' }}>
+                  <strong>{error}</strong>
+                </li>
               ))}
             </ul>
           </Alert>
@@ -1007,21 +1165,25 @@ const BulkImportModal = ({ show, onClose, onImport, loading = false }) => {
                   overflowX: 'auto'
                 }}
               >
-                <Table striped hover className="mb-0" style={{ minWidth: '1600px' }}>
+                <Table striped hover className="mb-0" style={{ minWidth: '2000px' }}>
                   <thead className="table-light">
                     <tr>
                       <th style={{ minWidth: '50px' }}>NO.</th>
                       <th style={{ minWidth: '120px' }}>FIRST NAME</th>
                       <th style={{ minWidth: '120px' }}>MIDDLE NAME</th>
                       <th style={{ minWidth: '120px' }}>LAST NAME</th>
+                      <th style={{ minWidth: '200px' }}>ADDRESS</th>
                       <th style={{ minWidth: '200px' }}>EMAIL</th>
-                      <th style={{ minWidth: '120px' }}>ROLE</th>
                       <th style={{ minWidth: '150px' }}>PHONE NUMBER</th>
+                      <th style={{ minWidth: '150px' }}>AVATAR URL</th>
                       <th style={{ minWidth: '100px' }}>GENDER</th>
+                      <th style={{ minWidth: '120px' }}>ROLE</th>
                       <th style={{ minWidth: '150px' }}>CERTIFICATION</th>
                       <th style={{ minWidth: '150px' }}>SPECIALIZATION</th>
-                      <th style={{ minWidth: '100px' }}>EXPERIENCE</th>
+                      <th style={{ minWidth: '120px' }}>EXPERIENCE (YEARS)</th>
+                      <th style={{ minWidth: '150px' }}>BIO</th>
                       <th style={{ minWidth: '120px' }}>DATE OF BIRTH</th>
+                      <th style={{ minWidth: '120px' }}>ENROLLMENT DATE</th>
                       <th style={{ minWidth: '120px' }}>TRAINING BATCH</th>
                       <th style={{ minWidth: '120px' }}>PASSPORT NO</th>
                       <th style={{ minWidth: '100px' }}>NATION</th>
@@ -1037,9 +1199,10 @@ const BulkImportModal = ({ show, onClose, onImport, loading = false }) => {
                         <td>{user.first_name || user.full_name || '-'}</td>
                         <td>{user.middle_name || '-'}</td>
                         <td>{user.last_name || '-'}</td>
+                        <td>{user.address || '-'}</td>
                         <td>{user.email || '-'}</td>
-                        <td>{user.role || '-'}</td>
                         <td>{user.phone_number || '-'}</td>
+                        <td>{user.avatar_url || '-'}</td>
                         <td>
                           {user.gender ? (
                             <span title={`Original: ${user.gender}`}>
@@ -1047,10 +1210,13 @@ const BulkImportModal = ({ show, onClose, onImport, loading = false }) => {
                             </span>
                           ) : '-'}
                         </td>
+                        <td>{user.role || '-'}</td>
                         <td>{user.certification_number || '-'}</td>
                         <td>{user.specialization || '-'}</td>
                         <td>{user.years_of_experience || '-'}</td>
-                        <td>{user.date_of_birth || '-'}</td>
+                        <td>{user.bio || '-'}</td>
+                        <td>{user.date_of_birth ? new Date(user.date_of_birth).toLocaleDateString('en-US', { year: 'numeric', month: '2-digit', day: '2-digit' }) : '-'}</td>
+                        <td>{user.enrollment_date ? new Date(user.enrollment_date).toLocaleDateString('en-US', { year: 'numeric', month: '2-digit', day: '2-digit' }) : '-'}</td>
                         <td>{user.training_batch || '-'}</td>
                         <td>{user.passport_no || '-'}</td>
                         <td>{user.nation || '-'}</td>
