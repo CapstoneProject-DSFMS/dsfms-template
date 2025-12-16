@@ -367,12 +367,12 @@ const BulkImportModal = ({ show, onClose, onImport, loading = false }) => {
     const templateData = [
       allColumns, // Header row
       [
-        'Trần', // first_name
+        'Hòa', // first_name
         'Thị', // middle_name
-        'Hoa', // last_name
+        'Trần', // last_name
         '456 Lê Văn Sỹ, Quận 3, TP.HCM', // address
-        'tran.thi.hoa.trainer@example.com', // email
-        '+84 912 345 678', // phone_number
+        'tranthihoa.trainer@example.com', // email
+        '0912345679', // phone_number
         '', // avatar_url (optional)
         'FEMALE', // gender (M/F or MALE/FEMALE)
         'TRAINER', // role (must match system role name)
@@ -380,10 +380,30 @@ const BulkImportModal = ({ show, onClose, onImport, loading = false }) => {
         'Cabin Safety', // specialization
         '7', // years_of_experience
         'Huấn luyện viên Cabin Safety với 7 năm kinh nghiệm quốc tế', // bio
-        '1988-06-21', // date_of_birth
+        '', // date_of_birth
         '', // enrollment_date (trainee only)
         '', // training_batch (trainee only)
-        'B987654321', // passport_no
+        '', // passport_no
+        '' // nation
+      ],
+      [
+        'Hồng', // first_name
+        'Thị', // middle_name
+        'Trần', // last_name
+        '456 Lê Văn Sỹ, Quận 3, TP.HCM', // address
+        'tranthihong.trainee@example.com', // email
+        '0912345680', // phone_number
+        '', // avatar_url (optional)
+        'FEMALE', // gender (M/F or MALE/FEMALE)
+        'TRAINEE', // role (must match system role name)
+        '', // certification_number (trainer only)
+        '', // specialization (trainer only)
+        '', // years_of_experience (trainer only)
+        '', // bio
+        '', // date_of_birth
+        '', // enrollment_date (trainee only)
+        '', // training_batch (trainee only)
+        'B987654322', // passport_no
         'Vietnam' // nation
       ]
     ];

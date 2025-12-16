@@ -65,12 +65,6 @@ const UserRow = ({ user, index, onView, onEdit, onDisable }) => {
         </Badge>
       </td>
       
-      <td className="align-middle hide-mobile">
-        <span className="text-dark">
-          {user.department}
-        </span>
-      </td>
-      
       <td className="align-middle show-mobile">
         <Badge 
           bg={getStatusVariant(user.status)}

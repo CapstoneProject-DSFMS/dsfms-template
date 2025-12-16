@@ -175,36 +175,70 @@ const AssessmentReviewRequestsPage = () => {
       const eventsData = response?.data?.events || response?.events || [];
       
       // Map API response to component format and generate eventId
-      const mappedEvents = eventsData
-        .filter(event => event.status !== 'NOT_STARTED') // Filter out NOT_STARTED events
-        .map(event => {
-          // Generate eventId from templateId + occuranceDate (same format as before for compatibility)
-          const eventKey = `${event.templateInfo?.id || ''}|${event.occuranceDate || ''}`;
-          const eventId = encodeURIComponent(eventKey);
-          
-          // Calculate submittedCount: totalAssessments - totalReviewedForm - totalCancelledForm
-          const submittedCount = event.totalAssessments - event.totalReviewedForm - event.totalCancelledForm;
-          
-          return {
-            eventId,
-            eventKey,
-            eventName: event.name,
-            templateName: event.templateInfo?.name || 'Unknown Template',
-            templateId: event.templateInfo?.id,
-            occurrenceDate: event.occuranceDate || event.occurrenceDate,
-            status: event.status,
-            totalAssessments: event.totalAssessments,
-            totalTrainees: event.totalTrainees,
-            totalTrainers: event.totalTrainers,
-            submittedCount: submittedCount > 0 ? submittedCount : 0,
-            reviewedCount: event.totalReviewedForm || 0,
-            cancelledCount: event.totalCancelledForm || 0,
-            entityInfo: event.entityInfo,
-            templateInfo: event.templateInfo,
-            courseId: event.courseId,
-            subjectId: event.subjectId
-          };
-        });
+      const mappedEvents = await Promise.all(
+        eventsData
+          .filter(event => event.status !== 'NOT_STARTED') // Filter out NOT_STARTED events
+          .map(async (event) => {
+            // Generate eventId from templateId + occuranceDate (same format as before for compatibility)
+            const eventKey = `${event.templateInfo?.id || ''}|${event.occuranceDate || ''}`;
+            const eventId = encodeURIComponent(eventKey);
+            
+            // Fetch assessments to count actual status
+            let submittedCount = 0;
+            let reviewedCount = 0;
+            let cancelledCount = 0;
+            
+            try {
+              let assessmentsResponse;
+              
+              // Determine which API to call based on courseId or subjectId
+              if (event.courseId) {
+                const occuranceDate = new Date(event.occuranceDate).toISOString().split('T')[0];
+                assessmentsResponse = await assessmentAPI.getCourseEventAssessments(
+                  event.courseId,
+                  event.templateInfo?.id,
+                  occuranceDate
+                );
+              } else if (event.subjectId) {
+                const occuranceDate = new Date(event.occuranceDate).toISOString().split('T')[0];
+                assessmentsResponse = await assessmentAPI.getSubjectEventAssessments(
+                  event.subjectId,
+                  event.templateInfo?.id,
+                  occuranceDate
+                );
+              }
+              
+              // Count assessments by status
+              const assessments = assessmentsResponse?.assessments || [];
+              submittedCount = assessments.filter(a => a.status === 'SUBMITTED').length;
+              reviewedCount = assessments.filter(a => a.status === 'REVIEWED').length;
+              cancelledCount = assessments.filter(a => a.status === 'CANCELLED').length;
+            } catch (error) {
+              console.error('Error fetching assessments for event:', event.name, error);
+              throw error;
+            }
+            
+            return {
+              eventId,
+              eventKey,
+              eventName: event.name,
+              templateName: event.templateInfo?.name || 'Unknown Template',
+              templateId: event.templateInfo?.id,
+              occurrenceDate: event.occuranceDate || event.occurrenceDate,
+              status: event.status,
+              totalAssessments: event.totalAssessments,
+              totalTrainees: event.totalTrainees,
+              totalTrainers: event.totalTrainers,
+              submittedCount: submittedCount,
+              reviewedCount: reviewedCount,
+              cancelledCount: cancelledCount,
+              entityInfo: event.entityInfo,
+              templateInfo: event.templateInfo,
+              courseId: event.courseId,
+              subjectId: event.subjectId
+            };
+          })
+      );
       
       setEvents(mappedEvents);
     } catch (error) {
@@ -279,12 +313,7 @@ const AssessmentReviewRequestsPage = () => {
   };
 
 
-  // Auto-switch to Completed if no processing events have submitted
-  useEffect(() => {
-    if (mainTab === 'processing' && processingEvents.length === 0 && completedEvents.length > 0) {
-      setMainTab('completed');
-    }
-  }, [processingEvents.length, completedEvents.length, mainTab]);
+  // No auto-switch logic - let user control tab switching
 
   const SortableHeader = ({ columnKey, children, className = "", nestedKey = null }) => {
     const sortKey = nestedKey ? `${columnKey}.${nestedKey}` : columnKey;

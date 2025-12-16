@@ -207,7 +207,7 @@ const CourseRow = ({ course, index, onView }) => {
 // Main Component
 const MyDepartmentDetailsPage = () => {
   const navigate = useNavigate();
-  const { courseId } = useParams();
+  const { courseId, departmentId } = useParams();
   const { user } = useAuth();
   const [courses, setCourses] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -216,6 +216,9 @@ const MyDepartmentDetailsPage = () => {
   const [filterStatus, setFilterStatus] = useState('all');
   const [selectedCourse, setSelectedCourse] = useState(null);
   const [activeTab, setActiveTab] = useState('subjects');
+
+  // Check user role to determine which API to call
+  const isDepartmentHead = user?.role?.name === 'DEPARTMENT_HEAD' || user?.role?.name === 'DEPARTMENT HEAD';
 
   // Fetch courses from API
   useEffect(() => {
@@ -229,17 +232,21 @@ const MyDepartmentDetailsPage = () => {
         setLoading(true);
         setError(null);
 
-        // Step 1: Get all departments from public API (no permission required)
-        // getPublicDepartments() returns array directly, not { departments: [...] }
-        const departments = await departmentAPI.getPublicDepartments();
-        
-        // Handle both array format and object format
-        const departmentsList = Array.isArray(departments) 
-          ? departments 
-          : (departments.departments || []);
+        let userDepartment;
 
-        // Step 2: Find department where headUserId matches current user id
-        const userDepartment = departmentsList.find(dept => dept.headUserId === user.id);
+        // Step 1: Get department based on role
+        if (isDepartmentHead) {
+          // Department Head: call /departments/me
+          userDepartment = await departmentAPI.getMyDepartment();
+        } else {
+          // Academic Department: call /departments/{departmentId}
+          if (!departmentId) {
+            setError('Department ID is required');
+            setLoading(false);
+            return;
+          }
+          userDepartment = await departmentAPI.getDepartmentById(departmentId);
+        }
 
         if (!userDepartment) {
           setCourses([]);
@@ -247,12 +254,10 @@ const MyDepartmentDetailsPage = () => {
           return;
         }
 
-        // Step 3: Get department detail to get courses
-        // Note: getDepartmentById might still require permission, but Department Head should have VIEW_DEPARTMENT_IN_DETAIL
-        const departmentDetail = await departmentAPI.getDepartmentById(userDepartment.id);
-        const coursesList = departmentDetail.courses || [];
+        // Step 2: Get courses from the department
+        const coursesList = userDepartment.courses || [];
 
-        // Step 4: Filter out archived courses and map to match expected format
+        // Step 3: Filter out archived courses and map to match expected format
         const activeCourses = coursesList.filter(course => course.status !== 'ARCHIVED');
         const mappedCourses = activeCourses.map(course => ({
           id: course.id,
@@ -279,7 +284,7 @@ const MyDepartmentDetailsPage = () => {
     };
 
     fetchCourses();
-  }, [user]);
+  }, [user, isDepartmentHead, departmentId]);
 
   const filteredCourses = courses.filter(course => {
     const matchesSearch = course.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -294,7 +299,8 @@ const MyDepartmentDetailsPage = () => {
 
   const handleViewCourse = (course) => {
     setSelectedCourse(course);
-    navigate(`${ROUTES.DEPARTMENT_MY_DETAILS}/${course.id}`);
+    // Navigate to the course details page 
+    navigate(`/academic/course/${course.id}`);
   };
 
   const tabs = [

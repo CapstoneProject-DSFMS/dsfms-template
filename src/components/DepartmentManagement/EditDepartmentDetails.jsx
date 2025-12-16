@@ -28,21 +28,26 @@ const EditDepartmentDetails = ({ department, onUpdate }) => {
   });
   const [loading, setLoading] = useState(false);
   const [availableUsers, setAvailableUsers] = useState([]);
+  const [loadingHeads, setLoadingHeads] = useState(false);
+
+  const loadDepartmentHeads = async () => {
+    try {
+      setLoadingHeads(true);
+      // Call API to get all department heads
+      const response = await departmentAPI.getDepartmentHeads();
+      const heads = response?.users || response?.data?.users || [];
+      setAvailableUsers(heads);
+    } catch (error) {
+      console.error('Error loading department heads:', error);
+      toast.error('Failed to load department heads');
+      setAvailableUsers([]);
+    } finally {
+      setLoadingHeads(false);
+    }
+  };
 
   useEffect(() => {
-    const loadDepartmentHeads = async () => {
-      try {
-        // Call API to get all department heads
-        const response = await departmentAPI.getDepartmentHeads();
-        const heads = response?.users || response?.data?.users || [];
-        setAvailableUsers(heads);
-      } catch (error) {
-        console.error('Error loading department heads:', error);
-        toast.error('Failed to load department heads');
-        setAvailableUsers([]);
-      }
-    };
-
+    // Load department heads on component mount
     loadDepartmentHeads();
   }, []);
 
@@ -157,8 +162,18 @@ const EditDepartmentDetails = ({ department, onUpdate }) => {
                 name="headUserId"
                 value={formData.headUserId}
                 onChange={handleInputChange}
+                onFocus={loadDepartmentHeads}
               >
-                <option value="">Select Department Head</option>
+                {formData.headUserId && (department?.headUser || availableUsers.find(u => u.id === formData.headUserId)) ? (
+                  <option value={formData.headUserId}>
+                    {(() => {
+                      const currentHead = department?.headUser || availableUsers.find(u => u.id === formData.headUserId);
+                      return `${currentHead.lastName || ''}${currentHead.middleName ? ' ' + currentHead.middleName : ''} ${currentHead.firstName || ''}`.trim();
+                    })()}
+                  </option>
+                ) : (
+                  <option value="">Select Department Head</option>
+                )}
                 {Array.isArray(availableUsers) && availableUsers.map(user => (
                   <option key={user.id} value={user.id}>
                     [{user.eid}] - {user.lastName}{user.middleName ? ' ' + user.middleName : ''} {user.firstName}
