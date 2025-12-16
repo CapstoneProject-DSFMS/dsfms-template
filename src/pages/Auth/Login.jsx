@@ -423,11 +423,7 @@ function Login() {
                   {/* Demo credentials info */}
                   <div className="text-center">
                     <small className="text-white-50 d-block mb-2">
-                      Test Credentials:
-                    </small>
-                    <div className="text-white-50 small">
-                      <div>Admin: michael.brown@admin.com / Admin@123</div>
-                    </div>
+Enhance Your Examinations Through DSFMS                    </small>
                   </div>
                 </Form>
               </div>

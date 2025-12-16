@@ -30,7 +30,10 @@ import { usePermissions } from "../../hooks/usePermissions";
 import { useAuth } from "../../hooks/useAuth";
 import useDepartmentManagement from "../../hooks/useDepartmentManagement";
 import { ROUTES } from "../../constants/routes";
-import { getAccessibleNavItems, isAcademicDepartment } from "../../utils/sidebarUtils";
+import {
+  getAccessibleNavItems,
+  isAcademicDepartment,
+} from "../../utils/sidebarUtils";
 import { PERMISSION_IDS } from "../../constants/permissionIds";
 
 const Sidebar = ({ collapsed, onClose }) => {
@@ -38,55 +41,40 @@ const Sidebar = ({ collapsed, onClose }) => {
   const { user } = useAuth();
   const location = useLocation();
   const navigate = useNavigate();
-  
-  const isAcademicDept = useMemo(
-    () => isAcademicDepartment(user),
-    [user]
-  );
+
+  const isAcademicDept = useMemo(() => isAcademicDepartment(user), [user]);
 
   // Check if user has permission to view departments dropdown
   // Show dropdown if:
   // 1. Has VIEW_ALL_DEPARTMENTS but NOT UPDATE_DEPARTMENT (Academic Department)
   // 2. Has ONLY VIEW_DEPARTMENT_DETAILS (not VIEW_ALL_DEPARTMENTS) - My Department
-  const hasDepartmentDropdownPermission = useMemo(
-    () => {
-      const hasViewAll = hasPermission(PERMISSION_IDS.VIEW_ALL_DEPARTMENTS);
-      const hasUpdate = hasPermission(PERMISSION_IDS.UPDATE_DEPARTMENT);
-      const hasViewDetail = hasPermission(PERMISSION_IDS.VIEW_DEPARTMENT_DETAILS);
-      
-      // Case 1: Academic Department (VIEW_ALL without UPDATE)
-      if (hasViewAll && !hasUpdate) {
-        return { show: true, mode: 'all' };
-      }
-      
-      // Case 2: My Department (ONLY VIEW_DETAIL, no VIEW_ALL)
-      if (hasViewDetail && !hasViewAll) {
-        return { show: true, mode: 'my' };
-      }
-      
-      return { show: false, mode: null };
-    },
-    [hasPermission]
-  );
-  
+  const hasDepartmentDropdownPermission = useMemo(() => {
+    const hasViewAll = hasPermission(PERMISSION_IDS.VIEW_ALL_DEPARTMENTS);
+    const hasUpdate = hasPermission(PERMISSION_IDS.UPDATE_DEPARTMENT);
+    const hasViewDetail = hasPermission(PERMISSION_IDS.VIEW_DEPARTMENT_DETAILS);
+
+    // Case 1: Academic Department (VIEW_ALL without UPDATE)
+    if (hasViewAll && !hasUpdate) {
+      return { show: true, mode: "all" };
+    }
+
+    // Case 2: My Department (ONLY VIEW_DETAIL, no VIEW_ALL)
+    if (hasViewDetail && !hasViewAll) {
+      return { show: true, mode: "my" };
+    }
+
+    return { show: false, mode: null };
+  }, [hasPermission]);
+
   const { departments, loading: departmentsLoading } = useDepartmentManagement(
     hasDepartmentDropdownPermission.show,
     hasDepartmentDropdownPermission.mode
   );
-  const [isDepartmentDropdownOpen, setIsDepartmentDropdownOpen] = useState(false);
+  const [isDepartmentDropdownOpen, setIsDepartmentDropdownOpen] =
+    useState(false);
   const [openDropdownId, setOpenDropdownId] = useState(null);
   const [isScrollable, setIsScrollable] = useState(false);
   const dropdownRef = useRef(null);
-  
-  
-  // Debug log - Commented out to reduce console noise
-  // console.log('🔍 Sidebar - User role:', user?.role);
-  // console.log('🔍 Sidebar - User object:', user);
-  // console.log('🔍 Sidebar - User permissions:', userPermissions);
-  // console.log('🔍 Sidebar - Departments:', departments);
-  
-  // Filter active departments - Commented out as not used
-  // const activeDepartments = departments.filter(dept => dept.status === 'ACTIVE');
 
   // Check if dropdown is scrollable
   useEffect(() => {
@@ -101,7 +89,7 @@ const Sidebar = ({ collapsed, onClose }) => {
     () => getAccessibleNavItems(user, hasPermission),
     [user, hasPermission]
   );
-  
+
   const iconMap = useMemo(
     () => ({
       list: List,
@@ -131,7 +119,7 @@ const Sidebar = ({ collapsed, onClose }) => {
   //   userRole: user?.role,
   //   userPermissions: userPermissions?.map(p => p.name).filter(name => name.includes('dashboard') || name.includes('DASHBOARD'))
   // });
-  // 
+  //
   // // Debug TRAINEE permissions
   // console.log('🔍 Sidebar - TRAINEE permissions check:', {
   //   userRole: user?.role,
@@ -179,7 +167,10 @@ const Sidebar = ({ collapsed, onClose }) => {
       }}
     >
       {/* Logo/Brand */}
-      <div className="p-3 border-bottom border-secondary bg-gradient-primary-custom position-relative" style={{ zIndex: 1 }}>
+      <div
+        className="p-3 border-bottom border-secondary bg-gradient-primary-custom position-relative"
+        style={{ zIndex: 1 }}
+      >
         <div className="d-flex align-items-center justify-content-center">
           {!collapsed && (
             <>
@@ -196,7 +187,7 @@ const Sidebar = ({ collapsed, onClose }) => {
             </div>
           )}
         </div>
-        
+
         {/* Mobile/Tablet close button */}
         {onClose && (
           <Button
@@ -216,17 +207,17 @@ const Sidebar = ({ collapsed, onClose }) => {
                 onClose();
               }
             }}
-            style={{ 
-              border: 'none', 
-              background: 'transparent', 
+            style={{
+              border: "none",
+              background: "transparent",
               zIndex: 1052,
-              minWidth: '40px',
-              minHeight: '40px',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              cursor: 'pointer',
-              pointerEvents: 'auto'
+              minWidth: "40px",
+              minHeight: "40px",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              cursor: "pointer",
+              pointerEvents: "auto",
             }}
             aria-label="Close sidebar"
           >
@@ -239,11 +230,10 @@ const Sidebar = ({ collapsed, onClose }) => {
       <Nav className="flex-column flex-grow-1 p-3 bg-gradient-primary-custom">
         {navItems.map((item) => {
           const IconComponent = iconMap[item.icon] || List;
-          const childIsActive = item.children?.some((child) =>
-            location.pathname === child.path
+          const childIsActive = item.children?.some(
+            (child) => location.pathname === child.path
           );
-          const isActive =
-            location.pathname === item.path || childIsActive;
+          const isActive = location.pathname === item.path || childIsActive;
           const isDropdown = item.children && item.children.length > 0;
           const isOpen = openDropdownId === item.id;
 
@@ -287,7 +277,10 @@ const Sidebar = ({ collapsed, onClose }) => {
                       <>
                         <span
                           className="sidebar-nav-label flex-grow-1"
-                          style={{ overflowWrap: "break-word", lineHeight: "1.2" }}
+                          style={{
+                            overflowWrap: "break-word",
+                            lineHeight: "1.2",
+                          }}
                         >
                           {item.label}
                         </span>
@@ -323,7 +316,9 @@ const Sidebar = ({ collapsed, onClose }) => {
                             onClose && onClose();
                           }}
                         >
-                          <span className="sidebar-nav-label">{child.label}</span>
+                          <span className="sidebar-nav-label">
+                            {child.label}
+                          </span>
                         </Link>
                       ))}
                     </div>
@@ -380,12 +375,19 @@ const Sidebar = ({ collapsed, onClose }) => {
           <Nav.Item className="mb-3">
             <Link
               to={ROUTES.ASSESSMENT_EVENTS}
-              className={`sidebar-nav-link text-white d-flex align-items-center py-3 pe-1 rounded nav-link ${collapsed ? "justify-content-center" : ""} ${location.pathname === ROUTES.ASSESSMENT_EVENTS ? "active" : ""}`}
+              className={`sidebar-nav-link text-white d-flex align-items-center py-3 pe-1 rounded nav-link ${
+                collapsed ? "justify-content-center" : ""
+              } ${
+                location.pathname === ROUTES.ASSESSMENT_EVENTS ? "active" : ""
+              }`}
               style={{
                 minHeight: collapsed ? "48px" : "auto",
-                backgroundColor: location.pathname === ROUTES.ASSESSMENT_EVENTS ? "rgba(255, 255, 255, 0.1)" : "transparent",
-                whiteSpace: collapsed ? 'nowrap' : 'normal',
-                overflowWrap: collapsed ? 'normal' : 'break-word'
+                backgroundColor:
+                  location.pathname === ROUTES.ASSESSMENT_EVENTS
+                    ? "rgba(255, 255, 255, 0.1)"
+                    : "transparent",
+                whiteSpace: collapsed ? "nowrap" : "normal",
+                overflowWrap: collapsed ? "normal" : "break-word",
               }}
               onClick={() => {
                 onClose && onClose();
@@ -400,7 +402,14 @@ const Sidebar = ({ collapsed, onClose }) => {
                   transition: "transform 0.3s cubic-bezier(.68,-0.55,.27,1.55)",
                 }}
               />
-              {!collapsed && <span className="sidebar-nav-label" style={{ overflowWrap: 'break-word', lineHeight: '1.2' }}>Assessment Event</span>}
+              {!collapsed && (
+                <span
+                  className="sidebar-nav-label"
+                  style={{ overflowWrap: "break-word", lineHeight: "1.2" }}
+                >
+                  Assessment Event
+                </span>
+              )}
             </Link>
           </Nav.Item>
         )}
@@ -411,10 +420,20 @@ const Sidebar = ({ collapsed, onClose }) => {
             <div className="position-relative">
               {/* Department dropdown trigger */}
               <div
-                className={`sidebar-nav-link text-white d-flex align-items-center py-3 pe-1 rounded nav-link ${collapsed ? "justify-content-center" : ""} ${location.pathname.startsWith('/academic/departments') ? "active" : ""}`}
+                className={`sidebar-nav-link text-white d-flex align-items-center py-3 pe-1 rounded nav-link ${
+                  collapsed ? "justify-content-center" : ""
+                } ${
+                  location.pathname.startsWith("/academic/departments")
+                    ? "active"
+                    : ""
+                }`}
                 style={{
                   minHeight: collapsed ? "48px" : "auto",
-                  backgroundColor: location.pathname.startsWith('/academic/departments') ? "rgba(255, 255, 255, 0.1)" : "transparent",
+                  backgroundColor: location.pathname.startsWith(
+                    "/academic/departments"
+                  )
+                    ? "rgba(255, 255, 255, 0.1)"
+                    : "transparent",
                 }}
               >
                 <Building
@@ -423,88 +442,117 @@ const Sidebar = ({ collapsed, onClose }) => {
                   style={{
                     display: "inline-block",
                     flexShrink: 0,
-                    transition: "transform 0.3s cubic-bezier(.68,-0.55,.27,1.55)",
+                    transition:
+                      "transform 0.3s cubic-bezier(.68,-0.55,.27,1.55)",
                   }}
                 />
                 {!collapsed && (
                   <>
-                    <span 
+                    <span
                       className="sidebar-nav-label flex-grow-1"
-                      style={{ cursor: "pointer", overflowWrap: 'break-word', lineHeight: '1.2' }}
+                      style={{
+                        cursor: "pointer",
+                        overflowWrap: "break-word",
+                        lineHeight: "1.2",
+                      }}
                       onClick={() => {
-                        setIsDepartmentDropdownOpen(!isDepartmentDropdownOpen);
-                        // Navigate based on mode
-                        if (hasDepartmentDropdownPermission.mode === 'my' && departments.length === 1) {
-                          // If only one department, navigate directly to it
+                        if (departments.length === 1) {
+                          // Navigate directly to the single department
                           navigate(`/academic/course/${departments[0].id}`);
                         } else {
+                          setIsDepartmentDropdownOpen(
+                            !isDepartmentDropdownOpen
+                          );
                           // Navigate to department list page
-                          navigate('/academic/departments');
+                          navigate("/academic/departments");
                         }
                       }}
                     >
-                      Departments
+                      {departments.length === 1
+                        ? "My Department"
+                        : "Departments"}
                     </span>
-                    <ChevronDown
-                      size={16}
-                      className="ms-auto"
-                      style={{
-                        transition: "transform 0.3s ease",
-                        cursor: "pointer",
-                        transform: isDepartmentDropdownOpen ? "rotate(180deg)" : "rotate(0deg)"
-                      }}
-                      onClick={() => {
-                        setIsDepartmentDropdownOpen(!isDepartmentDropdownOpen);
-                      }}
-                    />
+                    {departments.length > 1 && (
+                      <ChevronDown
+                        size={16}
+                        className="ms-auto"
+                        style={{
+                          transition: "transform 0.3s ease",
+                          cursor: "pointer",
+                          transform: isDepartmentDropdownOpen
+                            ? "rotate(180deg)"
+                            : "rotate(0deg)",
+                        }}
+                        onClick={() => {
+                          setIsDepartmentDropdownOpen(
+                            !isDepartmentDropdownOpen
+                          );
+                        }}
+                      />
+                    )}
                   </>
                 )}
               </div>
 
-              {/* Department dropdown menu */}
-              {!collapsed && isDepartmentDropdownOpen && (
-                <div 
-                  ref={dropdownRef}
-                  className={`position-absolute start-0 end-0 mt-1 sidebar-department-dropdown ${isScrollable ? 'scrollable' : ''}`}
-                  style={{
-                    zIndex: 1000,
-                    maxHeight: "300px",
-                    overflowY: "auto"
-                  }}
-                >
-                  {/* Individual departments */}
-                  {departmentsLoading ? (
-                    <div className="px-3 py-2 text-white-50 sidebar-department-loading">
-                      <small>Loading departments...</small>
-                    </div>
-                  ) : departments.length > 0 ? (
-                    departments.map((dept) => (
-                      <Link
-                        key={dept.id}
-                        to={`/academic/course/${dept.id}`}
-                        className={`d-block px-3 py-2 text-white text-decoration-none d-flex align-items-center sidebar-department-item ${location.pathname === `/academic/course/${dept.id}` ? 'active' : ''}`}
-                        style={{
-                          fontSize: "0.875rem",
-                          backgroundColor: location.pathname === `/academic/course/${dept.id}` ? "rgba(255, 255, 255, 0.15)" : "transparent",
-                          overflowWrap: 'break-word',
-                          whiteSpace: 'normal'
-                        }}
-                        onClick={() => {
-                          // Không đóng dropdown, chỉ đóng sidebar trên mobile
-                          onClose && onClose();
-                        }}
-                      >
-                        <ChevronRight size={12} className="me-2 sidebar-department-chevron" />
-                        {dept.code}
-                      </Link>
-                    ))
-                  ) : (
-                    <div className="px-3 py-2 text-white-50">
-                      <small>No departments found</small>
-                    </div>
-                  )}
-                </div>
-              )}
+              {/* Department dropdown menu - only show if more than 1 department */}
+              {!collapsed &&
+                isDepartmentDropdownOpen &&
+                departments.length > 1 && (
+                  <div
+                    ref={dropdownRef}
+                    className={`position-absolute start-0 end-0 mt-1 sidebar-department-dropdown ${
+                      isScrollable ? "scrollable" : ""
+                    }`}
+                    style={{
+                      zIndex: 1000,
+                      maxHeight: "300px",
+                      overflowY: "auto",
+                    }}
+                  >
+                    {/* Individual departments */}
+                    {departmentsLoading ? (
+                      <div className="px-3 py-2 text-white-50 sidebar-department-loading">
+                        <small>Loading departments...</small>
+                      </div>
+                    ) : departments.length > 0 ? (
+                      departments.map((dept) => (
+                        <Link
+                          key={dept.id}
+                          to={`/academic/course/${dept.id}`}
+                          className={`d-block px-3 py-2 text-white text-decoration-none d-flex align-items-center sidebar-department-item ${
+                            location.pathname === `/academic/course/${dept.id}`
+                              ? "active"
+                              : ""
+                          }`}
+                          style={{
+                            fontSize: "0.875rem",
+                            backgroundColor:
+                              location.pathname ===
+                              `/academic/course/${dept.id}`
+                                ? "rgba(255, 255, 255, 0.15)"
+                                : "transparent",
+                            overflowWrap: "break-word",
+                            whiteSpace: "normal",
+                          }}
+                          onClick={() => {
+                            // Không đóng dropdown, chỉ đóng sidebar trên mobile
+                            onClose && onClose();
+                          }}
+                        >
+                          <ChevronRight
+                            size={12}
+                            className="me-2 sidebar-department-chevron"
+                          />
+                          {dept.code}
+                        </Link>
+                      ))
+                    ) : (
+                      <div className="px-3 py-2 text-white-50">
+                        <small>No departments found</small>
+                      </div>
+                    )}
+                  </div>
+                )}
             </div>
           </Nav.Item>
         )}

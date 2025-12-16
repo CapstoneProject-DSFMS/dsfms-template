@@ -87,13 +87,6 @@ const LoginForm = () => {
                   </button>
                 </div>
               </form>
-              
-              {/* Test credentials */}
-              <div className="mt-3">
-                <small className="text-muted">
-                  Test credentials: michael.brown@admin.com / Admin@123
-                </small>
-              </div>
             </div>
           </div>
         </div>
