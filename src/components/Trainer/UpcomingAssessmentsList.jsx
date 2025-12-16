@@ -296,7 +296,7 @@ const UpcomingAssessmentsList = () => {
     <div>
 
       {/* Search and Filters */}
-      <Row className="mb-3 mt-4 form-mobile-stack search-filter-section">
+      <Row className="mb-3 form-mobile-stack search-filter-section">
         <Col xs={12} lg={5} md={4} className="mb-2 mb-lg-0 ps-2 ps-lg-3">
           <SearchBar
             placeholder="Search assessments, courses, or trainees..."
