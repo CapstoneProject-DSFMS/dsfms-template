@@ -5,7 +5,6 @@ import { ToastContainer } from 'react-toastify'
 import { useEffect } from 'react'
 import './styles/dropdown-unified.css' // Unified dropdown styles to prevent conflicts
 import './styles/sidebar-dropdown.css' // Beautiful sidebar dropdown styles
-// import './styles/trainee.css' // Removed to prevent color overrides
 
 function App() {
   useEffect(() => {

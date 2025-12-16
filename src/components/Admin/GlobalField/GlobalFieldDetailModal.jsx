@@ -67,17 +67,6 @@ const GlobalFieldDetailModal = ({ show, onHide, field }) => {
           <FileText className="me-2" size={20} />
           <span>Global Field Detail</span>
         </Modal.Title>
-        <button 
-          onClick={onHide} 
-          className="btn btn-link text-white p-0"
-          style={{ 
-            border: 'none', 
-            background: 'none', 
-            opacity: 0.9
-          }}
-        >
-          <X size={24} />
-        </button>
       </Modal.Header>
       
       <Modal.Body style={{ padding: '1.5rem', maxHeight: '60vh', overflowY: 'auto' }}>
@@ -133,11 +122,45 @@ const GlobalFieldDetailModal = ({ show, onHide, field }) => {
 
           {field.options && (
             <ListGroup.Item className="px-0 py-3 border-bottom">
-              <div className="d-flex align-items-center mb-2">
-                <FileText className="text-primary-custom me-3" size={20} />
+              <div className="d-flex align-items-start mb-2">
+                <FileText className="text-primary-custom me-3 mt-1" size={20} />
                 <div className="flex-grow-1">
-                  <strong className="text-muted small d-block mb-1">Options</strong>
-                  <span className="text-dark">{JSON.stringify(field.options)}</span>
+                  <strong className="text-muted small d-block mb-2">Options</strong>
+                  {field.options?.items && Array.isArray(field.options.items) && field.options.items.length > 0 ? (
+                    <div className="border rounded p-2" style={{ backgroundColor: '#f8f9fa' }}>
+                      {field.options.items.map((item, idx) => {
+                        // Handle both object format {label, value} and string format
+                        const isObject = typeof item === 'object' && item !== null;
+                        const label = isObject ? (item.label || 'N/A') : (item || 'N/A');
+                        const value = isObject ? (item.value || 'N/A') : (item || 'N/A');
+                        
+                        return (
+                          <div key={idx} className="mb-2 pb-2" style={{ paddingLeft: '0.5rem', borderBottom: idx !== field.options.items.length - 1 ? '1px solid #dee2e6' : 'none' }}>
+                            <div className="d-flex align-items-start justify-content-between gap-2">
+                              <div className="flex-grow-1">
+                                {isObject && (
+                                  <div className="mb-1">
+                                    <small className="text-muted d-block">Label</small>
+                                  </div>
+                                )}
+                                <span className="text-dark fw-medium">{label}</span>
+                              </div>
+                              {isObject && (
+                                <div>
+                                  <small className="text-muted d-block">Value</small>
+                                  <code className="text-dark" style={{ fontSize: '0.9rem', backgroundColor: '#e9ecef', padding: '0.35rem 0.5rem', borderRadius: '0.25rem', display: 'inline-block' }}>
+                                    {value}
+                                  </code>
+                                </div>
+                              )}
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  ) : (
+                    <span className="text-muted">No options available</span>
+                  )}
                 </div>
               </div>
             </ListGroup.Item>

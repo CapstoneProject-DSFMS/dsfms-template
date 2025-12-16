@@ -14,17 +14,6 @@ const normalizeResponse = (responseData) => {
 
 // Role API endpoints
 export const roleAPI = {
-  // Get all roles from public API (no authentication required)
-  getPublicRoles: async () => {
-    try {
-      const response = await publicApiClient.get('/public/roles');
-      // Handle response format: { data: [...], totalItems: ... }
-      return response.data?.data || response.data || [];
-    } catch (error) {
-      console.error('Error fetching public roles:', error);
-      throw error;
-    }
-  },
   // Get all roles
   getRoles: async (params = {}) => {
     try {

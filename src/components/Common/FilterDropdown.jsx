@@ -31,7 +31,7 @@ const FilterDropdown = ({
           onClick={() => onSelect('')}
           className={!selectedValue ? 'text-primary-custom bg-light' : ''}
         >
-          All {title}s
+          All {title}
         </Dropdown.Item>
         <Dropdown.Divider />
         {options.map((option) => (
