@@ -143,7 +143,7 @@ const TraineeDetailsModal = ({
                           className="px-2 py-1" 
                           style={{ fontSize: '0.75rem' }}
                         >
-                          {subject.status}
+                          {subject.status?.replace(/_/g, ' ')}
                         </Badge>
                       </td>
                       <td className="border-0 text-center">

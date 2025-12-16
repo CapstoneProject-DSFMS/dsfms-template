@@ -118,6 +118,7 @@ const CourseRow = ({ course, index, onView }) => {
     const statusConfig = {
       PLANNED: { variant: 'info', icon: Clock },
       ONGOING: { variant: 'primary', icon: CheckCircle },
+      ON_GOING: { variant: 'primary', icon: CheckCircle },
       COMPLETED: { variant: 'success', icon: CheckCircle },
       CANCELLED: { variant: 'secondary', icon: Clock },
       active: { variant: 'success', icon: CheckCircle },
@@ -131,7 +132,7 @@ const CourseRow = ({ course, index, onView }) => {
     return (
       <Badge bg={config.variant} className="d-flex align-items-center">
         <IconComponent size={12} className="me-1" />
-        {status.toUpperCase()}
+        {status?.replace(/_/g, ' ').toUpperCase()}
       </Badge>
     );
   };

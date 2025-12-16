@@ -591,7 +591,7 @@ const EnrolledTraineesTable = ({ courseId, subjectId, loading = false, refreshTr
                                         {subject.code}
                                       </Badge>
                                       <Badge bg={subject.status === 'ON_GOING' ? 'success' : 'primary-custom'} className={subject.status === 'ON_GOING' ? '' : 'text-white'}>
-                                        {subject.status}
+                                        {subject.status?.replace(/_/g, ' ')}
                                       </Badge>
                                     </div>
                                   </div>
@@ -657,7 +657,7 @@ const EnrolledTraineesTable = ({ courseId, subjectId, loading = false, refreshTr
                                     <div className="space-y-2">
                                       <div className="d-flex justify-content-between align-items-center">
                                         <span className="text-primary-custom small fw-semibold">Status:</span>
-                                        <Badge bg="primary-custom" className="text-white">{enrollment.status}</Badge>
+                                        <Badge bg="primary-custom" className="text-white">{enrollment.status?.replace(/_/g, ' ')}</Badge>
                                       </div>
                                       {enrollment.batchCode && (
                                         <div className="d-flex justify-content-between align-items-center">

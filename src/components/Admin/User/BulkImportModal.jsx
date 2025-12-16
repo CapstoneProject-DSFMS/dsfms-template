@@ -62,14 +62,8 @@ const BulkImportModal = ({ show, onClose, onImport, loading = false }) => {
       // Extract roles array from response
       const rolesArray = rolesData?.roles || rolesData || [];
       
-      console.log('📦 Roles fetched from API:', {
-        rolesCount: rolesArray.length,
-        roles: rolesArray.map(r => ({ id: r.id, name: r.name }))
-      });
-      
       setRoles(rolesArray);
     } catch (error) {
-      console.error('Failed to fetch roles:', error);
       setErrors(['Failed to load roles. Please refresh the page.']);
       setRoles([]);
     } finally {
@@ -93,6 +87,39 @@ const BulkImportModal = ({ show, onClose, onImport, loading = false }) => {
   };
 
   // Format date to ISO string
+  const formatValidationErrors = (error) => {
+    // Try to extract validation errors from API response
+    const errorData = error?.response?.data;
+    
+    if (!errorData) {
+      return [error.message || 'Failed to import users. Please try again.'];
+    }
+    
+    // If there are detailed validation errors
+    if (errorData.errors && Array.isArray(errorData.errors)) {
+      const formattedErrors = errorData.errors.map(err => {
+        // Extract user index and field name from path like "users.3.traineeProfile.enrollmentDate"
+        const pathMatch = err.path?.match(/users\.(\d+)\..*?\.(\w+)$/);
+        let userIndex = 'Unknown';
+        let fieldName = '';
+        
+        if (pathMatch) {
+          userIndex = parseInt(pathMatch[1]) + 1; // Convert to 1-based index
+          fieldName = pathMatch[2];
+          // Convert camelCase to Title Case
+          fieldName = fieldName.replace(/([A-Z])/g, ' $1').toUpperCase().trim();
+        }
+        
+        return `Row ${userIndex} - ${fieldName || err.path}: ${err.message}`;
+      });
+      
+      return formattedErrors;
+    }
+    
+    // Fallback to general message
+    return [errorData.message || 'Failed to import users. Please try again.'];
+  };
+
   const formatDateToISO = (dateString) => {
     if (!dateString) return '';
     
@@ -117,19 +144,57 @@ const BulkImportModal = ({ show, onClose, onImport, loading = false }) => {
           // Format: MM/DD/YYYY or DD/MM/YYYY
           const parts = dateStr.split('/');
           if (parts.length === 3) {
-            // Assume MM/DD/YYYY format
-            date = new Date(parts[2], parts[0] - 1, parts[1]);
+            // Assume MM/DD/YYYY format - CONVERT TO NUMBERS!
+            let year = parseInt(parts[2], 10);
+            const month = parseInt(parts[0], 10);
+            const day = parseInt(parts[1], 10);
+            
+            // Convert 2-digit year to 4-digit year using windowing
+            // Standard convention: 00-25 = 2000-2025, 26-99 = 1926-1999
+            if (year < 100) {
+              const currentYear = new Date().getFullYear();
+              const currentCentury = Math.floor(currentYear / 100) * 100;
+              const currentYearInCentury = currentYear % 100;
+              
+              // If year <= current year in century, assume current century (20xx)
+              // Otherwise assume previous century (19xx)
+              if (year <= currentYearInCentury) {
+                year = currentCentury + year;  // 25 → 2025
+              } else {
+                year = (currentCentury - 100) + year;  // 98 → 1998
+              }
+            }
+            date = new Date(year, month - 1, day);
           }
         } else if (dateStr.includes('-')) {
           // Format: YYYY-MM-DD or DD-MM-YYYY
           const parts = dateStr.split('-');
           if (parts.length === 3) {
             if (parts[0].length === 4) {
-              // YYYY-MM-DD format
-              date = new Date(parts[0], parts[1] - 1, parts[2]);
+              // YYYY-MM-DD format - CONVERT TO NUMBERS!
+              const year = parseInt(parts[0], 10);
+              const month = parseInt(parts[1], 10);
+              const day = parseInt(parts[2], 10);
+              date = new Date(year, month - 1, day);
             } else {
-              // DD-MM-YYYY format
-              date = new Date(parts[2], parts[1] - 1, parts[0]);
+              // DD-MM-YYYY format - CONVERT TO NUMBERS!
+              let year = parseInt(parts[2], 10);
+              const month = parseInt(parts[1], 10);
+              const day = parseInt(parts[0], 10);
+              
+              // Convert 2-digit year to 4-digit year using windowing
+              if (year < 100) {
+                const currentYear = new Date().getFullYear();
+                const currentCentury = Math.floor(currentYear / 100) * 100;
+                const currentYearInCentury = currentYear % 100;
+                
+                if (year <= currentYearInCentury) {
+                  year = currentCentury + year;
+                } else {
+                  year = (currentCentury - 100) + year;
+                }
+              }
+              date = new Date(year, month - 1, day);
             }
           }
         } else {
@@ -152,7 +217,6 @@ const BulkImportModal = ({ show, onClose, onImport, loading = false }) => {
       // Return ISO datetime string (YYYY-MM-DDTHH:mm:ss.sssZ)
       return date.toISOString();
     } catch (error) {
-      console.error('Error formatting date:', error, 'Input:', dateString);
       return '';
     }
   };
@@ -203,59 +267,22 @@ const BulkImportModal = ({ show, onClose, onImport, loading = false }) => {
   // Smart role mapping function
   const findRoleId = (roleName) => {
     if (!roleName || !roles.length) {
-      console.warn('⚠️ findRoleId: No roleName or roles not loaded', { roleName, rolesCount: roles.length });
       return null;
     }
     
     const normalizedInput = normalizeRoleName(roleName);
     
-    console.log('🔍 Finding role:', { 
-      input: roleName, 
-      normalized: normalizedInput,
-      availableRoles: roles.map(r => ({ 
-        name: r.name, 
-        normalized: normalizeRoleName(r.name),
-        id: r.id
-      }))
-    });
-    
     // Direct match first - normalize both input and role names
     // This should match "DEPARTMENT_HEAD" with "DEPARTMENT HEAD" after normalization
     const directMatch = roles.find(role => {
       const normalizedRoleName = normalizeRoleName(role.name);
-      const isMatch = normalizedRoleName === normalizedInput;
-      if (isMatch) {
-        console.log('✅ Direct match:', {
-          input: roleName,
-          inputNormalized: normalizedInput,
-          dbRole: role.name,
-          dbRoleNormalized: normalizedRoleName,
-          match: isMatch
-        });
-      }
-      return isMatch;
+      return normalizedRoleName === normalizedInput;
     });
-    
     if (directMatch) {
-      console.log('✅ Direct match found:', directMatch.name, directMatch.id);
       return directMatch.id;
     }
     
     // If direct match fails, try partial match (for variations like ADMIN -> ADMINISTRATOR)
-    // But first, let's check if the issue is with normalization
-    console.log('⚠️ Direct match failed, checking normalization...');
-    roles.forEach(role => {
-      const normalizedRoleName = normalizeRoleName(role.name);
-      if (normalizedRoleName === normalizedInput) {
-        console.log('🔍 Found potential match:', {
-          input: roleName,
-          inputNormalized: normalizedInput,
-          dbRole: role.name,
-          dbRoleNormalized: normalizedRoleName,
-          match: normalizedRoleName === normalizedInput
-        });
-      }
-    });
     
     // Partial match for common variations (only for special cases like ADMIN -> ADMINISTRATOR)
     const partialMatches = {
@@ -274,7 +301,6 @@ const BulkImportModal = ({ show, onClose, onImport, loading = false }) => {
         return normalizedRoleName === mappedName;
       });
       if (mappedRole) {
-        console.log('✅ Partial match found:', mappedRole.name, mappedRole.id);
         return mappedRole.id;
       }
     }
@@ -282,32 +308,14 @@ const BulkImportModal = ({ show, onClose, onImport, loading = false }) => {
     // Fuzzy match - normalize both sides for comparison (fallback)
     const fuzzyMatch = roles.find(role => {
       const normalizedRoleName = normalizeRoleName(role.name);
-      const isFuzzyMatch = normalizedRoleName.includes(normalizedInput) ||
-                           normalizedInput.includes(normalizedRoleName);
-      if (isFuzzyMatch) {
-        console.log('🔍 Fuzzy match candidate:', {
-          input: roleName,
-          inputNormalized: normalizedInput,
-          dbRole: role.name,
-          dbRoleNormalized: normalizedRoleName
-        });
-      }
-      return isFuzzyMatch;
+      return normalizedRoleName.includes(normalizedInput) ||
+             normalizedInput.includes(normalizedRoleName);
     });
     
     if (fuzzyMatch) {
-      console.log('✅ Fuzzy match found:', fuzzyMatch.name, fuzzyMatch.id);
       return fuzzyMatch.id;
     }
     
-    console.warn('❌ No role match found for:', {
-      input: roleName,
-      normalized: normalizedInput,
-      availableRoles: roles.map(r => ({
-        name: r.name,
-        normalized: normalizeRoleName(r.name)
-      }))
-    });
     return null;
   };
 
@@ -473,10 +481,7 @@ const BulkImportModal = ({ show, onClose, onImport, loading = false }) => {
       return;
     }
 
-    console.log('📋 Processing file with roles loaded:', {
-      rolesCount: roles.length,
-      roles: roles.map(r => r.name)
-    });
+
 
     const reader = new FileReader();
     reader.onload = (e) => {
@@ -503,21 +508,8 @@ const BulkImportModal = ({ show, onClose, onImport, loading = false }) => {
           return row.some(cell => cell !== null && cell !== undefined && cell !== '' && String(cell).trim() !== '');
         });
 
-        console.log('📊 File parsing results:', {
-          totalRowsParsed: jsonData.length,
-          nonEmptyRowsFound: nonEmptyRows.length,
-          firstRow: jsonData[0],
-          sampleRows: jsonData.slice(0, 3)
-        });
-
         if (nonEmptyRows.length < 2) {
           setErrors(['File must contain at least a header row and one data row. Please check if your file has empty rows or formatting issues.']);
-          console.error('❌ File validation failed:', {
-            totalRows: jsonData.length,
-            nonEmptyRows: nonEmptyRows.length,
-            firstFewRows: jsonData.slice(0, 3),
-            allRows: jsonData
-          });
           return;
         }
 
@@ -530,11 +522,6 @@ const BulkImportModal = ({ show, onClose, onImport, loading = false }) => {
         // Check again after filtering data rows
         if (dataRows.length === 0) {
           setErrors(['File must contain at least one data row with content. Please check if your data rows are empty or have formatting issues.']);
-          console.error('No valid data rows found after filtering:', {
-            totalRows: jsonData.length,
-            nonEmptyRows: nonEmptyRows.length,
-            dataRowsAfterFilter: dataRows.length
-          });
           return;
         }
 
@@ -604,8 +591,6 @@ const BulkImportModal = ({ show, onClose, onImport, loading = false }) => {
         // Process data rows
         // IMPORTANT: Check if roles are loaded before processing
         if (roles.length === 0) {
-          console.warn('⚠️ Roles not loaded yet, validation may fail');
-          // Don't block file processing, but warn user
           setValidationErrors(['⚠️ Roles are still loading. Role validation may fail. Please wait and try again if you see role errors.']);
         }
 
@@ -626,6 +611,14 @@ const BulkImportModal = ({ show, onClose, onImport, loading = false }) => {
               if (row[colIndex] !== null && row[colIndex] !== undefined) {
                 if (typeof row[colIndex] === 'string') {
                   value = normalizeText(row[colIndex]);
+                } else if (row[colIndex] instanceof Date) {
+                  // Handle Date objects from Excel (when cellDates: true)
+                  // Convert to MM/DD/YYYY format for consistent parsing
+                  const dateObj = row[colIndex];
+                  const month = String(dateObj.getMonth() + 1).padStart(2, '0');
+                  const day = String(dateObj.getDate()).padStart(2, '0');
+                  const year = dateObj.getFullYear();
+                  value = `${month}/${day}/${year}`;
                 } else if (typeof row[colIndex] === 'number') {
                   value = row[colIndex].toString();
                 } else {
@@ -665,25 +658,11 @@ const BulkImportModal = ({ show, onClose, onImport, loading = false }) => {
                 const roleId = findRoleId(value);
                 if (!roleId) {
                   hasError = true;
-                  // Show normalized comparison for debugging
-                  const normalizedInput = normalizeRoleName(value);
-                  const availableNormalized = roles.map(r => ({
-                    original: r.name,
-                    normalized: normalizeRoleName(r.name)
-                  }));
-                  console.error('❌ Role validation failed:', {
-                    input: value,
-                    normalizedInput: normalizedInput,
-                    availableRoles: roles.map(r => r.name),
-                    availableNormalized: availableNormalized
-                  });
                   rowErrors.push(`Invalid role: "${value}". Available roles: ${roles.map(r => r.name).join(', ')}`);
                 } else {
-                  console.log('✅ Role validated successfully:', value, '→', roleId);
                 }
               } else {
                 // Roles not loaded yet, show warning but don't mark as error
-                console.warn('⚠️ Roles not loaded, cannot validate role:', value);
               }
             }
 
@@ -857,7 +836,8 @@ const BulkImportModal = ({ show, onClose, onImport, loading = false }) => {
       await onImport(usersToImport);
       handleClose();
     } catch (error) {
-      setErrors([error.message || 'Failed to import users. Please try again.']);
+      const formattedErrors = formatValidationErrors(error);
+      setErrors(formattedErrors);
     }
   };
 
@@ -973,20 +953,46 @@ const BulkImportModal = ({ show, onClose, onImport, loading = false }) => {
 
         {/* Error Messages */}
         {errors.length > 0 && (
-          <div className="alert alert-danger mb-3">
+          <div 
+            className="alert alert-danger mb-3"
+            style={{
+              borderRadius: '8px',
+              borderLeft: '4px solid #dc3545',
+              padding: '1rem',
+              backgroundColor: '#f8d7da'
+            }}
+          >
+            <h6 className="text-danger mb-3" style={{ fontWeight: 'bold' }}>
+              ⚠️ Import Failed - Please fix the following errors:
+            </h6>
             <ul className="mb-0">
               {errors.map((error, index) => (
-                <li key={index}>{error}</li>
+                <li key={index} style={{ marginBottom: '0.5rem', color: '#721c24' }}>
+                  <strong>{error}</strong>
+                </li>
               ))}
             </ul>
           </div>
         )}
 
         {validationErrors.length > 0 && (
-          <Alert variant="warning" className="mb-3">
+          <Alert 
+            variant="warning" 
+            className="mb-3"
+            style={{
+              borderRadius: '8px',
+              borderLeft: '4px solid #856404',
+              padding: '1rem'
+            }}
+          >
+            <h6 className="text-warning mb-3" style={{ fontWeight: 'bold' }}>
+              ⚠️ Validation Issues - Please review:
+            </h6>
             <ul className="mb-0">
               {validationErrors.map((error, index) => (
-                <li key={index}>{error}</li>
+                <li key={index} style={{ marginBottom: '0.5rem', color: '#856404' }}>
+                  <strong>{error}</strong>
+                </li>
               ))}
             </ul>
           </Alert>
@@ -1007,21 +1013,25 @@ const BulkImportModal = ({ show, onClose, onImport, loading = false }) => {
                   overflowX: 'auto'
                 }}
               >
-                <Table striped hover className="mb-0" style={{ minWidth: '1600px' }}>
+                <Table striped hover className="mb-0" style={{ minWidth: '2000px' }}>
                   <thead className="table-light">
                     <tr>
                       <th style={{ minWidth: '50px' }}>NO.</th>
                       <th style={{ minWidth: '120px' }}>FIRST NAME</th>
                       <th style={{ minWidth: '120px' }}>MIDDLE NAME</th>
                       <th style={{ minWidth: '120px' }}>LAST NAME</th>
+                      <th style={{ minWidth: '200px' }}>ADDRESS</th>
                       <th style={{ minWidth: '200px' }}>EMAIL</th>
-                      <th style={{ minWidth: '120px' }}>ROLE</th>
                       <th style={{ minWidth: '150px' }}>PHONE NUMBER</th>
+                      <th style={{ minWidth: '150px' }}>AVATAR URL</th>
                       <th style={{ minWidth: '100px' }}>GENDER</th>
+                      <th style={{ minWidth: '120px' }}>ROLE</th>
                       <th style={{ minWidth: '150px' }}>CERTIFICATION</th>
                       <th style={{ minWidth: '150px' }}>SPECIALIZATION</th>
-                      <th style={{ minWidth: '100px' }}>EXPERIENCE</th>
+                      <th style={{ minWidth: '120px' }}>EXPERIENCE (YEARS)</th>
+                      <th style={{ minWidth: '150px' }}>BIO</th>
                       <th style={{ minWidth: '120px' }}>DATE OF BIRTH</th>
+                      <th style={{ minWidth: '120px' }}>ENROLLMENT DATE</th>
                       <th style={{ minWidth: '120px' }}>TRAINING BATCH</th>
                       <th style={{ minWidth: '120px' }}>PASSPORT NO</th>
                       <th style={{ minWidth: '100px' }}>NATION</th>
@@ -1037,9 +1047,10 @@ const BulkImportModal = ({ show, onClose, onImport, loading = false }) => {
                         <td>{user.first_name || user.full_name || '-'}</td>
                         <td>{user.middle_name || '-'}</td>
                         <td>{user.last_name || '-'}</td>
+                        <td>{user.address || '-'}</td>
                         <td>{user.email || '-'}</td>
-                        <td>{user.role || '-'}</td>
                         <td>{user.phone_number || '-'}</td>
+                        <td>{user.avatar_url || '-'}</td>
                         <td>
                           {user.gender ? (
                             <span title={`Original: ${user.gender}`}>
@@ -1047,10 +1058,13 @@ const BulkImportModal = ({ show, onClose, onImport, loading = false }) => {
                             </span>
                           ) : '-'}
                         </td>
+                        <td>{user.role || '-'}</td>
                         <td>{user.certification_number || '-'}</td>
                         <td>{user.specialization || '-'}</td>
                         <td>{user.years_of_experience || '-'}</td>
-                        <td>{user.date_of_birth || '-'}</td>
+                        <td>{user.bio || '-'}</td>
+                        <td>{user.date_of_birth ? new Date(user.date_of_birth).toLocaleDateString('en-US', { year: 'numeric', month: '2-digit', day: '2-digit' }) : '-'}</td>
+                        <td>{user.enrollment_date ? new Date(user.enrollment_date).toLocaleDateString('en-US', { year: 'numeric', month: '2-digit', day: '2-digit' }) : '-'}</td>
                         <td>{user.training_batch || '-'}</td>
                         <td>{user.passport_no || '-'}</td>
                         <td>{user.nation || '-'}</td>

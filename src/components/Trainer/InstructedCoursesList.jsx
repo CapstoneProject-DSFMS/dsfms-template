@@ -34,17 +34,10 @@ const InstructedCoursesList = () => {
           return;
         }
         
-        // Map API status to table status format
+        // Map API status to display format
         const mapStatus = (apiStatus) => {
-          const statusMap = {
-            'ON_GOING': 'active',
-            'PLANNED': 'scheduled',
-            'COMPLETED': 'completed',
-            'CANCELLED': 'cancelled',
-            'PAUSED': 'paused',
-            'ARCHIVED': 'completed'
-          };
-          return statusMap[apiStatus] || apiStatus.toLowerCase();
+          // Keep original status from API
+          return apiStatus;
         };
         
         // Format date from ISO string to YYYY-MM-DD
@@ -80,14 +73,15 @@ const InstructedCoursesList = () => {
 
   const getStatusBadge = (status) => {
     const statusConfig = {
-      active: { variant: 'success', text: 'Active' },
-      scheduled: { variant: 'primary', text: 'Scheduled' },
-      completed: { variant: 'secondary', text: 'Completed' },
-      paused: { variant: 'warning', text: 'Paused' },
-      cancelled: { variant: 'danger', text: 'Cancelled' }
+      'ON_GOING': { variant: 'success', text: 'ON GOING' },
+      'PLANNED': { variant: 'primary', text: 'PLANNED' },
+      'COMPLETED': { variant: 'secondary', text: 'COMPLETED' },
+      'PAUSED': { variant: 'warning', text: 'PAUSED' },
+      'CANCELLED': { variant: 'danger', text: 'CANCELLED' },
+      'ARCHIVED': { variant: 'secondary', text: 'ARCHIVED' }
     };
     
-    const config = statusConfig[status] || { variant: 'secondary', text: status };
+    const config = statusConfig[status] || { variant: 'secondary', text: status?.replace(/_/g, ' ') || status };
     return <Badge bg={config.variant}>{config.text}</Badge>;
   };
 

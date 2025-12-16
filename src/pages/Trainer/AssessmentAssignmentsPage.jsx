@@ -459,9 +459,25 @@ const AssessmentAssignmentsPage = () => {
                           : "—"}
                       </span>
                     </div>
+                  <div className="mb-3 mt-3">
+                    <h6
+                      className="mb-2 fw-bold"
+                      style={{ fontSize: "1rem", color: "#333" }}
+                    >
+                      Trainers in Assessments
+                    </h6>
+                    <p className="mb-0">
+                      <Badge bg="info" className="px-3 py-2 fs-6">
+                        {state.numberOfParticipatedTrainers} Trainer
+                        {state.numberOfParticipatedTrainers !== 1 ? "s" : ""}
+                      </Badge>
+                    </p>
+                  </div>
                   </div>
                 </Col>
-                <Col md={6}>
+                
+                <Col md={6}> 
+
                   <div className="mb-3">
                     <h6
                       className="mb-2 fw-bold"
@@ -770,22 +786,7 @@ const AssessmentAssignmentsPage = () => {
               )}
 
               <Row>
-                <Col md={6}>
-                  <div className="mb-3">
-                    <h6
-                      className="mb-2 fw-bold"
-                      style={{ fontSize: "1rem", color: "#333" }}
-                    >
-                      Trainers in Assessments
-                    </h6>
-                    <p className="mb-0">
-                      <Badge bg="info" className="px-3 py-2 fs-6">
-                        {state.numberOfParticipatedTrainers} Trainer
-                        {state.numberOfParticipatedTrainers !== 1 ? "s" : ""}
-                      </Badge>
-                    </p>
-                  </div>
-                </Col>
+        
                 <Col md={6}>
                   <div className="mb-3">
                     <h6

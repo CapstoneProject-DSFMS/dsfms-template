@@ -81,7 +81,7 @@ const RoleRow = ({ role, index, onView, onEdit, onDelete, onDisable }) => {
             <span className="me-1" style={{ fontSize: '0.8rem' }}>
               {getStatusIcon(role.status)} TEST
             </span>
-            {role.status}
+            {role.status?.replace(/_/g, ' ')}
           </Badge>
         </td>
         

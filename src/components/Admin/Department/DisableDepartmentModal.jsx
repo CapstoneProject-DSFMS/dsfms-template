@@ -207,7 +207,7 @@ const DisableDepartmentModal = ({
                 <span className={`badge ${
                   department.status === 'ACTIVE' ? 'bg-success' : 'bg-secondary'
                 }`} style={{ width: 'fit-content', backgroundColor: department.status === 'ACTIVE' ? '#28a745' : '#1b3c53' }}>
-                  {department.status}
+                  {department.status?.replace(/_/g, ' ')}
                 </span>
               </div>
             </div>

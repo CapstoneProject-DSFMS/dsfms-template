@@ -112,33 +112,35 @@ export const mapError = (error, context = {}) => {
     // If there are specific field errors, try to map them
     if (errors && Array.isArray(errors) && errors.length > 0) {
       const fieldErrors = errors.map(err => {
-        // Handle different error formats
-        if (typeof err === 'string') {
-          // Try to extract field name from error message
-          const fieldMatch = err.match(/(\w+)\s+(.+)/);
-          if (fieldMatch) {
-            const [, field, errorText] = fieldMatch;
-            const fieldMapping = ERROR_MAPPINGS[mainMessage]?.fields?.[field];
-            return fieldMapping || errorText;
+        // Backend format example: { path: "users.3.traineeProfile.enrollmentDate", message: "..." }
+        if (err && typeof err === 'object' && err.path && err.message) {
+          // Extract user index and last segment of path for readability
+          const pathMatch = err.path.match(/users\.(\d+)\.(.*)/);
+          let rowLabel = '';
+          let fieldLabel = '';
+          if (pathMatch) {
+            const rowIndex = parseInt(pathMatch[1], 10);
+            rowLabel = !Number.isNaN(rowIndex) ? `Row ${rowIndex + 1}` : '';
+            // Take the last segment after the final dot
+            const segments = pathMatch[2].split('.');
+            const rawField = segments[segments.length - 1];
+            fieldLabel = rawField
+              ? rawField.replace(/([A-Z])/g, ' $1').replace(/_/g, ' ').trim()
+              : '';
           }
-          return err;
-        } else if (typeof err === 'object' && err !== null) {
-          // Handle object errors
-          if (err.field && err.message) {
-            // Format: { field: 'fieldName', message: 'error message' }
-            const fieldMapping = ERROR_MAPPINGS[mainMessage]?.fields?.[err.field];
-            return fieldMapping || err.message;
-          } else if (err.property && err.constraints) {
-            // NestJS format: { property: 'fieldName', constraints: { ... } }
-            const fieldMapping = ERROR_MAPPINGS[mainMessage]?.fields?.[err.property];
-            return fieldMapping || Object.values(err.constraints)[0] || err.property;
-          }
-          return JSON.stringify(err);
+          const prefix = [rowLabel, fieldLabel].filter(Boolean).join(' - ');
+          return prefix ? `${prefix}: ${err.message}` : err.message;
         }
-        return String(err);
+
+        if (typeof err === 'string') {
+          return err;
+        }
+
+        return JSON.stringify(err);
       });
-      
-      return `${mappedMessage}\n\nDetails:\n${fieldErrors.join('\n')}`;
+
+      // Join each error on a new line without the verbose "Details" prefix
+      return fieldErrors.join('\n');
     }
     
     return mappedMessage;
