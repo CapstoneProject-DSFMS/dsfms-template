@@ -37,7 +37,7 @@ const TABS = [
 
 const SUBTABS = [
   { id: 'pending', label: 'Pending' },
-  { id: 'acknowledge', label: 'Acknowledge' },
+  { id: 'acknowledge', label: 'Acknowledged' },
   { id: 'resolved', label: 'Resolved' },
   { id: 'cancel', label: 'Cancel' },
 ];
