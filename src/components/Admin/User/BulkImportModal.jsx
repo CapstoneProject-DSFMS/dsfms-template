@@ -56,10 +56,13 @@ const BulkImportModal = ({ show, onClose, onImport, loading = false }) => {
   const fetchRoles = async () => {
     try {
       setRolesLoading(true);
-      // Use public API (no permission required)
-      const rolesArray = await roleAPI.getPublicRoles();
+      // Call GET /roles API
+      const rolesData = await roleAPI.getRoles();
       
-      console.log('📦 Roles fetched from public API:', {
+      // Extract roles array from response
+      const rolesArray = rolesData?.roles || rolesData || [];
+      
+      console.log('📦 Roles fetched from API:', {
         rolesCount: rolesArray.length,
         roles: rolesArray.map(r => ({ id: r.id, name: r.name }))
       });

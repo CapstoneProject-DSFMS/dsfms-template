@@ -33,9 +33,14 @@ const ImportFileModal = ({ show, onHide, onImportSuccess, onImportError }) => {
   const loadDepartments = async () => {
     try {
       setLoadingDepartments(true);
-      // Use public API (no permission required)
-      const departmentsData = await departmentAPI.getPublicDepartments();
-      setDepartments(departmentsData);
+      // Call GET /departments API
+      const departmentsData = await departmentAPI.getDepartments();
+      // Extract only name and id from departments
+      const simplifiedDepts = departmentsData.map(dept => ({
+        id: dept.id,
+        name: dept.name
+      }));
+      setDepartments(simplifiedDepts);
     } catch (error) {
       console.error('Error loading departments:', error);
       toast.error('Failed to load departments');

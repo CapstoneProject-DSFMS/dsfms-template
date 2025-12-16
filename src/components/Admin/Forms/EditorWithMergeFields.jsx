@@ -458,7 +458,7 @@ const EditorWithMergeFields = forwardRef(({
     const loadRoles = async () => {
       try {
         // Use public API (no permission required)
-        const data = await roleAPI.getPublicRoles();
+        const data = await roleAPI.getRoles();
         const roles = Array.isArray(data) ? data : [];
         const filtered = roles
           .map((r) => (typeof r === 'string' ? r : (r.name || r.code || r.roleName || '')))

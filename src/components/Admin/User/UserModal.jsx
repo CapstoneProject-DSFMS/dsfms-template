@@ -30,14 +30,17 @@ const UserModal = ({ show, user, mode, onSave, onClose }) => {
   const [roles, setRoles] = useState([]);
   const [rolesLoading, setRolesLoading] = useState(false);
 
-  // Fetch roles from public API (no permission required)
+  // Fetch roles from API
   const fetchRoles = async () => {
     setRolesLoading(true);
     try {
-      const rolesData = await roleAPI.getPublicRoles();
+      const rolesData = await roleAPI.getRoles();
+      
+      // Extract roles array from response
+      const rolesArray = rolesData?.roles || rolesData || [];
       
       // Transform to simple array of role names
-      const roleNames = rolesData.map(role => role.name);
+      const roleNames = rolesArray.map(role => role.name);
       setRoles(roleNames);
     } catch (error) {
       console.error('Error fetching roles:', error);

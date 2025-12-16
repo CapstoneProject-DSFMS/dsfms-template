@@ -332,7 +332,7 @@ export const useUserManagementAPI = () => {
       let newRoleId = null;
       try {
         // Use public API (no permission required)
-        const rolesData = await roleAPI.getPublicRoles();
+        const rolesData = await roleAPI.getRoles();
         
         const targetRole = rolesData.find(role => role.name === userData.role);
         if (targetRole) {
