@@ -37,7 +37,7 @@ const TraineeDetailsPage = () => {
           firstName: userData.firstName || '',
           lastName: userData.lastName || '',
           middleName: userData.middleName || '',
-          name: `${userData.firstName || ''} ${userData.middleName || ''} ${userData.lastName || ''}`.trim().replace(/\s+/g, ' '),
+          name: `${userData.lastName || ''} ${userData.middleName || ''} ${userData.firstName || ''}`.trim().replace(/\s+/g, ' '),
           email: userData.email || '',
           phoneNumber: userData.phoneNumber || 'N/A',
           status: userData.status || 'ACTIVE',

@@ -42,6 +42,11 @@ const getStatusBadge = (status) => {
   return <span className={`badge bg-${config.variant}`}>{config.text}</span>;
 };
 
+const formatStatusText = (status) => {
+  if (!status) return "";
+  return status.replace(/_/g, " ");
+};
+
 const formatDateTime = (dateStr) => {
   if (!dateStr) return { date: "—", time: "" };
   const date = new Date(dateStr);
@@ -460,83 +465,118 @@ const AssessmentAssignmentsPage = () => {
                       </span>
                     </div>
                   <div className="mb-3 mt-3">
-                    <h6
-                      className="mb-2 fw-bold"
-                      style={{ fontSize: "1rem", color: "#333" }}
+                    <span
+                      className="fw-bold"
+                      style={{ color: "#456882", fontSize: "0.95rem" }}
                     >
-                      Trainers in Assessments
-                    </h6>
-                    <p className="mb-0">
-                      <Badge bg="info" className="px-3 py-2 fs-6">
-                        {state.numberOfParticipatedTrainers} Trainer
-                        {state.numberOfParticipatedTrainers !== 1 ? "s" : ""}
-                      </Badge>
-                    </p>
+                      Trainers in Assessments:
+                    </span>{" "}
+                    <Badge bg="info" className="px-3 py-2">
+                      {state.numberOfParticipatedTrainers} Trainer
+                      {state.numberOfParticipatedTrainers !== 1 ? "s" : ""}
+                    </Badge>
                   </div>
                   </div>
                 </Col>
                 
-                <Col md={6}> 
-
-                  <div className="mb-3">
-                    <h6
-                      className="mb-2 fw-bold"
-                      style={{
-                        color: "#064681ff",
-                        backgroundColor: "#daefffff",
-                        padding: "8px 12px",
-                        borderRadius: "6px",
-                        display: "inline-block",
-                      }}
-                    >
-                      {entityType === "course" ? "Course" : "Subject"} Details
-                    </h6>
-                    {eventInfo?.courseInfo ? (
-                      <>
-                        <p className="mb-1 fw-semibold">
-                          {eventInfo.courseInfo.name || "—"}
-                          {eventInfo.courseInfo.code ? (
-                            <Badge bg="secondary" className="ms-2">
-                              {eventInfo.courseInfo.code}
-                            </Badge>
-                          ) : null}
-                        </p>
-                        {eventInfo.courseInfo.description && (
-                          <p className="mb-1 text-muted small">
-                            {eventInfo.courseInfo.description}
-                          </p>
+                <Col md={6}>
+                  {/* Template Information */}
+                  {eventInfo?.templateInfo && (
+                    <div className="mb-3">
+                      <h6
+                        className="mb-2 fw-bold"
+                        style={{
+                          color: "#064681ff",
+                          backgroundColor: "#daefffff",
+                          padding: "8px 12px",
+                          borderRadius: "6px",
+                          display: "inline-block",
+                        }}
+                      >
+                        Template Information
+                      </h6>
+                      <div className="small">
+                        <div className="mb-1">
+                          <span
+                            className="fw-bold"
+                            style={{ color: "#456882", fontSize: "0.9rem" }}
+                          >
+                            Template Name:
+                          </span>{" "}
+                          <span className="fw-medium">
+                            {eventInfo.templateInfo.name || "—"}
+                          </span>
+                        </div>
+                        {eventInfo.templateInfo.version !== null && eventInfo.templateInfo.version !== undefined && (
+                          <div className="mb-1">
+                            <span
+                              className="fw-bold"
+                              style={{ color: "#456882", fontSize: "0.9rem" }}
+                            >
+                              Version:
+                            </span>{" "}
+                            <span className="fw-medium">
+                              v{eventInfo.templateInfo.version.toFixed(1)}
+                            </span>
+                          </div>
                         )}
-                        <div className="mt-2">
-                          {eventInfo.courseInfo.level && (
-                            <Badge bg="info" className="me-1">
-                              Level: {eventInfo.courseInfo.level}
-                            </Badge>
-                          )}
-                          {eventInfo.courseInfo.status && (
+                        {eventInfo.templateInfo.status && (
+                          <div className="mb-1">
+                            <span
+                              className="fw-bold"
+                              style={{ color: "#456882", fontSize: "0.9rem" }}
+                            >
+                              Status:
+                            </span>{" "}
                             <Badge
                               bg={
-                                eventInfo.courseInfo.status === "ON_GOING"
+                                eventInfo.templateInfo.status === "PUBLISHED"
                                   ? "success"
                                   : "secondary"
                               }
-                              className="me-1"
+                              className="ms-1"
                             >
-                              {eventInfo.courseInfo.status}
+                              {formatStatusText(eventInfo.templateInfo.status)}
                             </Badge>
-                          )}
-                        </div>
-                      </>
-                    ) : (
-                      <p className="mb-0 fw-semibold">
-                        {state.info?.name || "—"}
-                        {state.info?.code ? (
-                          <Badge bg="secondary" className="ms-2">
-                            {state.info.code}
-                          </Badge>
-                        ) : null}
-                      </p>
-                    )}
-                  </div>
+                          </div>
+                        )}
+                        {eventInfo.templateInfo.description && (
+                          <div className="mb-1">
+                            <span
+                              className="fw-bold"
+                              style={{ color: "#456882", fontSize: "0.9rem" }}
+                            >
+                              Description:
+                            </span>{" "}
+                            <span className="fw-medium">
+                              {eventInfo.templateInfo.description}
+                            </span>
+                          </div>
+                        )}
+                        {eventInfo.templateInfo.templateContent && (
+                          <div className="mb-1 mt-2">
+                            <Button
+                              variant="outline-primary"
+                              size="sm"
+                              onClick={() =>
+                                handleViewPDF(
+                                  eventInfo.templateInfo.templateContent,
+                                  eventInfo.templateInfo.id
+                                )
+                              }
+                              disabled={loadingPDF}
+                              className="d-inline-flex align-items-center"
+                            >
+                              <FileEarmarkPdf className="me-1" size={14} />
+                              {loadingPDF
+                                ? "Loading..."
+                                : "View Template PDF"}
+                            </Button>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  )}
                 </Col>
               </Row>
 
@@ -555,19 +595,44 @@ const AssessmentAssignmentsPage = () => {
                           display: "inline-block",
                         }}
                       >
-                        Parent Course Information
+                        {eventInfo?.subjectInfo ? "Parent Course Information" : "Course Information"}
                       </h6>
                       <div className="small">
-                        <div className="mb-1">
-                          <span
-                            className="fw-bold"
-                            style={{ color: "#456882", fontSize: "0.9rem" }}
-                          >
-                            Course ID:
-                          </span>{" "}
-                          <span className="fw-medium">
-                            {eventInfo.courseInfo.id || "—"}
+                        <div className="mb-2">
+                          <span className="fw-semibold d-block mb-1">
+                            {eventInfo.courseInfo.name || "—"}
                           </span>
+                          {eventInfo.courseInfo.code && (
+                            <Badge bg="secondary" className="me-1 mb-1">
+                              {eventInfo.courseInfo.code}
+                            </Badge>
+                          )}
+                        </div>
+                        {eventInfo.courseInfo.description && (
+                          <div className="mb-2 text-muted" style={{ fontSize: "0.875rem" }}>
+                            {eventInfo.courseInfo.description}
+                          </div>
+                        )}
+                        <div className="mb-2">
+                          {eventInfo.courseInfo.status && (
+                            <Badge
+                              bg={
+                                eventInfo.courseInfo.status === "ON_GOING"
+                                  ? "success"
+                                  : eventInfo.courseInfo.status === "PUBLISHED"
+                                  ? "success"
+                                  : "secondary"
+                              }
+                              className="me-1"
+                            >
+                              {formatStatusText(eventInfo.courseInfo.status)}
+                            </Badge>
+                          )}
+                          {eventInfo.courseInfo.level && (
+                            <Badge bg="info" className="text-dark me-1">
+                              {eventInfo.courseInfo.level}
+                            </Badge>
+                          )}
                         </div>
                         {eventInfo.courseInfo.maxNumTrainee && (
                           <div className="mb-1">
@@ -676,111 +741,101 @@ const AssessmentAssignmentsPage = () => {
                     </div>
                   </Col>
                   <Col md={6}>
-                    <div className="mb-3">
-                      <h6
-                        className="mb-2 fw-bold"
-                        style={{ fontSize: "0.95rem", color: "#333" }}
-                      >
-                        Template Information
-                      </h6>
-                      {eventInfo?.templateInfo ? (
+                    {/* Subject Information - Only show when has subject */}
+                    {eventInfo?.subjectInfo && (
+                      <div className="mb-3">
+                        <h6
+                          className="mb-2 fw-bold"
+                          style={{
+                            color: "#064681ff",
+                            backgroundColor: "#daefffff",
+                            padding: "8px 12px",
+                            borderRadius: "6px",
+                            display: "inline-block",
+                          }}
+                        >
+                          Subject Information
+                        </h6>
                         <div className="small">
-                          <div className="mb-1">
-                            <span
-                              className="fw-bold"
-                              style={{ color: "#456882", fontSize: "0.9rem" }}
-                            >
-                              Template Name:
-                            </span>{" "}
-                            <span className="fw-medium">
-                              {eventInfo.templateInfo.name || "—"}
+                          <div className="mb-2">
+                            <span className="fw-semibold d-block mb-1">
+                              {eventInfo.subjectInfo.name || "—"}
                             </span>
+                            {eventInfo.subjectInfo.code && (
+                              <Badge bg="secondary" className="me-1 mb-1">
+                                {eventInfo.subjectInfo.code}
+                              </Badge>
+                            )}
                           </div>
-                          <div className="mb-1">
-                            <span
-                              className="fw-bold"
-                              style={{ color: "#456882", fontSize: "0.9rem" }}
-                            >
-                              Template ID:
-                            </span>{" "}
-                            <span className="fw-medium">
-                              {eventInfo.templateInfo.id || "—"}
-                            </span>
-                          </div>
-                          {eventInfo.templateInfo.version && (
-                            <div className="mb-1">
-                              <span
-                                className="fw-bold"
-                                style={{ color: "#456882", fontSize: "0.9rem" }}
-                              >
-                                Version:
-                              </span>{" "}
-                              <span className="fw-medium">
-                                {eventInfo.templateInfo.version}
-                              </span>
+                          {eventInfo.subjectInfo.description && (
+                            <div className="mb-2 text-muted" style={{ fontSize: "0.875rem" }}>
+                              {eventInfo.subjectInfo.description}
                             </div>
                           )}
-                          {eventInfo.templateInfo.status && (
-                            <div className="mb-1">
-                              <span
-                                className="fw-bold"
-                                style={{ color: "#456882", fontSize: "0.9rem" }}
-                              >
-                                Status:
-                              </span>{" "}
+                          <div className="mb-2">
+                            {eventInfo.subjectInfo.status && (
                               <Badge
                                 bg={
-                                  eventInfo.templateInfo.status === "PUBLISHED"
+                                  eventInfo.subjectInfo.status === "ON_GOING"
+                                    ? "success"
+                                    : eventInfo.subjectInfo.status === "PUBLISHED"
                                     ? "success"
                                     : "secondary"
                                 }
-                                className="ms-1"
+                                className="me-1"
                               >
-                                {eventInfo.templateInfo.status}
+                                {formatStatusText(eventInfo.subjectInfo.status)}
                               </Badge>
-                            </div>
-                          )}
-                          {eventInfo.templateInfo.description && (
+                            )}
+                            {eventInfo.subjectInfo.level && (
+                              <Badge bg="info" className="text-dark me-1">
+                                {eventInfo.subjectInfo.level}
+                              </Badge>
+                            )}
+                          </div>
+                          {eventInfo.subjectInfo.passScore !== null &&
+                            eventInfo.subjectInfo.passScore !== undefined && (
+                              <div className="mb-1">
+                                <span
+                                  className="fw-bold"
+                                  style={{ color: "#456882", fontSize: "0.9rem" }}
+                                >
+                                  Pass Score:
+                                </span>{" "}
+                                <span className="fw-medium">
+                                  {eventInfo.subjectInfo.passScore}
+                                </span>
+                              </div>
+                            )}
+                          {eventInfo.subjectInfo.startDate && (
                             <div className="mb-1">
                               <span
                                 className="fw-bold"
                                 style={{ color: "#456882", fontSize: "0.9rem" }}
                               >
-                                Description:
+                                Start Date:
                               </span>{" "}
                               <span className="fw-medium">
-                                {eventInfo.templateInfo.description}
+                                {formatDateTime(eventInfo.subjectInfo.startDate).date}
                               </span>
                             </div>
                           )}
-                          {eventInfo.templateInfo && (
-                            <div className="mb-1 mt-2">
-                              <Button
-                                variant="outline-primary"
-                                size="sm"
-                                onClick={() =>
-                                  handleViewPDF(
-                                    eventInfo.templateInfo.templateContent,
-                                    eventInfo.templateInfo.id
-                                  )
-                                }
-                                disabled={loadingPDF}
-                                className="d-inline-flex align-items-center"
+                          {eventInfo.subjectInfo.endDate && (
+                            <div className="mb-1">
+                              <span
+                                className="fw-bold"
+                                style={{ color: "#456882", fontSize: "0.9rem" }}
                               >
-                                <FileEarmarkPdf className="me-1" size={14} />
-                                {loadingPDF
-                                  ? "Loading..."
-                                  : "View Template PDF"}
-                              </Button>
+                                End Date:
+                              </span>{" "}
+                              <span className="fw-medium">
+                                {formatDateTime(eventInfo.subjectInfo.endDate).date}
+                              </span>
                             </div>
                           )}
                         </div>
-                      ) : (
-                        <p className="text-muted small">
-                          No template information available
-                        </p>
-                      )}
-                    </div>
+                      </div>
+                    )}
                   </Col>
                 </Row>
               )}

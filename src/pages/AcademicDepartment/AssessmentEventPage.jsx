@@ -29,15 +29,18 @@ const AssessmentEventPage = () => {
         let courseName = '';
         
         if (event.subjectId === null) {
+          // Course event only
           if (event.entityInfo && event.entityInfo.type === 'course') {
             courseName = event.entityInfo.name || '';
             subjectName = '';
           }
         } else {
+          // Subject event
           if (event.entityInfo && event.entityInfo.type === 'subject') {
             subjectName = event.entityInfo.name || '';
+            // Get course name from belongToCourseName
+            courseName = event.entityInfo.belongToCourseName || '';
           }
-          courseName = '';
         }
         
         return {

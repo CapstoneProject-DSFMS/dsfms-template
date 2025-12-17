@@ -160,7 +160,7 @@ const UnifiedTemplateListPage = () => {
       const description = template.description?.toLowerCase() || '';
       const createdBy = template.createdBy?.toLowerCase() || 
                        (template.createdByUser?.firstName && template.createdByUser?.lastName
-                         ? `${template.createdByUser.firstName} ${template.createdByUser.lastName}`.toLowerCase()
+                         ? `${template.createdByUser.lastName} ${template.createdByUser.firstName}`.toLowerCase()
                          : '');
       
       return name.includes(searchTerm.toLowerCase()) ||

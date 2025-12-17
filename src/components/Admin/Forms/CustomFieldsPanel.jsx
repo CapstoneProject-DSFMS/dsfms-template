@@ -717,6 +717,20 @@ const CustomFieldsPanel = ({
           updatedFields = updatedFields.filter(f => f.fieldType !== 'SECTION_CONTROL_TOGGLE');
         }
         
+        // ✅ Update roleRequired for SIGNATURE fields if editBy changed
+        if (sectionToSave.editBy !== existingSection.editBy) {
+          updatedFields = updatedFields.map(field => {
+            // Only update roleRequired for SIGNATURE_DRAW and SIGNATURE_TYPE
+            if (field.fieldType === 'SIGNATURE_DRAW' || field.fieldType === 'SIGNATURE_TYPE') {
+              return {
+                ...field,
+                roleRequired: sectionToSave.editBy
+              };
+            }
+            return field;
+          });
+        }
+        
         next[editingSectionIndex] = {
           ...existingSection,
           label: sectionToSave.label,
@@ -1105,11 +1119,18 @@ const CustomFieldsPanel = ({
       }
 
       // Validate signatures based on roles
+      console.log('🔍 ===== SIGNATURE VALIDATION DEBUG =====');
+      console.log('🔍 All sections:', sections);
+      console.log('🔍 All fields:', allFields);
+      
       // 1. Trainer can have one or more signature fields of either type (IMAGE or DRAW)
       const trainerSignatureFields = allFields.filter(f =>
         (f.fieldType === 'SIGNATURE_IMAGE' || f.fieldType === 'SIGNATURE_DRAW') &&
         f.roleRequired === 'TRAINER'
       );
+      console.log('🔍 TRAINER signature fields:', trainerSignatureFields);
+      console.log('🔍 TRAINER signature fields count:', trainerSignatureFields.length);
+      
       if (trainerSignatureFields.length === 0) { // Changed condition: check for at least one
         toast.error('Template must have at least one signature field (IMAGE or DRAW) for the TRAINER role.'); // Updated error message
         setIsSubmitting(false);
@@ -1121,11 +1142,17 @@ const CustomFieldsPanel = ({
         f.fieldType === 'SIGNATURE_DRAW' && 
         f.roleRequired === 'TRAINEE'
       );
+      console.log('🔍 TRAINEE signature fields:', traineeSignatureFields);
+      console.log('🔍 TRAINEE signature fields count:', traineeSignatureFields.length);
+      
       if (traineeSignatureFields.length !== 1) {
-        toast.error('Template must have exactly one SIGNATURE_DRAW field for the TRAINEE role.');
+        toast.error(`Template must have exactly one SIGNATURE_DRAW field for the TRAINEE role. Found: ${traineeSignatureFields.length}`);
         setIsSubmitting(false);
         return;
       }
+      
+      console.log('✅ Signature validation passed!');
+      console.log('🔍 ===== END SIGNATURE VALIDATION DEBUG =====');
 
       // Validate FINAL_SCORE_TEST fields
       const finalScoreTestFields = allFields.filter(f => f.fieldType === 'FINAL_SCORE_TEST');
@@ -2008,8 +2035,8 @@ const CustomFieldsPanel = ({
                                   {isPart && (<span className="badge part-badge flex-shrink-0">PART</span>)}
                                   {isCheckBox && (<span className="badge part-badge flex-shrink-0">CHECK_BOX</span>)}
                                 </div>
-                                <small className="text-muted d-block" style={{ fontSize: '0.7rem', wordBreak: 'break-word', overflow: 'hidden', textOverflow: 'ellipsis' }} title={`${field.fieldName} (${field.fieldType})${field.roleRequired ? ` - ${field.roleRequired}` : ''}`}>
-                                  {field.fieldName} ({field.fieldType}){field.roleRequired ? ` - ${field.roleRequired}` : ''}
+                                <small className="text-muted d-block" style={{ fontSize: '0.7rem', wordBreak: 'break-word', overflow: 'hidden', textOverflow: 'ellipsis' }} title={`${field.fieldName} (${field.fieldType})`}>
+                                  {field.fieldName} ({field.fieldType})
                                 </small>
                               </div>
                               <div className="d-flex gap-1 flex-shrink-0">
@@ -2215,7 +2242,7 @@ const CustomFieldsPanel = ({
                     onChange={(e) => setNewSection((prev) => ({ ...prev, roleInSubject: e.target.value }))}
                       style={{ minWidth: '200px' }}
                     >
-                      <option value="ASSESSMENT_REVIEWER">ASSESSMENT_REVIEWER</option>
+                      <option value="ASSESSMENT_REVIEWER">ASSESSMENT REVIEWER</option>
                       <option value="EXAMINER">EXAMINER</option>
                     </Form.Select>
                 </Form.Group>

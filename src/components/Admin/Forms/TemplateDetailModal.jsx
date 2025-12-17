@@ -1477,20 +1477,6 @@ const TemplateDetailModal = ({ show, onHide, template, onCreateVersion, onTempla
             {template?.name || 'Template'}
           </span>
         </Modal.Title>
-        <Button 
-          variant="link" 
-          onClick={onHide} 
-          className="text-white p-0 flex-shrink-0"
-          style={{ 
-            border: 'none', 
-            background: 'none', 
-            opacity: 0.9,
-            color: '#ffffff !important',
-            marginLeft: '1rem'
-          }}
-        >
-          <X size={24} color="#ffffff" />
-        </Button>
       </Modal.Header>
       
       <Modal.Body 

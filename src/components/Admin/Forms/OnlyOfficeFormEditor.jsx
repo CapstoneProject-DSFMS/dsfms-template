@@ -136,6 +136,7 @@ const OnlyOfficeFormEditor = forwardRef(({
         { label: "Trainee's Full Name", variable: "{trainee_name}", fieldType: 'TEXT' },
         { label: "Trainee's Eid", variable: "{trainee_eid}", fieldType: 'TEXT' },
         { label: "Trainee's Nation", variable: "{trainee_nationality}", fieldType: 'TEXT' },
+        { label: "Trainee Passport Number", variable: "{trainee_passport_no}", fieldType: 'TEXT' },
         { label: "Trainee's Batch Name", variable: "{training_batch}", fieldType: 'TEXT' },
         { label: "Course's Name", variable: "{course_name}", fieldType: 'TEXT' },
         { label: "Course's Code", variable: "{course_code}", fieldType: 'TEXT' },

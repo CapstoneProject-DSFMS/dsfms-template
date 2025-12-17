@@ -91,7 +91,7 @@ const AddTrainersModal = ({ show, onHide, departmentId, assignedTrainers = [], o
 
   const getFullName = (trainer) => {
     const { firstName, middleName, lastName } = trainer;
-    return [firstName, middleName, lastName].filter(Boolean).join(' ');
+    return [lastName, middleName, firstName].filter(Boolean).join(' ');
   };
 
   const handleSubmit = async () => {
