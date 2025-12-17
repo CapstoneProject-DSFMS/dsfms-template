@@ -471,9 +471,8 @@ const AssessmentAssignmentsPage = () => {
                     >
                       Trainers in Assessments:
                     </span>{" "}
-                    <Badge bg="info" className="px-3 py-2">
-                      {state.numberOfParticipatedTrainers} Trainer
-                      {state.numberOfParticipatedTrainers !== 1 ? "s" : ""}
+                    <Badge bg="dark" className="px-3 py-2">
+                      {state.numberOfParticipatedTrainers} Trainer{state.numberOfParticipatedTrainers !== 1 ? "s" : ""}
                     </Badge>
                   </div>
                   </div>
@@ -580,8 +579,8 @@ const AssessmentAssignmentsPage = () => {
                 </Col>
               </Row>
 
-              {/* Course Information Details */}
-              {eventInfo?.courseInfo && (
+              {/* Course/Parent Course Information */}
+              {(eventInfo?.courseInfo || eventInfo?.subjectInfo?.course) && (
                 <Row className="mt-3">
                   <Col md={6}>
                     <div className="mb-3">
@@ -600,41 +599,41 @@ const AssessmentAssignmentsPage = () => {
                       <div className="small">
                         <div className="mb-2">
                           <span className="fw-semibold d-block mb-1">
-                            {eventInfo.courseInfo.name || "—"}
+                            {(eventInfo.subjectInfo?.course || eventInfo.courseInfo).name || "—"}
                           </span>
-                          {eventInfo.courseInfo.code && (
+                          {(eventInfo.subjectInfo?.course || eventInfo.courseInfo).code && (
                             <Badge bg="secondary" className="me-1 mb-1">
-                              {eventInfo.courseInfo.code}
+                              {(eventInfo.subjectInfo?.course || eventInfo.courseInfo).code}
                             </Badge>
                           )}
                         </div>
-                        {eventInfo.courseInfo.description && (
+                        {(eventInfo.subjectInfo?.course || eventInfo.courseInfo).description && (
                           <div className="mb-2 text-muted" style={{ fontSize: "0.875rem" }}>
-                            {eventInfo.courseInfo.description}
+                            {(eventInfo.subjectInfo?.course || eventInfo.courseInfo).description}
                           </div>
                         )}
                         <div className="mb-2">
-                          {eventInfo.courseInfo.status && (
+                          {(eventInfo.subjectInfo?.course || eventInfo.courseInfo).status && (
                             <Badge
                               bg={
-                                eventInfo.courseInfo.status === "ON_GOING"
+                                (eventInfo.subjectInfo?.course || eventInfo.courseInfo).status === "ON_GOING"
                                   ? "success"
-                                  : eventInfo.courseInfo.status === "PUBLISHED"
+                                  : (eventInfo.subjectInfo?.course || eventInfo.courseInfo).status === "PUBLISHED"
                                   ? "success"
                                   : "secondary"
                               }
                               className="me-1"
                             >
-                              {formatStatusText(eventInfo.courseInfo.status)}
+                              {formatStatusText((eventInfo.subjectInfo?.course || eventInfo.courseInfo).status)}
                             </Badge>
                           )}
-                          {eventInfo.courseInfo.level && (
+                          {(eventInfo.subjectInfo?.course || eventInfo.courseInfo).level && (
                             <Badge bg="info" className="text-dark me-1">
-                              {eventInfo.courseInfo.level}
+                              {(eventInfo.subjectInfo?.course || eventInfo.courseInfo).level}
                             </Badge>
                           )}
                         </div>
-                        {eventInfo.courseInfo.maxNumTrainee && (
+                        {(eventInfo.subjectInfo?.course || eventInfo.courseInfo).maxNumTrainee && (
                           <div className="mb-1">
                             <span
                               className="fw-bold"
@@ -643,11 +642,11 @@ const AssessmentAssignmentsPage = () => {
                               Max Trainees:
                             </span>{" "}
                             <span className="fw-medium">
-                              {eventInfo.courseInfo.maxNumTrainee}
+                              {(eventInfo.subjectInfo?.course || eventInfo.courseInfo).maxNumTrainee}
                             </span>
                           </div>
                         )}
-                        {eventInfo.courseInfo.venue && (
+                        {(eventInfo.subjectInfo?.course || eventInfo.courseInfo).venue && (
                           <div className="mb-1">
                             <span
                               className="fw-bold"
@@ -656,11 +655,11 @@ const AssessmentAssignmentsPage = () => {
                               Venue:
                             </span>{" "}
                             <span className="fw-medium">
-                              {eventInfo.courseInfo.venue}
+                              {(eventInfo.subjectInfo?.course || eventInfo.courseInfo).venue}
                             </span>
                           </div>
                         )}
-                        {eventInfo.courseInfo.note && (
+                        {(eventInfo.subjectInfo?.course || eventInfo.courseInfo).note && (
                           <div className="mb-1">
                             <span
                               className="fw-bold"
@@ -669,12 +668,12 @@ const AssessmentAssignmentsPage = () => {
                               Note:
                             </span>{" "}
                             <span className="fw-medium">
-                              {eventInfo.courseInfo.note}
+                              {(eventInfo.subjectInfo?.course || eventInfo.courseInfo).note}
                             </span>
                           </div>
                         )}
-                        {eventInfo.courseInfo.passScore !== null &&
-                          eventInfo.courseInfo.passScore !== undefined && (
+                        {((eventInfo.subjectInfo?.course || eventInfo.courseInfo).passScore !== null &&
+                          (eventInfo.subjectInfo?.course || eventInfo.courseInfo).passScore !== undefined) && (
                             <div className="mb-1">
                               <span
                                 className="fw-bold"
@@ -683,11 +682,11 @@ const AssessmentAssignmentsPage = () => {
                                 Pass Score:
                               </span>{" "}
                               <span className="fw-medium">
-                                {eventInfo.courseInfo.passScore}
+                                {(eventInfo.subjectInfo?.course || eventInfo.courseInfo).passScore}
                               </span>
                             </div>
                           )}
-                        {eventInfo.courseInfo.startDate && (
+                        {(eventInfo.subjectInfo?.course || eventInfo.courseInfo).startDate && (
                           <div className="mb-1">
                             <span
                               className="fw-bold"
@@ -697,13 +696,13 @@ const AssessmentAssignmentsPage = () => {
                             </span>{" "}
                             <span className="fw-medium">
                               {
-                                formatDateTime(eventInfo.courseInfo.startDate)
+                                formatDateTime((eventInfo.subjectInfo?.course || eventInfo.courseInfo).startDate)
                                   .date
                               }
                             </span>
                           </div>
                         )}
-                        {eventInfo.courseInfo.endDate && (
+                        {(eventInfo.subjectInfo?.course || eventInfo.courseInfo).endDate && (
                           <div className="mb-1">
                             <span
                               className="fw-bold"
@@ -713,13 +712,13 @@ const AssessmentAssignmentsPage = () => {
                             </span>{" "}
                             <span className="fw-medium">
                               {
-                                formatDateTime(eventInfo.courseInfo.endDate)
+                                formatDateTime((eventInfo.subjectInfo?.course || eventInfo.courseInfo).endDate)
                                   .date
                               }
                             </span>
                           </div>
                         )}
-                        {eventInfo.courseInfo.department && (
+                        {(eventInfo.subjectInfo?.course || eventInfo.courseInfo).department && (
                           <div className="mb-1">
                             <span
                               className="fw-bold"
@@ -728,10 +727,10 @@ const AssessmentAssignmentsPage = () => {
                               Department:
                             </span>{" "}
                             <span className="fw-medium">
-                              {eventInfo.courseInfo.department.name || "—"}
-                              {eventInfo.courseInfo.department.code && (
+                              {(eventInfo.subjectInfo?.course || eventInfo.courseInfo).department.name || "—"}
+                              {(eventInfo.subjectInfo?.course || eventInfo.courseInfo).department.code && (
                                 <span className="text-muted ms-1">
-                                  ({eventInfo.courseInfo.department.code})
+                                  ({(eventInfo.subjectInfo?.course || eventInfo.courseInfo).department.code})
                                 </span>
                               )}
                             </span>
@@ -787,12 +786,30 @@ const AssessmentAssignmentsPage = () => {
                                 {formatStatusText(eventInfo.subjectInfo.status)}
                               </Badge>
                             )}
-                            {eventInfo.subjectInfo.level && (
-                              <Badge bg="info" className="text-dark me-1">
-                                {eventInfo.subjectInfo.level}
+                            {eventInfo.subjectInfo.method && (
+                              <Badge bg="info" className="me-1">
+                                {eventInfo.subjectInfo.method}
+                              </Badge>
+                            )}
+                            {eventInfo.subjectInfo.type && (
+                              <Badge bg="primary" className="me-1">
+                                {eventInfo.subjectInfo.type}
                               </Badge>
                             )}
                           </div>
+                          {eventInfo.subjectInfo.duration && (
+                            <div className="mb-1">
+                              <span
+                                className="fw-bold"
+                                style={{ color: "#456882", fontSize: "0.9rem" }}
+                              >
+                                Duration:
+                              </span>{" "}
+                              <span className="fw-medium">
+                                {eventInfo.subjectInfo.duration} 
+                              </span>
+                            </div>
+                          )}
                           {eventInfo.subjectInfo.passScore !== null &&
                             eventInfo.subjectInfo.passScore !== undefined && (
                               <div className="mb-1">

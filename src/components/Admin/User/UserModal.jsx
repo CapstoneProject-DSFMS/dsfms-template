@@ -30,6 +30,15 @@ const UserModal = ({ show, user, mode, onSave, onClose }) => {
   const [roles, setRoles] = useState([]);
   const [rolesLoading, setRolesLoading] = useState(false);
 
+  // Format role name: remove underscores and capitalize words
+  const formatRoleName = (role) => {
+    if (!role) return '';
+    return role
+      .split('_')
+      .map(word => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
+      .join(' ');
+  };
+
   // Fetch roles from API
   const fetchRoles = async () => {
     setRolesLoading(true);
@@ -483,7 +492,7 @@ const UserModal = ({ show, user, mode, onSave, onClose }) => {
                     {rolesLoading ? 'Loading roles...' : 'Select a role'}
                   </option>
                   {roles.map(role => (
-                    <option key={role} value={role}>{role}</option>
+                    <option key={role} value={role}>{formatRoleName(role)}</option>
                   ))}
                 </Form.Select>
                 <Form.Control.Feedback type="invalid">

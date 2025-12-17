@@ -33,17 +33,64 @@
   box-shadow: 0 0 0 0.2rem rgba(21, 58, 74, 0.15);
 }
 
-.field-toggle .form-check-input {
-  width: 3rem;
-  height: 1.4rem;
-  border-radius: 999px;
-  background-color: rgba(21, 58, 74, 0.15);
-  border: 1px solid rgba(21, 58, 74, 0.25);
+/* Custom Toggle Switch - Beautiful round style with checkmark */
+.custom-toggle-switch .form-check-input {
+  width: 52px;
+  height: 26px;
+  background-color: #d1d5db;
+  border: none;
+  border-radius: 15px;
+  position: relative;
+  cursor: pointer;
+  transition: background-color 0.3s ease;
 }
 
-.field-toggle .form-check-input:checked {
-  background-color: var(--bs-primary);
-  border-color: var(--bs-primary);
+.custom-toggle-switch .form-check-input:checked {
+  background-color: #7B8CF5;
+}
+
+/* Circle button */
+.custom-toggle-switch .form-check-input::before {
+  content: '';
+  position: absolute;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: white;
+  top: -3px;
+  left: -3px;
+  transition: transform 0.3s ease;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+}
+
+.custom-toggle-switch .form-check-input:checked::before {
+  transform: translateX(26px);
+}
+
+/* Checkmark when checked (ON) */
+.custom-toggle-switch .form-check-input:checked::after {
+  content: '✓';
+  position: absolute;
+  color: white;
+  font-size: 14px;
+  font-weight: bold;
+  left: 8px;
+  top: 50%;
+  transform: translateY(-50%);
+  z-index: 0;
+}
+
+/* X mark when unchecked (OFF) */
+.custom-toggle-switch .form-check-input::after {
+  content: '✕';
+  position: absolute;
+  color: #6b7280;
+  font-size: 14px;
+  font-weight: bold;
+  right: 8px;
+  top: 50%;
+  transform: translateY(-50%);
+  z-index: 0;
 }
 
 .field-group {
