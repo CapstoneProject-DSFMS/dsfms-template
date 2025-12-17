@@ -386,8 +386,21 @@ const AssessmentEventDetailModal = ({ show, onClose, event }) => {
     );
   };
 
-  // Calculate statistics
+  // Calculate statistics - Use data from API if available
   const calculateStatistics = () => {
+    // Use statistics from event data if available (from API)
+    if (event.totalTrainees !== undefined) {
+      return {
+        total: event.totalTrainees || 0,
+        passed: event.totalPassed || 0,
+        failed: event.totalFailed || 0,
+        inProgress: 0,
+        pending: 0,
+        notStarted: 0,
+      };
+    }
+    
+    // Fallback: Calculate from assessments array
     if (!assessments || assessments.length === 0) {
       return {
         total: 0,

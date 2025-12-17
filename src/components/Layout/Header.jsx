@@ -81,9 +81,10 @@ const Header = ({ onToggleSidebar }) => {
     
     // Try to get name from profile if available (direct access)
     if (profile && profile.firstName) {
-      const nameParts = [profile.firstName];
-      if (profile.middleName) nameParts.push(profile.middleName);
+      const nameParts = [];
       if (profile.lastName) nameParts.push(profile.lastName);
+      if (profile.middleName) nameParts.push(profile.middleName);
+      if (profile.firstName) nameParts.push(profile.firstName);
       const fullName = nameParts.join(' ').trim();
       if (fullName) {
         return fullName;
@@ -97,7 +98,7 @@ const Header = ({ onToggleSidebar }) => {
     
     // If user has firstName and lastName, construct full name
     if (user.firstName && user.lastName) {
-      return `${user.firstName} ${user.lastName}`;
+      return `${user.lastName} ${user.firstName}`;
     }
     
     // Try to get name from JWT token payload directly

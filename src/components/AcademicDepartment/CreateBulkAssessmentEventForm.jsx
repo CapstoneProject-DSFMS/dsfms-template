@@ -419,29 +419,23 @@ const CreateBulkAssessmentEventForm = ({ onSuccess }) => {
       const occDate = new Date(formData.occuranceDate);
       
       if (formData.subjectId) {
-        // If subject is selected, validate against subject date range
+        // If subject is selected, validate against subject start date only
         const selectedSubject = subjects.find(s => s.id === formData.subjectId);
         if (selectedSubject) {
           const subjectStart = new Date(selectedSubject.startDate);
-          const subjectEnd = new Date(selectedSubject.endDate);
           
           if (occDate < subjectStart) {
             newErrors.occuranceDate = `Occurrence date must be on or after subject start date (${subjectStart.toLocaleDateString()})`;
-          } else if (occDate > subjectEnd) {
-            newErrors.occuranceDate = `Occurrence date must be on or before subject end date (${subjectEnd.toLocaleDateString()})`;
           }
         }
       } else if (formData.courseId) {
-        // If only course is selected, validate against course date range
+        // If only course is selected, validate against course start date only
         const selectedCourse = courses.find(c => c.id === formData.courseId);
         if (selectedCourse) {
           const courseStart = new Date(selectedCourse.startDate);
-          const courseEnd = new Date(selectedCourse.endDate);
           
           if (occDate < courseStart) {
             newErrors.occuranceDate = `Occurrence date must be on or after course start date (${courseStart.toLocaleDateString()})`;
-          } else if (occDate > courseEnd) {
-            newErrors.occuranceDate = `Occurrence date must be on or before course end date (${courseEnd.toLocaleDateString()})`;
           }
         }
       }

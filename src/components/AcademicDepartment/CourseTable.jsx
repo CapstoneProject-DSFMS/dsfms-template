@@ -198,7 +198,7 @@ const CourseTable = ({
                     textTransform: 'uppercase'
                   }}
                 >
-                  {course.status || 'N/A'}
+                  {course.status?.replace(/_/g, ' ') || 'N/A'}
                 </Badge>
               </td>
               <td className="text-center show-mobile">

@@ -2183,7 +2183,7 @@ const EditorWithMergeFields = forwardRef(({
                       onChange={(e) => setNewSection((prev) => ({ ...prev, roleInSubject: e.target.value }))}
                       style={{ minWidth: '200px' }}
                     >
-                      <option value="ASSESSMENT_REVIEWER">ASSESSMENT_REVIEWER</option>
+                      <option value="ASSESSMENT_REVIEWER">ASSESSMENT REVIEWER</option>
                       <option value="EXAMINER">EXAMINER</option>
                     </Form.Select>
                   </Form.Group>

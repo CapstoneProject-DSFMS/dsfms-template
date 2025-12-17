@@ -158,11 +158,11 @@ const TemplateCardGrid = ({
                     className="text-muted text-truncate" 
                     style={{ maxWidth: '120px' }}
                     title={template.createdByUser?.firstName && template.createdByUser?.lastName
-                      ? `${template.createdByUser.firstName} ${template.createdByUser.lastName}`
+                      ? `${template.createdByUser.lastName} ${template.createdByUser.firstName}`
                       : template.createdBy || 'N/A'}
                   >
                     {template.createdByUser?.firstName && template.createdByUser?.lastName
-                      ? `${template.createdByUser.firstName} ${template.createdByUser.lastName}`
+                      ? `${template.createdByUser.lastName} ${template.createdByUser.firstName}`
                       : template.createdBy || 'N/A'}
                   </small>
                 </div>

@@ -260,7 +260,7 @@ export const useUserManagementAPI = () => {
       const transformedUsers = usersArray.map(user => ({
         id: user.id,
         eid: user.eid,
-        fullName: [user.firstName, user.middleName, user.lastName].filter(Boolean).join(' '),
+        fullName: [user.lastName, user.middleName, user.firstName].filter(Boolean).join(' '),
         firstName: user.firstName,
         middleName: user.middleName,
         lastName: user.lastName,

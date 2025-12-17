@@ -243,7 +243,7 @@ const AssessmentEventsList = ({ courseId, subjectId, onView }) => {
                 </td>
                 <td className="align-middle">
                   <Badge bg={getStatusBadgeColor(event.status)} className="px-3 py-2">
-                    {event.status || '-'}
+                    {event.status?.replace(/_/g, ' ') || '-'}
                   </Badge>
                 </td>
                 <td className="align-middle text-center">

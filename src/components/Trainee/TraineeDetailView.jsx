@@ -136,7 +136,7 @@ const TraineeDetailView = ({ traineeId }) => {
             <Card.Body>
               <div className="text-center mb-4">
                 <h4 className="mb-1">
-                  {trainee.firstName} {trainee.middleName} {trainee.lastName}
+                  {trainee.lastName} {trainee.middleName} {trainee.firstName}
                 </h4>
               </div>
 

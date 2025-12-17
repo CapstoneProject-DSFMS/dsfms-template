@@ -31,7 +31,7 @@ const ProfileAvatar = ({
 
   const getDisplayName = () => {
     if (profileData) {
-      return [profileData.firstName, profileData.middleName, profileData.lastName]
+      return [profileData.lastName, profileData.middleName, profileData.firstName]
         .filter(Boolean)
         .join(' ') || 'User Name';
     }

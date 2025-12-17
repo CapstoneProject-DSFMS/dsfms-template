@@ -44,9 +44,9 @@ const useProfile = () => {
     
     // Construct name from parts
     const nameParts = [];
-    if (firstName) nameParts.push(firstName);
-    if (middleName) nameParts.push(middleName);
     if (lastName) nameParts.push(lastName);
+    if (middleName) nameParts.push(middleName);
+    if (firstName) nameParts.push(firstName);
     
     return nameParts.join(' ') || 'User';
   };

@@ -56,7 +56,7 @@ const TemplateDetailPage = () => {
       
       const getDisplayName = (user) => {
         if (user?.firstName && user?.lastName) {
-          return `${user.firstName} ${user.lastName}`;
+          return `${user.lastName} ${user.firstName}`;
         }
         return user?.fullName || user?.name || 'N/A';
       };

@@ -156,8 +156,8 @@ const AssessmentEventTable = ({
           <thead className="sticky-header">
             <tr>
               <SortableHeader columnKey="name">Name</SortableHeader>
-              <SortableHeader columnKey="subject">Subject</SortableHeader>
               <SortableHeader columnKey="course">Course</SortableHeader>
+              <SortableHeader columnKey="subject">Subject</SortableHeader>
               <SortableHeader columnKey="occurrenceDate">
                 Occurrence Date
               </SortableHeader>
@@ -193,10 +193,10 @@ const AssessmentEventTable = ({
                   <span className="fw-medium">{event.name || "-"}</span>
                 </td>
                 <td className="align-middle" style={{ borderColor: "white" }}>
-                  <span>{event.subject || "-"}</span>
+                  <span>{event.course || "-"}</span>
                 </td>
                 <td className="align-middle" style={{ borderColor: "white" }}>
-                  <span>{event.course || "-"}</span>
+                  <span>{event.subject || "-"}</span>
                 </td>
                 <td className="align-middle" style={{ borderColor: "white" }}>
                   <span>{formatDate(event.occurrenceDate)}</span>
@@ -206,7 +206,7 @@ const AssessmentEventTable = ({
                     bg={getStatusBadgeColor(event.status)}
                     className="px-3 py-2"
                   >
-                    {event.status || "-"}
+                    {event.status?.replace(/_/g, ' ') || "-"}
                   </Badge>
                 </td>
                 <td
