@@ -391,7 +391,7 @@ const AssessmentSectionFieldsPage = () => {
             checked={value === 'true' || value === true || value === 'TRUE'}
             onChange={(e) => handleFieldChange(fieldId, e.target.checked ? 'true' : 'false')}
             disabled={disabled}
-            className="field-toggle"
+            className="custom-toggle-switch"
           />
         </div>
       );
@@ -407,60 +407,49 @@ const AssessmentSectionFieldsPage = () => {
         <div key={fieldId} className="field-input-wrapper">
           <Form.Label className="field-label">{label}</Form.Label>
           
-          {/* Display saved signature and pad side by side */}
-          <Row className="g-3">
-             {/* Saved Signature Image (if exists) */}
-             {savedSignatureUrl && (
-               <Col md={6} sm={12}>
-                 <div>
-                   <Form.Label className="text-muted small mb-2">Current Signature</Form.Label>
-                   <div
-                     style={{
-                       width: '350px',
-                       height: '200px',
-                       border: '1px solid #ddd',
-                       borderRadius: '4px',
-                       padding: '8px',
-                       backgroundColor: '#f8f9fa',
-                       display: 'flex',
-                       alignItems: 'center',
-                       justifyContent: 'center'
-                     }}
-                   >
-                     <img 
-                       src={savedSignatureUrl} 
-                       alt="Saved Signature" 
-                       style={{ 
-                         maxWidth: '100%',
-                         maxHeight: '100%',
-                         objectFit: 'contain'
-                       }} 
-                     />
-                   </div>
-                 </div>
-               </Col>
-             )}
-             
-             {/* Signature Pad */}
-             <Col md={savedSignatureUrl ? 6 : 12} sm={12}>
-               <div>
-                 {savedSignatureUrl && (
-                   <Form.Label className="text-muted small mb-2">Draw New Signature</Form.Label>
-                 )}
-                 <div style={{ opacity: disabled ? 0.6 : 1, pointerEvents: disabled ? 'none' : 'auto' }}>
-                   <SignaturePad
-                     onSignatureChange={(dataUrl) => {
-                       if (!disabled) {
-                         handleSignatureChange(fieldId, dataUrl);
-                       }
-                     }}
-                     width={350}
-                     height={200}
-                   />
-                 </div>
-               </div>
-             </Col>
-          </Row>
+          {/* Display saved signature OR signature pad (not both) */}
+          {savedSignatureUrl ? (
+            // Show only Current Signature when it exists
+            <div>
+              <Form.Label className="text-muted small mb-2">Current Signature</Form.Label>
+              <div
+                style={{
+                  width: '350px',
+                  height: '200px',
+                  border: '1px solid #ddd',
+                  borderRadius: '4px',
+                  padding: '8px',
+                  backgroundColor: '#f8f9fa',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center'
+                }}
+              >
+                <img 
+                  src={savedSignatureUrl} 
+                  alt="Saved Signature" 
+                  style={{ 
+                    maxWidth: '100%',
+                    maxHeight: '100%',
+                    objectFit: 'contain'
+                  }} 
+                />
+              </div>
+            </div>
+          ) : (
+            // Show signature pad only when no signature exists
+            <div style={{ opacity: disabled ? 0.6 : 1, pointerEvents: disabled ? 'none' : 'auto' }}>
+              <SignaturePad
+                onSignatureChange={(dataUrl) => {
+                  if (!disabled) {
+                    handleSignatureChange(fieldId, dataUrl);
+                  }
+                }}
+                width={350}
+                height={200}
+              />
+            </div>
+          )}
         </div>
       );
     }
@@ -843,6 +832,7 @@ const AssessmentSectionFieldsPage = () => {
               checked={state.sectionControlToggleValue}
               onChange={(e) => handleSectionControlToggle(e.target.checked)}
               disabled={!state.canUpdate && !state.canSave}
+              className="custom-toggle-switch"
             />
           </div>
         )}
