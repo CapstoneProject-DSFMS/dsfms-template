@@ -353,20 +353,13 @@ const AssessmentAssignmentsPage = () => {
     let failed = 0;
 
     state.assessments.forEach((assessment) => {
-      if (
-        assessment.status === "APPROVED" ||
-        assessment.status === "COMPLETED"
-      ) {
-        const score = assessment.resultScore || 0;
-        if (score >= 70) {
-          passed++;
-        } else {
-          failed++;
-        }
-      } else if (
-        assessment.status === "REJECTED" ||
-        assessment.status === "CANCELLED"
-      ) {
+      // Check if passed based on resultText only
+      const resultText = String(assessment.resultText || "")
+        .toUpperCase()
+        .trim();
+      if (resultText === "PASSED" || resultText === "PASS") {
+        passed++;
+      } else if (resultText === "FAILED" || resultText === "FAIL") {
         failed++;
       }
     });

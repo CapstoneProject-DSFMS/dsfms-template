@@ -30,75 +30,33 @@ const TraineeYourAssessmentsEnhanced = () => {
       setLoading(true);
       setError(null);
 
-      // Get all courses/subjects for the trainee
-      const response = await subjectAPI.getTraineeCourseSubjects(user.id);
-      const courseData = response?.courses || [];
+      // Fetch all assessments for trainee in single API call
+      const response = await assessmentAPI.getTraineeAssessments();
+      const allAssessmentsData = response?.assessments || [];
 
-      if (!Array.isArray(courseData) || courseData.length === 0) {
+      if (!Array.isArray(allAssessmentsData) || allAssessmentsData.length === 0) {
         setAssessments([]);
         setLoading(false);
         return;
       }
 
-      // Fetch assessments for all courses or subjects based on active tab
-      const allAssessments = [];
+      // Filter assessments by allowed statuses and active tab
+      const allowedStatuses = ['APPROVED', 'ON_GOING', 'DRAFT', 'SIGNATURE_PENDING', 'SUBMITTED'];
+      const filteredAssessments = allAssessmentsData.filter(assessment => 
+        allowedStatuses.includes(assessment.status)
+      );
 
+      // Filter based on active tab
+      let processedAssessments = filteredAssessments;
       if (activeTab === 'course') {
-        // Fetch assessments for all courses
-        for (const item of courseData) {
-          const course = item.course;
-          if (course?.id) {
-            try {
-              const assessmentResponse = await assessmentAPI.getCourseAssessments(course.id);
-              const courseAssessments = assessmentResponse?.assessments || [];
-              
-              // Add course info to each assessment and filter by allowed statuses
-              courseAssessments.forEach(assessment => {
-                const allowedStatuses = ['APPROVED', 'ON_GOING', 'DRAFT', 'SIGNATURE_PENDING'];
-                if (allowedStatuses.includes(assessment.status)) {
-                  allAssessments.push({
-                    ...assessment,
-                    courseInfo: assessmentResponse?.courseInfo || course
-                  });
-                }
-              });
-            } catch (err) {
-              console.error(`Error loading assessments for course ${course.id}:`, err);
-              // Continue with other courses
-            }
-          }
-        }
+        // Show only course assessments (no subject)
+        processedAssessments = filteredAssessments.filter(a => a.courseId && !a.subjectId);
       } else {
-        // Fetch assessments for all subjects
-        for (const item of courseData) {
-          const subjects = item.subjects || [];
-          for (const subject of subjects) {
-            if (subject?.id) {
-              try {
-                const assessmentResponse = await assessmentAPI.getSubjectAssessments(subject.id);
-                const subjectAssessments = assessmentResponse?.assessments || [];
-                
-                // Add subject and course info to each assessment and filter by allowed statuses
-                subjectAssessments.forEach(assessment => {
-                  const allowedStatuses = ['APPROVED', 'ON_GOING', 'DRAFT', 'SIGNATURE_PENDING'];
-                  if (allowedStatuses.includes(assessment.status)) {
-                    allAssessments.push({
-                      ...assessment,
-                      subjectInfo: assessmentResponse?.subjectInfo || subject,
-                      courseInfo: item.course
-                    });
-                  }
-                });
-              } catch (err) {
-                console.error(`Error loading assessments for subject ${subject.id}:`, err);
-                // Continue with other subjects
-              }
-            }
-          }
-        }
+        // Show only subject assessments
+        processedAssessments = filteredAssessments.filter(a => a.subjectId);
       }
 
-      setAssessments(allAssessments);
+      setAssessments(processedAssessments);
     } catch (err) {
       console.error('Error loading assessments:', err);
       setError(err.message || 'Failed to load assessments');

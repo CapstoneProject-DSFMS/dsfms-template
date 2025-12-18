@@ -78,6 +78,21 @@ const assessmentAPI = {
   },
 
   /**
+   * Get all trainee assessments (optimized - single API call)
+   * @param {Object} params - Query parameters (page, limit, etc.)
+   * @returns {Promise} Trainee assessments response with courseId and subjectId
+   */
+  getTraineeAssessments: async (params = {}) => {
+    try {
+      const response = await apiClient.get('/assessments/trainee', { params });
+      return response.data;
+    } catch (error) {
+      console.error('Error fetching trainee assessments:', error);
+      throw error;
+    }
+  },
+
+  /**
    * Get assessments by course (OLD API - deprecated)
    * @param {string} courseId
    * @param {Object} params

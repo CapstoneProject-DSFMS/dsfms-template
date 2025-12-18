@@ -221,9 +221,6 @@ const AssessmentEventReviewDetailPage = () => {
           stats.failed++;
         }
         // If resultText is empty or unknown, don't count as passed or failed
-      } else if (status === "REJECTED") {
-        stats.submitted++;
-        stats.failed++;
       } else {
         stats.pending++;
       }
@@ -419,16 +416,13 @@ const AssessmentEventReviewDetailPage = () => {
         }`.trim() ||
         `Trainee ${index + 1}`;
       const traineeEmail = assessment.trainee?.email || "-";
-      const score = assessment.resultScore || 0;
+      const score = assessment.resultScore !== undefined && assessment.resultScore !== null ? assessment.resultScore : "N/A";
       const maxScore = 100; // Default max score
       const percentage =
-        maxScore > 0 ? Math.round((score / maxScore) * 100) : 0;
+        score !== "N/A" && maxScore > 0 ? Math.round((score / maxScore) * 100) : "N/A";
 
       // Determine result based on resultText only
       let result = assessment.resultText || null;
-      if (!result && assessment.status === "REJECTED") {
-        result = "FAILED";
-      }
 
       return {
         id: assessment.id,
@@ -1360,24 +1354,23 @@ const AssessmentEventReviewDetailPage = () => {
                               <td className="align-middle">
                                 {getAssessmentStatusBadge(item.status)}
                               </td>
-                              <td className="align-middle">
-                                {item.status === "COMPLETED" ||
-                                item.status === "APPROVED" ? (
-                                  <span
-                                    className={`fw-bold ${
-                                      item.percentage >= 70
-                                        ? "text-success"
-                                        : item.percentage >= 60
-                                        ? "text-warning"
-                                        : "text-danger"
-                                    }`}
-                                  >
-                                    {item.score}/{item.maxScore}
-                                  </span>
-                                ) : (
-                                  <span className="text-muted">-</span>
-                                )}
-                              </td>
+              <td className="align-middle">
+                {item.score !== "N/A" ? (
+                  <span
+                    className={`fw-bold ${
+                      item.percentage >= 70
+                        ? "text-success"
+                        : item.percentage >= 60
+                        ? "text-warning"
+                        : "text-danger"
+                    }`}
+                  >
+                    {item.score}/{item.maxScore}
+                  </span>
+                ) : (
+                  <span className="text-muted">N/A</span>
+                )}
+              </td>
                               <td className="align-middle">
                                 {item.result ? (
                                   <Badge
@@ -1391,7 +1384,7 @@ const AssessmentEventReviewDetailPage = () => {
                                     {item.result}
                                   </Badge>
                                 ) : (
-                                  <span className="text-muted">-</span>
+                                  <span className="text-muted">N/A</span>
                                 )}
                               </td>
                               <td className="align-middle text-center">
