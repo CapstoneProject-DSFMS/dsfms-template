@@ -1,8 +1,8 @@
     import React, { useState, useEffect } from 'react';
-import { Modal, Form, Button, Row, Col } from 'react-bootstrap';
+import { Modal, Form, Button, Row, Col, Alert } from 'react-bootstrap';
 import { X, Save, Eye } from 'react-bootstrap-icons';
 
-const DepartmentModal = ({ show, department, mode, onSave, onClose, availableUsers }) => {
+const DepartmentModal = ({ show, department, mode, onSave, onClose, availableUsers, loadingUsers, usersError }) => {
   const [formData, setFormData] = useState({
     name: '',
     code: '',
@@ -193,19 +193,28 @@ const DepartmentModal = ({ show, department, mode, onSave, onClose, availableUse
                 <Form.Label className="text-primary-custom fw-semibold">
                   Department Head *
                 </Form.Label>
+                {usersError && (
+                  <Alert variant="warning" className="mb-2">
+                    <small>⚠️ {usersError}</small>
+                  </Alert>
+                )}
                 <Form.Select
                   value={formData.departmentHeadId}
                   onChange={(e) => handleInputChange('departmentHeadId', e.target.value)}
                   isInvalid={!!errors.departmentHeadId}
-                  disabled={isReadOnly}
+                  disabled={isReadOnly || loadingUsers || availableUsers.length === 0}
                   style={{
                     borderColor: errors.departmentHeadId ? '#dc3545' : 'var(--bs-primary)',
                     borderWidth: '2px'
                   }}
                 >
-                  {formData.departmentHeadId && availableUsers.find(u => u.id === formData.departmentHeadId) ? (
+                  {loadingUsers ? (
+                    <option value="">Loading department heads...</option>
+                  ) : availableUsers.length === 0 ? (
+                    <option value="">No department heads available</option>
+                  ) : formData.departmentHeadId && availableUsers.find(u => u.id === formData.departmentHeadId) ? (
                     <option value={formData.departmentHeadId}>
-                      {availableUsers.find(u => u.id === formData.departmentHeadId) && (() => {
+                      {(() => {
                         const currentHead = availableUsers.find(u => u.id === formData.departmentHeadId);
                         return `${currentHead.lastName}${currentHead.middleName ? ' ' + currentHead.middleName : ''} ${currentHead.firstName}`;
                       })()}
@@ -213,7 +222,7 @@ const DepartmentModal = ({ show, department, mode, onSave, onClose, availableUse
                   ) : (
                     <option value="">Select department head</option>
                   )}
-                  {availableUsers.map(user => (
+                  {!loadingUsers && availableUsers.map(user => (
                     <option key={user.id} value={user.id}>
                       {user.lastName}{user.middleName ? ' ' + user.middleName : ''} {user.firstName} ({user.eid})
                     </option>

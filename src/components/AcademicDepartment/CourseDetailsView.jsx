@@ -376,9 +376,9 @@ const CourseDetailsView = ({ courseId }) => {
                             }}
                           >
                             {[
-                              departmentHead.firstName,
+                              departmentHead.lastName,
                               departmentHead.middleName,
-                              departmentHead.lastName
+                              departmentHead.firstName
                             ].filter(Boolean).join(' ')}
                           </Button>
                         ) : (

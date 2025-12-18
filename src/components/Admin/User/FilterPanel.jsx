@@ -14,6 +14,15 @@ const FilterPanel = ({
 }) => {
   const hasActiveFilters = selectedRoles.length > 0 || selectedDepartments.length > 0;
 
+  // Format role name: remove underscores and capitalize words
+  const formatRoleName = (role) => {
+    if (!role) return '';
+    return role
+      .split('_')
+      .map(word => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
+      .join(' ');
+  };
+
   return (
     <Dropdown className={`filter-panel-dropdown ${className}`}>
       <Dropdown.Toggle 
@@ -78,7 +87,7 @@ const FilterPanel = ({
                 key={role}
                 type="checkbox"
                 id={`role-${role}`}
-                label={role}
+                label={formatRoleName(role)}
                 checked={selectedRoles.includes(role)}
                 onChange={() => onRoleToggle(role)}
                 className="mb-1"

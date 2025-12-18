@@ -547,14 +547,16 @@ const InPageCourseDetail = ({ course, department } = {}) => {
       <div className="d-flex justify-content-between align-items-center mb-2">
         {/* Left Group - Enroll Trainees */}
         <div className="d-flex">
-          <PermissionWrapper 
-            permission={PERMISSION_IDS.ENROLL_SINGLE_TRAINEE}
-            fallback={null}
-          >
-            <Button size="sm" variant="primary" onClick={handleEnrollTrainees}>
-              <People size={14} className="me-1" /> Enroll Trainees
-            </Button>
-          </PermissionWrapper>
+          {courseDetails?.status === 'PLANNED' && (
+            <PermissionWrapper 
+              permission={PERMISSION_IDS.ENROLL_SINGLE_TRAINEE}
+              fallback={null}
+            >
+              <Button size="sm" variant="primary" onClick={handleEnrollTrainees}>
+                <People size={14} className="me-1" /> Enroll Trainees
+              </Button>
+            </PermissionWrapper>
+          )}
         </div>
 
         {/* Right Group - Subject Management & Edit Course */}
@@ -570,34 +572,40 @@ const InPageCourseDetail = ({ course, department } = {}) => {
             </PermissionWrapper>
           )}
           <div className="vr" style={{ height: '24px', margin: '0 8px' }}></div>
-          <PermissionWrapper 
-            permission={PERMISSION_IDS.CREATE_SUBJECT}
-            fallback={null}
-          >
-            <Button size="sm" variant="primary" onClick={() => setShowAddSubject(true)}>
-              <Plus size={14} className="me-1" /> Add Subject
-            </Button>
-          </PermissionWrapper>
-          <PermissionWrapper 
-            permission={PERMISSION_IDS.CREATE_BULK_SUBJECTS}
-            fallback={null}
-          >
-            <Button size="sm" variant="outline-primary" onClick={() => setShowBulkImport(true)}>
-              <Upload size={14} className="me-1" /> Import Bulk Subjects
-            </Button>
-          </PermissionWrapper>
-          <PermissionWrapper 
-            permission={PERMISSION_IDS.REMOVE_TRAINEE_FROM_ENROLLMENT}
-            fallback={null}
-          >
-            <Button 
-              size="sm" 
-              variant="outline-danger" 
-              onClick={() => setShowDeleteBatchEnrollments(true)}
+          {courseDetails?.status === 'PLANNED' && (
+            <PermissionWrapper 
+              permission={PERMISSION_IDS.CREATE_SUBJECT}
+              fallback={null}
             >
-              <Trash size={14} className="me-1" /> Delete Enrollment Batch
-            </Button>
-          </PermissionWrapper>
+              <Button size="sm" variant="primary" onClick={() => setShowAddSubject(true)}>
+                <Plus size={14} className="me-1" /> Add Subject
+              </Button>
+            </PermissionWrapper>
+          )}
+          {courseDetails?.status === 'PLANNED' && (
+            <PermissionWrapper 
+              permission={PERMISSION_IDS.CREATE_BULK_SUBJECTS}
+              fallback={null}
+            >
+              <Button size="sm" variant="outline-primary" onClick={() => setShowBulkImport(true)}>
+                <Upload size={14} className="me-1" /> Import Bulk Subjects
+              </Button>
+            </PermissionWrapper>
+          )}
+          {courseDetails?.status === 'PLANNED' && (
+            <PermissionWrapper 
+              permission={PERMISSION_IDS.REMOVE_TRAINEE_FROM_ENROLLMENT}
+              fallback={null}
+            >
+              <Button 
+                size="sm" 
+                variant="outline-danger" 
+                onClick={() => setShowDeleteBatchEnrollments(true)}
+              >
+                <Trash size={14} className="me-1" /> Delete Enrollment Batch
+              </Button>
+            </PermissionWrapper>
+          )}
         </div>
       </div>
 

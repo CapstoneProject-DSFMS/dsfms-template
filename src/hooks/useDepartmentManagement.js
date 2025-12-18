@@ -345,10 +345,16 @@ const useDepartmentManagement = (shouldLoad = true, mode = 'all') => {
   const getAvailableUsers = useCallback(async () => {
     try {
       const response = await departmentAPI.getDepartmentHeads();
-      // API returns { users: [...], totalItems: 7 }
-      return response?.users || [];
+      console.log('🔍 Raw API response:', response);
+      
+      // API returns { message: "...", data: { users: [...], totalItems: 2 } }
+      // departmentAPI.getDepartmentHeads() returns response.data
+      // So we need to access response.data.users or response.users
+      const users = response?.data?.users || response?.users || [];
+      console.log('✅ Extracted users:', users);
+      return users;
     } catch (error) {
-      console.error('Error fetching department heads:', error);
+      console.error('❌ Error fetching department heads:', error);
       toast.error('Failed to load department heads');
       return [];
     }

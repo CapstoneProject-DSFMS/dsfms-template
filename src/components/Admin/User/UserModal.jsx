@@ -271,8 +271,6 @@ const UserModal = ({ show, user, mode, onSave, onClose }) => {
       }
       if (!formData.passportNo.trim()) {
         newErrors.passportNo = 'Passport number is required for trainees';
-      } else if (!/^\d{1,20}$/.test(formData.passportNo.trim())) {
-        newErrors.passportNo = 'Passport number must be 1-20 digits only';
       }
       if (!formData.dateOfBirth.trim()) {
         newErrors.dateOfBirth = 'Date of birth is required for trainees';

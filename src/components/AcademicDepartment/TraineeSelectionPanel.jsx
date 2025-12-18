@@ -6,19 +6,16 @@ import { PERMISSION_IDS } from '../../constants/permissionIds';
 import traineeAPI from '../../api/trainee';
 import './TraineeSelectionPanel.css';  // ← ADD CUSTOM CSS
 
-const TraineeSelectionPanel = ({ selectedTrainees, onSelectionChange, subjects = [] }) => {
+const TraineeSelectionPanel = ({ selectedTrainees, onSelectionChange, subjects = [], availableTrainees = [], loadingTrainees = false }) => {
   const [searchTerm, setSearchTerm] = useState('');
   const [showAvailableDropdown, setShowAvailableDropdown] = useState(false);
-  const [allTrainees, setAllTrainees] = useState([]);
-  const [loadingTrainees, setLoadingTrainees] = useState(false);
   const [error, setError] = useState(null);
   const [justAddedTraineeId, setJustAddedTraineeId] = useState(null);
   const dropdownRef = useRef(null);
 
-  // Load trainees from API when subjects list changes
-  useEffect(() => {
-    loadTrainees();
-  }, [subjects]);
+  // Remove the useEffect that loads trainees from API
+  // Parent component (EnrollTraineesPage) handles API calls via handleSubjectToggle
+  // We only display trainees passed from parent via availableTrainees prop
 
   // Close dropdown when clicking outside
   useEffect(() => {
@@ -37,41 +34,18 @@ const TraineeSelectionPanel = ({ selectedTrainees, onSelectionChange, subjects =
     };
   }, [showAvailableDropdown]);
 
-  const loadTrainees = async () => {
-    // Extract all subject IDs from subjects list
-    const subjectIds = Array.isArray(subjects) 
-      ? subjects.map(subject => subject.id).filter(Boolean) // Filter out null/undefined IDs
-      : [];
-    
-    // If no subjects, clear trainees list
-    if (subjectIds.length === 0) {
-      setAllTrainees([]);
-      setError(null);
-      return;
-    }
-
-    setLoadingTrainees(true);
-    setError(null);
-    try {
-      // Call POST API with subjectIds in body
-      const response = await traineeAPI.getTraineesForEnrollment(subjectIds);
-      
-      // Response format: { message: "...", data: { trainees: [...], totalItems: ... } }
-      const traineesData = response?.data?.trainees || [];
-      
-      // Transform API data to match component format
-      // API returns: { id, eid, firstName, middleName, lastName, email, avatarUrl, departmentId, department: { id, name } }
-      const transformedTrainees = traineesData.map(trainee => {
-        // Combine firstName, middleName, lastName into full name
+  // Transform availableTrainees from parent into the format we need
+  const allTrainees = Array.isArray(availableTrainees) 
+    ? availableTrainees.map(trainee => {
         const nameParts = [
           trainee.firstName,
           trainee.middleName,
           trainee.lastName
-        ].filter(Boolean); // Remove null/undefined/empty strings
+        ].filter(Boolean);
         
         const name = nameParts.length > 0 
           ? nameParts.join(' ').trim()
-          : trainee.eid; // Fallback to eid if no name
+          : trainee.eid;
         
         return {
           id: trainee.id,
@@ -80,20 +54,17 @@ const TraineeSelectionPanel = ({ selectedTrainees, onSelectionChange, subjects =
           firstName: trainee.firstName || '',
           lastName: trainee.lastName || '',
           email: trainee.email,
-          status: trainee.status || 'ACTIVE', // Default to ACTIVE if not provided
+          status: trainee.status || 'ACTIVE',
           departmentId: trainee.departmentId,
           departmentName: trainee.department?.name || ''
         };
-      });
-      
-      setAllTrainees(transformedTrainees);
-    } catch (error) {
-      console.error('Error loading trainees:', error);
-      setError('Failed to load trainees');
-      setAllTrainees([]);
-    } finally {
-      setLoadingTrainees(false);
-    }
+      })
+    : [];
+
+  const loadTrainees = async () => {
+    // NO LONGER USED - API calls handled by parent component
+    // Parent passes availableTrainees via props
+    console.warn('loadTrainees called but should not be - parent handles API calls');
   };
 
   const filteredTrainees = allTrainees.filter(trainee =>

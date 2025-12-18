@@ -23,6 +23,7 @@ const DisableUserModal = ({
       centered
       backdrop="static"
       keyboard={false}
+      dialogClassName="modal-scrollable-content"
     >
       <Modal.Header 
         closeButton 
@@ -37,7 +38,7 @@ const DisableUserModal = ({
         </Modal.Title>
       </Modal.Header>
 
-      <Modal.Body className="py-4">
+      <Modal.Body className="py-4" style={{ maxHeight: 'calc(100vh - 200px)', overflowY: 'auto' }}>
         <div className="text-center mb-4">
           <div className={`rounded-circle d-inline-flex align-items-center justify-content-center mb-3 ${
             isDisabling ? 'bg-warning-subtle' : 'bg-success-subtle'

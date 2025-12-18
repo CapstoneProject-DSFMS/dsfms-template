@@ -8,6 +8,7 @@ const transformDepartmentData = (response) => {
   return {
     id: response.id,
     name: response.name,
+    code: response.code,
     description: response.description,
     headUserId: response.headUserId,
     headUser: response.headUser,
@@ -26,9 +27,18 @@ const EditDepartmentDetails = ({ department, onUpdate }) => {
     description: department.description || '',
     headUserId: department.headUserId || ''
   });
+  const [originalData, setOriginalData] = useState({
+    name: department.name || '',
+    code: department.code || '',
+    description: department.description || '',
+    headUserId: department.headUserId || ''
+  });
   const [loading, setLoading] = useState(false);
   const [availableUsers, setAvailableUsers] = useState([]);
   const [loadingHeads, setLoadingHeads] = useState(false);
+
+  // Check if form data has changed from original
+  const hasChanges = JSON.stringify(formData) !== JSON.stringify(originalData);
 
   const loadDepartmentHeads = async () => {
     try {
@@ -50,6 +60,18 @@ const EditDepartmentDetails = ({ department, onUpdate }) => {
     // Load department heads on component mount
     loadDepartmentHeads();
   }, []);
+
+  // Reset form when department prop changes
+  useEffect(() => {
+    const updatedFormData = {
+      name: department.name || '',
+      code: department.code || '',
+      description: department.description || '',
+      headUserId: department.headUserId || ''
+    };
+    setFormData(updatedFormData);
+    setOriginalData(updatedFormData);
+  }, [department]);
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
@@ -84,8 +106,11 @@ const EditDepartmentDetails = ({ department, onUpdate }) => {
 
       const response = await departmentAPI.updateDepartment(department.id, formData);
       
+      // Fetch full department details to ensure all data is complete
+      const fullDepartmentData = await departmentAPI.getDepartmentById(department.id);
+      
       // Transform response to match expected format
-      const transformedDepartment = transformDepartmentData(response);
+      const transformedDepartment = transformDepartmentData(fullDepartmentData);
       onUpdate(transformedDepartment);
       toast.success('Department updated successfully!');
     } catch (err) {
@@ -164,21 +189,25 @@ const EditDepartmentDetails = ({ department, onUpdate }) => {
                 onChange={handleInputChange}
                 onFocus={loadDepartmentHeads}
               >
-                {formData.headUserId && (department?.headUser || availableUsers.find(u => u.id === formData.headUserId)) ? (
-                  <option value={formData.headUserId}>
-                    {(() => {
-                      const currentHead = department?.headUser || availableUsers.find(u => u.id === formData.headUserId);
-                      return `${currentHead.lastName || ''}${currentHead.middleName ? ' ' + currentHead.middleName : ''} ${currentHead.firstName || ''}`.trim();
-                    })()}
+                {!formData.headUserId && <option value="">Select Department Head</option>}
+                
+                {/* Show current department head if available */}
+                {formData.headUserId && department?.headUser && (
+                  <option value={formData.headUserId} selected>
+                    [{department.headUser.eid}] - {department.headUser.lastName}
+                    {department.headUser.middleName ? ' ' + department.headUser.middleName : ''} {department.headUser.firstName}
                   </option>
-                ) : (
-                  <option value="">Select Department Head</option>
                 )}
-                {Array.isArray(availableUsers) && availableUsers.map(user => (
-                  <option key={user.id} value={user.id}>
-                    [{user.eid}] - {user.lastName}{user.middleName ? ' ' + user.middleName : ''} {user.firstName}
-                  </option>
-                ))}
+                
+                {/* Show all available department heads */}
+                {Array.isArray(availableUsers) && availableUsers.map(user => {
+                  const displayName = `[${user.eid}] - ${user.lastName}${user.middleName ? ' ' + user.middleName : ''} ${user.firstName}`;
+                  return (
+                    <option key={user.id} value={user.id}>
+                      {displayName}
+                    </option>
+                  );
+                })}
               </select>
             </div>
           </Col>
@@ -200,7 +229,7 @@ const EditDepartmentDetails = ({ department, onUpdate }) => {
           <Button 
             type="submit" 
             variant="primary"
-            disabled={loading}
+            disabled={loading || !hasChanges}
           >
             {loading ? 'Updating...' : 'Update Department'}
           </Button>
