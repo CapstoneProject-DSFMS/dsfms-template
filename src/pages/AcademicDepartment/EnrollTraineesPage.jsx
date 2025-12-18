@@ -10,6 +10,7 @@ import BulkImportTraineesModal from '../../components/AcademicDepartment/BulkImp
 import BatchCodeModal from '../../components/AcademicDepartment/BatchCodeModal';
 import courseAPI from '../../api/course';
 import subjectAPI from '../../api/subject';
+import traineeAPI from '../../api/trainee';
 import { PermissionWrapper } from '../../components/Common'; // Add this
 import { PERMISSION_IDS } from '../../constants/permissionIds'; // Add this
 
@@ -29,6 +30,8 @@ const EnrollTraineesPage = () => {
   const [bulkImportLoading, setBulkImportLoading] = useState(false);
   const [enrollLoading, setEnrollLoading] = useState(false);
   const [subjectsMap, setSubjectsMap] = useState({}); // Map subjectId to subject name/code
+  const [availableTrainees, setAvailableTrainees] = useState([]);
+  const [loadingTrainees, setLoadingTrainees] = useState(false);
 
   // Load course data from API
   useEffect(() => {
@@ -74,28 +77,35 @@ const EnrollTraineesPage = () => {
 
   // Optional: Keep this for backward compatibility if subjectsMap is used elsewhere
   useEffect(() => {
-    // If subjects map wasn't set by course API, load from all subjects (fallback)
-    if (Object.keys(subjectsMap).length === 0 && !courseLoading) {
-      const loadSubjectsMap = async () => {
-        try {
-          const response = await subjectAPI.getSubjects();
-          if (response && response.subjects) {
-            const map = {};
-            response.subjects.forEach(subject => {
-              map[subject.id] = {
-                name: subject.name,
-                code: subject.code
-              };
-            });
-            setSubjectsMap(map);
-          }
-        } catch (error) {
-          // Silently fail - subjects map is optional for error display
-        }
-      };
-      loadSubjectsMap();
+    // Fallback removed - subjects are loaded from course API only
+  }, []);
+
+  // Fetch available trainees when selected subjects change
+  const fetchAvailableTrainees = async (subjectIds) => {
+    try {
+      setLoadingTrainees(true);
+      const response = await traineeAPI.getTraineesForEnrollment(subjectIds);
+      setAvailableTrainees(response.data?.trainees || []);
+    } catch (error) {
+      console.error('Error fetching trainees:', error);
+      toast.error('Failed to load available trainees');
+      setAvailableTrainees([]);
+    } finally {
+      setLoadingTrainees(false);
     }
-  }, [courseLoading]);
+  };
+
+  // Handle subject selection/deselection
+  const handleSubjectToggle = async (newSelectedSubjects) => {
+    setSelectedSubjects(newSelectedSubjects);
+    
+    // Fetch trainees for selected subjects
+    if (newSelectedSubjects.length > 0) {
+      await fetchAvailableTrainees(newSelectedSubjects);
+    } else {
+      setAvailableTrainees([]);
+    }
+  };
 
   // Show loading state while course is loading
   if (courseLoading) {
@@ -444,7 +454,7 @@ const EnrollTraineesPage = () => {
             <div style={{ height: '500px', position: 'relative', zIndex: 1, overflow: 'visible', marginBottom: '2rem' }}>
               <SubjectSelectionPanel 
                 selectedSubjects={selectedSubjects}
-                onSelectionChange={setSelectedSubjects}
+                onSelectionChange={handleSubjectToggle}
                 subjects={courseSubjects}
               />
             </div>
@@ -457,6 +467,8 @@ const EnrollTraineesPage = () => {
                 selectedTrainees={selectedTrainees}
                 onSelectionChange={setSelectedTrainees}
                 subjects={courseSubjects}
+                availableTrainees={availableTrainees}
+                loadingTrainees={loadingTrainees}
               />
             </div>
           </Col>

@@ -16,6 +16,15 @@ const UserRow = ({ user, index, onView, onEdit, onDisable }) => {
     return status === 'ACTIVE' ? '●' : '○';
   };
 
+  // Format role name: remove underscores and capitalize words
+  const formatRoleName = (role) => {
+    if (!role) return '';
+    return role
+      .split('_')
+      .map(word => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
+      .join(' ');
+  };
+
   // Kiểm tra xem người dùng TRONG BẢNG có phải là ADMINISTRATOR hay không.
   // Đây KHÔNG phải là kiểm tra vai trò của người dùng đang đăng nhập.
   const isAdmin = user.role === 'ADMINISTRATOR';
@@ -61,7 +70,7 @@ const UserRow = ({ user, index, onView, onEdit, onDisable }) => {
             fontSize: '0.75rem'
           }}
         >
-          {user.role}
+          {formatRoleName(user.role)}
         </Badge>
       </td>
       

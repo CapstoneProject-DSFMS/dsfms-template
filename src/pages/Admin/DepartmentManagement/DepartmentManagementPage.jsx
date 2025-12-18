@@ -49,6 +49,8 @@ const DepartmentManagementPage = () => {
   
   // Available users for department head selection
   const [availableUsers, setAvailableUsers] = useState([]);
+  const [loadingUsers, setLoadingUsers] = useState(false);
+  const [usersError, setUsersError] = useState(null);
 
   // Load departments based on permission - extracted as function for reuse
   const loadDepartmentsData = useCallback(async () => {
@@ -111,22 +113,54 @@ const DepartmentManagementPage = () => {
   useEffect(() => {
     const loadAvailableUsers = async () => {
       try {
+        setLoadingUsers(true);
+        setUsersError(null);
+        console.log('📥 Loading available department heads...');
         const users = await getAvailableUsers();
-        setAvailableUsers(users);
+        console.log('✅ Department heads loaded:', users);
+        console.log('✅ Users type:', typeof users, 'Is array:', Array.isArray(users), 'Length:', users?.length);
+        if (Array.isArray(users) && users.length > 0) {
+          setAvailableUsers(users);
+        } else {
+          console.warn('⚠️ No department heads available or empty array');
+          setUsersError('No department heads available');
+          setAvailableUsers([]);
+        }
       } catch (error) {
-        console.error('Error loading available users:', error);
+        console.error('❌ Error loading available users:', error);
+        setUsersError(error?.message || 'Failed to load department heads');
         setAvailableUsers([]);
+      } finally {
+        setLoadingUsers(false);
       }
     };
 
     loadAvailableUsers();
   }, [getAvailableUsers]);
 
-  // Modal handlers
+  // Reload department heads when modal opens
   const handleAddDepartment = () => {
     setSelectedDepartment(null);
     setModalMode('add');
     setShowModal(true);
+    
+    // Reload department heads data when opening modal for add
+    const reloadHeads = async () => {
+      try {
+        console.log('🔄 Reloading department heads for modal...');
+        const users = await getAvailableUsers();
+        if (Array.isArray(users) && users.length > 0) {
+          setAvailableUsers(users);
+          setUsersError(null);
+        } else {
+          setUsersError('No department heads available');
+        }
+      } catch (error) {
+        console.error('Error reloading department heads:', error);
+        setUsersError(error?.message || 'Failed to reload department heads');
+      }
+    };
+    reloadHeads();
   };
 
   const handleViewDepartment = (department) => {
@@ -350,6 +384,8 @@ const DepartmentManagementPage = () => {
             onSave={handleSaveDepartment}
             onClose={handleCloseModal}
             availableUsers={availableUsers}
+            loadingUsers={loadingUsers}
+            usersError={usersError}
           />
         )}
 
