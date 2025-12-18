@@ -160,7 +160,10 @@ export const useUserManagementAPI = () => {
         passportNo: userDetail.traineeProfile?.passportNo || '',
         nation: userDetail.traineeProfile?.nation || '',
         createdAt: userDetail.createdAt,
-        lastLogin: userDetail.lastLogin || ''
+        lastLogin: userDetail.lastLogin || '',
+        // ✅ Include full profile objects for UserModal
+        traineeProfile: userDetail.traineeProfile || null,
+        trainerProfile: userDetail.trainerProfile || null
       };
       setSelectedUser(transformedUser);
       setModalMode('view');
@@ -204,7 +207,10 @@ export const useUserManagementAPI = () => {
         passportNo: userDetail.traineeProfile?.passportNo || '',
         nation: userDetail.traineeProfile?.nation || '',
         createdAt: userDetail.createdAt,
-        lastLogin: userDetail.lastLogin || ''
+        lastLogin: userDetail.lastLogin || '',
+        // ✅ Include full profile objects for UserModal
+        traineeProfile: userDetail.traineeProfile || null,
+        trainerProfile: userDetail.trainerProfile || null
       };
       
       setSelectedUser(transformedUser);
@@ -332,9 +338,23 @@ export const useUserManagementAPI = () => {
       let newRoleId = null;
       try {
         // Use public API (no permission required)
-        const rolesData = await roleAPI.getRoles();
+        const rolesResponse = await roleAPI.getRoles();
         
-        const targetRole = rolesData.find(role => role.name === userData.role);
+        // ✅ Handle different response formats
+        let rolesArray = [];
+        if (Array.isArray(rolesResponse)) {
+          rolesArray = rolesResponse;
+        } else if (rolesResponse?.roles && Array.isArray(rolesResponse.roles)) {
+          rolesArray = rolesResponse.roles;
+        } else if (rolesResponse?.data && Array.isArray(rolesResponse.data)) {
+          rolesArray = rolesResponse.data;
+        }
+        
+        if (!rolesArray || rolesArray.length === 0) {
+          throw new Error('No roles found in API response');
+        }
+        
+        const targetRole = rolesArray.find(role => role.name === userData.role);
         if (targetRole) {
           newRoleId = targetRole.id;
         } else {

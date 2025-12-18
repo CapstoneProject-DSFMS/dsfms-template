@@ -172,56 +172,21 @@ const EnrolledTraineesTable = ({ courseId, subjectId, loading = false, refreshTr
 
     setRemoveLoading(true);
     try {
-      // Call API to get trainee enrollments
-      const response = await courseAPI.getTraineeEnrollments(courseId, traineeToRemove.userId);
-      const responseData = response?.data || response;
-      // Filter out cancelled enrollments before removing
-      const subjects = (responseData.subjects || []).filter(item => 
-        item.enrollment?.status !== 'CANCELLED'
-      );
+      // Call API to remove trainee from all subjects in the course
+      await subjectAPI.removeTraineeFromAllSubjects(courseId, traineeToRemove.userId);
       
-      if (subjects.length > 0) {
-        // Remove trainee from each subject
-        const removePromises = subjects.map(async (item) => {
-          const subject = item.subject || item;
-          const enrollment = item.enrollment;
-          const subjectId = subject.id;
-          const batchCode = enrollment?.batchCode;
-          
-          if (!batchCode) {
-            return null; // Skip if no batch code
-          }
-          
-          return subjectAPI.removeTraineeFromSubject(subjectId, traineeToRemove.userId, batchCode);
-        });
-        
-        // Wait for all removals to complete (filter out null values)
-        const validPromises = removePromises.filter(promise => promise !== null);
-        if (validPromises.length > 0) {
-          await Promise.all(validPromises);
-        }
-        
-        // Refresh the enrolled trainees data
-        await loadEnrolledTrainees();
-        
-        // Show success toast
-        toast.success(`Successfully removed ${traineeToRemove.name} from all subjects`, {
-          autoClose: 3000,
-          position: "top-right",
-          icon: false
-        });
-        
-        // Close modal
-        setShowRemoveModal(false);
-      } else {
-        // No enrollments found
-        toast.warning(`No enrollments found for ${traineeToRemove.name}`, {
-          autoClose: 3000,
-          position: "top-right",
-          icon: false
-        });
-        setShowRemoveModal(false);
-      }
+      // Refresh the enrolled trainees data
+      await loadEnrolledTrainees();
+      
+      // Show success toast
+      toast.success(`Successfully removed ${traineeToRemove.name} from all subjects`, {
+        autoClose: 3000,
+        position: "top-right",
+        icon: false
+      });
+      
+      // Close modal
+      setShowRemoveModal(false);
       
     } catch (error) {
       // Show error toast

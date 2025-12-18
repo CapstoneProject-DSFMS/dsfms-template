@@ -83,10 +83,20 @@ const DisableUserModal = ({
               <div className="text-muted small">Role</div>
               <div className="fw-medium">{user.role}</div>
             </div>
-            <div className="col-4">
-              <div className="text-muted small">Department</div>
-              <div className="fw-medium">{user.department}</div>
-            </div>
+            {/* ✅ Only show Department for DEPARTMENT_HEAD role */}
+            {user.role === 'DEPARTMENT_HEAD' && (
+              <div className="col-4">
+                <div className="text-muted small">Department</div>
+                <div className="fw-medium">{user.department || 'N/A'}</div>
+              </div>
+            )}
+            {/* ✅ If not DEPARTMENT_HEAD, take full width for Role */}
+            {user.role !== 'DEPARTMENT_HEAD' && (
+              <div className="col-4">
+                <div className="text-muted small">&nbsp;</div>
+                <div className="fw-medium">&nbsp;</div>
+              </div>
+            )}
           </div>
         </div>
 

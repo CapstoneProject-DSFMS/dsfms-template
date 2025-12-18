@@ -128,8 +128,8 @@ const EnrollTraineesPage = () => {
   }
 
   const handleBack = () => {
-    // Navigate back to course detail page
-    navigate(ROUTES.ACADEMIC_COURSE_DETAIL(courseId));
+    // Navigate back using browser history (don't push new entry)
+    navigate(-1);
   };
 
   const handleBulkImport = () => {

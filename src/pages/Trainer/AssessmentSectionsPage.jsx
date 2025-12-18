@@ -84,7 +84,7 @@ const TrainerAssessmentSectionsPage = () => {
     });
   }, [state.sections]);
 
-  const roleInSubject = sortedSections[0]?.templateSection?.roleInSubject || state.userRole;
+  const roleInSubject = state.userRole;
 
   const formatDate = (dateStr) => {
     if (!dateStr) return '—';

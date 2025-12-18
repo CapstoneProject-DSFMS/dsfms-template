@@ -65,6 +65,7 @@ const InPageCourseDetail = ({ course, department } = {}) => {
   // Course details state
   const [courseDetails, setCourseDetails] = useState(null);
   const [subjects, setSubjects] = useState([]);
+  const [trainers, setTrainers] = useState([]);
   const [loading, setLoading] = useState(true);
   // const [hasApiData, setHasApiData] = useState(false); // Track if we have API data
 
@@ -76,6 +77,26 @@ const InPageCourseDetail = ({ course, department } = {}) => {
       const status = subject?.status?.toUpperCase();
       return status !== 'ARCHIVED' && !subject?.deletedAt;
     });
+  };
+  
+  // Helper function to load and transform trainers from course data
+  const loadCourseTrainers = (courseData) => {
+    if (courseData && courseData.instructors && Array.isArray(courseData.instructors)) {
+      // Transform instructor data to match UI format
+      const transformedTrainers = courseData.instructors.map(trainer => ({
+        id: trainer.id,
+        eid: trainer.eid,
+        name: `${trainer.firstName} ${trainer.lastName}`,
+        email: trainer.email,  // ✅ Add email
+        phoneNumber: trainer.phoneNumber,  // ✅ Add phone number
+        role: trainer.roleInCourse?.[0] || 'TRAINER',  // roleInCourse is array, get first element
+        assignedAt: trainer.assignedAt || new Date()
+      }));
+      
+      setTrainers(transformedTrainers);
+    } else {
+      setTrainers([]);
+    }
   };
   
   // Active tab state - check location state for initial tab
@@ -131,10 +152,13 @@ const InPageCourseDetail = ({ course, department } = {}) => {
           subjectCount: response.subjectCount || 0,
           traineeCount: response.traineeCount || 0,
           trainerCount: response.trainerCount || 0,
-          instructors: response.instructors || [] // Add instructors from API
+          instructors: response.courseInstructors || [] // Map courseInstructors to instructors
         };
         
         setCourseDetails(transformedCourseDetails);
+        
+        // ✅ Load and transform trainers from instructors field
+        loadCourseTrainers(transformedCourseDetails);
         
         // Extract and set subjects from API response (filter out archived)
         if (response.subjects && Array.isArray(response.subjects)) {
@@ -376,8 +400,13 @@ const InPageCourseDetail = ({ course, department } = {}) => {
       if (response) {
         setCourseDetails(prev => ({
           ...prev,
-          instructors: response.instructors || []
+          instructors: response.courseInstructors || []
         }));
+        // ✅ Update trainers state with transformed data
+        loadCourseTrainers({
+          ...response,
+          instructors: response.courseInstructors || []
+        });
       }
     } catch (error) {
       const errorMessage = error?.response?.data?.message || error?.message || 'Failed to assign trainer';
@@ -422,8 +451,13 @@ const InPageCourseDetail = ({ course, department } = {}) => {
       if (response) {
         setCourseDetails(prev => ({
           ...prev,
-          instructors: response.instructors || []
+          instructors: response.courseInstructors || []
         }));
+        // ✅ Update trainers state with transformed data
+        loadCourseTrainers({
+          ...response,
+          instructors: response.courseInstructors || []
+        });
       }
     } catch (error) {
       const errorMessage = error?.response?.data?.message || error?.message || 'Failed to update trainer role';
@@ -466,6 +500,9 @@ const InPageCourseDetail = ({ course, department } = {}) => {
         instructors: (prev.instructors || []).filter(instr => instr.id !== trainerId),
         trainerCount: Math.max(0, (prev.trainerCount || 0) - 1)
       }));
+      
+      // ✅ Update trainers state by removing the trainer
+      setTrainers(prev => prev.filter(trainer => trainer.id !== trainerId));
       
       setShowRemoveTrainer(false);
       setSelectedTrainerToRemove(null);
@@ -862,7 +899,7 @@ const InPageCourseDetail = ({ course, department } = {}) => {
               {/* Assign Trainer Tab */}
               <Tab.Pane eventKey="assign-trainer" style={{ height: '100%' }}>
                 <TrainersInAssessmentTable
-                  trainers={courseDetails?.instructors || []}
+                  trainers={trainers}
                   variant="course"
                   onEdit={(trainerId) => handleEditTrainer(trainerId)}
                   onDelete={(trainerId) => handleRemoveTrainer(trainerId)}

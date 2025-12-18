@@ -25,10 +25,27 @@ const UserModal = ({ show, user, mode, onSave, onClose }) => {
     nation: '',
     department: ''
   });
+
+  // DEBUG: Log user prop
+  console.log('🔍 DEBUG UserModal: user prop received:', user);
+  if (user?.traineeProfile) {
+    console.log('   traineeProfile:', user.traineeProfile);
+    console.log('   traineeProfile.dob:', user.traineeProfile.dob);
+    console.log('   traineeProfile.nation:', user.traineeProfile.nation);
+    console.log('   traineeProfile.trainingBatch:', user.traineeProfile.trainingBatch);
+  }
   const [errors, setErrors] = useState({});
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [roles, setRoles] = useState([]);
   const [rolesLoading, setRolesLoading] = useState(false);
+
+  // ✅ Helper: Normalize field values (convert "N/A" and empty strings)
+  const normalizeField = (value) => {
+    if (!value || value === 'N/A' || value === 'null' || value === 'undefined') {
+      return '';
+    }
+    return String(value).trim();
+  };
 
   // Format role name: remove underscores and capitalize words
   const formatRoleName = (role) => {
@@ -82,25 +99,86 @@ const UserModal = ({ show, user, mode, onSave, onClose }) => {
 
   useEffect(() => {
     if (user && mode !== 'add') {
-      setFormData({
+      // ✅ Extract role name (from role object or string)
+      const roleName = typeof user.role === 'string' ? user.role : (user.role?.name || '');
+      
+      // ✅ Initialize base data with normalization
+      let formDataToSet = {
         firstName: user.firstName || '',
         middleName: user.middleName || '',
         lastName: user.lastName || '',
         address: user.address || '',
         email: user.email || '',
         phoneNumber: user.phoneNumber || '',
-        role: user.role || '',
+        role: roleName,
         roleId: user.roleId || '',
-        certificationNumber: user.certificationNumber || '',
-        specialization: user.specialization || '',
-        yearsOfExperience: user.yearsOfExperience || '',
-        bio: user.bio || '',
-        dateOfBirth: user.dateOfBirth || '',
-        trainingBatch: user.trainingBatch || '',
-        passportNo: user.passportNo || '',
-        nation: user.nation || '',
-        department: user.department || ''
-      });
+        department: normalizeField(user.department),  // ✅ Normalize "N/A" → ""
+        certificationNumber: '',
+        specialization: '',
+        yearsOfExperience: '',
+        bio: '',
+        dateOfBirth: '',
+        trainingBatch: '',
+        passportNo: '',
+        nation: ''
+      };
+
+      // ✅ Load TRAINEE-specific data from traineeProfile
+      if (roleName === 'TRAINEE' && user.traineeProfile) {
+        console.log('✅ traineeProfile found:', user.traineeProfile);
+        
+        formDataToSet.dateOfBirth = user.traineeProfile.dob ? user.traineeProfile.dob.split('T')[0] : '';
+        formDataToSet.passportNo = normalizeField(user.traineeProfile.passportNo);
+        formDataToSet.nation = normalizeField(user.traineeProfile.nation);
+        formDataToSet.trainingBatch = normalizeField(user.traineeProfile.trainingBatch);
+        
+        console.log('✅ DEBUG: Loaded TRAINEE profile data:');
+        console.log('   dob raw:', user.traineeProfile.dob);
+        console.log('   dateOfBirth after split:', formDataToSet.dateOfBirth);
+        console.log('   nation raw:', user.traineeProfile.nation);
+        console.log('   nation after normalize:', formDataToSet.nation);
+        console.log('   trainingBatch raw:', user.traineeProfile.trainingBatch);
+        console.log('   trainingBatch after normalize:', formDataToSet.trainingBatch);
+        console.log('   passportNo:', formDataToSet.passportNo);
+      }
+
+      // ✅ Load TRAINER-specific data from trainerProfile
+      if (roleName === 'TRAINER' && user.trainerProfile) {
+        formDataToSet.specialization = normalizeField(user.trainerProfile.specialization);  // ✅ Normalize
+        formDataToSet.certificationNumber = normalizeField(user.trainerProfile.certificationNumber);  // ✅ Normalize
+        formDataToSet.yearsOfExperience = user.trainerProfile.yearsOfExperience || '';
+        formDataToSet.bio = normalizeField(user.trainerProfile.bio);  // ✅ Normalize
+        
+        console.log('✅ DEBUG: Loaded TRAINER profile data:');
+        console.log('   specialization:', formDataToSet.specialization);
+        console.log('   certificationNumber:', formDataToSet.certificationNumber);
+        console.log('   bio:', formDataToSet.bio);
+      }
+
+      // ✅ Fallback: Try to load from root level (for backward compatibility)
+      if (!formDataToSet.specialization && user.specialization) {
+        formDataToSet.specialization = normalizeField(user.specialization);  // ✅ Normalize
+      }
+      if (!formDataToSet.certificationNumber && user.certificationNumber) {
+        formDataToSet.certificationNumber = normalizeField(user.certificationNumber);  // ✅ Normalize
+      }
+      if (!formDataToSet.bio && user.bio) {
+        formDataToSet.bio = normalizeField(user.bio);  // ✅ Normalize
+      }
+      if (!formDataToSet.passportNo && user.passportNo) {
+        formDataToSet.passportNo = normalizeField(user.passportNo);  // ✅ Normalize
+      }
+
+      setFormData(formDataToSet);
+      
+      console.log('🔍 DEBUG: Final formData loaded:');
+      console.log('   Role:', formDataToSet.role);
+      console.log('   Department:', formDataToSet.department, '(should be empty string if was N/A)');
+      console.log('   DateOfBirth:', formDataToSet.dateOfBirth, '(ISO format YYYY-MM-DD)');
+      console.log('   Nation:', formDataToSet.nation);
+      console.log('   PassportNo:', formDataToSet.passportNo);
+      console.log('   TrainingBatch:', formDataToSet.trainingBatch);
+      console.log('   All fields:', formDataToSet);
     } else if (mode === 'add') {
       setFormData({
         firstName: '',
@@ -110,6 +188,7 @@ const UserModal = ({ show, user, mode, onSave, onClose }) => {
         email: '',
         phoneNumber: '',
         role: '',
+        roleId: '',
         certificationNumber: '',
         specialization: '',
         yearsOfExperience: '',
@@ -180,7 +259,7 @@ const UserModal = ({ show, user, mode, onSave, onClose }) => {
       } else if (formData.bio.trim().length < 1) {
         newErrors.bio = 'Bio must be at least 1 character';
       }
-      // Department is NOT allowed for Trainer role
+      // ✅ Department is NOT allowed for Trainer role - only check if not empty
       if (formData.department && formData.department.trim() !== '') {
         newErrors.department = 'Department is not allowed for Trainer role';
       }

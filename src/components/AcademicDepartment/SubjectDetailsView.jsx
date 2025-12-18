@@ -72,13 +72,13 @@ const SubjectDetailsView = ({ subjectId, courseId }) => {
   // Function to format role display
   const formatRoleDisplay = (role) => {
     const roleMap = {
-      'PRIMARY_INSTRUCTOR': { text: 'Primary Instructor', variant: 'primary' },
-      'EXAMINER': { text: 'Examiner', variant: 'warning' },
-      'ASSESSMENT_REVIEWER': { text: 'Assessment Reviewer', variant: 'info' },
-      'ASSISTANT_INSTRUCTOR': { text: 'Assistant Instructor', variant: 'secondary' }
+      'PRIMARY_INSTRUCTOR': { text: 'Primary Instructor', variant: 'success' },
+      'EXAMINER': { text: 'Examiner', variant: 'success' },
+      'ASSESSMENT_REVIEWER': { text: 'Assessment Reviewer', variant: 'success' },
+      'ASSISTANT_INSTRUCTOR': { text: 'Assistant Instructor', variant: 'success' }
     };
     
-    const roleInfo = roleMap[role] || { text: role, variant: 'light' };
+    const roleInfo = roleMap[role] || { text: role, variant: 'success' };
     return roleInfo;
   };
 
