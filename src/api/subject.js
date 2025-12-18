@@ -186,6 +186,16 @@ const subjectAPI = {
     }
   },
 
+  // Remove trainee from all subjects in a course
+  removeTraineeFromAllSubjects: async (courseId, traineeId) => {
+    try {
+      const response = await apiClient.delete(`/subjects/courses/${courseId}/trainees/${traineeId}`);
+      return response.data;
+    } catch (error) {
+      throw error;
+    }
+  },
+
   // Add trainer to subject
   addTrainerToSubject: async (subjectId, trainerData) => {
     try {

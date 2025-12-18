@@ -4,6 +4,15 @@ import PropTypes from 'prop-types';
 const AssessmentOverview = ({ assessmentInfo, roleInSubject, formatDate }) => {
   if (!assessmentInfo) return null;
 
+  // Format role text - remove underscores and capitalize
+  const formatRoleText = (role) => {
+    if (!role) return '—';
+    return role
+      .split('_')
+      .map(word => word.charAt(0) + word.slice(1).toLowerCase())
+      .join(' ');
+  };
+
   // Get trainee display info - prioritize fullName, fallback to firstName + lastName
   const traineeName = assessmentInfo.trainee?.fullName || 
                       `${assessmentInfo.trainee?.firstName || ''} ${assessmentInfo.trainee?.lastName || ''}`.trim() || '—';
@@ -50,7 +59,7 @@ const AssessmentOverview = ({ assessmentInfo, roleInSubject, formatDate }) => {
     },
     {
       label: 'Your Role In Assessment',
-      value: roleInSubject || '—',
+      value: formatRoleText(roleInSubject),
       subValue: ''
     }
   ];

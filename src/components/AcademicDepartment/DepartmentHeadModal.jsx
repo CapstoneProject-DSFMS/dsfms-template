@@ -5,11 +5,20 @@ import { Person, Envelope } from 'react-bootstrap-icons';
 const DepartmentHeadModal = ({ show, onClose, departmentHead, department }) => {
   if (!departmentHead) return null;
 
-  // Build full name from API data
+  // Format role text - remove underscores and capitalize
+  const formatRoleText = (role) => {
+    if (!role) return 'Department Head';
+    return role
+      .split('_')
+      .map(word => word.charAt(0) + word.slice(1).toLowerCase())
+      .join(' ');
+  };
+
+  // Build full name from API data - last + middle + first
   const fullName = [
-    departmentHead.firstName,
+    departmentHead.lastName,
     departmentHead.middleName,
-    departmentHead.lastName
+    departmentHead.firstName
   ].filter(Boolean).join(' ');
 
   return (
@@ -33,7 +42,7 @@ const DepartmentHeadModal = ({ show, onClose, departmentHead, department }) => {
               </div>
               <h5 className="mb-1">{fullName}</h5>
               <Badge bg="primary" className="mb-2">
-                {departmentHead.role?.name || 'Department Head'}
+                {formatRoleText(departmentHead.role?.name)}
               </Badge>
               <p className="text-muted small mb-0">{department?.name}</p>
             </div>
