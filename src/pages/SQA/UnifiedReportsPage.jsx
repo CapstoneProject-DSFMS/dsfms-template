@@ -39,14 +39,14 @@ const SUBTABS = [
   { id: 'pending', label: 'Pending' },
   { id: 'acknowledge', label: 'Acknowledged' },
   { id: 'resolved', label: 'Resolved' },
-  { id: 'cancel', label: 'Cancel' },
+  { id: 'cancel', label: 'Cancelled' },
 ];
 
 const SUBTABS_WITHOUT_CANCEL = [
   { id: 'pending', label: 'Pending' },
   { id: 'acknowledge', label: 'Acknowledge' },
   { id: 'resolved', label: 'Resolved' },
-  { id: 'cancel', label: 'Cancel' },
+  { id: 'cancel', label: 'Cancelled' },
 ];
 
 const incidentStatusOptions = [
@@ -356,7 +356,7 @@ const UnifiedReportsPage = ({ defaultTab, source = '/reports', onShowForm }) => 
                       <small className="text-muted">
                         {filteredData.length}{' '}
                         {activeTab === 'feedback'
-                          ? `feedback item${filteredData.length !== 1 ? 's' : ''}`
+                          ? `feedback`
                           : `incident${filteredData.length !== 1 ? 's' : ''}`}
                       </small>
                     </div>
@@ -423,29 +423,30 @@ const UnifiedReportsPage = ({ defaultTab, source = '/reports', onShowForm }) => 
                         {/* ACTIONS */}
                         <td className="align-middle text-center show-mobile">
                           <PermissionWrapper permission={PERMISSION_IDS.VIEW_INCIDENT_FEEDBACK_REPORT_DETAILS} fallback={null}>
-                            <PortalUnifiedDropdown
-                              align="end"
-                              className="table-dropdown"
-                              placement="bottom-end"
-                              trigger={{
-                                variant: 'link',
-                                className: 'btn btn-link p-0 text-primary-custom',
-                                style: { border: 'none', background: 'transparent' },
-                                children: <ThreeDotsVertical size={16} />
+                            <Button
+                              style={{
+                                backgroundColor: '#2c3e50',
+                                borderColor: '#2c3e50',
+                                color: '#fff',
+                                borderRadius: '8px',
+                                padding: '10px 20px',
+                                fontWeight: '500',
+                                fontSize: '14px',
+                                cursor: 'pointer',
+                                whiteSpace: 'nowrap'
                               }}
-                              items={[
-                                {
-                                  label: 'View Detail',
-                                  icon: <Eye />,
-                                  onClick: () => handleViewReport(item.id)
-                                },
-                                ...(activeTab === 'feedback' && item.status !== 'acknowledged' && item.status !== 'reviewed' ? [{
-                                  label: 'Acknowledge',
-                                  icon: <CheckCircle />,
-                                  onClick: () => handleAcknowledgeFeedback(item.id)
-                                }] : [])
-                              ]}
-                            />
+                              onClick={() => handleViewReport(item.id)}
+                              onMouseOver={(e) => {
+                                e.currentTarget.style.backgroundColor = '#1a252f';
+                                e.currentTarget.style.borderColor = '#1a252f';
+                              }}
+                              onMouseOut={(e) => {
+                                e.currentTarget.style.backgroundColor = '#2c3e50';
+                                e.currentTarget.style.borderColor = '#2c3e50';
+                              }}
+                            >
+                              View details
+                            </Button>
                           </PermissionWrapper>
                         </td>
                       </tr>

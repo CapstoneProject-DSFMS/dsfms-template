@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Modal, Form, Button } from 'react-bootstrap';
+import { Modal, Form, Button, Alert } from 'react-bootstrap';
 import { Key, Eye, EyeSlash, X } from 'react-bootstrap-icons';
 
 const ResetPasswordModal = ({ show, onClose, onSave, loading = false }) => {
@@ -11,6 +11,7 @@ const ResetPasswordModal = ({ show, onClose, onSave, loading = false }) => {
   const [showOldPassword, setShowOldPassword] = useState(false);
   const [showNewPassword, setShowNewPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const [error, setError] = useState('');
 
   const handlePasswordChange = (e) => {
     const { name, value } = e.target;
@@ -18,17 +19,24 @@ const ResetPasswordModal = ({ show, onClose, onSave, loading = false }) => {
       ...prev,
       [name]: value
     }));
+    // Clear error when user starts typing
+    if (error) setError('');
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    setError('');
     
+    // Validate that new password and confirm password match
     if (passwordForm.newPassword !== passwordForm.confirmPassword) {
-      throw new Error('New password and confirm password do not match.');
+      setError('New password and confirm password do not match.');
+      return;
     }
 
+    // Validate password length
     if (passwordForm.newPassword.length < 6) {
-      throw new Error('New password must be at least 6 characters long.');
+      setError('New password must be at least 6 characters long.');
+      return;
     }
 
     try {
@@ -51,12 +59,13 @@ const ResetPasswordModal = ({ show, onClose, onSave, loading = false }) => {
   };
 
   const handleClose = () => {
-    // Reset form when closing
+    // Reset form and error when closing
     setPasswordForm({
       oldPassword: '',
       newPassword: '',
       confirmPassword: ''
     });
+    setError('');
     onClose();
   };
 
@@ -78,6 +87,11 @@ const ResetPasswordModal = ({ show, onClose, onSave, loading = false }) => {
       </Modal.Header>
 
       <Modal.Body className="p-4">
+        {error && (
+          <Alert variant="danger" className="mb-3">
+            {error}
+          </Alert>
+        )}
         <Form onSubmit={handleSubmit}>
           <Form.Group className="mb-3">
             <Form.Label className="fw-semibold">Current Password</Form.Label>

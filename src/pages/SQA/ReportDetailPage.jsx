@@ -27,6 +27,7 @@ const ReportDetailPage = () => {
   const [report, setReport] = useState(null);
   const [loading, setLoading] = useState(true);
   const [showResolveModal, setShowResolveModal] = useState(false);
+  const [showCancelModal, setShowCancelModal] = useState(false);
   const [resolveText, setResolveText] = useState('');
   const [resolving, setResolving] = useState(false);
   const [actionLoading, setActionLoading] = useState(false);
@@ -48,11 +49,16 @@ const ReportDetailPage = () => {
     fetchReport();
   }, [reportId]);
 
-  const handleCancel = async () => {
+  const handleCancel = () => {
+    setShowCancelModal(true);
+  };
+
+  const handleConfirmCancel = async () => {
     try {
       setActionLoading(true);
       await reportAPI.cancelReport(reportId);
       toast.success('Report cancelled successfully');
+      setShowCancelModal(false);
       navigate(source);
     } catch (error) {
       console.error('Error cancelling report:', error);
@@ -288,23 +294,17 @@ const ReportDetailPage = () => {
                     {getSeverityBadge(report.severity)}
                   </div>
                 </Col>
-                <Col md={6}>
-                  <div className="mb-3">
-                    <small className="text-muted d-block mb-1">Report ID</small>
-                    <code>{report.id}</code>
-                  </div>
-                </Col>
               </Row>
 
               <div className="mb-3">
                 <small className="text-muted d-block mb-2">Description</small>
-                <p className="mb-0">{report.description}</p>
+                <p className="mb-0" style={{ whiteSpace: 'pre-wrap', wordWrap: 'break-word' }}>{report.description}</p>
               </div>
 
               {report.actionsTaken && (
                 <div className="mb-3">
                   <small className="text-muted d-block mb-2">Actions Taken</small>
-                  <p className="mb-0">{report.actionsTaken}</p>
+                  <p className="mb-0" style={{ whiteSpace: 'pre-wrap', wordWrap: 'break-word' }}>{report.actionsTaken}</p>
                 </div>
               )}
 
@@ -312,7 +312,7 @@ const ReportDetailPage = () => {
                 <div className="mb-3">
                   <small className="text-muted d-block mb-2">Resolution Notes</small>
                   <Alert variant="success">
-                    <p className="mb-0">{report.response}</p>
+                    <p className="mb-0" style={{ whiteSpace: 'pre-wrap', wordWrap: 'break-word' }}>{report.response}</p>
                   </Alert>
                 </div>
               )}
@@ -361,33 +361,69 @@ const ReportDetailPage = () => {
               <h6 className="mb-0">Report Information</h6>
             </Card.Header>
             <Card.Body>
-              <div className="mb-3">
-                <small className="text-muted d-block mb-1">Created By</small>
-                <div>
-                  {report?.createdBy?.firstName} {report?.createdBy?.lastName}
-                  <br />
-                  <small className="text-muted">{report?.createdBy?.email}</small>
-                </div>
-              </div>
-              {report?.managedBy && (
-                <div className="mb-3">
-                  <small className="text-muted d-block mb-1">Managed By</small>
-                  <div>
-                    {report?.managedBy?.firstName} {report?.managedBy?.lastName}
-                    <br />
-                    <small className="text-muted">{report?.managedBy?.email}</small>
-                  </div>
-                </div>
-              )}
-              {report?.isAnonymous && (
-                <Alert variant="info" className="small mb-0">
+              {report?.isAnonymous ? (
+                <Alert variant="info" className="mb-0">
                   This report was submitted anonymously.
                 </Alert>
+              ) : (
+                <>
+                  <div className="mb-3">
+                    <small className="text-muted d-block mb-1">Created By</small>
+                    <div>
+                      {report?.createdBy?.firstName} {report?.createdBy?.lastName}
+                      <br />
+                      <small className="text-muted">{report?.createdBy?.email}</small>
+                    </div>
+                  </div>
+                  {report?.managedBy && (
+                    <div className="mb-3">
+                      <small className="text-muted d-block mb-1">Managed By</small>
+                      <div>
+                        {report?.managedBy?.firstName} {report?.managedBy?.lastName}
+                        <br />
+                        <small className="text-muted">{report?.managedBy?.email}</small>
+                      </div>
+                    </div>
+                  )}
+                </>
               )}
             </Card.Body>
           </Card>
         </Col>
       </Row>
+
+      {/* Cancel Confirmation Modal */}
+      <Modal show={showCancelModal} onHide={() => setShowCancelModal(false)} centered>
+        <Modal.Header closeButton>
+          <Modal.Title>Cancel Report</Modal.Title>
+        </Modal.Header>
+        <Modal.Body>
+          <p>Are you sure you want to cancel this report? This action cannot be undone.</p>
+        </Modal.Body>
+        <Modal.Footer>
+          <Button
+            variant="secondary"
+            onClick={() => setShowCancelModal(false)}
+            disabled={actionLoading}
+          >
+            Keep Report
+          </Button>
+          <Button
+            variant="danger"
+            onClick={handleConfirmCancel}
+            disabled={actionLoading}
+          >
+            {actionLoading ? (
+              <>
+                <span className="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
+                Cancelling...
+              </>
+            ) : (
+              'Cancel Report'
+            )}
+          </Button>
+        </Modal.Footer>
+      </Modal>
 
       {/* Resolve Modal */}
       <Modal show={showResolveModal} onHide={() => {

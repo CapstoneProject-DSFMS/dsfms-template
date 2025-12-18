@@ -66,7 +66,10 @@ const TrainersInAssessmentTable = ({
     if (variant === 'subject') {
       return trainer.name || '';
     } else {
-      // Course variant
+      // Course variant - can use pre-combined name or construct from parts
+      if (trainer.name) {
+        return trainer.name; // Already combined (from transformed data)
+      }
       const parts = [trainer.firstName, trainer.middleName, trainer.lastName].filter(Boolean);
       return parts.join(' ') || '';
     }
@@ -77,8 +80,18 @@ const TrainersInAssessmentTable = ({
     if (variant === 'subject') {
       return trainer.role;
     } else {
-      return trainer.roleInCourse;
+      // Course variant - role might be string (from transformed data) or array (from API)
+      return trainer.role || trainer.roleInCourse;
     }
+  };
+
+  // Function to format role text (convert ASSESSMENT_REVIEWER to Assessment Reviewer)
+  const formatRoleText = (role) => {
+    if (!role) return '-';
+    return role
+      .split('_')
+      .map(word => word.charAt(0) + word.slice(1).toLowerCase())
+      .join(' ');
   };
 
   // Render role cell based on variant
@@ -92,12 +105,20 @@ const TrainersInAssessmentTable = ({
         </Badge>
       );
     } else {
-      // Course variant - roleInCourse is an array
+      // Course variant - role might be string (from transformed data) or array (from API)
       const roles = getTrainerRole(trainer);
-      if (roles && roles.length > 0) {
+      
+      // Handle both string and array formats
+      if (typeof roles === 'string') {
+        return (
+          <Badge bg="success">
+            {formatRoleText(roles)}
+          </Badge>
+        );
+      } else if (Array.isArray(roles) && roles.length > 0) {
         return roles.map((role, idx) => (
           <Badge key={idx} bg="success" className="me-1">
-            {role}
+            {formatRoleText(role)}
           </Badge>
         ));
       } else {

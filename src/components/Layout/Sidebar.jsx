@@ -434,6 +434,26 @@ const Sidebar = ({ collapsed, onClose }) => {
                   )
                     ? "rgba(255, 255, 255, 0.1)"
                     : "transparent",
+                  cursor: "pointer",
+                }}
+                onClick={() => {
+                  if (collapsed) {
+                    // When collapsed, navigate directly (shortcut)
+                    if (departments.length === 1) {
+                      navigate(`/academic/course/${departments[0].id}`);
+                    } else {
+                      navigate("/academic/departments");
+                    }
+                    onClose && onClose();
+                  } else {
+                    // When expanded, toggle dropdown
+                    if (departments.length === 1) {
+                      navigate(`/academic/course/${departments[0].id}`);
+                    } else {
+                      setIsDepartmentDropdownOpen(!isDepartmentDropdownOpen);
+                      navigate("/academic/departments");
+                    }
+                  }
                 }}
               >
                 <Building

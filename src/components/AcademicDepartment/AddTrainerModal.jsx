@@ -160,8 +160,8 @@ const AddTrainerModal = ({ show, onClose, onSave, loading = false, courseId = nu
                       {formData.trainer_user_id
                         ? trainers.find(t => t.id === formData.trainer_user_id)
                           ? trainers.find(t => t.id === formData.trainer_user_id).department?.name
-                            ? `${trainers.find(t => t.id === formData.trainer_user_id).firstName} ${trainers.find(t => t.id === formData.trainer_user_id).lastName} - ${trainers.find(t => t.id === formData.trainer_user_id).department.name}`
-                            : `${trainers.find(t => t.id === formData.trainer_user_id).firstName} ${trainers.find(t => t.id === formData.trainer_user_id).lastName}`
+                            ? `${trainers.find(t => t.id === formData.trainer_user_id).eid} - ${trainers.find(t => t.id === formData.trainer_user_id).firstName} ${trainers.find(t => t.id === formData.trainer_user_id).lastName} - ${trainers.find(t => t.id === formData.trainer_user_id).department.name}`
+                            : `${trainers.find(t => t.id === formData.trainer_user_id).eid} - ${trainers.find(t => t.id === formData.trainer_user_id).firstName} ${trainers.find(t => t.id === formData.trainer_user_id).lastName}`
                           : 'Choose a trainer...'
                         : loadingTrainers
                           ? 'Loading trainers...'
@@ -214,7 +214,7 @@ const AddTrainerModal = ({ show, onClose, onSave, loading = false, courseId = nu
                           key={trainer.id}
                           eventKey={trainer.id}
                         >
-                          {trainer.firstName} {trainer.lastName}{trainer.department?.name ? ` - ${trainer.department.name}` : ''}
+                          {trainer.eid} - {trainer.firstName} {trainer.lastName}{trainer.department?.name ? ` - ${trainer.department.name}` : ''}
                         </Dropdown.Item>
                       ))
                     )}

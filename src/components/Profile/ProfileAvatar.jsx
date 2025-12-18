@@ -11,7 +11,8 @@ const ProfileAvatar = ({
   onAvatarSelected,
   onConfigureSignature,
   onSaveChanges,
-  loading
+  loading,
+  hasAvatarSelected = false
 }) => {
   const fileInputRef = useRef(null);
   const [uploading, setUploading] = useState(false);
@@ -217,12 +218,14 @@ const ProfileAvatar = ({
               variant="primary"
               size="sm"
               onClick={onSaveChanges}
-              disabled={loading}
+              disabled={loading || !hasAvatarSelected}
               className="d-flex align-items-center justify-content-center"
               style={{ 
                 minWidth: '140px',
                 borderRadius: '20px',
-                fontWeight: '500'
+                fontWeight: '500',
+                opacity: hasAvatarSelected ? 1 : 0.5,
+                cursor: hasAvatarSelected ? 'pointer' : 'not-allowed'
               }}
             >
               {loading ? 'Saving...' : (

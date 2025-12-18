@@ -36,18 +36,20 @@ const ProfilePage = () => {
   }, []);
 
   const handleUpdatePersonalInfo = async (personalInfo) => {
+    // ✅ Check if there are any changes
+    if (!selectedAvatarFile) {
+      toast.info('Nothing to update');
+      return;
+    }
+    
     setLoading(true);
     
     try {
-      // If avatar file is selected, only send avatar
+      // If avatar file is selected, send avatar
       if (selectedAvatarFile) {
         const response = await profileAPI.updateProfile(selectedAvatarFile);
         setProfileData(response);
         setSelectedAvatarFile(null);
-      } else {
-        // Otherwise send profile info normally
-        const response = await profileAPI.updateProfile(personalInfo);
-        setProfileData(response);
       }
       toast.success('Profile updated successfully!');
     } catch (error) {
@@ -131,6 +133,7 @@ const ProfilePage = () => {
             onConfigureSignature={handleConfigureSignature}
             onSaveChanges={handleUpdatePersonalInfo}
             loading={loading}
+            hasAvatarSelected={!!selectedAvatarFile}
           />
         </Col>
 
