@@ -432,8 +432,6 @@ const AssessmentEventDetailModal = ({ show, onClose, event }) => {
         } else if (resultText === "FAILED" || resultText === "FAIL") {
           stats.failed++;
         }
-      } else if (status === "REJECTED" || status === "FAILED") {
-        stats.failed++;
       } else if (status === "ONGOING") {
         stats.inProgress++;
       } else if (status === "PENDING") {
