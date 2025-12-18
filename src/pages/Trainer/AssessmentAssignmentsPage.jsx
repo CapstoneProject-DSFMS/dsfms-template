@@ -981,7 +981,25 @@ const AssessmentAssignmentsPage = () => {
                               ? item.resultScore
                               : "—"}
                           </td>
-                          <td>{item.resultText || "—"}</td>
+                          <td>
+                            {item.resultText ? (
+                              <Badge
+                                bg={
+                                  item.resultText.toUpperCase() === "PASSED" ||
+                                  item.resultText.toUpperCase() === "PASS"
+                                    ? "success"
+                                    : item.resultText.toUpperCase() === "FAILED" ||
+                                    item.resultText.toUpperCase() === "FAIL"
+                                    ? "danger"
+                                    : "secondary"
+                                }
+                              >
+                                {item.resultText}
+                              </Badge>
+                            ) : (
+                              <span className="text-muted">—</span>
+                            )}
+                          </td>
                           <td>
                             {item.pdfUrl ? (
                               <Button

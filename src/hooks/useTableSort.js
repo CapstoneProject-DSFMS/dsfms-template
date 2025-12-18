@@ -7,7 +7,8 @@ const useTableSort = (data, defaultSortKey = null, defaultSortDirection = 'asc')
   });
 
   const sortedData = useMemo(() => {
-    if (!sortConfig.key || !data) return data;
+    if (!data) return [];
+    if (!sortConfig.key) return [...data];
 
     return [...data].sort((a, b) => {
       let aValue = a[sortConfig.key];

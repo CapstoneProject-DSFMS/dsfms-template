@@ -49,12 +49,20 @@ const AssessmentEventReviewDetailPage = () => {
   const [activeTab, setActiveTab] = useState("overview");
   const [showTemplatePreview, setShowTemplatePreview] = useState(false);
   const [templatePdfUrl, setTemplatePdfUrl] = useState(null);
+  const [showAssessmentPdfPreview, setShowAssessmentPdfPreview] = useState(false);
+  const [assessmentPdfUrl, setAssessmentPdfUrl] = useState(null);
   const [loadingPDF, setLoadingPDF] = useState(false);
+  const [showCourseDetailModal, setShowCourseDetailModal] = useState(false);
+  const [selectedCourseDetail, setSelectedCourseDetail] = useState(null);
+  const [showSubjectDetailModal, setShowSubjectDetailModal] = useState(false);
+  const [selectedSubjectDetail, setSelectedSubjectDetail] = useState(null);
 
   // Get event type from location state or detect from data
   const [eventType, setEventType] = useState(() => {
     return location.state?.eventType || null; // Will be set after fetching data
   });
+  const sourceTab = location.state?.eventType; // "processing" hoặc "completed"
+  
   const [formsSubTab, setFormsSubTab] = useState(() => {
     // Default subtab based on event type if available
     const type = location.state?.eventType;
@@ -240,6 +248,28 @@ const AssessmentEventReviewDetailPage = () => {
 
   const stats = calculateStatistics();
 
+  // Count assessments by status - khác nhau tùy theo sourceTab
+  let countByStatus = {};
+  let totalProcessedForms = 0;
+
+  if (sourceTab === "processing") {
+    // Processing: Submitted, Reviewed, Cancelled
+    countByStatus = {
+      submitted: assessments?.filter(a => String(a.status || "").toUpperCase() === "SUBMITTED").length || 0,
+      reviewed: assessments?.filter(a => String(a.status || "").toUpperCase() === "REVIEWED").length || 0,
+      cancelled: assessments?.filter(a => String(a.status || "").toUpperCase() === "CANCELLED").length || 0,
+    };
+    totalProcessedForms = countByStatus.submitted + countByStatus.reviewed + countByStatus.cancelled;
+  } else {
+    // Completed: Approved, Rejected, Cancelled
+    countByStatus = {
+      approved: assessments?.filter(a => String(a.status || "").toUpperCase() === "APPROVED").length || 0,
+      rejected: assessments?.filter(a => String(a.status || "").toUpperCase() === "REJECTED").length || 0,
+      cancelled: assessments?.filter(a => String(a.status || "").toUpperCase() === "CANCELLED").length || 0,
+    };
+    totalProcessedForms = countByStatus.approved + countByStatus.rejected + countByStatus.cancelled;
+  }
+
   // Get assessment status badge - display original status from API
   const getAssessmentStatusBadge = (status) => {
     const statusConfig = {
@@ -394,11 +424,9 @@ const AssessmentEventReviewDetailPage = () => {
       const percentage =
         maxScore > 0 ? Math.round((score / maxScore) * 100) : 0;
 
-      // Determine result
-      let result = null;
-      if (assessment.status === "APPROVED") {
-        result = score >= 70 ? "PASSED" : "FAILED";
-      } else if (assessment.status === "REJECTED") {
+      // Determine result based on resultText only
+      let result = assessment.resultText || null;
+      if (!result && assessment.status === "REJECTED") {
         result = "FAILED";
       }
 
@@ -416,6 +444,7 @@ const AssessmentEventReviewDetailPage = () => {
         maxScore: maxScore,
         percentage: percentage,
         result: result,
+        pdfUrl: assessment.pdfUrl || null,
         rawAssessment: assessment,
       };
     });
@@ -508,6 +537,16 @@ const AssessmentEventReviewDetailPage = () => {
     }
   };
 
+  const handleViewAssessmentPdf = (pdfUrl) => {
+    setAssessmentPdfUrl(pdfUrl);
+    setShowAssessmentPdfPreview(true);
+  };
+
+  const handleCloseAssessmentPdfPreview = () => {
+    setShowAssessmentPdfPreview(false);
+    setAssessmentPdfUrl(null);
+  };
+
   if (loading) {
     return (
       <Container fluid className="py-4">
@@ -587,7 +626,7 @@ const AssessmentEventReviewDetailPage = () => {
                     }}
                   >
                     <Book className="me-2" size={16} />
-                    Assessment Forms ({assessments.length})
+                    Assessment Forms ({totalProcessedForms})
                   </Nav.Link>
                 </Nav.Item>
               </Nav>
@@ -710,44 +749,89 @@ const AssessmentEventReviewDetailPage = () => {
                           <Book className="me-2" size={16} />
                           Course Information
                         </h6>
-                        <div>
-                          <span className="fw-semibold">
-                            {courseSubjectInfo.course.name}
-                          </span>
-                          {courseSubjectInfo.course.code && (
-                            <span className="text-muted ms-2">
-                              ({courseSubjectInfo.course.code})
+                        <div className="d-flex justify-content-between align-items-start">
+                          <div>
+                            <span className="fw-semibold">
+                              {courseSubjectInfo.course.name}
                             </span>
-                          )}
+                            {courseSubjectInfo.course.code && (
+                              <span className="text-muted ms-2">
+                                ({courseSubjectInfo.course.code})
+                              </span>
+                            )}
+                          </div>
+                          <Button
+                            variant="outline-primary"
+                            size="sm"
+                            onClick={() => {
+                              setSelectedCourseDetail(eventData?.courseInfo || courseSubjectInfo.course);
+                              setShowCourseDetailModal(true);
+                            }}
+                          >
+                            View Details
+                          </Button>
                         </div>
                       </div>
                     )}
                     {courseSubjectInfo?.subject && (
                       <div className="mb-3">
-                        <h6 className="text-muted mb-1 d-flex align-items-center">
+                        <h6
+                          className="fw-bold text-primary mb-2"
+                          style={{
+                            fontSize: "1.1rem",
+                            backgroundColor: "#f0f8ff",
+                            padding: "6px 10px",
+                            borderRadius: "6px",
+                            border: "1px solid #cce7ff",
+                          }}
+                        >
                           <Book className="me-2" size={16} />
                           Subject Information
                         </h6>
-                        <div>
-                          <span className="fw-semibold">
-                            {courseSubjectInfo.subject.name}
-                          </span>
-                          {courseSubjectInfo.subject.code && (
-                            <span className="text-muted ms-2">
-                              ({courseSubjectInfo.subject.code})
-                            </span>
-                          )}
-                          {courseSubjectInfo.subject.course && (
-                            <div className="text-muted small mt-1">
-                              From course:{" "}
-                              {courseSubjectInfo.subject.course.name}
-                              {courseSubjectInfo.subject.course.code && (
-                                <span className="ms-1">
-                                  ({courseSubjectInfo.subject.course.code})
-                                </span>
-                              )}
-                            </div>
-                          )}
+                        <div className="d-flex justify-content-between align-items-start gap-3">
+                          <div style={{ flex: 1 }}>
+                            <Badge className="mb-2" bg="dark">{courseSubjectInfo.subject.name}</Badge>
+                            {courseSubjectInfo.subject.code && (
+                              <div className="text-muted small mt-2">
+                                <strong>Code:</strong> {courseSubjectInfo.subject.code}
+                              </div>
+                            )}
+                            {courseSubjectInfo.subject.course && (
+                              <div className="mt-3">
+                                <div
+                                  className="fw-bold text-primary small mb-2"
+                                  style={{
+                                    backgroundColor: "#f0f8ff",
+                                    padding: "6px 10px",
+                                    borderRadius: "6px",
+                                    border: "1px solid #cce7ff",
+                                    display: "inline-block",
+                                  }}
+                                >
+                                  Parent Course
+                                </div>
+                                <div className="text-muted small mt-1">
+                                  {courseSubjectInfo.subject.course.name}
+                                  {courseSubjectInfo.subject.course.code && (
+                                    <div className="text-muted small">
+                                      ({courseSubjectInfo.subject.course.code})
+                                    </div>
+                                  )}
+                                </div>
+                              </div>
+                            )}
+                          </div>
+                          <Button
+                            variant="outline-primary"
+                            size="sm"
+                            onClick={() => {
+                              setSelectedSubjectDetail(eventData?.subjectInfo || courseSubjectInfo.subject);
+                              setShowSubjectDetailModal(true);
+                            }}
+                            style={{ whiteSpace: 'nowrap' }}
+                          >
+                            View Details
+                          </Button>
                         </div>
                       </div>
                     )}
@@ -765,7 +849,7 @@ const AssessmentEventReviewDetailPage = () => {
                       Assessment Results Overview
                     </h6>
                   </Col>
-                  <Col md={4} className="mb-3">
+                  <Col md={3} className="mb-3">
                     <Card
                       className="h-100 border-success shadow-sm"
                       style={{
@@ -813,7 +897,7 @@ const AssessmentEventReviewDetailPage = () => {
                       </Card.Body>
                     </Card>
                   </Col>
-                  <Col md={4} className="mb-3">
+                  <Col md={3} className="mb-3">
                     <Card
                       className="h-100 border-danger shadow-sm"
                       style={{
@@ -861,7 +945,55 @@ const AssessmentEventReviewDetailPage = () => {
                       </Card.Body>
                     </Card>
                   </Col>
-                  <Col md={4} className="mb-3">
+                  <Col md={3} className="mb-3">
+                    <Card
+                      className="h-100 border-secondary shadow-sm"
+                      style={{
+                        transition: "all 0.3s ease",
+                        cursor: "pointer",
+                        backgroundColor: "#e2e3e5", // Solid secondary background
+                        border: "2px solid var(--bs-secondary)",
+                        position: "relative",
+                        overflow: "hidden",
+                      }}
+                      onMouseEnter={(e) => {
+                        e.currentTarget.style.transform =
+                          "translateY(-8px) scale(1.05)";
+                        e.currentTarget.style.boxShadow =
+                          "0 12px 30px rgba(108, 117, 125, 0.4)";
+                        e.currentTarget.style.borderColor = "#6c757d";
+                      }}
+                      onMouseLeave={(e) => {
+                        e.currentTarget.style.transform =
+                          "translateY(0) scale(1)";
+                        e.currentTarget.style.boxShadow =
+                          "0 4px 12px rgba(0,0,0,0.1)";
+                        e.currentTarget.style.borderColor = "var(--bs-secondary)";
+                      }}
+                    >
+                      <Card.Body className="text-center position-relative">
+                        <div
+                          className="mb-2"
+                          style={{
+                            fontSize: "3rem",
+                            fontWeight: "bold",
+                            color: "#383d41",
+                            textShadow: "0 2px 4px rgba(0,0,0,0.1)",
+                            animation: "pulse 2s infinite",
+                          }}
+                        >
+                          {countByStatus.cancelled}
+                        </div>
+                        <p
+                          className="text-muted mb-0 fw-semibold"
+                          style={{ fontSize: "1rem" }}
+                        >
+                          Cancelled
+                        </p>
+                      </Card.Body>
+                    </Card>
+                  </Col>
+                  <Col md={3} className="mb-3">
                     <Card
                       className="h-100 border-primary shadow-sm"
                       style={{
@@ -948,9 +1080,7 @@ const AssessmentEventReviewDetailPage = () => {
                               <Clock className="me-1" size={14} />
                               Submitted (
                               {
-                                assessments.filter(
-                                  (a) => a.status === "SUBMITTED"
-                                ).length
+                                countByStatus.submitted || 0
                               }
                               )
                             </Nav.Link>
@@ -978,11 +1108,7 @@ const AssessmentEventReviewDetailPage = () => {
                               <CheckCircle className="me-1" size={14} />
                               Reviewed (
                               {
-                                assessments.filter(
-                                  (a) =>
-                                    a.status === "APPROVED" ||
-                                    a.status === "REJECTED"
-                                ).length
+                                countByStatus.reviewed || 0
                               }
                               )
                             </Nav.Link>
@@ -1010,9 +1136,7 @@ const AssessmentEventReviewDetailPage = () => {
                               <X className="me-1" size={14} />
                               Cancelled (
                               {
-                                assessments.filter(
-                                  (a) => a.status === "CANCELLED"
-                                ).length
+                                countByStatus.cancelled || 0
                               }
                               )
                             </Nav.Link>
@@ -1043,9 +1167,7 @@ const AssessmentEventReviewDetailPage = () => {
                               <CheckCircle className="me-1" size={14} />
                               Approved (
                               {
-                                assessments.filter(
-                                  (a) => a.status === "APPROVED"
-                                ).length
+                                countByStatus.approved || 0
                               }
                               )
                             </Nav.Link>
@@ -1073,9 +1195,7 @@ const AssessmentEventReviewDetailPage = () => {
                               <XCircle className="me-1" size={14} />
                               Rejected (
                               {
-                                assessments.filter(
-                                  (a) => a.status === "REJECTED"
-                                ).length
+                                countByStatus.rejected || 0
                               }
                               )
                             </Nav.Link>
@@ -1103,9 +1223,7 @@ const AssessmentEventReviewDetailPage = () => {
                               <X className="me-1" size={14} />
                               Cancelled (
                               {
-                                assessments.filter(
-                                  (a) => a.status === "CANCELLED"
-                                ).length
+                                countByStatus.cancelled || 0
                               }
                               )
                             </Nav.Link>
@@ -1179,6 +1297,16 @@ const AssessmentEventReviewDetailPage = () => {
                               borderColor: "var(--bs-primary)",
                             }}
                           >
+                            PDF
+                          </th>
+                          <th
+                            className="fw-semibold text-center"
+                            style={{
+                              backgroundColor: "var(--bs-primary)",
+                              color: "white",
+                              borderColor: "var(--bs-primary)",
+                            }}
+                          >
                             Preview
                           </th>
                         </tr>
@@ -1244,8 +1372,7 @@ const AssessmentEventReviewDetailPage = () => {
                                         : "text-danger"
                                     }`}
                                   >
-                                    {item.score}/{item.maxScore} (
-                                    {item.percentage}%)
+                                    {item.score}/{item.maxScore}
                                   </span>
                                 ) : (
                                   <span className="text-muted">-</span>
@@ -1255,13 +1382,27 @@ const AssessmentEventReviewDetailPage = () => {
                                 {item.result ? (
                                   <Badge
                                     bg={
-                                      item.result === "PASSED"
+                                      item.result.toUpperCase() === "PASSED" ||
+                                      item.result.toUpperCase() === "PASS"
                                         ? "success"
                                         : "danger"
                                     }
                                   >
                                     {item.result}
                                   </Badge>
+                                ) : (
+                                  <span className="text-muted">-</span>
+                                )}
+                              </td>
+                              <td className="align-middle text-center">
+                                {item.pdfUrl ? (
+                                  <Button
+                                    variant="outline-primary"
+                                    size="sm"
+                                    onClick={() => handleViewAssessmentPdf(item.pdfUrl)}
+                                  >
+                                    View PDF
+                                  </Button>
                                 ) : (
                                   <span className="text-muted">-</span>
                                 )}
@@ -1338,6 +1479,374 @@ const AssessmentEventReviewDetailPage = () => {
           </Button>
         </Modal.Footer>
       </Modal>
+
+      {/* Assessment PDF Preview Modal */}
+      <Modal
+        show={showAssessmentPdfPreview}
+        onHide={handleCloseAssessmentPdfPreview}
+        size="lg"
+        centered
+      >
+        <Modal.Header closeButton>
+          <Modal.Title>Assessment PDF Preview</Modal.Title>
+        </Modal.Header>
+        <Modal.Body style={{ minHeight: "500px", padding: 0 }}>
+          {assessmentPdfUrl ? (
+            <iframe
+              src={assessmentPdfUrl}
+              style={{
+                width: "100%",
+                height: "600px",
+                border: "none",
+              }}
+              title="Assessment PDF Preview"
+            />
+          ) : (
+            <div
+              className="d-flex justify-content-center align-items-center"
+              style={{ minHeight: "500px" }}
+            >
+              <p className="text-muted">Failed to load PDF</p>
+            </div>
+          )}
+        </Modal.Body>
+        <Modal.Footer>
+          <Button variant="secondary" onClick={handleCloseAssessmentPdfPreview}>
+            Close
+          </Button>
+        </Modal.Footer>
+      </Modal>
+
+      {/* Course/Subject Detail Modal */}
+      <Modal
+        show={showCourseDetailModal}
+        onHide={() => setShowCourseDetailModal(false)}
+        size="lg"
+        centered
+      >
+        <Modal.Header closeButton>
+          <Modal.Title>Course Information</Modal.Title>
+        </Modal.Header>
+        <Modal.Body style={{ maxHeight: '70vh', overflowY: 'auto' }}>
+          {selectedCourseDetail && (
+            <>
+              <h6
+                className="fw-bold text-primary mb-4"
+                style={{
+                  fontSize: "1.1rem",
+                  backgroundColor: "#f0f8ff",
+                  padding: "6px 10px",
+                  borderRadius: "6px",
+                  border: "1px solid #cce7ff",
+                  display: "inline-block",
+                }}
+              >
+                <Book className="me-2" size={18} />
+                Course Details
+              </h6>
+              <Row>
+              <Col md={6}>
+                <div className="mb-3">
+                  <label className="fw-bold text-muted small">Course Name</label>
+                  <p className="mb-0">{selectedCourseDetail.name}</p>
+                </div>
+              </Col>
+              <Col md={6}>
+                <div className="mb-3">
+                  <label className="fw-bold text-muted small">Course Code</label>
+                  <p className="mb-0">{selectedCourseDetail.code || "N/A"}</p>
+                </div>
+              </Col>
+              <Col md={6}>
+                <div className="mb-3">
+                  <label className="fw-bold text-muted small">Level</label>
+                  <p className="mb-0">
+                    <Badge bg="info">
+                      {selectedCourseDetail.level || "N/A"}
+                    </Badge>
+                  </p>
+                </div>
+              </Col>
+              <Col md={6}>
+                <div className="mb-3">
+                  <label className="fw-bold text-muted small">Status</label>
+                  <p className="mb-0">
+                    <Badge bg={selectedCourseDetail.status === 'ON_GOING' ? 'warning' : 'secondary'}>
+                      {selectedCourseDetail.status?.replace(/_/g, ' ') || "N/A"}
+                    </Badge>
+                  </p>
+                </div>
+              </Col>
+              <Col md={6}>
+                <div className="mb-3">
+                  <label className="fw-bold text-muted small">Start Date</label>
+                  <p className="mb-0">
+                    {selectedCourseDetail.startDate
+                      ? new Date(selectedCourseDetail.startDate).toLocaleDateString()
+                      : "N/A"}
+                  </p>
+                </div>
+              </Col>
+              <Col md={6}>
+                <div className="mb-3">
+                  <label className="fw-bold text-muted small">End Date</label>
+                  <p className="mb-0">
+                    {selectedCourseDetail.endDate
+                      ? new Date(selectedCourseDetail.endDate).toLocaleDateString()
+                      : "N/A"}
+                  </p>
+                </div>
+              </Col>
+              <Col md={6}>
+                <div className="mb-3">
+                  <label className="fw-bold text-muted small">Max Trainees</label>
+                  <p className="mb-0">{selectedCourseDetail.maxNumTrainee || "N/A"}</p>
+                </div>
+              </Col>
+              <Col md={6}>
+                <div className="mb-3">
+                  <label className="fw-bold text-muted small">Venue</label>
+                  <p className="mb-0">{selectedCourseDetail.venue || "N/A"}</p>
+                </div>
+              </Col>
+              {selectedCourseDetail.department && (
+                <Col md={12}>
+                  <div className="mb-3">
+                    <label className="fw-bold text-muted small">Department</label>
+                    <p className="mb-0">
+                      {selectedCourseDetail.department.name}
+                      {selectedCourseDetail.department.code && (
+                        <span className="text-muted ms-2">
+                          ({selectedCourseDetail.department.code})
+                        </span>
+                      )}
+                    </p>
+                  </div>
+                </Col>
+              )}
+              {selectedCourseDetail.description && (
+                <Col md={12}>
+                  <div className="mb-3">
+                    <label className="fw-bold text-muted small">Description</label>
+                    <p className="mb-0">{selectedCourseDetail.description}</p>
+                  </div>
+                </Col>
+              )}
+              {selectedCourseDetail.note && (
+                <Col md={12}>
+                  <div className="mb-3">
+                    <label className="fw-bold text-muted small">Notes</label>
+                    <p className="mb-0">{selectedCourseDetail.note}</p>
+                  </div>
+                </Col>
+              )}
+            </Row>
+            </>
+          )}
+        </Modal.Body>
+        <Modal.Footer>
+          <Button
+            variant="secondary"
+            onClick={() => setShowCourseDetailModal(false)}
+          >
+            Close
+          </Button>
+        </Modal.Footer>
+      </Modal>
+
+      {/* Subject Detail Modal with Parent Course */}
+      {selectedSubjectDetail && (
+        <Modal
+          show={showSubjectDetailModal}
+          onHide={() => setShowSubjectDetailModal(false)}
+          size="lg"
+          centered
+        >
+          <Modal.Header closeButton>
+            <Modal.Title>Subject & Parent Course Information</Modal.Title>
+          </Modal.Header>
+          <Modal.Body style={{ maxHeight: '70vh', overflowY: 'auto' }}>
+            <div>
+              {/* Subject Section */}
+              <h6
+                className="fw-bold text-primary mb-3"
+                style={{
+                  fontSize: "1.1rem",
+                  backgroundColor: "#f0f8ff",
+                  padding: "6px 10px",
+                  borderRadius: "6px",
+                  border: "1px solid #cce7ff",
+                }}
+              >
+                <Book className="me-2" size={18} />
+                Subject Details
+              </h6>
+              <Row className="mb-4">
+                <Col md={6}>
+                  <div className="mb-3">
+                    <label className="fw-bold text-muted small">Subject Name</label>
+                    <p className="mb-0">{selectedSubjectDetail.name}</p>
+                  </div>
+                </Col>
+                <Col md={6}>
+                  <div className="mb-3">
+                    <label className="fw-bold text-muted small">Subject Code</label>
+                    <p className="mb-0">{selectedSubjectDetail.code || "N/A"}</p>
+                  </div>
+                </Col>
+                <Col md={6}>
+                  <div className="mb-3">
+                    <label className="fw-bold text-muted small">Method</label>
+                    <p className="mb-0">{selectedSubjectDetail.method || "N/A"}</p>
+                  </div>
+                </Col>
+                <Col md={6}>
+                  <div className="mb-3">
+                    <label className="fw-bold text-muted small">Duration</label>
+                    <p className="mb-0">{selectedSubjectDetail.duration || "N/A"}</p>
+                  </div>
+                </Col>
+                <Col md={6}>
+                  <div className="mb-3">
+                    <label className="fw-bold text-muted small">Status</label>
+                    <p className="mb-0">
+                      <Badge bg={selectedSubjectDetail.status === 'ON_GOING' ? 'warning' : 'secondary'}>
+                        {selectedSubjectDetail.status?.replace(/_/g, ' ') || "N/A"}
+                      </Badge>
+                    </p>
+                  </div>
+                </Col>
+                <Col md={6}>
+                  <div className="mb-3">
+                    <label className="fw-bold text-muted small">Type</label>
+                    <p className="mb-0">{selectedSubjectDetail.type || "N/A"}</p>
+                  </div>
+                </Col>
+                <Col md={6}>
+                  <div className="mb-3">
+                    <label className="fw-bold text-muted small">Start Date</label>
+                    <p className="mb-0">
+                      {selectedSubjectDetail.startDate
+                        ? new Date(selectedSubjectDetail.startDate).toLocaleDateString()
+                        : "N/A"}
+                    </p>
+                  </div>
+                </Col>
+                <Col md={6}>
+                  <div className="mb-3">
+                    <label className="fw-bold text-muted small">End Date</label>
+                    <p className="mb-0">
+                      {selectedSubjectDetail.endDate
+                        ? new Date(selectedSubjectDetail.endDate).toLocaleDateString()
+                        : "N/A"}
+                    </p>
+                  </div>
+                </Col>
+                <Col md={6}>
+                  <div className="mb-3">
+                    <label className="fw-bold text-muted small">Pass Score</label>
+                    <p className="mb-0">{selectedSubjectDetail.passScore || "N/A"}</p>
+                  </div>
+                </Col>
+                {selectedSubjectDetail.description && (
+                  <Col md={12}>
+                    <div className="mb-3">
+                      <label className="fw-bold text-muted small">Description</label>
+                      <p className="mb-0">{selectedSubjectDetail.description}</p>
+                    </div>
+                  </Col>
+                )}
+              </Row>
+
+              {/* Parent Course Section */}
+              {selectedSubjectDetail.course && (
+                <>
+                  <hr className="my-4" />
+                  <h6
+                    className="fw-bold text-primary mb-2"
+                    style={{
+                      fontSize: "1.1rem",
+                      backgroundColor: "#f0f8ff",
+                      padding: "6px 10px",
+                      borderRadius: "6px",
+                      border: "1px solid #cce7ff",
+                    }}
+                  >
+                    <FileText className="me-2" size={18} />
+                    Parent Course Information
+                  </h6>
+                  <Row>
+                    <Col md={6}>
+                      <div className="mb-3">
+                        <label className="fw-bold text-muted small">Course Name</label>
+                        <p className="mb-0">{selectedSubjectDetail.course.name}</p>
+                      </div>
+                    </Col>
+                    <Col md={6}>
+                      <div className="mb-3">
+                        <label className="fw-bold text-muted small">Course Code</label>
+                        <p className="mb-0">{selectedSubjectDetail.course.code || "N/A"}</p>
+                      </div>
+                    </Col>
+                    <Col md={6}>
+                      <div className="mb-3">
+                        <label className="fw-bold text-muted small">Status</label>
+                        <p className="mb-0">
+                          <Badge bg={selectedSubjectDetail.course.status === 'ON_GOING' ? 'warning' : 'secondary'}>
+                            {selectedSubjectDetail.course.status?.replace(/_/g, ' ') || "N/A"}
+                          </Badge>
+                        </p>
+                      </div>
+                    </Col>
+                    <Col md={6}>
+                      <div className="mb-3">
+                        <label className="fw-bold text-muted small">Max Trainees</label>
+                        <p className="mb-0">{selectedSubjectDetail.course.maxNumTrainee || "N/A"}</p>
+                      </div>
+                    </Col>
+                    <Col md={6}>
+                      <div className="mb-3">
+                        <label className="fw-bold text-muted small">Start Date</label>
+                        <p className="mb-0">
+                          {selectedSubjectDetail.course.startDate
+                            ? new Date(selectedSubjectDetail.course.startDate).toLocaleDateString()
+                            : "N/A"}
+                        </p>
+                      </div>
+                    </Col>
+                    <Col md={6}>
+                      <div className="mb-3">
+                        <label className="fw-bold text-muted small">End Date</label>
+                        <p className="mb-0">
+                          {selectedSubjectDetail.course.endDate
+                            ? new Date(selectedSubjectDetail.course.endDate).toLocaleDateString()
+                            : "N/A"}
+                        </p>
+                      </div>
+                    </Col>
+                    {selectedSubjectDetail.course.description && (
+                      <Col md={12}>
+                        <div className="mb-3">
+                          <label className="fw-bold text-muted small">Description</label>
+                          <p className="mb-0">{selectedSubjectDetail.course.description}</p>
+                        </div>
+                      </Col>
+                    )}
+                  </Row>
+                </>
+              )}
+            </div>
+          </Modal.Body>
+          <Modal.Footer>
+            <Button
+              variant="secondary"
+              onClick={() => setShowSubjectDetailModal(false)}
+            >
+              Close
+            </Button>
+          </Modal.Footer>
+        </Modal>
+      )}
     </Container>
   );
 };
