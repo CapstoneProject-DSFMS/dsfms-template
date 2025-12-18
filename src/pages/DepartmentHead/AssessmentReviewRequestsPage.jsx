@@ -52,7 +52,7 @@ const ProcessingEventRow = ({ event, index, onView }) => {
       <td className="align-middle">
         <div>
           <div className="fw-medium">{event.eventName}</div>
-          <small className="text-muted">{event.templateName}</small>
+          <small className="text-muted">{event.entityDisplay}</small>
         </div>
       </td>
       <td className="align-middle">
@@ -121,7 +121,7 @@ const CompletedEventRow = ({ event, index, onView }) => {
       <td className="align-middle">
         <div>
           <div className="fw-medium">{event.eventName}</div>
-          <small className="text-muted">{event.templateName}</small>
+          <small className="text-muted">{event.entityDisplay}</small>
         </div>
       </td>
       <td className="align-middle">
@@ -175,70 +175,33 @@ const AssessmentReviewRequestsPage = () => {
       const eventsData = response?.data?.events || response?.events || [];
       
       // Map API response to component format and generate eventId
-      const mappedEvents = await Promise.all(
-        eventsData
-          .filter(event => event.status !== 'NOT_STARTED') // Filter out NOT_STARTED events
-          .map(async (event) => {
-            // Generate eventId from templateId + occuranceDate (same format as before for compatibility)
-            const eventKey = `${event.templateInfo?.id || ''}|${event.occuranceDate || ''}`;
-            const eventId = encodeURIComponent(eventKey);
-            
-            // Fetch assessments to count actual status
-            let submittedCount = 0;
-            let reviewedCount = 0;
-            let cancelledCount = 0;
-            
-            try {
-              let assessmentsResponse;
-              
-              // Determine which API to call based on courseId or subjectId
-              if (event.courseId) {
-                const occuranceDate = new Date(event.occuranceDate).toISOString().split('T')[0];
-                assessmentsResponse = await assessmentAPI.getCourseEventAssessments(
-                  event.courseId,
-                  event.templateInfo?.id,
-                  occuranceDate
-                );
-              } else if (event.subjectId) {
-                const occuranceDate = new Date(event.occuranceDate).toISOString().split('T')[0];
-                assessmentsResponse = await assessmentAPI.getSubjectEventAssessments(
-                  event.subjectId,
-                  event.templateInfo?.id,
-                  occuranceDate
-                );
-              }
-              
-              // Count assessments by status
-              const assessments = assessmentsResponse?.assessments || [];
-              submittedCount = assessments.filter(a => a.status === 'SUBMITTED').length;
-              reviewedCount = assessments.filter(a => a.status === 'REVIEWED').length;
-              cancelledCount = assessments.filter(a => a.status === 'CANCELLED').length;
-            } catch (error) {
-              console.error('Error fetching assessments for event:', event.name, error);
-              throw error;
-            }
-            
-            return {
-              eventId,
-              eventKey,
-              eventName: event.name,
-              templateName: event.templateInfo?.name || 'Unknown Template',
-              templateId: event.templateInfo?.id,
-              occurrenceDate: event.occuranceDate || event.occurrenceDate,
-              status: event.status,
-              totalAssessments: event.totalAssessments,
-              totalTrainees: event.totalTrainees,
-              totalTrainers: event.totalTrainers,
-              submittedCount: submittedCount,
-              reviewedCount: reviewedCount,
-              cancelledCount: cancelledCount,
-              entityInfo: event.entityInfo,
-              templateInfo: event.templateInfo,
-              courseId: event.courseId,
-              subjectId: event.subjectId
-            };
-          })
-      );
+      const mappedEvents = eventsData
+        .filter(event => event.status !== 'NOT_STARTED') // Filter out NOT_STARTED events
+        .map((event) => {
+          // Generate eventId from templateId + occuranceDate (same format as before for compatibility)
+          const eventKey = `${event.templateInfo?.id || ''}|${event.occuranceDate || ''}`;
+          const eventId = encodeURIComponent(eventKey);
+
+          return {
+            eventId,
+            eventKey,
+            eventName: event.name,
+            entityDisplay: event.entityInfo ? `${event.entityInfo.type.charAt(0).toUpperCase() + event.entityInfo.type.slice(1)}: ${event.entityInfo.name}` : 'Unknown Entity',
+            templateId: event.templateInfo?.id,
+            occurrenceDate: event.occuranceDate || event.occurrenceDate,
+            status: event.status,
+            totalAssessments: event.totalAssessments,
+            totalTrainees: event.totalTrainees,
+            totalTrainers: event.totalTrainers,
+            submittedCount: event.totalSubmittedForm || 0,
+            reviewedCount: event.totalReviewedForm || 0,
+            cancelledCount: event.totalCancelledForm || 0,
+            entityInfo: event.entityInfo,
+            templateInfo: event.templateInfo,
+            courseId: event.courseId,
+            subjectId: event.subjectId
+          };
+        });
       
       setEvents(mappedEvents);
     } catch (error) {
@@ -255,10 +218,12 @@ const AssessmentReviewRequestsPage = () => {
     const completed = [];
 
     events.forEach(event => {
-      // Event is in Processing if it has submitted forms (submittedCount > 0)
-      if (event.submittedCount > 0) {
+      // Event is in Processing if status is ON_GOING
+      if (event.status === 'ON_GOING') {
         processing.push(event);
-      } else {
+      } 
+      // Event is in Completed if status is FINISHED
+      else if (event.status === 'FINISHED') {
         completed.push(event);
       }
     });
@@ -296,7 +261,12 @@ const AssessmentReviewRequestsPage = () => {
   const finalFilteredEvents = filteredEvents;
 
   // Use table sort hook
-  const { sortedData: sortedEvents, sortConfig, handleSort } = useTableSort(finalFilteredEvents);
+  const { sortedData: sortedEvents, sortConfig, handleSort, handleSort: resetSort } = useTableSort(finalFilteredEvents);
+
+  // Reset sort when tab changes
+  useEffect(() => {
+    // Sort will automatically update since finalFilteredEvents changed
+  }, [mainTab]);
 
   const handleViewEvent = (event) => {
     // Determine event type based on whether it has submitted forms
@@ -420,6 +390,7 @@ const AssessmentReviewRequestsPage = () => {
           <Tab.Content style={{ flex: 1, overflow: 'hidden', display: 'flex', flexDirection: 'column' }}>
             <Tab.Pane 
               eventKey={mainTab}
+              key={mainTab}
               style={{ 
                 flex: 1, 
                 overflow: 'hidden', 
@@ -513,7 +484,7 @@ const AssessmentReviewRequestsPage = () => {
                         if (mainTab === 'processing') {
                           return (
                             <ProcessingEventRow
-                              key={event.eventId}
+                              key={`${mainTab}-${index}`}
                               event={event}
                               index={index}
                               onView={handleViewEvent}
@@ -522,7 +493,7 @@ const AssessmentReviewRequestsPage = () => {
                         } else {
                           return (
                             <CompletedEventRow
-                              key={event.eventId}
+                              key={`${mainTab}-${index}`}
                               event={event}
                               index={index}
                               onView={handleViewEvent}

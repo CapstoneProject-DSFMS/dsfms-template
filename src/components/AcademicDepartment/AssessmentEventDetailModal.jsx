@@ -424,14 +424,12 @@ const AssessmentEventDetailModal = ({ show, onClose, event }) => {
     assessments.forEach((assessment) => {
       const status = String(assessment.status || "").toUpperCase();
       if (status === "COMPLETED" || status === "APPROVED") {
-        // Check if passed based on score or result
-        const score = assessment.score || 0;
-        const maxScore = assessment.maxScore || 100;
-        const passThreshold = assessment.passThreshold || 70; // Default 70%
-
-        if (score >= maxScore * (passThreshold / 100)) {
+        // Check if passed based on resultText only
+        const resultText = String(assessment.resultText || "").toUpperCase().trim();
+        
+        if (resultText === "PASSED" || resultText === "PASS") {
           stats.passed++;
-        } else {
+        } else if (resultText === "FAILED" || resultText === "FAIL") {
           stats.failed++;
         }
       } else if (status === "REJECTED" || status === "FAILED") {
@@ -1297,10 +1295,13 @@ const AssessmentEventDetailModal = ({ show, onClose, event }) => {
                             {resultText ? (
                               <Badge
                                 bg={
-                                  resultText === "PASSED" ||
-                                  resultText === "PASS"
+                                  resultText.toUpperCase() === "PASSED" ||
+                                  resultText.toUpperCase() === "PASS"
                                     ? "success"
-                                    : "danger"
+                                    : resultText.toUpperCase() === "FAILED" ||
+                                    resultText.toUpperCase() === "FAIL"
+                                    ? "danger"
+                                    : "secondary"
                                 }
                               >
                                 {resultText}
