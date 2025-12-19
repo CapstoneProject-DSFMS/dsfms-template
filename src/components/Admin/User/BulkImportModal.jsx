@@ -125,11 +125,14 @@ const BulkImportModal = ({ show, onClose, onImport, loading = false }) => {
     
     try {
       // Handle different date formats
-      let date;
+      let year, month, day;
       
       // If it's already a Date object
       if (dateString instanceof Date) {
-        date = dateString;
+        year = dateString.getUTCFullYear();
+        month = dateString.getUTCMonth() + 1;
+        day = dateString.getUTCDate();
+        console.log('✅ [formatDateToISO] Date object detected (using UTC):', { date: dateString.toString(), extracted: { year, month, day } });
       } else {
         // Try to parse the date string
         const dateStr = dateString.toString().trim();
@@ -145,9 +148,9 @@ const BulkImportModal = ({ show, onClose, onImport, loading = false }) => {
           const parts = dateStr.split('/');
           if (parts.length === 3) {
             // Assume MM/DD/YYYY format - CONVERT TO NUMBERS!
-            let year = parseInt(parts[2], 10);
-            const month = parseInt(parts[0], 10);
-            const day = parseInt(parts[1], 10);
+            year = parseInt(parts[2], 10);
+            month = parseInt(parts[0], 10);
+            day = parseInt(parts[1], 10);
             
             // Convert 2-digit year to 4-digit year using windowing
             // Standard convention: 00-25 = 2000-2025, 26-99 = 1926-1999
@@ -164,7 +167,7 @@ const BulkImportModal = ({ show, onClose, onImport, loading = false }) => {
                 year = (currentCentury - 100) + year;  // 98 → 1998
               }
             }
-            date = new Date(year, month - 1, day);
+            console.log('📅 [formatDateToISO] Parsed MM/DD/YYYY format:', { year, month, day });
           }
         } else if (dateStr.includes('-')) {
           // Format: YYYY-MM-DD or DD-MM-YYYY
@@ -172,15 +175,15 @@ const BulkImportModal = ({ show, onClose, onImport, loading = false }) => {
           if (parts.length === 3) {
             if (parts[0].length === 4) {
               // YYYY-MM-DD format - CONVERT TO NUMBERS!
-              const year = parseInt(parts[0], 10);
-              const month = parseInt(parts[1], 10);
-              const day = parseInt(parts[2], 10);
-              date = new Date(year, month - 1, day);
+              year = parseInt(parts[0], 10);
+              month = parseInt(parts[1], 10);
+              day = parseInt(parts[2], 10);
+              console.log('📅 [formatDateToISO] Parsed YYYY-MM-DD format:', { year, month, day });
             } else {
               // DD-MM-YYYY format - CONVERT TO NUMBERS!
-              let year = parseInt(parts[2], 10);
-              const month = parseInt(parts[1], 10);
-              const day = parseInt(parts[0], 10);
+              year = parseInt(parts[2], 10);
+              month = parseInt(parts[1], 10);
+              day = parseInt(parts[0], 10);
               
               // Convert 2-digit year to 4-digit year using windowing
               if (year < 100) {
@@ -194,28 +197,44 @@ const BulkImportModal = ({ show, onClose, onImport, loading = false }) => {
                   year = (currentCentury - 100) + year;
                 }
               }
-              date = new Date(year, month - 1, day);
+              console.log('📅 [formatDateToISO] Parsed DD-MM-YYYY format:', { year, month, day });
             }
           }
         } else {
           // Try direct parsing
-          date = new Date(dateStr);
+          const tempDate = new Date(dateStr);
+          console.log('📅 [formatDateToISO] Direct parsing:', { input: dateStr });
+          year = tempDate.getFullYear();
+          month = tempDate.getMonth() + 1;
+          day = tempDate.getDate();
         }
       }
       
-      // Check if date is valid and not too far in the past/future
-      if (isNaN(date.getTime())) {
+      // Check for valid date components
+      if (!year || !month || !day) {
+        console.warn('⚠️ [formatDateToISO] Invalid date components detected');
         return '';
       }
       
       // Check for reasonable date range (1900-2100)
-      const year = date.getFullYear();
       if (year < 1900 || year > 2100) {
+        console.warn('⚠️ [formatDateToISO] Date out of valid range:', { year });
         return '';
       }
       
-      // Return ISO datetime string (YYYY-MM-DDTHH:mm:ss.sssZ)
-      return date.toISOString();
+      // IMPORTANT: Create UTC date directly using Date.UTC() to avoid timezone issues
+      // This ensures toISOString() won't shift the date
+      const utcDate = new Date(Date.UTC(year, month - 1, day));
+      
+      // Validate the date
+      if (isNaN(utcDate.getTime())) {
+        console.warn('⚠️ [formatDateToISO] Invalid date after UTC conversion');
+        return '';
+      }
+      
+      // Return ISO datetime string
+      const isoResult = utcDate.toISOString();
+      return isoResult;
     } catch (error) {
       return '';
     }
@@ -1063,8 +1082,18 @@ const BulkImportModal = ({ show, onClose, onImport, loading = false }) => {
                         <td>{user.specialization || '-'}</td>
                         <td>{user.years_of_experience || '-'}</td>
                         <td>{user.bio || '-'}</td>
-                        <td>{user.date_of_birth ? new Date(user.date_of_birth).toLocaleDateString('en-US', { year: 'numeric', month: '2-digit', day: '2-digit' }) : '-'}</td>
-                        <td>{user.enrollment_date ? new Date(user.enrollment_date).toLocaleDateString('en-US', { year: 'numeric', month: '2-digit', day: '2-digit' }) : '-'}</td>
+                        <td>
+                          {user.date_of_birth ? (() => {
+                            const isoDate = formatDateToISO(user.date_of_birth);
+                            return isoDate ? new Date(isoDate).toLocaleDateString('en-US', { year: 'numeric', month: '2-digit', day: '2-digit' }) : 'Invalid';
+                          })() : '-'}
+                        </td>
+                        <td>
+                          {user.enrollment_date ? (() => {
+                            const isoDate = formatDateToISO(user.enrollment_date);
+                            return isoDate ? new Date(isoDate).toLocaleDateString('en-US', { year: 'numeric', month: '2-digit', day: '2-digit' }) : 'Invalid';
+                          })() : '-'}
+                        </td>
                         <td>{user.training_batch || '-'}</td>
                         <td>{user.passport_no || '-'}</td>
                         <td>{user.nation || '-'}</td>
