@@ -494,7 +494,7 @@ const SubjectDetailsView = ({ subjectId, courseId }) => {
                         }}>Duration</h6>
                         <div className="d-flex align-items-center">
                           <Clock size={16} className="me-2 text-primary" />
-                          <span className="text-dark" style={{ fontSize: '0.9rem' }}>{subject.duration} days</span>
+                          <span className="text-dark" style={{ fontSize: '0.9rem' }}>{subject.duration}</span>
                         </div>
                       </div>
                       <div className="mb-3">

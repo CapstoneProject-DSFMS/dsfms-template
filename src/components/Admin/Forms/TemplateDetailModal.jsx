@@ -1079,6 +1079,23 @@ const TemplateDetailModal = ({ show, onHide, template, onCreateVersion, onTempla
                                 >
                                   {field.label || field.fieldName}
                                 </span>
+                                {(field.fieldName || field.name) && (
+                                  <span 
+                                    style={{ 
+                                      fontSize: '12px',
+                                      color: '#666',
+                                      fontFamily: 'Fira Mono, monospace',
+                                      marginLeft: '8px',
+                                      padding: '2px 6px',
+                                      backgroundColor: '#f5f5f5',
+                                      borderRadius: '3px',
+                                      wordBreak: 'break-word',
+                                      overflowWrap: 'break-word'
+                                    }}
+                                  >
+                                    {field.fieldName || field.name}
+                                  </span>
+                                )}
                               </div>
                               <Badge
                                 bg="secondary"

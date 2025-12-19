@@ -125,13 +125,10 @@ export const traineeAPI = {
     }
   },
 
-  // Get all trainees with role filter (for enrollment) - OLD: used GET /users
-  // Now using POST /subjects/active-trainees endpoint with subjectIds in body
-  getTraineesForEnrollment: async (subjectIds = []) => {
+  // Get all active trainees for enrollment - using GET without filters
+  getTraineesForEnrollment: async () => {
     try {
-      const response = await apiClient.post('/subjects/active-trainees', { 
-        subjectIds: Array.isArray(subjectIds) ? subjectIds : [] 
-      });
+      const response = await apiClient.get('/subjects/active-trainees');
       // API returns: { message: "...", data: { trainees: [...], totalItems: ... } }
       return response.data;
     } catch (error) {

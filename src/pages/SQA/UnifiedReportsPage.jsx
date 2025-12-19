@@ -206,7 +206,19 @@ const UnifiedReportsPage = ({ defaultTab, source = '/reports', onShowForm }) => 
         item.createdBy?.email,
       ];
 
-      const matchesSearch = baseFields
+      // Construct full name for search (lastName + middleName + firstName)
+      const fullName = [
+        item.createdBy?.lastName,
+        item.createdBy?.middleName,
+        item.createdBy?.firstName
+      ]
+        .filter(Boolean)
+        .join(' ');
+
+      // Include full name in search fields
+      const searchFields = baseFields.concat(fullName);
+
+      const matchesSearch = searchFields
         .filter(Boolean)
         .some((field) => field.toLowerCase().includes(searchTerm.toLowerCase()));
 

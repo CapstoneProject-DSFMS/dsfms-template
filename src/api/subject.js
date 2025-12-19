@@ -134,7 +134,7 @@ const subjectAPI = {
     }
   },
 
-  // Assign trainees to subject
+  // Assign trainees to subject (single subject)
   assignTrainees: async (subjectId, traineeData) => {
     try {
       // Backend expects camelCase: batchCode and traineeUserIds
@@ -151,18 +151,63 @@ const subjectAPI = {
       if (!Array.isArray(requestData.traineeUserIds) || requestData.traineeUserIds.length === 0) {
         throw new Error('traineeUserIds must be a non-empty array');
       }
+
+      if (!subjectId) {
+        throw new Error('subjectId is required');
+      }
       
-      // Create a fresh plain object (avoid any prototype issues)
+      // Create a fresh plain object
       const payload = {
         batchCode: String(requestData.batchCode).trim(),
         traineeUserIds: Array.isArray(requestData.traineeUserIds) 
-          ? [...requestData.traineeUserIds] // Create new array
+          ? [...requestData.traineeUserIds]
           : []
       };
       
-      // Send directly without transformRequest - let axios handle serialization
-      // Similar to how other POST requests work (createSubject, etc.)
+      // Send to single subject endpoint
       const response = await apiClient.post(`/subjects/${subjectId}/assign-trainees`, payload);
+      return response.data;
+    } catch (error) {
+      throw error;
+    }
+  },
+
+  // Assign trainees to multiple subjects (bulk enrollment)
+  assignTraineesToMultipleSubjects: async (enrollData) => {
+    try {
+      // Backend expects: batchCode, traineeUserIds, subjectIds
+      const requestData = {
+        batchCode: enrollData.batchCode || enrollData.batch_code || '',
+        traineeUserIds: enrollData.traineeUserIds || enrollData.trainee_user_ids || [],
+        subjectIds: enrollData.subjectIds || enrollData.subject_ids || []
+      };
+      
+      // Validate data types
+      if (!requestData.batchCode || typeof requestData.batchCode !== 'string') {
+        throw new Error('batchCode must be a non-empty string');
+      }
+      
+      if (!Array.isArray(requestData.traineeUserIds) || requestData.traineeUserIds.length === 0) {
+        throw new Error('traineeUserIds must be a non-empty array');
+      }
+
+      if (!Array.isArray(requestData.subjectIds) || requestData.subjectIds.length === 0) {
+        throw new Error('subjectIds must be a non-empty array');
+      }
+      
+      // Create a fresh plain object with batch code, trainee IDs, and subject IDs
+      const payload = {
+        batchCode: String(requestData.batchCode).trim(),
+        traineeUserIds: Array.isArray(requestData.traineeUserIds) 
+          ? [...requestData.traineeUserIds]
+          : [],
+        subjectIds: Array.isArray(requestData.subjectIds)
+          ? [...requestData.subjectIds]
+          : []
+      };
+      
+      // Send to bulk endpoint - assigns trainees to multiple subjects at once
+      const response = await apiClient.post('/subjects/assign-trainees', payload);
       return response.data;
     } catch (error) {
       throw error;
