@@ -556,7 +556,6 @@ export const useUserManagementAPI = () => {
       }
       
       // Refresh users list (departments will be fetched separately if needed)
-      console.log('Refreshing user list after bulk import...');
       const usersResponse = await userAPI.getUsers({ _t: new Date().getTime() });
       
       // Handle different response formats - ensure data is an array
@@ -571,6 +570,18 @@ export const useUserManagementAPI = () => {
         console.warn('⚠️ Unexpected users response format:', usersResponse);
         usersArray = [];
       }
+      
+      // Log imported users data
+      console.log('✅ [handleBulkImport] Users after import from backend:', {
+        totalUsers: usersArray.length,
+        trainees: usersArray.filter(u => u.role?.name === 'TRAINEE').map((user, idx) => ({
+          index: idx,
+          name: `${user.firstName} ${user.middleName || ''} ${user.lastName}`.trim(),
+          dob: user.traineeProfile?.dob,
+          enrollmentDate: user.traineeProfile?.enrollmentDate,
+          raw: user.traineeProfile
+        }))
+      });
       
       const transformedUsers = usersArray.map(user => ({
         id: user.id,
@@ -593,6 +604,7 @@ export const useUserManagementAPI = () => {
         bio: user.trainerProfile?.bio || '',
         // Trainee profile fields
         dateOfBirth: user.traineeProfile?.dob ? user.traineeProfile.dob.split('T')[0] : '',
+        enrollmentDate: user.traineeProfile?.enrollmentDate ? user.traineeProfile.enrollmentDate.split('T')[0] : '',
         trainingBatch: user.traineeProfile?.trainingBatch || '',
         passportNo: user.traineeProfile?.passportNo || '',
         nation: user.traineeProfile?.nation || '',
