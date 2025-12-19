@@ -252,34 +252,78 @@ const EnrollTraineesPage = () => {
       // Call bulk API with all subjects and trainees
       const response = await subjectAPI.assignTraineesToMultipleSubjects(enrollData);
       
-      toast.success(`Successfully enrolled ${selectedTrainees.length} trainee(s) to ${selectedSubjects.length} subject(s)!`, {
-        autoClose: 4000,
-        position: "top-right"
-      });
+      console.log('Full response:', response);
       
-      // Clear selections after successful enrollment
-      setSelectedTrainees([]);
-      setSelectedSubjects([]);
+      // assignTraineesToMultipleSubjects returns response.data which is:
+      // { message: "...", data: { successMessages: [], errorMessages: [] } }
+      const successMessages = response?.data?.successMessages || [];
+      const errorMessages = response?.data?.errorMessages || [];
       
-      // Redirect to course detail page with trainees tab active
-      setTimeout(() => {
-        navigate(ROUTES.ACADEMIC_COURSE_DETAIL(courseId), {
-          state: { activeTab: 'trainees' }
+      console.log('Success messages:', successMessages);
+      console.log('Error messages:', errorMessages);
+      
+      // Show success messages
+      if (successMessages && successMessages.length > 0) {
+        successMessages.forEach((message, index) => {
+          setTimeout(() => {
+            toast.success(message, {
+              autoClose: 5000,
+              position: "top-right"
+            });
+          }, index * 100); // Stagger toasts
         });
-      }, 1000);
-        
-    } catch (error) {
-      let errorMessage = 'Failed to enroll trainees. Please try again.';
-      if (error.response?.data?.message) {
-        errorMessage = error.response.data.message;
-      } else if (error.message) {
-        errorMessage = error.message;
       }
       
+      // Show error messages
+      if (errorMessages && errorMessages.length > 0) {
+        errorMessages.forEach((message, index) => {
+          setTimeout(() => {
+            toast.error(message, {
+              autoClose: 5000,
+              position: "top-right"
+            });
+          }, (successMessages.length + index) * 100); // Stagger after success toasts
+        });
+      }
+      
+      // If there are any success messages, clear selections and redirect
+      if (successMessages && successMessages.length > 0) {
+        setSelectedTrainees([]);
+        setSelectedSubjects([]);
+        
+        // Redirect to course detail page with trainees tab active
+        setTimeout(() => {
+          navigate(ROUTES.ACADEMIC_COURSE_DETAIL(courseId), {
+            state: { activeTab: 'trainees' }
+          });
+        }, (successMessages.length + errorMessages.length) * 100 + 1000);
+      }
+        
+    } catch (error) {
+      console.error('Catch block error:', error);
+      console.error('Error response:', error.response?.data);
+      
+      // Try to extract error messages from response
+      const errorMessagesList = error.response?.data?.data?.errorMessages || error.response?.data?.errorMessages || [];
+      const errorMessage = error.response?.data?.message || error.message || 'Failed to enroll trainees';
+      
+      // Show general error message first
       toast.error(errorMessage, {
         autoClose: 5000,
         position: "top-right"
       });
+      
+      // Show detailed error messages if available
+      if (errorMessagesList && errorMessagesList.length > 0) {
+        errorMessagesList.forEach((message, index) => {
+          setTimeout(() => {
+            toast.error(message, {
+              autoClose: 5000,
+              position: "top-right"
+            });
+          }, (index + 1) * 100);
+        });
+      }
     } finally {
       setEnrollLoading(false);
     }
