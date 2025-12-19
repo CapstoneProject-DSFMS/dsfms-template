@@ -80,31 +80,30 @@ const EnrollTraineesPage = () => {
     // Fallback removed - subjects are loaded from course API only
   }, []);
 
-  // Fetch available trainees when selected subjects change
-  const fetchAvailableTrainees = async (subjectIds) => {
-    try {
-      setLoadingTrainees(true);
-      const response = await traineeAPI.getTraineesForEnrollment(subjectIds);
-      setAvailableTrainees(response.data?.trainees || []);
-    } catch (error) {
-      console.error('Error fetching trainees:', error);
-      toast.error('Failed to load available trainees');
-      setAvailableTrainees([]);
-    } finally {
-      setLoadingTrainees(false);
-    }
-  };
+  // Fetch all available trainees on component mount
+  useEffect(() => {
+    const fetchAllAvailableTrainees = async () => {
+      try {
+        setLoadingTrainees(true);
+        const response = await traineeAPI.getTraineesForEnrollment();
+        setAvailableTrainees(response.data?.trainees || []);
+      } catch (error) {
+        console.error('Error fetching trainees:', error);
+        toast.error('Failed to load available trainees');
+        setAvailableTrainees([]);
+      } finally {
+        setLoadingTrainees(false);
+      }
+    };
 
-  // Handle subject selection/deselection
-  const handleSubjectToggle = async (newSelectedSubjects) => {
-    setSelectedSubjects(newSelectedSubjects);
-    
-    // Fetch trainees for selected subjects
-    if (newSelectedSubjects.length > 0) {
-      await fetchAvailableTrainees(newSelectedSubjects);
-    } else {
-      setAvailableTrainees([]);
+    if (courseId) {
+      fetchAllAvailableTrainees();
     }
+  }, [courseId]);
+
+  // Handle subject selection/deselection (no API call needed)
+  const handleSubjectToggle = (newSelectedSubjects) => {
+    setSelectedSubjects(newSelectedSubjects);
   };
 
   // Show loading state while course is loading
@@ -240,129 +239,36 @@ const EnrollTraineesPage = () => {
           throw new Error(`Trainee ${trainee.eid} (${trainee.firstName} ${trainee.lastName}) is missing UUID`);
         }
         
-        return trainee.id; // Just the user IDs as array
+        return trainee.id;
       });
       
-      // Backend expects camelCase format
-      const traineeData = {
-        batchCode: String(batchCode).trim(), // Ensure it's a string
-        traineeUserIds: traineeIds // Array of UUIDs
+      // Backend expects camelCase format with all subjects at once
+      const enrollData = {
+        batchCode: String(batchCode).trim(),
+        traineeUserIds: traineeIds,
+        subjectIds: selectedSubjects
       };
 
-      // Call API for each selected subject with subject name tracking
-      const enrollmentPromises = selectedSubjects.map(async (subjectId) => {
-        if (!subjectId) {
-          const subjectInfo = subjectsMap[subjectId] || { name: 'Unknown', code: 'N/A' };
-          throw new Error(`Invalid subject ID: ${subjectId} (${subjectInfo.name})`);
-        }
-        
-        try {
-          const response = await subjectAPI.assignTrainees(subjectId, traineeData);
-          return { 
-            subjectId, 
-            response, 
-            status: 'success',
-            subjectName: subjectsMap[subjectId]?.name || 'Unknown Subject',
-            subjectCode: subjectsMap[subjectId]?.code || 'N/A'
-          };
-        } catch (error) {
-          // Return error info instead of throwing
-          const subjectInfo = subjectsMap[subjectId] || { name: 'Unknown Subject', code: 'N/A' };
-          return {
-            subjectId,
-            status: 'error',
-            error,
-            subjectName: subjectInfo.name,
-            subjectCode: subjectInfo.code,
-            errorMessage: error.response?.data?.message || error.message || 'Unknown error',
-            errorDetails: error.response?.data
-          };
-        }
+      // Call bulk API with all subjects and trainees
+      const response = await subjectAPI.assignTraineesToMultipleSubjects(enrollData);
+      
+      toast.success(`Successfully enrolled ${selectedTrainees.length} trainee(s) to ${selectedSubjects.length} subject(s)!`, {
+        autoClose: 4000,
+        position: "top-right"
       });
-
-      // Wait for all enrollments to complete (use allSettled to get all results)
-      const enrollmentResults = await Promise.allSettled(enrollmentPromises);
       
-      // Process results
-      const successful = [];
-      const failed = [];
+      // Clear selections after successful enrollment
+      setSelectedTrainees([]);
+      setSelectedSubjects([]);
       
-      enrollmentResults.forEach((result, index) => {
-        if (result.status === 'fulfilled') {
-          const enrollment = result.value;
-          if (enrollment.status === 'success') {
-            successful.push(enrollment);
-          } else {
-            failed.push(enrollment);
-          }
-        } else {
-          // Promise rejected
-          const subjectId = selectedSubjects[index];
-          const subjectInfo = subjectsMap[subjectId] || { name: 'Unknown Subject', code: 'N/A' };
-          failed.push({
-            subjectId,
-            status: 'error',
-            subjectName: subjectInfo.name,
-            subjectCode: subjectInfo.code,
-            errorMessage: result.reason?.message || 'Unknown error',
-            errorDetails: result.reason
-          });
-        }
-      });
-
-      // Show detailed error messages for each failed subject
-      if (failed.length > 0) {
-        failed.forEach((failure) => {
-          const errorMsg = failure.errorMessage || 'Unknown error';
-          const subjectDisplay = `${failure.subjectName} (${failure.subjectCode})`;
-          
-          // Extract more specific error if available
-          let detailedError = errorMsg;
-          if (failure.errorDetails?.message) {
-            detailedError = failure.errorDetails.message;
-          } else if (failure.errorDetails?.errors && Array.isArray(failure.errorDetails.errors)) {
-            detailedError = failure.errorDetails.errors.map(e => e.message || e).join(', ');
-          }
-          
-          toast.error(`${subjectDisplay}: ${detailedError}`, {
-            autoClose: 5000,
-            position: "top-right",
-            icon: false
-          });
+      // Redirect to course detail page with trainees tab active
+      setTimeout(() => {
+        navigate(ROUTES.ACADEMIC_COURSE_DETAIL(courseId), {
+          state: { activeTab: 'trainees' }
         });
-      }
-
-      // Show success message if any succeeded
-      if (successful.length > 0) {
-        const enrolledCount = selectedTrainees.length;
-        toast.success(`Successfully enrolled ${enrolledCount} trainee(s) to ${successful.length} subject(s): ${successful.map(s => s.subjectName).join(', ')}`, {
-          autoClose: 4000,
-          position: "top-right",
-          icon: false
-        });
+      }, 1000);
         
-        // Clear only successful subjects from selection
-        if (failed.length === 0) {
-          // All succeeded, clear all
-          setSelectedTrainees([]);
-          setSelectedSubjects([]);
-        } else {
-          // Some failed, only clear successful subjects (keep failed ones)
-          const successfulSubjectIds = new Set(successful.map(s => s.subjectId));
-          setSelectedSubjects(prev => prev.filter(id => !successfulSubjectIds.has(id)));
-        }
-        
-        // Redirect to course detail page with trainees tab active when at least one enrollment succeeded
-        setTimeout(() => {
-          navigate(ROUTES.ACADEMIC_COURSE_DETAIL(courseId), {
-            state: { activeTab: 'trainees' }
-          });
-        }, 1000); // Delay to show toast before redirect
-      }
-      
     } catch (error) {
-      // This catch should rarely be hit now since we handle errors in allSettled
-      
       let errorMessage = 'Failed to enroll trainees. Please try again.';
       if (error.response?.data?.message) {
         errorMessage = error.response.data.message;
@@ -370,7 +276,10 @@ const EnrollTraineesPage = () => {
         errorMessage = error.message;
       }
       
-      toast.error(errorMessage);
+      toast.error(errorMessage, {
+        autoClose: 5000,
+        position: "top-right"
+      });
     } finally {
       setEnrollLoading(false);
     }

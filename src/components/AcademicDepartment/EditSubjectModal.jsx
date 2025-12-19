@@ -7,9 +7,27 @@ const EditSubjectModal = ({ show, onClose, onSave, subject, loading = false }) =
     name: '',
     code: '',
     description: '',
-    level: 'Beginner'
+    method: 'CLASSROOM',
+    type: 'UNLIMIT',
+    roomName: '',
+    remarkNote: '',
+    timeSlot: '',
+    isSIM: false,
+    passScore: '',
+    startDate: '',
+    endDate: ''
   });
   const [errors, setErrors] = useState([]);
+
+  // Helper function to format ISO date to YYYY-MM-DD for input type="date"
+  const formatDateForInput = (isoDate) => {
+    if (!isoDate) return '';
+    try {
+      return new Date(isoDate).toISOString().split('T')[0];
+    } catch (error) {
+      return isoDate;
+    }
+  };
 
   useEffect(() => {
     if (subject && show) {
@@ -17,17 +35,25 @@ const EditSubjectModal = ({ show, onClose, onSave, subject, loading = false }) =
         name: subject.name || '',
         code: subject.code || '',
         description: subject.description || '',
-        level: subject.level || 'Beginner'
+        method: subject.method || 'CLASSROOM',
+        type: subject.type || 'UNLIMIT',
+        roomName: subject.roomName || '',
+        remarkNote: subject.remarkNote || '',
+        timeSlot: subject.timeSlot || '',
+        isSIM: subject.isSIM || false,
+        passScore: subject.passScore || '',
+        startDate: formatDateForInput(subject.startDate),
+        endDate: formatDateForInput(subject.endDate)
       });
       setErrors([]);
     }
   }, [subject, show]);
 
   const handleInputChange = (e) => {
-    const { name, value } = e.target;
+    const { name, value, type, checked } = e.target;
     setFormData(prev => ({
       ...prev,
-      [name]: value
+      [name]: type === 'checkbox' ? checked : value
     }));
   };
 
@@ -41,9 +67,22 @@ const EditSubjectModal = ({ show, onClose, onSave, subject, loading = false }) =
     if (!formData.code.trim()) {
       newErrors.push('Subject code is required');
     }
-    
-    if (!formData.description.trim()) {
-      newErrors.push('Description is required');
+
+    const passScoreStr = String(formData.passScore || '').trim();
+    if (passScoreStr && (isNaN(passScoreStr) || !Number.isInteger(parseFloat(passScoreStr)) || parseFloat(passScoreStr) < 0 || parseFloat(passScoreStr) > 100)) {
+      newErrors.push('Pass score must be an integer between 0 and 100');
+    }
+
+    if (!formData.startDate.trim()) {
+      newErrors.push('Start date is required');
+    }
+
+    if (!formData.endDate.trim()) {
+      newErrors.push('End date is required');
+    }
+
+    if (formData.startDate && formData.endDate && new Date(formData.startDate + 'T00:00:00') >= new Date(formData.endDate + 'T00:00:00')) {
+      newErrors.push('End date must be after start date');
     }
     
     setErrors(newErrors);
@@ -58,7 +97,21 @@ const EditSubjectModal = ({ show, onClose, onSave, subject, loading = false }) =
     }
     
     try {
-      await onSave(formData);
+      const subjectData = {
+        name: formData.name.trim(),
+        code: formData.code.trim(),
+        description: formData.description?.trim() || null,
+        method: formData.method,
+        type: formData.type,
+        roomName: formData.roomName?.trim() || null,
+        remarkNote: formData.remarkNote?.trim() || null,
+        timeSlot: formData.timeSlot?.trim() || null,
+        isSIM: formData.isSIM,
+        passScore: formData.passScore ? parseFloat(formData.passScore) : null,
+        startDate: formData.startDate,
+        endDate: formData.endDate
+      };
+      await onSave(subjectData);
       handleClose();
     } catch (error) {
     }
@@ -69,7 +122,15 @@ const EditSubjectModal = ({ show, onClose, onSave, subject, loading = false }) =
       name: '',
       code: '',
       description: '',
-      level: 'Beginner'
+      method: 'CLASSROOM',
+      type: 'UNLIMIT',
+      roomName: '',
+      remarkNote: '',
+      timeSlot: '',
+      isSIM: false,
+      passScore: '',
+      startDate: '',
+      endDate: ''
     });
     setErrors([]);
     onClose();
@@ -87,7 +148,7 @@ const EditSubjectModal = ({ show, onClose, onSave, subject, loading = false }) =
         </Button>
       </Modal.Header>
 
-      <Modal.Body className="p-4">
+      <Modal.Body className="p-4" style={{ maxHeight: '60vh', overflowY: 'auto', overflowX: 'hidden' }}>
         {errors.length > 0 && (
           <Alert variant="danger" className="mb-3">
             <ul className="mb-0">
@@ -110,6 +171,7 @@ const EditSubjectModal = ({ show, onClose, onSave, subject, loading = false }) =
                   onChange={handleInputChange}
                   placeholder="Enter subject name"
                   disabled={loading}
+                  required
                 />
               </Form.Group>
             </Col>
@@ -123,6 +185,70 @@ const EditSubjectModal = ({ show, onClose, onSave, subject, loading = false }) =
                   onChange={handleInputChange}
                   placeholder="Enter subject code"
                   disabled={loading}
+                  required
+                />
+              </Form.Group>
+            </Col>
+          </Row>
+
+          <Form.Group className="mb-3">
+            <Form.Label>Description</Form.Label>
+            <Form.Control
+              as="textarea"
+              rows={3}
+              name="description"
+              value={formData.description}
+              onChange={handleInputChange}
+              placeholder="Enter subject description"
+              disabled={loading}
+            />
+          </Form.Group>
+
+          <Row>
+            <Col md={6}>
+              <Form.Group className="mb-3">
+                <Form.Label>Method *</Form.Label>
+                <Form.Select
+                  name="method"
+                  value={formData.method}
+                  onChange={handleInputChange}
+                  disabled={loading}
+                  required
+                >
+                  <option value="CLASSROOM">CLASSROOM</option>
+                  <option value="E_LEARNING">E_LEARNING</option>
+                  <option value="ERO">ERO</option>
+                </Form.Select>
+              </Form.Group>
+            </Col>
+          </Row>
+
+          <Row>
+            <Col md={6}>
+              <Form.Group className="mb-3">
+                <Form.Label>Type *</Form.Label>
+                <Form.Select
+                  name="type"
+                  value={formData.type}
+                  onChange={handleInputChange}
+                  disabled={loading}
+                  required
+                >
+                  <option value="UNLIMIT">UNLIMIT</option>
+                  <option value="RECURRENT">RECURRENT</option>
+                </Form.Select>
+              </Form.Group>
+            </Col>
+            <Col md={6}>
+              <Form.Group className="mb-3">
+                <Form.Label>Venue</Form.Label>
+                <Form.Control
+                  type="text"
+                  name="roomName"
+                  value={formData.roomName}
+                  onChange={handleInputChange}
+                  placeholder="Enter venue"
+                  disabled={loading}
                 />
               </Form.Group>
             </Col>
@@ -131,30 +257,85 @@ const EditSubjectModal = ({ show, onClose, onSave, subject, loading = false }) =
           <Row>
             <Col md={6}>
               <Form.Group className="mb-3">
-                <Form.Label>Level</Form.Label>
-                <Form.Select
-                  name="level"
-                  value={formData.level}
+                <Form.Label>Time Slot</Form.Label>
+                <Form.Control
+                  type="text"
+                  name="timeSlot"
+                  value={formData.timeSlot}
+                  onChange={handleInputChange}
+                  placeholder="e.g., 09:00-11:00"
+                  disabled={loading}
+                />
+              </Form.Group>
+            </Col>
+            <Col md={6}>
+              <Form.Group className="mb-3">
+                <Form.Label>Pass Score</Form.Label>
+                <Form.Control
+                  type="number"
+                  name="passScore"
+                  value={formData.passScore}
+                  onChange={handleInputChange}
+                  onKeyPress={(e) => e.key === '.' && e.preventDefault()}
+                  placeholder="Enter pass score (0-100)"
+                  min="0"
+                  max="100"
+                  step="1"
+                  disabled={loading}
+                />
+              </Form.Group>
+            </Col>
+          </Row>
+
+          <Row>
+            <Col md={6}>
+              <Form.Group className="mb-3">
+                <Form.Label>Start Date *</Form.Label>
+                <Form.Control
+                  type="date"
+                  name="startDate"
+                  value={formData.startDate}
                   onChange={handleInputChange}
                   disabled={loading}
-                >
-                  <option value="Beginner">Beginner</option>
-                  <option value="Intermediate">Intermediate</option>
-                  <option value="Advanced">Advanced</option>
-                </Form.Select>
+                  required
+                />
+              </Form.Group>
+            </Col>
+            <Col md={6}>
+              <Form.Group className="mb-3">
+                <Form.Label>End Date *</Form.Label>
+                <Form.Control
+                  type="date"
+                  name="endDate"
+                  value={formData.endDate}
+                  onChange={handleInputChange}
+                  disabled={loading}
+                  required
+                />
               </Form.Group>
             </Col>
           </Row>
 
           <Form.Group className="mb-3">
-            <Form.Label>Description *</Form.Label>
+            <Form.Label>Remark Note</Form.Label>
             <Form.Control
               as="textarea"
-              rows={4}
-              name="description"
-              value={formData.description}
+              rows={2}
+              name="remarkNote"
+              value={formData.remarkNote}
               onChange={handleInputChange}
-              placeholder="Enter subject description"
+              placeholder="Enter remark note"
+              disabled={loading}
+            />
+          </Form.Group>
+
+          <Form.Group className="mb-3">
+            <Form.Check
+              type="checkbox"
+              name="isSIM"
+              checked={formData.isSIM}
+              onChange={handleInputChange}
+              label="Is Simulator"
               disabled={loading}
             />
           </Form.Group>

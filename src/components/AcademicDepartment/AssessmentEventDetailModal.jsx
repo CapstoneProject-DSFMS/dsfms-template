@@ -555,6 +555,25 @@ const AssessmentEventDetailModal = ({ show, onClose, event }) => {
                 Trainee Roster
               </Nav.Link>
             </Nav.Item>
+
+            <Nav.Item>
+              <Nav.Link
+                eventKey="instructors"
+                className={activeTab === "instructors" ? "active" : ""}
+                style={{
+                  color:
+                    activeTab === "instructors" ? "var(--bs-primary)" : "#6c757d",
+                  borderBottom:
+                    activeTab === "instructors"
+                      ? "2px solid var(--bs-primary)"
+                      : "none",
+                  fontWeight: activeTab === "instructors" ? 600 : 400,
+                }}
+              >
+                <Person className="me-2" size={16} />
+                Instructed Trainers
+              </Nav.Link>
+            </Nav.Item>
           </Nav>
 
           <Tab.Content
@@ -1329,6 +1348,127 @@ const AssessmentEventDetailModal = ({ show, onClose, event }) => {
                     })}
                   </tbody>
                 </Table>
+              </div>
+            </Tab.Pane>
+
+            {/* Instructed Trainers Tab */}
+            <Tab.Pane
+              eventKey="instructors"
+              style={{
+                height: activeTab === "instructors" ? "100%" : "0",
+                minHeight: activeTab === "instructors" ? "100%" : "0",
+                display: activeTab === "instructors" ? "flex" : "none",
+                flexDirection: "column",
+                margin: 0,
+                padding: 0,
+                overflow: "hidden",
+                position: "relative",
+                flex: activeTab === "instructors" ? 1 : 0,
+                alignItems: "flex-start",
+                justifyContent: "flex-start",
+              }}
+            >
+              <div
+                style={{
+                  width: "100%",
+                  height: "100%",
+                  flex: "1 1 auto",
+                  overflowY: "auto",
+                  overflowX: "auto",
+                  minHeight: 0,
+                  padding: "1.5rem",
+                  margin: 0,
+                  maxHeight: "none",
+                  border: "none",
+                  borderRadius: 0,
+                  position: "relative",
+                  WebkitOverflowScrolling: "touch",
+                  alignSelf: "stretch",
+                }}
+              >
+                {event?.availableTrainers && event.availableTrainers.length > 0 ? (
+                  <Table hover className="mb-0" style={{ fontSize: "0.875rem", marginTop: 0 }}>
+                    <thead className="sticky-header">
+                      <tr>
+                        <th
+                          style={{
+                            backgroundColor: "var(--bs-primary)",
+                            color: "white",
+                            fontWeight: 600,
+                            textTransform: "uppercase",
+                            borderColor: "var(--bs-primary)",
+                          }}
+                        >
+                          EID
+                        </th>
+                        <th
+                          style={{
+                            backgroundColor: "var(--bs-primary)",
+                            color: "white",
+                            fontWeight: 600,
+                            textTransform: "uppercase",
+                            borderColor: "var(--bs-primary)",
+                          }}
+                        >
+                          Name
+                        </th>
+                        <th
+                          style={{
+                            backgroundColor: "var(--bs-primary)",
+                            color: "white",
+                            fontWeight: 600,
+                            textTransform: "uppercase",
+                            borderColor: "var(--bs-primary)",
+                          }}
+                        >
+                          Email
+                        </th>
+                        <th
+                          style={{
+                            backgroundColor: "var(--bs-primary)",
+                            color: "white",
+                            fontWeight: 600,
+                            textTransform: "uppercase",
+                            borderColor: "var(--bs-primary)",
+                          }}
+                        >
+                          Role
+                        </th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {event.availableTrainers.map((trainer, index) => (
+                        <tr key={index}>
+                          <td className="align-middle fw-semibold">{trainer.eid || "-"}</td>
+                          <td className="align-middle">{trainer.fullName || "-"}</td>
+                          <td className="align-middle">{trainer.email || "-"}</td>
+                          <td className="align-middle">
+                            <Badge
+                              bg={
+                                trainer.roleInAssessment === "EXAMINER"
+                                  ? "primary"
+                                  : trainer.roleInAssessment === "ASSESSMENT_REVIEWER"
+                                  ? "info"
+                                  : "secondary"
+                              }
+                            >
+                              {trainer.roleInAssessment === "EXAMINER"
+                                ? "Examiner"
+                                : trainer.roleInAssessment === "ASSESSMENT_REVIEWER"
+                                ? "Reviewer"
+                                : trainer.roleInAssessment}
+                            </Badge>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </Table>
+                ) : (
+                  <div className="text-center text-muted py-5">
+                    <Person size={48} className="mb-3 opacity-50" />
+                    <p>No trainers assigned to this event</p>
+                  </div>
+                )}
               </div>
             </Tab.Pane>
           </Tab.Content>

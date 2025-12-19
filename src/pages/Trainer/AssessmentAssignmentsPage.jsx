@@ -462,7 +462,7 @@ const AssessmentAssignmentsPage = () => {
                       className="fw-bold"
                       style={{ color: "#456882", fontSize: "0.95rem" }}
                     >
-                      Trainers in Assessments:
+                      Total Participated Trainers:
                     </span>{" "}
                     <Badge bg="dark" className="px-3 py-2">
                       {state.numberOfParticipatedTrainers} Trainer{state.numberOfParticipatedTrainers !== 1 ? "s" : ""}

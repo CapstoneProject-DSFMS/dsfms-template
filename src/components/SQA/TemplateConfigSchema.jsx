@@ -8,6 +8,12 @@ const TemplateConfigSchema = ({ sections = [] }) => {
       return [];
     }
 
+    // Log API response structure for debugging
+    console.log('TemplateConfigSchema - Sections from API:', sections);
+    if (sections[0]?.fields) {
+      console.log('First field structure:', sections[0].fields[0]);
+    }
+
     const itemsList = [];
     
     sections.forEach((section, sectionIndex) => {
@@ -190,6 +196,23 @@ const TemplateConfigSchema = ({ sections = [] }) => {
                   >
                     {item.name}
                   </span>
+                  {isField && (item.data?.fieldName || item.data?.name) && (
+                    <span 
+                      style={{ 
+                        fontSize: '12px',
+                        color: '#666',
+                        fontFamily: 'Fira Mono, monospace',
+                        marginLeft: '8px',
+                        padding: '2px 6px',
+                        backgroundColor: '#f5f5f5',
+                        borderRadius: '3px',
+                        wordBreak: 'break-word',
+                        overflowWrap: 'break-word'
+                      }}
+                    >
+                      {item.data.fieldName || item.data.name}
+                    </span>
+                  )}
                   {isSection && item.fieldCount > 0 && (
                     <Badge 
                       bg="info" 

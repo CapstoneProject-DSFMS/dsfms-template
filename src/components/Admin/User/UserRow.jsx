@@ -112,22 +112,25 @@ const UserRow = ({ user, index, onView, onEdit, onDisable }) => {
                 onClick: () => onView(user),
                 permission: PERMISSION_IDS.VIEW_USER_IN_DETAIL
               },
-              {
+              // Chỉ hiển thị Edit User nếu user KHÔNG phải Admin
+              ...(isAdmin ? [] : [{
                 label: 'Edit User',
                 icon: <Pencil />,
                 onClick: () => onEdit(user),
                 permission: PERMISSION_IDS.UPDATE_USER,
-                disabled: isAdmin || user.status === 'DISABLED' // <-- Vô hiệu hóa nếu người dùng trong bảng là ADMINISTRATOR
-              },
-              { type: 'divider' },
-              {
-                label: user.status === 'ACTIVE' ? 'Disable User' : 'Enable User',
-                icon: <PersonX />,
-                className: 'text-danger',
-                onClick: () => onDisable(user),
-                permission: PERMISSION_IDS.UPDATE_USER,
-                disabled: isAdmin // <-- Vô hiệu hóa nếu người dùng trong bảng là ADMINISTRATOR
-              }
+                disabled: user.status === 'DISABLED'
+              }]),
+              // Chỉ hiển thị Disable/Enable User nếu user KHÔNG phải Admin
+              ...(isAdmin ? [] : [
+                { type: 'divider' },
+                {
+                  label: user.status === 'ACTIVE' ? 'Disable User' : 'Enable User',
+                  icon: <PersonX />,
+                  className: 'text-danger',
+                  onClick: () => onDisable(user),
+                  permission: PERMISSION_IDS.UPDATE_USER
+                }
+              ])
             ]}
           />
         </PermissionWrapper>
