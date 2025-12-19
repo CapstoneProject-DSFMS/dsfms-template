@@ -159,7 +159,7 @@ const EnrollTraineesPage = () => {
         return {
           id: trainee.id, // Use real UUID from API
           eid: trainee.eid,
-          name: `${trainee.firstName} ${trainee.lastName}`.trim(), // Combined name for display
+          name: `${trainee.lastName}${trainee.middleName ? ' ' + trainee.middleName : ''} ${trainee.firstName}`.trim(), // Combined name for display
           firstName: trainee.firstName,
           lastName: trainee.lastName,
           email: trainee.email,

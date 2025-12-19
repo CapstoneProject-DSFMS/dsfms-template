@@ -220,7 +220,7 @@ const CreateBulkAssessmentEventForm = ({ onSuccess }) => {
     const firstName = trainee.firstName || '';
     const lastName = trainee.lastName || '';
     const middleName = trainee.middleName || '';
-    return `${firstName} ${middleName} ${lastName}`.trim() || trainee.eid || 'Unknown';
+    return `${lastName}${middleName ? ' ' + middleName : ''} ${firstName}`.trim() || trainee.eid || 'Unknown';
   };
 
   // Memoize filtered subjects to avoid re-filtering on every render

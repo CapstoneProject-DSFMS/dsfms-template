@@ -19,6 +19,9 @@ const EditGlobalFieldModal = ({ show, onHide, field, onSuccess }) => {
   const [newChildLabel, setNewChildLabel] = useState('');
   const [newChildFieldName, setNewChildFieldName] = useState('');
   const [editingChildIndex, setEditingChildIndex] = useState(null);
+  // Options for VALUE_LIST field
+  const [valueListOptions, setValueListOptions] = useState([]);
+  const [newOptionInput, setNewOptionInput] = useState('');
 
   useEffect(() => {
     const loadFieldDetail = async () => {
@@ -57,14 +60,21 @@ const EditGlobalFieldModal = ({ show, onHide, field, onSuccess }) => {
           } else {
             setChildren([]);
           }
+          // Load options for VALUE_LIST field
+          if (normalizedFieldType === 'VALUE_LIST' && fieldDetail.options?.items) {
+            setValueListOptions(fieldDetail.options.items);
+          } else {
+            setValueListOptions([]);
+          }
           setErrors({});
         } catch (error) {
           console.error('Error loading field detail:', error);
           // Fallback to field from prop if detail fetch fails
+          const fieldTypeToUse = field.fieldType || 'TEXT';
           setFormData({
             label: field.label || '',
             fieldName: field.fieldName || '',
-            fieldType: field.fieldType || 'TEXT',
+            fieldType: fieldTypeToUse,
             options: field.options || null
           });
           // Load children if field has them
@@ -76,6 +86,12 @@ const EditGlobalFieldModal = ({ show, onHide, field, onSuccess }) => {
             })));
           } else {
             setChildren([]);
+          }
+          // Load options for VALUE_LIST field
+          if (fieldTypeToUse === 'VALUE_LIST' && field.options?.items) {
+            setValueListOptions(field.options.items);
+          } else {
+            setValueListOptions([]);
           }
           setErrors({});
         } finally {
@@ -131,12 +147,23 @@ const EditGlobalFieldModal = ({ show, onHide, field, onSuccess }) => {
     try {
       setIsSubmitting(true);
 
+      // Prepare options for VALUE_LIST
+      let options = formData.options || null;
+      if (formData.fieldType === 'VALUE_LIST') {
+        if (!valueListOptions || valueListOptions.length === 0) {
+          toast.warning('Please add at least one option for VALUE_LIST field');
+          setIsSubmitting(false);
+          return;
+        }
+        options = { items: valueListOptions };
+      }
+
       const payload = {
         label: formData.label.trim(),
         fieldName: formData.fieldName.trim(),
         fieldType: formData.fieldType,
         roleRequired: null,
-        options: formData.options || null
+        options: options
       };
 
       // Add children for PART and CHECK_BOX fields (complete replacement strategy)
@@ -190,6 +217,8 @@ const EditGlobalFieldModal = ({ show, onHide, field, onSuccess }) => {
     setNewChildLabel('');
     setNewChildFieldName('');
     setEditingChildIndex(null);
+    setValueListOptions([]);
+    setNewOptionInput('');
     onHide();
   };
 
@@ -227,7 +256,14 @@ const EditGlobalFieldModal = ({ show, onHide, field, onSuccess }) => {
       </Modal.Header>
       
       <Form onSubmit={handleSubmit}>
-        <Modal.Body style={{ padding: '1.5rem' }}>
+        <Modal.Body 
+          style={{ 
+            maxHeight: '70vh',
+            overflowY: 'auto',
+            overflowX: 'hidden',
+            padding: '1.5rem'
+          }}
+        >
           {loadingField && (
             <div className="text-center py-4">
               <Spinner animation="border" variant="primary" className="me-2" />
@@ -291,6 +327,79 @@ const EditGlobalFieldModal = ({ show, onHide, field, onSuccess }) => {
               {errors.fieldType}
             </Form.Control.Feedback>
           </Form.Group>
+
+          {/* VALUE_LIST Options Field */}
+          {formData.fieldType === 'VALUE_LIST' && (
+            <Form.Group className="mb-3">
+              <Form.Label className="fw-medium">
+                Options <span className="text-danger">*</span>
+              </Form.Label>
+              <div className="d-flex gap-2 mb-2">
+                <Form.Control
+                  type="text"
+                  placeholder="Enter option value (e.g., Pass, Fail)"
+                  value={newOptionInput}
+                  onChange={(e) => setNewOptionInput(e.target.value)}
+                  onKeyPress={(e) => {
+                    if (e.key === 'Enter') {
+                      e.preventDefault();
+                      const trimmedValue = newOptionInput.trim();
+                      if (trimmedValue) {
+                        // Check for duplicate
+                        if (valueListOptions.includes(trimmedValue)) {
+                          toast.warning('This option already exists. Please enter a different value.');
+                          return;
+                        }
+                        setValueListOptions(prev => [...prev, trimmedValue]);
+                        setNewOptionInput('');
+                      }
+                    }
+                  }}
+                />
+                <Button
+                  variant="outline-primary"
+                  size="sm"
+                  onClick={() => {
+                    const trimmedValue = newOptionInput.trim();
+                    if (trimmedValue) {
+                      // Check for duplicate
+                      if (valueListOptions.includes(trimmedValue)) {
+                        toast.warning('This option already exists. Please enter a different value.');
+                        return;
+                      }
+                      setValueListOptions(prev => [...prev, trimmedValue]);
+                      setNewOptionInput('');
+                    }
+                  }}
+                  disabled={!newOptionInput.trim()}
+                >
+                  <Plus size={14} />
+                </Button>
+              </div>
+              {valueListOptions.length > 0 && (
+                <div className="d-flex flex-column gap-2 mb-2" style={{ maxHeight: '200px', overflowY: 'auto' }}>
+                  {valueListOptions.map((option, idx) => (
+                    <div key={idx} className="d-flex align-items-center gap-2 p-2 border rounded">
+                      <span className="flex-grow-1">{option}</span>
+                      <Button
+                        variant="outline-danger"
+                        size="sm"
+                        onClick={() => {
+                          setValueListOptions(prev => prev.filter((_, i) => i !== idx));
+                        }}
+                        style={{ padding: '0.25rem 0.4rem' }}
+                      >
+                        <X size={12} />
+                      </Button>
+                    </div>
+                  ))}
+                </div>
+              )}
+              <Form.Text className="text-muted">
+                Add options one by one.
+              </Form.Text>
+            </Form.Group>
+          )}
 
           {/* Children Fields Section for PART and CHECK_BOX */}
           {(formData.fieldType === 'PART' || formData.fieldType === 'CHECK_BOX') && (

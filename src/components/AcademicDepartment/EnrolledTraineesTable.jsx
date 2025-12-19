@@ -45,7 +45,7 @@ const EnrolledTraineesTable = ({ courseId, subjectId, loading = false, refreshTr
         traineesList = traineesData.map((trainee) => ({
           id: trainee.id,
           eid: trainee.eid || '',
-          name: `${trainee.firstName || ''}${trainee.middleName ? ' ' + trainee.middleName : ''} ${trainee.lastName || ''}`.trim() || 'Unknown',
+          name: `${trainee.lastName || ''}${trainee.middleName ? ' ' + trainee.middleName : ''} ${trainee.firstName || ''}`.trim() || 'Unknown',
           firstName: trainee.firstName || '',
           middleName: trainee.middleName || null,
           lastName: trainee.lastName || '',
@@ -70,11 +70,11 @@ const EnrolledTraineesTable = ({ courseId, subjectId, loading = false, refreshTr
       
       // Map API response to component format
       const mappedTrainees = traineesList.map((trainee) => {
-        // Build full name from firstName, middleName, lastName
+        // Build full name from lastName, middleName, firstName
         const nameParts = [
-          trainee.firstName,
+          trainee.lastName,
           trainee.middleName,
-          trainee.lastName
+          trainee.firstName
         ].filter(Boolean);
         const fullName = nameParts.join(' ') || trainee.name || 'Unknown';
         

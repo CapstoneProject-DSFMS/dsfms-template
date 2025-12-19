@@ -521,7 +521,7 @@ const TemplateDetailModal = ({ show, onHide, template, onCreateVersion, onTempla
             <div className="flex-grow-1">
               <strong className="text-muted small d-block mb-1">Created By</strong>
               <span className="text-dark">
-                {template.createdByUser?.firstName || ''} {template.createdByUser?.lastName || ''}
+                {template.createdByUser?.lastName || ''}{template.createdByUser?.middleName ? ' ' + template.createdByUser?.middleName : ''} {template.createdByUser?.firstName || ''}
               </span>
               <small className="text-muted d-block">
                 <Calendar className="me-1" size={12} />
@@ -555,7 +555,7 @@ const TemplateDetailModal = ({ show, onHide, template, onCreateVersion, onTempla
                   ) : reviewedByUser ? (
                     <>
                       <span className="text-dark">
-                        {reviewedByUser.firstName || ''} {reviewedByUser.lastName || ''}
+                        {reviewedByUser.lastName || ''}{reviewedByUser.middleName ? ' ' + reviewedByUser.middleName : ''} {reviewedByUser.firstName || ''}
                       </span>
                       {template.reviewedAt && (
                         <small className="text-muted d-block">
@@ -1170,7 +1170,7 @@ const TemplateDetailModal = ({ show, onHide, template, onCreateVersion, onTempla
                     <div>
                       <strong className="text-dark">Created By:</strong> {
                         currentTemplate.createdByUser.firstName && currentTemplate.createdByUser.lastName
-                          ? `${currentTemplate.createdByUser.firstName} ${currentTemplate.createdByUser.lastName}`
+                          ? `${currentTemplate.createdByUser.lastName}${currentTemplate.createdByUser.middleName ? ' ' + currentTemplate.createdByUser.middleName : ''} ${currentTemplate.createdByUser.firstName}`
                           : currentTemplate.createdByUser.fullName || 'N/A'
                       }
                     </div>
@@ -1205,7 +1205,7 @@ const TemplateDetailModal = ({ show, onHide, template, onCreateVersion, onTempla
                         <div>
                           <strong className="text-dark">Created By:</strong> {
                             originalVersion.createdByUser.firstName && originalVersion.createdByUser.lastName
-                              ? `${originalVersion.createdByUser.firstName} ${originalVersion.createdByUser.lastName}`
+                              ? `${originalVersion.createdByUser.lastName}${originalVersion.createdByUser.middleName ? ' ' + originalVersion.createdByUser.middleName : ''} ${originalVersion.createdByUser.firstName}`
                               : originalVersion.createdByUser.fullName || 'N/A'
                           }
                         </div>

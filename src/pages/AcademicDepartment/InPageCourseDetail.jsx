@@ -86,7 +86,7 @@ const InPageCourseDetail = ({ course, department } = {}) => {
       const transformedTrainers = courseData.instructors.map(trainer => ({
         id: trainer.id,
         eid: trainer.eid,
-        name: `${trainer.firstName} ${trainer.lastName}`,
+        name: `${trainer.lastName}${trainer.middleName ? ' ' + trainer.middleName : ''} ${trainer.firstName}`,
         email: trainer.email,  // ✅ Add email
         phoneNumber: trainer.phoneNumber,  // ✅ Add phone number
         role: trainer.roleInCourse?.[0] || 'TRAINER',  // roleInCourse is array, get first element
@@ -966,6 +966,7 @@ const InPageCourseDetail = ({ course, department } = {}) => {
         onSave={handleAddTrainer}
         loading={isAddingTrainer}
         courseId={courseId}
+        subjectId={null}
       />
 
       <EditCourseTrainerModal

@@ -165,7 +165,7 @@ const TraineeSubjectDetailView = ({ traineeId, courseId, subjectId }) => {
                 {subject.name}
               </h2>
                 <p className="text-muted mb-0">
-                  {subject.code} • {trainee?.firstName} {trainee?.lastName}
+                  {subject.code} • {trainee?.lastName}{trainee?.middleName ? ' ' + trainee?.middleName : ''} {trainee?.firstName}
                 </p>
               </div>
             </div>

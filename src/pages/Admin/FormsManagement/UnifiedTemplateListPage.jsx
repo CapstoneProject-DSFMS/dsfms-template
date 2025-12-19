@@ -160,7 +160,7 @@ const UnifiedTemplateListPage = () => {
       const description = template.description?.toLowerCase() || '';
       const createdBy = template.createdBy?.toLowerCase() || 
                        (template.createdByUser?.firstName && template.createdByUser?.lastName
-                         ? `${template.createdByUser.lastName} ${template.createdByUser.firstName}`.toLowerCase()
+                         ? `${template.createdByUser.lastName}${template.createdByUser.middleName ? ' ' + template.createdByUser.middleName : ''} ${template.createdByUser.firstName}`.toLowerCase()
                          : '');
       
       return name.includes(searchTerm.toLowerCase()) ||
@@ -252,7 +252,7 @@ const UnifiedTemplateListPage = () => {
         const name = template.name?.toLowerCase() || '';
         const description = template.description?.toLowerCase() || '';
         const createdBy = template.createdByUser?.firstName && template.createdByUser?.lastName
-          ? `${template.createdByUser.firstName} ${template.createdByUser.lastName}`.toLowerCase()
+          ? `${template.createdByUser.lastName}${template.createdByUser.middleName ? ' ' + template.createdByUser.middleName : ''} ${template.createdByUser.firstName}`.toLowerCase()
           : '';
         const searchLower = adminSearchTerm.toLowerCase();
         return name.includes(searchLower) ||
@@ -534,9 +534,9 @@ const UnifiedTemplateListPage = () => {
                             <small 
                               className="text-muted text-truncate" 
                               style={{ maxWidth: '120px' }}
-                              title={`${template.createdByUser?.firstName || ''} ${template.createdByUser?.lastName || ''}`.trim()}
+                              title={`${template.createdByUser?.lastName || ''}${template.createdByUser?.middleName ? ' ' + template.createdByUser?.middleName : ''} ${template.createdByUser?.firstName || ''}`.trim()}
                             >
-                              {template.createdByUser?.firstName} {template.createdByUser?.lastName}
+                              {template.createdByUser?.lastName}{template.createdByUser?.middleName ? ' ' + template.createdByUser?.middleName : ''} {template.createdByUser?.firstName}
                             </small>
                           </div>
                           <small className="text-muted flex-shrink-0 ms-2">{formatDate(template.createdAt)}</small>

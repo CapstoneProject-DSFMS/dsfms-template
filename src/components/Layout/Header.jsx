@@ -98,7 +98,7 @@ const Header = ({ onToggleSidebar }) => {
     
     // If user has firstName and lastName, construct full name
     if (user.firstName && user.lastName) {
-      return `${user.lastName} ${user.firstName}`;
+      return `${user.lastName}${user.middleName ? ' ' + user.middleName : ''} ${user.firstName}`;
     }
     
     // Try to get name from JWT token payload directly
@@ -113,7 +113,7 @@ const Header = ({ onToggleSidebar }) => {
           return tokenPayload.name;
         }
         if (tokenPayload.firstName && tokenPayload.lastName) {
-          return `${tokenPayload.firstName} ${tokenPayload.lastName}`;
+          return `${tokenPayload.lastName}${tokenPayload.middleName ? ' ' + tokenPayload.middleName : ''} ${tokenPayload.firstName}`;
         }
       }
     } catch (error) {

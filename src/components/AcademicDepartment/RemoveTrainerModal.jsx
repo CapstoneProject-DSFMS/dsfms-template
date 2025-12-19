@@ -23,7 +23,7 @@ const RemoveTrainerModal = ({ show, onClose, onConfirm, trainer, loading = false
           </p>
           <div className="bg-light p-3 rounded mb-3">
             <div className="mb-2">
-              <strong>Name:</strong> {trainer?.firstName} {trainer?.middleName} {trainer?.lastName}
+              <strong>Name:</strong> {trainer?.lastName}{trainer?.middleName ? ' ' + trainer?.middleName : ''} {trainer?.firstName}
             </div>
             <div className="mb-2">
               <strong>EID:</strong> {trainer?.eid}

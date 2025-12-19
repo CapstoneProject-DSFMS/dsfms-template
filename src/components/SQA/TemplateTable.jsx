@@ -220,7 +220,7 @@ const TemplateTable = ({
                     <td className="align-middle hide-mobile">
                       <div className="text-muted small">
                         {template.createdBy || (template.createdByUser?.firstName && template.createdByUser?.lastName 
-                          ? `${template.createdByUser.lastName} ${template.createdByUser.firstName}` 
+                          ? `${template.createdByUser.lastName}${template.createdByUser.middleName ? ' ' + template.createdByUser.middleName : ''} ${template.createdByUser.firstName}` 
                           : 'N/A')}
                       </div>
                     </td>

@@ -173,7 +173,7 @@ const GlobalFieldDetailModal = ({ show, onHide, field }) => {
                 <div className="flex-grow-1">
                   <strong className="text-muted small d-block mb-1">Created By</strong>
                   <span className="text-dark">
-                    {field.createdBy.firstName} {field.createdBy.lastName}
+                    {field.createdBy.lastName}{field.createdBy.middleName ? ' ' + field.createdBy.middleName : ''} {field.createdBy.firstName}
                   </span>
                 </div>
               </div>
@@ -199,7 +199,7 @@ const GlobalFieldDetailModal = ({ show, onHide, field }) => {
                 <div className="flex-grow-1">
                   <strong className="text-muted small d-block mb-1">Updated By</strong>
                   <span className="text-dark">
-                    {field.updatedBy.firstName} {field.updatedBy.lastName}
+                    {field.updatedBy.lastName}{field.updatedBy.middleName ? ' ' + field.updatedBy.middleName : ''} {field.updatedBy.firstName}
                   </span>
                 </div>
               </div>

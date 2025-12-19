@@ -185,7 +185,7 @@ const TemplatePreviewModal = ({ show, onHide, template }) => {
             <div className="flex-grow-1">
               <strong className="text-muted small d-block mb-1">Created By</strong>
               <span className="text-dark">
-                {template.createdByUser?.firstName || ''} {template.createdByUser?.lastName || ''}
+                {template.createdByUser?.lastName || ''}{template.createdByUser?.middleName ? ' ' + template.createdByUser?.middleName : ''} {template.createdByUser?.firstName || ''}
               </span>
               <small className="text-muted d-block">
                 <Calendar className="me-1" size={12} />
@@ -219,7 +219,7 @@ const TemplatePreviewModal = ({ show, onHide, template }) => {
                   ) : reviewedByUser ? (
                     <>
                       <span className="text-dark">
-                        {reviewedByUser.firstName || ''} {reviewedByUser.lastName || ''}
+                        {reviewedByUser.lastName || ''}{reviewedByUser.middleName ? ' ' + reviewedByUser.middleName : ''} {reviewedByUser.firstName || ''}
                       </span>
                       {template.reviewedAt && (
                         <small className="text-muted d-block">

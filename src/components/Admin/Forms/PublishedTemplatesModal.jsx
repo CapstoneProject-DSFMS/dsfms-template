@@ -259,9 +259,9 @@ const PublishedTemplatesModal = ({ show, onHide }) => {
                           <small 
                             className="text-muted text-truncate" 
                             style={{ maxWidth: '120px' }}
-                            title={`${template.createdByUser?.firstName || ''} ${template.createdByUser?.lastName || ''}`.trim()}
+                            title={`${template.createdByUser?.lastName || ''}${template.createdByUser?.middleName ? ' ' + template.createdByUser?.middleName : ''} ${template.createdByUser?.firstName || ''}`.trim()}
                           >
-                            {template.createdByUser?.firstName} {template.createdByUser?.lastName}
+                            {template.createdByUser?.lastName}{template.createdByUser?.middleName ? ' ' + template.createdByUser?.middleName : ''} {template.createdByUser?.firstName}
                           </small>
                         </div>
                         <small className="text-muted flex-shrink-0 ms-2">{formatDate(template.createdAt)}</small>

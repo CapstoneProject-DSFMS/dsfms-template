@@ -22,6 +22,7 @@ const ReportDetailPage = () => {
   
   // Get source from location.state (default to '/reports' if not provided)
   const source = location.state?.from || '/reports';
+  const activeTab = location.state?.tab || 'incidents';
   const isFromIssueList = source === '/reports/create';
   
   const [report, setReport] = useState(null);
@@ -125,7 +126,8 @@ const ReportDetailPage = () => {
     if (isFromIssueList) {
       navigate('/reports/create');
     } else {
-      navigate('/reports');
+      // Navigate back to /reports with the active tab as query parameter
+      navigate(`/reports?tab=${activeTab}`);
     }
   };
 
@@ -332,7 +334,7 @@ const ReportDetailPage = () => {
                       ) : (
                         <>
                           <div className="fw-medium">
-                            {report?.createdBy?.firstName} {report?.createdBy?.lastName}
+                            {report?.createdBy?.lastName}{report?.createdBy?.middleName ? ' ' + report?.createdBy?.middleName : ''} {report?.createdBy?.firstName}
                           </div>
                           <small className="text-muted">{report?.createdBy?.email}</small>
                         </>
@@ -370,7 +372,7 @@ const ReportDetailPage = () => {
                   <div className="mb-3">
                     <small className="text-muted d-block mb-1">Created By</small>
                     <div>
-                      {report?.createdBy?.firstName} {report?.createdBy?.lastName}
+                      {report?.createdBy?.lastName}{report?.createdBy?.middleName ? ' ' + report?.createdBy?.middleName : ''} {report?.createdBy?.firstName}
                       <br />
                       <small className="text-muted">{report?.createdBy?.email}</small>
                     </div>
@@ -379,7 +381,7 @@ const ReportDetailPage = () => {
                     <div className="mb-3">
                       <small className="text-muted d-block mb-1">Managed By</small>
                       <div>
-                        {report?.managedBy?.firstName} {report?.managedBy?.lastName}
+                        {report?.managedBy?.lastName}{report?.managedBy?.middleName ? ' ' + report?.managedBy?.middleName : ''} {report?.managedBy?.firstName}
                         <br />
                         <small className="text-muted">{report?.managedBy?.email}</small>
                       </div>

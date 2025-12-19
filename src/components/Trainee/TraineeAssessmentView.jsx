@@ -184,7 +184,7 @@ const TraineeAssessmentView = ({ traineeId }) => {
                   Assessment Management
                 </h2>
                 <p className="text-muted mb-0">
-                  {trainee.firstName} {trainee.lastName} • {trainee.eid}
+                  {trainee.lastName}{trainee.middleName ? ' ' + trainee.middleName : ''} {trainee.firstName} • {trainee.eid}
                 </p>
               </div>
             </div>

@@ -3,7 +3,7 @@ import { Modal, Button, Form, Alert, Row, Col, Spinner, Dropdown } from 'react-b
 import { X, Plus } from 'react-bootstrap-icons';
 import courseAPI from '../../api/course';
 
-const AddTrainerModal = ({ show, onClose, onSave, loading = false, courseId = null }) => {
+const AddTrainerModal = ({ show, onClose, onSave, loading = false, courseId = null, subjectId = null }) => {
   const [formData, setFormData] = useState({
     trainer_user_id: '',
     role_in_subject: 'EXAMINER'
@@ -19,7 +19,7 @@ const AddTrainerModal = ({ show, onClose, onSave, loading = false, courseId = nu
       let trainersList = [];
       
       try {
-        const response = await courseAPI.getActiveTrainers();
+        const response = await courseAPI.getActiveTrainers(courseId, subjectId);
         
         // Handle different response formats from active trainers API
         if (response) {
@@ -52,7 +52,7 @@ const AddTrainerModal = ({ show, onClose, onSave, loading = false, courseId = nu
     } finally {
       setLoadingTrainers(false);
     }
-  }, []); // Removed courseId dependency since API no longer needs it
+  }, [courseId, subjectId]); // Added subjectId dependency
 
   useEffect(() => {
     if (show) {
@@ -65,7 +65,7 @@ const AddTrainerModal = ({ show, onClose, onSave, loading = false, courseId = nu
       // Load trainers when modal opens
       loadTrainers();
     }
-  }, [show, loadTrainers]); // Removed courseId dependency since API no longer needs it
+  }, [show, courseId, subjectId, loadTrainers]); // Added subjectId dependency
 
   const validateForm = () => {
     const newErrors = [];
@@ -160,8 +160,8 @@ const AddTrainerModal = ({ show, onClose, onSave, loading = false, courseId = nu
                       {formData.trainer_user_id
                         ? trainers.find(t => t.id === formData.trainer_user_id)
                           ? trainers.find(t => t.id === formData.trainer_user_id).department?.name
-                            ? `${trainers.find(t => t.id === formData.trainer_user_id).eid} - ${trainers.find(t => t.id === formData.trainer_user_id).firstName} ${trainers.find(t => t.id === formData.trainer_user_id).lastName} - ${trainers.find(t => t.id === formData.trainer_user_id).department.name}`
-                            : `${trainers.find(t => t.id === formData.trainer_user_id).eid} - ${trainers.find(t => t.id === formData.trainer_user_id).firstName} ${trainers.find(t => t.id === formData.trainer_user_id).lastName}`
+                            ? `${trainers.find(t => t.id === formData.trainer_user_id).eid} - ${trainers.find(t => t.id === formData.trainer_user_id).lastName}${trainers.find(t => t.id === formData.trainer_user_id).middleName ? ' ' + trainers.find(t => t.id === formData.trainer_user_id).middleName : ''} ${trainers.find(t => t.id === formData.trainer_user_id).firstName} - ${trainers.find(t => t.id === formData.trainer_user_id).department.name}`
+                            : `${trainers.find(t => t.id === formData.trainer_user_id).eid} - ${trainers.find(t => t.id === formData.trainer_user_id).lastName}${trainers.find(t => t.id === formData.trainer_user_id).middleName ? ' ' + trainers.find(t => t.id === formData.trainer_user_id).middleName : ''} ${trainers.find(t => t.id === formData.trainer_user_id).firstName}`
                           : 'Choose a trainer...'
                         : loadingTrainers
                           ? 'Loading trainers...'
@@ -214,7 +214,7 @@ const AddTrainerModal = ({ show, onClose, onSave, loading = false, courseId = nu
                           key={trainer.id}
                           eventKey={trainer.id}
                         >
-                          {trainer.eid} - {trainer.firstName} {trainer.lastName}{trainer.department?.name ? ` - ${trainer.department.name}` : ''}
+                          {trainer.eid} - {trainer.lastName}{trainer.middleName ? ' ' + trainer.middleName : ''} {trainer.firstName}{trainer.department?.name ? ` - ${trainer.department.name}` : ''}
                         </Dropdown.Item>
                       ))
                     )}

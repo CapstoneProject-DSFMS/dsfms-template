@@ -76,7 +76,7 @@ const EditCourseTrainerModal = ({ show, onClose, onSave, trainer, loading = fals
   const getFullName = (trainer) => {
     if (!trainer) return '';
     if (trainer.name) return trainer.name;
-    return `${trainer.firstName || ''} ${trainer.middleName || ''} ${trainer.lastName || ''}`.trim();
+    return `${trainer.lastName || ''}${trainer.middleName ? ' ' + trainer.middleName : ''} ${trainer.firstName || ''}`.trim();
   };
 
   const getCurrentRole = () => {
