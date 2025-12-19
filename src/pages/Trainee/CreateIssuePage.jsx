@@ -170,7 +170,6 @@ const CreateIssuePage = () => {
                           <option value="FACILITIES_REPORT">Facilities Report</option>
                           <option value="COURSE_ORGANIZATION_REPORT">Course Organization Report</option>
                           <option value="FEEDBACK">Feedback</option>
-                          <option value="OTHER">Other</option>
                         </Form.Select>
                       </Form.Group>
                     </Col>
@@ -265,7 +264,6 @@ const CreateIssuePage = () => {
                     <li>Check if the incident has already been reported</li>
                     <li>Provide clear and specific details</li>
                     <li>Include steps to reproduce the incident</li>
-                    <li>Attach screenshots if applicable</li>
                   </ul>
                 </div>
 

@@ -395,7 +395,7 @@ const CreateAssessmentEventForm = ({ onSuccess }) => {
     const firstName = trainee.firstName || '';
     const lastName = trainee.lastName || '';
     const middleName = trainee.middleName || '';
-    return `${firstName} ${middleName} ${lastName}`.trim() || trainee.eid || 'Unknown';
+    return `${lastName}${middleName ? ' ' + middleName : ''} ${firstName}`.trim() || trainee.eid || 'Unknown';
   };
 
   return (

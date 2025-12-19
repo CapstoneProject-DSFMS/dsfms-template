@@ -89,7 +89,7 @@ const SubjectDetailsView = ({ subjectId, courseId }) => {
       const transformedTrainers = subjectData.instructors.map(trainer => ({
         id: trainer.id,
         eid: trainer.eid,
-        name: `${trainer.firstName} ${trainer.lastName}`,
+        name: `${trainer.lastName}${trainer.middleName ? ' ' + trainer.middleName : ''} ${trainer.firstName}`,
         role: trainer.roleInSubject,
         assignedAt: trainer.assignedAt
       }));
@@ -704,7 +704,8 @@ const SubjectDetailsView = ({ subjectId, courseId }) => {
         onClose={() => setShowAddTrainer(false)}
         onSave={handleAddTrainer}
         loading={isAddingTrainer}
-        courseId={courseId}
+        courseId={null}
+        subjectId={subjectId}
       />
 
       <EditTrainerModal

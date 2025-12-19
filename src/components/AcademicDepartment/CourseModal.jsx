@@ -92,8 +92,8 @@ const CourseModal = ({ show, course, mode, onSave, onClose, departmentId }) => {
       newErrors.maxNumTrainee = 'Max trainees must be a positive number';
     }
 
-    if (formData.passScore && (isNaN(formData.passScore) || formData.passScore < 0 || formData.passScore > 100)) {
-      newErrors.passScore = 'Pass score must be between 0 and 100';
+    if (formData.passScore && (isNaN(formData.passScore) || !Number.isInteger(parseFloat(formData.passScore)) || formData.passScore < 0 || formData.passScore > 100)) {
+      newErrors.passScore = 'Pass score must be an integer between 0 and 100';
     }
 
     if (formData.startDate && formData.endDate && new Date(formData.startDate) >= new Date(formData.endDate)) {
@@ -304,10 +304,11 @@ const CourseModal = ({ show, course, mode, onSave, onClose, departmentId }) => {
                   name="passScore"
                   value={formData.passScore}
                   onChange={handleInputChange}
+                  onKeyPress={(e) => e.key === '.' && e.preventDefault()}
                   placeholder="Minimum pass score (0-100)"
                   min="0"
                   max="100"
-                  step="0.1"
+                  step="1"
                   isInvalid={!!errors.passScore}
                   readOnly={isReadOnly}
                 />

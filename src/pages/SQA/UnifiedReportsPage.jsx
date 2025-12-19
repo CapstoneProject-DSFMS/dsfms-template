@@ -11,7 +11,7 @@ import {
   ThreeDotsVertical,
   FileText,
 } from 'react-bootstrap-icons';
-import { useNavigate, useLocation } from 'react-router-dom';
+import { useNavigate, useLocation, useSearchParams } from 'react-router-dom';
 import { toast } from 'react-toastify';
 import { ROUTES } from '../../constants/routes';
 import { PERMISSION_IDS } from '../../constants/permissionIds';
@@ -68,13 +68,17 @@ const feedbackStatusOptions = [
 const UnifiedReportsPage = ({ defaultTab, source = '/reports', onShowForm }) => {
   const navigate = useNavigate();
   const location = useLocation();
+  const [searchParams, setSearchParams] = useSearchParams();
+  
   const derivedTabFromPath = useMemo(() => {
     if (location.pathname.includes('/feedback')) return 'feedback';
     if (location.pathname.includes('/issues')) return 'incidents';
     return 'incidents';
   }, [location.pathname]);
 
-  const resolvedDefaultTab = defaultTab || derivedTabFromPath;
+  // Get tab from URL query parameter first, then from defaultTab/path
+  const tabFromURL = searchParams.get('tab');
+  const resolvedDefaultTab = tabFromURL || defaultTab || derivedTabFromPath;
 
   const [activeTab, setActiveTab] = useState(resolvedDefaultTab);
   const [activeSubTab, setActiveSubTab] = useState('pending');
@@ -218,7 +222,7 @@ const UnifiedReportsPage = ({ defaultTab, source = '/reports', onShowForm }) => 
 
   const handleViewReport = (reportId) => {
     navigate(ROUTES.REPORTS_DETAIL(reportId), { 
-      state: { from: source }
+      state: { from: source, tab: activeTab }
     });
   };
 
@@ -231,17 +235,17 @@ const UnifiedReportsPage = ({ defaultTab, source = '/reports', onShowForm }) => 
 
   if (loading) {
     return (
-      <Container fluid className="py-4">
+      <Container fluid className="py-2">
         <LoadingSkeleton />
       </Container>
     );
   }
 
   return (
-    <Container fluid className="py-4 reports-page">
+    <Container fluid className="py-2 reports-page">
       <Card className="border-0 shadow-sm">
         <Card.Header className="border-bottom py-2 bg-primary">
-          <Row className="align-items-center mb-3">
+          <Row className="align-items-center mb-2">
             <Col>
               <div className="d-flex align-items-center justify-content-between">
                 <div className="d-flex align-items-center gap-2">
@@ -280,6 +284,8 @@ const UnifiedReportsPage = ({ defaultTab, source = '/reports', onShowForm }) => 
                     onClick={() => {
                       setActiveTab(tab.id);
                       setActiveSubTab('pending');
+                      // Update URL with tab parameter
+                      setSearchParams({ tab: tab.id });
                     }}
                     active={activeTab === tab.id}
                     className="d-flex align-items-center"
@@ -336,7 +342,7 @@ const UnifiedReportsPage = ({ defaultTab, source = '/reports', onShowForm }) => 
           </Nav>
         </Card.Header>
 
-        <Card.Body className="p-4">
+        <Card.Body className="p-3">
           <Row className="mb-3 form-mobile-stack search-filter-section">
             <Col xs={12} lg={9} md={9} className="mb-2 mb-lg-0">
               <SearchBar
@@ -397,7 +403,7 @@ const UnifiedReportsPage = ({ defaultTab, source = '/reports', onShowForm }) => 
                         <td className="align-middle hide-mobile">
                           <div>
                             <div className="fw-medium">
-                              {item.createdBy?.firstName} {item.createdBy?.lastName}
+                              {item.createdBy?.lastName}{item.createdBy?.middleName ? ' ' + item.createdBy?.middleName : ''} {item.createdBy?.firstName}
                             </div>
                             <small className="text-muted">{item.createdBy?.email}</small>
                           </div>

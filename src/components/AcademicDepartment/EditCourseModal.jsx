@@ -267,10 +267,12 @@ const EditCourseModal = ({ show, onClose, onSave, course, loading = false }) => 
                   name="passScore"
                   value={formData.passScore}
                   onChange={handleInputChange}
+                  onKeyPress={(e) => e.key === '.' && e.preventDefault()}
                   isInvalid={!!errors.passScore}
                   disabled={loading}
                   min="0"
                   max="100"
+                  step="1"
                 />
                 <Form.Control.Feedback type="invalid">
                   {errors.passScore}

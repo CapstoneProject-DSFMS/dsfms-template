@@ -69,8 +69,8 @@ const AddSubjectModal = ({ show, onClose, onSave, loading = false, courseId, cou
     }
 
     // Optional fields validation (Y in schema) - only validate format if provided
-    if (formData.passScore.trim() && (isNaN(formData.passScore) || parseFloat(formData.passScore) < 0 || parseFloat(formData.passScore) > 100)) {
-      newErrors.push('Pass score must be between 0 and 100');
+    if (formData.passScore.trim() && (isNaN(formData.passScore) || !Number.isInteger(parseFloat(formData.passScore)) || parseFloat(formData.passScore) < 0 || parseFloat(formData.passScore) > 100)) {
+      newErrors.push('Pass score must be an integer between 0 and 100');
     }
 
     // Mandatory date fields (NN in schema)
@@ -346,10 +346,11 @@ const AddSubjectModal = ({ show, onClose, onSave, loading = false, courseId, cou
                   name="passScore"
                   value={formData.passScore}
                   onChange={handleInputChange}
+                  onKeyPress={(e) => e.key === '.' && e.preventDefault()}
                   placeholder="Enter pass score (0-100)"
                   min="0"
                   max="100"
-                  step="0.01"
+                  step="1"
                 />
               </Form.Group>
             </Col>

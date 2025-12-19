@@ -13,9 +13,9 @@ const AssessmentOverview = ({ assessmentInfo, roleInSubject, formatDate }) => {
       .join(' ');
   };
 
-  // Get trainee display info - prioritize fullName, fallback to firstName + lastName
+  // Get trainee display info - prioritize fullName, fallback to lastName + middleName + firstName
   const traineeName = assessmentInfo.trainee?.fullName || 
-                      `${assessmentInfo.trainee?.firstName || ''} ${assessmentInfo.trainee?.lastName || ''}`.trim() || '—';
+                      `${assessmentInfo.trainee?.lastName || ''}${assessmentInfo.trainee?.middleName ? ' ' + assessmentInfo.trainee.middleName : ''} ${assessmentInfo.trainee?.firstName || ''}`.trim() || '—';
   const traineeEid = assessmentInfo.trainee?.eid || '';
   
   // Get trainee profile info if available

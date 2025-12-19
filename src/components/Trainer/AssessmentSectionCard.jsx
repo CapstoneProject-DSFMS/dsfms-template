@@ -110,7 +110,7 @@ const AssessmentSectionCard = ({ section }) => {
                   <span className="fw-semibold">
                     {section.assessedBy?.fullName || 
                      (section.assessedBy?.firstName && section.assessedBy?.lastName 
-                       ? `${section.assessedBy.firstName} ${section.assessedBy.lastName}` 
+                       ? `${section.assessedBy.lastName}${section.assessedBy.middleName ? ' ' + section.assessedBy.middleName : ''} ${section.assessedBy.firstName}` 
                        : section.assessedBy?.id || '—')}
                   </span>
                 </span>

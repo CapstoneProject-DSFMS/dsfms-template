@@ -244,6 +244,7 @@ const AddCourseModal = ({ show, onClose, onSave, loading = false }) => {
                   name="passScore"
                   value={formData.passScore}
                   onChange={handleInputChange}
+                  onKeyPress={(e) => e.key === '.' && e.preventDefault()}
                   isInvalid={!!errors.passScore}
                   disabled={loading}
                   min="0"

@@ -323,7 +323,7 @@ const YourDraftsPage = () => {
                         <div className="d-flex align-items-center" style={{ minWidth: 0, flex: '1 1 auto' }}>
                           <Person size={12} className="text-muted me-1 flex-shrink-0" />
                           <small className="text-muted text-truncate" style={{ maxWidth: '120px' }}>
-                            {draft.createdByUser?.firstName} {draft.createdByUser?.lastName}
+                            {draft.createdByUser?.lastName}{draft.createdByUser?.middleName ? ' ' + draft.createdByUser?.middleName : ''} {draft.createdByUser?.firstName}
                           </small>
                         </div>
                         <small className="text-muted flex-shrink-0 ms-2">{formatDate(draft.createdAt)}</small>

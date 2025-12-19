@@ -70,7 +70,7 @@ const TrainersInAssessmentTable = ({
       if (trainer.name) {
         return trainer.name; // Already combined (from transformed data)
       }
-      const parts = [trainer.firstName, trainer.middleName, trainer.lastName].filter(Boolean);
+      const parts = [trainer.lastName, trainer.middleName, trainer.firstName].filter(Boolean);
       return parts.join(' ') || '';
     }
   };

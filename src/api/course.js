@@ -173,9 +173,19 @@ const courseAPI = {
   },
 
   // Get active trainers (replaced old getAvailableTrainersForCourse)
-  getActiveTrainers: async () => {
+  getActiveTrainers: async (courseId = null, subjectId = null) => {
     try {
-      const response = await apiClient.get(`/subjects/courses/active-trainers`);
+      let url = `/subjects/courses/active-trainers`;
+      const params = new URLSearchParams();
+      
+      if (courseId) params.append('courseId', courseId);
+      if (subjectId) params.append('subjectId', subjectId);
+      
+      if (params.toString()) {
+        url += `?${params.toString()}`;
+      }
+      
+      const response = await apiClient.get(url);
       return response.data;
     } catch (error) {
       console.error('Error fetching active trainers:', error);

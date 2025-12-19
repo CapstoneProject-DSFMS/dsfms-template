@@ -105,7 +105,7 @@ const TraineeDetailView = ({ traineeId }) => {
               <div>
               <h2 className="mb-1 d-flex align-items-center">
                 <Person className="me-2" size={28} />
-                {trainee.firstName} {trainee.lastName}
+                {trainee.lastName}{trainee.middleName ? ' ' + trainee.middleName : ''} {trainee.firstName}
               </h2>
                 <p className="text-muted mb-0">
                   {trainee.department?.name || 'No Department'}
