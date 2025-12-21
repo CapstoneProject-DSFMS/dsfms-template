@@ -257,7 +257,7 @@ const TemplateTable = ({
                               label: 'Disable Template',
                               icon: <XCircle />,
                               onClick: () => onDisableTemplate(template.id),
-                              permission: PERMISSION_IDS.VIEW_ALL_TEMPLATES
+                              permission: PERMISSION_IDS.UPDATE_TEMPLATE_STATUS
                             }
                           ]}
                         />

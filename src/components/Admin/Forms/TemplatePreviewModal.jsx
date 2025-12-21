@@ -16,6 +16,8 @@ import {
 } from 'react-bootstrap-icons';
 import { useNavigate } from 'react-router-dom';
 import { ROUTES } from '../../../constants/routes';
+import { PermissionWrapper } from '../../Common';
+import { PERMISSION_IDS } from '../../../constants/permissionIds';
 import { userAPI } from '../../../api/user';
 
 const TemplatePreviewModal = ({ show, onHide, template }) => {
@@ -377,14 +379,19 @@ const TemplatePreviewModal = ({ show, onHide, template }) => {
           Close
         </Button>
         {isRejected && (
-          <Button
-            variant="warning"
-            onClick={handleUpdateRejectedTemplate}
-            className="d-flex align-items-center"
+          <PermissionWrapper
+            permission={PERMISSION_IDS.UPDATE_TEMPLATE_VERSION}
+            fallback={null}
           >
-            <PencilSquare className="me-2" size={16} />
-            Update Rejected Template
-          </Button>
+            <Button
+              variant="warning"
+              onClick={handleUpdateRejectedTemplate}
+              className="d-flex align-items-center"
+            >
+              <PencilSquare className="me-2" size={16} />
+              Update Rejected Template
+            </Button>
+          </PermissionWrapper>
         )}
         <Button
           variant="primary-custom"
