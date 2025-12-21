@@ -143,7 +143,7 @@ const CreateIssuePage = () => {
                   <Row>
                     <Col md={6}>
                       <Form.Group className="mb-3">
-                        <Form.Label>Title</Form.Label>
+                        <Form.Label>Title *</Form.Label>
                         <Form.Control
                           type="text"
                           name="title"
@@ -194,7 +194,7 @@ const CreateIssuePage = () => {
                   </Row>
 
                   <Form.Group className="mb-3">
-                    <Form.Label>Description</Form.Label>
+                    <Form.Label>Description *</Form.Label>
                     <Form.Control
                       as="textarea"
                       rows={4}

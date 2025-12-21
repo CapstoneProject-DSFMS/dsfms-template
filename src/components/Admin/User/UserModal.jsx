@@ -228,11 +228,9 @@ const UserModal = ({ show, user, mode, onSave, onClose }) => {
       newErrors.email = 'Email is invalid';
     }
 
-    if (!formData.phoneNumber.trim()) {
-      newErrors.phoneNumber = 'Phone number is required';
-    } else if (!/^[+]?[0-9\s\-()]+$/.test(formData.phoneNumber)) {
+    if (formData.phoneNumber.trim() && !/^[+]?[0-9\s\-()]+$/.test(formData.phoneNumber)) {
       newErrors.phoneNumber = 'Phone number cannot contain letters';
-    } else {
+    } else if (formData.phoneNumber.trim()) {
       // Remove all non-digit characters except + at the beginning
       const cleanPhone = formData.phoneNumber.replace(/[^\d+]/g, '');
       if (cleanPhone.length < 7 || cleanPhone.length > 16) {
@@ -255,9 +253,11 @@ const UserModal = ({ show, user, mode, onSave, onClose }) => {
         newErrors.certificationNumber = 'Certification number is required for trainers';
       }
       if (!formData.bio || !formData.bio.trim()) {
-        newErrors.bio = 'Bio is required for trainers';
+        // Bio is optional - no error
       } else if (formData.bio.trim().length < 1) {
         newErrors.bio = 'Bio must be at least 1 character';
+      } else if (!/^[a-zA-Z0-9\s.,!?();:'"-ÀÁÂÃÈÉÊÌÍÒÓÔÕÙÚĂĐĨŨƠàáâãèéêìíòóôõùúăđĩũơƯĂÂÊÔưăâêôáàảãạăắằẳẵặâấầẩẫậéèẻẽẹêếềểễệíìỉĩịóòỏõọôốồổỗộơớờởỡợúùủũụưứừửữựýỳỷỹỵđ]+$/.test(formData.bio.trim())) {
+        newErrors.bio = 'Bio can only contain letters, numbers, spaces, and common punctuation';
       }
       // ✅ Department is NOT allowed for Trainer role - only check if not empty
       if (formData.department && formData.department.trim() !== '') {
@@ -504,7 +504,7 @@ const UserModal = ({ show, user, mode, onSave, onClose }) => {
             <Col md={12}>
               <Form.Group className="mb-4">
                 <Form.Label className="text-primary-custom fw-semibold">
-                  Phone Number *
+                  Phone Number
                 </Form.Label>
                 <Form.Control
                   type="tel"
@@ -680,7 +680,7 @@ const UserModal = ({ show, user, mode, onSave, onClose }) => {
                 <Col md={12}>
                   <Form.Group className="mb-4">
                     <Form.Label className="text-primary-custom fw-semibold">
-                      Bio *
+                      Bio
                     </Form.Label>
                     <Form.Control
                       as="textarea"
@@ -699,7 +699,7 @@ const UserModal = ({ show, user, mode, onSave, onClose }) => {
                       {errors.bio}
                     </Form.Control.Feedback>
                     <Form.Text className="text-muted">
-                      Bio is required and must contain at least 1 character. Only letters, numbers, spaces, and common punctuation are allowed.
+                      Bio is optional. If provided, must contain at least 1 character. Only letters, numbers, spaces, and common punctuation are allowed.
                     </Form.Text>
                   </Form.Group>
                 </Col>

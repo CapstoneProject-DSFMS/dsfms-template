@@ -105,8 +105,8 @@ const AddCourseModal = ({ show, onClose, onSave, loading = false }) => {
       newErrors.code = 'Course code is required';
     }
 
-    if (!formData.description.trim()) {
-      newErrors.description = 'Description is required';
+    if (formData.description.trim() === '') {
+      // Description is optional - no error
     }
 
     if (!formData.maxNumTrainee || isNaN(formData.maxNumTrainee) || parseInt(formData.maxNumTrainee) <= 0) {
@@ -117,7 +117,7 @@ const AddCourseModal = ({ show, onClose, onSave, loading = false }) => {
       newErrors.venue = 'Venue is required';
     }
 
-    if (!formData.passScore || isNaN(formData.passScore) || !Number.isInteger(parseFloat(formData.passScore)) || parseInt(formData.passScore) < 0 || parseInt(formData.passScore) > 100) {
+    if (formData.passScore && (isNaN(formData.passScore) || !Number.isInteger(parseFloat(formData.passScore)) || parseInt(formData.passScore) < 0 || parseInt(formData.passScore) > 100)) {
       newErrors.passScore = 'Pass score must be an integer between 0 and 100';
     }
 
@@ -238,7 +238,7 @@ const AddCourseModal = ({ show, onClose, onSave, loading = false }) => {
             </Col>
             <Col md={6}>
               <Form.Group className="mb-0">
-                <Form.Label className="fw-bold mb-2 d-block" style={{ marginTop: '0.5rem' }}>Pass Score *</Form.Label>
+                <Form.Label className="fw-bold mb-2 d-block" style={{ marginTop: '0.5rem' }}>Pass Score</Form.Label>
                 <Form.Control
                   type="number"
                   name="passScore"
@@ -330,7 +330,7 @@ const AddCourseModal = ({ show, onClose, onSave, loading = false }) => {
           <Row className="mb-5">
             <Col>
               <Form.Group className="mb-0">
-                <Form.Label className="fw-bold mb-2 d-block" style={{ marginTop: '0.5rem' }}>Description *</Form.Label>
+                <Form.Label className="fw-bold mb-2 d-block" style={{ marginTop: '0.5rem' }}>Description</Form.Label>
                 <Form.Control
                   as="textarea"
                   rows={3}
