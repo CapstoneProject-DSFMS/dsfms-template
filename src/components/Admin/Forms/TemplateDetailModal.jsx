@@ -21,6 +21,8 @@ import {
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'react-toastify';
 import { ROUTES } from '../../../constants/routes';
+import { PermissionWrapper } from '../../Common';
+import { PERMISSION_IDS } from '../../../constants/permissionIds';
 import { userAPI } from '../../../api/user';
 import templateAPI from '../../../api/template';
 import PDFModal from '../../Common/PDFModal';
@@ -1677,132 +1679,147 @@ const TemplateDetailModal = ({ show, onHide, template, onCreateVersion, onTempla
           Close
         </Button>
         {isRejected && (
-          <Button
-            variant="warning"
-            onClick={handleUpdateRejectedTemplate}
-            className="d-flex align-items-center justify-content-center"
-            style={{
-              backgroundColor: '#ffc107',
-              borderColor: '#ffc107',
-              color: '#000',
-              fontWeight: 500,
-              padding: '0.5rem 1.5rem',
-              borderRadius: '0.375rem',
-              transition: 'all 0.3s ease'
-            }}
-            onMouseEnter={(e) => {
-              e.currentTarget.style.backgroundColor = '#ffb300'
-              e.currentTarget.style.borderColor = '#ffb300'
-              e.currentTarget.style.transform = 'translateY(-1px)'
-              e.currentTarget.style.boxShadow = '0 4px 8px rgba(255, 193, 7, 0.3)'
-            }}
-            onMouseLeave={(e) => {
-              e.currentTarget.style.backgroundColor = '#ffc107'
-              e.currentTarget.style.borderColor = '#ffc107'
-              e.currentTarget.style.transform = 'translateY(0)'
-              e.currentTarget.style.boxShadow = 'none'
-            }}
+          <PermissionWrapper
+            permission={PERMISSION_IDS.UPDATE_TEMPLATE_VERSION}
+            fallback={null}
           >
-            <PencilSquare className="me-2" size={16} />
-            <span className="d-none d-sm-inline">Update Rejected Template</span>
-            <span className="d-inline d-sm-none">Update</span>
-          </Button>
+            <Button
+              variant="warning"
+              onClick={handleUpdateRejectedTemplate}
+              className="d-flex align-items-center justify-content-center"
+              style={{
+                backgroundColor: '#ffc107',
+                borderColor: '#ffc107',
+                color: '#000',
+                fontWeight: 500,
+                padding: '0.5rem 1.5rem',
+                borderRadius: '0.375rem',
+                transition: 'all 0.3s ease'
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.backgroundColor = '#ffb300'
+                e.currentTarget.style.borderColor = '#ffb300'
+                e.currentTarget.style.transform = 'translateY(-1px)'
+                e.currentTarget.style.boxShadow = '0 4px 8px rgba(255, 193, 7, 0.3)'
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.backgroundColor = '#ffc107'
+                e.currentTarget.style.borderColor = '#ffc107'
+                e.currentTarget.style.transform = 'translateY(0)'
+                e.currentTarget.style.boxShadow = 'none'
+              }}
+            >
+              <PencilSquare className="me-2" size={16} />
+              <span className="d-none d-sm-inline">Update Rejected Template</span>
+              <span className="d-inline d-sm-none">Update</span>
+            </Button>
+          </PermissionWrapper>
         )}
         {template?.status === 'PUBLISHED' && (
-          <Button
-            variant="danger"
-            onClick={handleDisableTemplate}
-            disabled={disabling}
-            className="d-flex align-items-center justify-content-center"
-            style={{
-              backgroundColor: '#dc3545',
-              borderColor: '#dc3545',
-              color: 'white',
-              fontWeight: 500,
-              padding: '0.5rem 1.5rem',
-              borderRadius: '0.375rem',
-              transition: 'all 0.3s ease',
-              opacity: disabling ? 0.6 : 1
-            }}
-            onMouseEnter={(e) => {
-              if (!disabling) {
-                e.currentTarget.style.backgroundColor = '#c82333'
-                e.currentTarget.style.borderColor = '#c82333'
-                e.currentTarget.style.transform = 'translateY(-1px)'
-                e.currentTarget.style.boxShadow = '0 4px 8px rgba(220, 53, 69, 0.3)'
-              }
-            }}
-            onMouseLeave={(e) => {
-              if (!disabling) {
-                e.currentTarget.style.backgroundColor = '#dc3545'
-                e.currentTarget.style.borderColor = '#dc3545'
-                e.currentTarget.style.transform = 'translateY(0)'
-                e.currentTarget.style.boxShadow = 'none'
-              }
-            }}
+          <PermissionWrapper
+            permission={PERMISSION_IDS.UPDATE_TEMPLATE_STATUS}
+            fallback={null}
           >
-            {disabling ? (
-              <>
-                <Spinner animation="border" size="sm" className="me-2" />
-                <span className="d-none d-sm-inline">Disabling...</span>
-                <span className="d-inline d-sm-none">Disabling...</span>
-              </>
-            ) : (
-              <>
-                <Ban className="me-2" size={16} />
-                <span className="d-none d-sm-inline">Disable Template</span>
-                <span className="d-inline d-sm-none">Disable</span>
-              </>
-            )}
-          </Button>
+            <Button
+              variant="danger"
+              onClick={handleDisableTemplate}
+              disabled={disabling}
+              className="d-flex align-items-center justify-content-center"
+              style={{
+                backgroundColor: '#dc3545',
+                borderColor: '#dc3545',
+                color: 'white',
+                fontWeight: 500,
+                padding: '0.5rem 1.5rem',
+                borderRadius: '0.375rem',
+                transition: 'all 0.3s ease',
+                opacity: disabling ? 0.6 : 1
+              }}
+              onMouseEnter={(e) => {
+                if (!disabling) {
+                  e.currentTarget.style.backgroundColor = '#c82333'
+                  e.currentTarget.style.borderColor = '#c82333'
+                  e.currentTarget.style.transform = 'translateY(-1px)'
+                  e.currentTarget.style.boxShadow = '0 4px 8px rgba(220, 53, 69, 0.3)'
+                }
+              }}
+              onMouseLeave={(e) => {
+                if (!disabling) {
+                  e.currentTarget.style.backgroundColor = '#dc3545'
+                  e.currentTarget.style.borderColor = '#dc3545'
+                  e.currentTarget.style.transform = 'translateY(0)'
+                  e.currentTarget.style.boxShadow = 'none'
+                }
+              }}
+            >
+              {disabling ? (
+                <>
+                  <Spinner animation="border" size="sm" className="me-2" />
+                  <span className="d-none d-sm-inline">Disabling...</span>
+                  <span className="d-inline d-sm-none">Disabling...</span>
+                </>
+              ) : (
+                <>
+                  <Ban className="me-2" size={16} />
+                  <span className="d-none d-sm-inline">Disable Template</span>
+                  <span className="d-inline d-sm-none">Disable</span>
+                </>
+              )}
+            </Button>
+          </PermissionWrapper>
         )}
         {template?.status === 'DISABLED' && (
-          <Button
-            variant="success"
-            onClick={handleEnableTemplate}
-            disabled={enabling}
-            className="d-flex align-items-center justify-content-center"
-            style={{
-              backgroundColor: '#28a745',
-              borderColor: '#28a745',
-              color: 'white',
-              fontWeight: 500,
-              padding: '0.5rem 1.5rem',
-              borderRadius: '0.375rem',
-              transition: 'all 0.3s ease',
-              opacity: enabling ? 0.6 : 1
-            }}
-            onMouseEnter={(e) => {
-              if (!enabling) {
-                e.currentTarget.style.backgroundColor = '#218838'
-                e.currentTarget.style.borderColor = '#218838'
-                e.currentTarget.style.transform = 'translateY(-1px)'
-                e.currentTarget.style.boxShadow = '0 4px 8px rgba(40, 167, 69, 0.3)'
-              }
-            }}
-            onMouseLeave={(e) => {
-              if (!enabling) {
-                e.currentTarget.style.backgroundColor = '#28a745'
-                e.currentTarget.style.borderColor = '#28a745'
-                e.currentTarget.style.transform = 'translateY(0)'
-                e.currentTarget.style.boxShadow = 'none'
-              }
-            }}
+          <PermissionWrapper
+            permission={PERMISSION_IDS.UPDATE_TEMPLATE_STATUS}
+            fallback={null}
           >
-            {enabling ? (
-              <>
-                <Spinner animation="border" size="sm" className="me-2" />
-                <span className="d-none d-sm-inline">Enabling...</span>
-                <span className="d-inline d-sm-none">Enabling...</span>
-              </>
-            ) : (
-              <>
-                <CheckCircle className="me-2" size={16} />
-                <span className="d-none d-sm-inline">Enable Template</span>
-                <span className="d-inline d-sm-none">Enable</span>
-              </>
-            )}
-          </Button>
+            <Button
+              variant="success"
+              onClick={handleEnableTemplate}
+              disabled={enabling}
+              className="d-flex align-items-center justify-content-center"
+              style={{
+                backgroundColor: '#28a745',
+                borderColor: '#28a745',
+                color: 'white',
+                fontWeight: 500,
+                padding: '0.5rem 1.5rem',
+                borderRadius: '0.375rem',
+                transition: 'all 0.3s ease',
+                opacity: enabling ? 0.6 : 1
+              }}
+              onMouseEnter={(e) => {
+                if (!enabling) {
+                  e.currentTarget.style.backgroundColor = '#218838'
+                  e.currentTarget.style.borderColor = '#218838'
+                  e.currentTarget.style.transform = 'translateY(-1px)'
+                  e.currentTarget.style.boxShadow = '0 4px 8px rgba(40, 167, 69, 0.3)'
+                }
+              }}
+              onMouseLeave={(e) => {
+                if (!enabling) {
+                  e.currentTarget.style.backgroundColor = '#28a745'
+                  e.currentTarget.style.borderColor = '#28a745'
+                  e.currentTarget.style.transform = 'translateY(0)'
+                  e.currentTarget.style.boxShadow = 'none'
+                }
+              }}
+            >
+              {enabling ? (
+                <>
+                  <Spinner animation="border" size="sm" className="me-2" />
+                  <span className="d-none d-sm-inline">Enabling...</span>
+                  <span className="d-inline d-sm-none">Enabling...</span>
+                </>
+              ) : (
+                <>
+                  <CheckCircle className="me-2" size={16} />
+                  <span className="d-none d-sm-inline">Enable Template</span>
+                  <span className="d-inline d-sm-none">Enable</span>
+                </>
+              )}
+            </Button>
+          </PermissionWrapper>
         )}
         {onCreateVersion && (
           <Button
