@@ -3,9 +3,7 @@ import { Container, Card, Nav, Tab, Table, Badge, Spinner, Alert, Button, Form, 
 import { Pen, Book, FileText, ExclamationTriangle, Save } from 'react-bootstrap-icons';
 import { useAuth } from '../../hooks/useAuth';
 import { toast } from 'react-toastify';
-import subjectAPI from '../../api/subject';
 import assessmentAPI from '../../api/assessment';
-import courseAPI from '../../api/course';
 import uploadAPI from '../../api/upload';
 import SignaturePad from '../Profile/SignaturePad';
 import SortableHeader from './SortableHeader';
@@ -23,113 +21,42 @@ const TraineeSignatureRequiredList = ({ traineeId }) => {
   const [signatureDataUrl, setSignatureDataUrl] = useState(null); // Store signature data
   const [uploadingSignature, setUploadingSignature] = useState(false); // Track upload progress
 
-  const { sortedData, sortConfig, handleSort } = useTableSort(assessments);
+  // Filter assessments based on active tab to avoid duplicates
+  const filteredAssessments = useMemo(() => {
+    if (activeTab === 'course') {
+      // Course Assessments: only show course-level assessments (subjectId is null)
+      return assessments.filter(assessment => assessment.subjectId === null);
+    } else {
+      // Subject Assessments: only show subject-level assessments (subjectId is not null)
+      return assessments.filter(assessment => assessment.subjectId !== null);
+    }
+  }, [assessments, activeTab]);
+
+  const { sortedData, sortConfig, handleSort } = useTableSort(filteredAssessments);
+
+  // Format status text by removing underscores and capitalizing
+  const formatStatusText = (status) => {
+    return status
+      .split('_')
+      .map(word => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
+      .join(' ');
+  };
 
   const loadAssessments = useCallback(async () => {
     try {
       setLoading(true);
       setError(null);
 
-      // Load courses map first
-      const coursesMapData = {};
-      try {
-        const coursesResponse = await courseAPI.getCourses();
-        // Handle different response structures: { courses: [...] }, { data: [...] }, or direct array
-        let courses = [];
-        if (Array.isArray(coursesResponse)) {
-          courses = coursesResponse;
-        } else if (coursesResponse?.courses && Array.isArray(coursesResponse.courses)) {
-          courses = coursesResponse.courses;
-        } else if (coursesResponse?.data && Array.isArray(coursesResponse.data)) {
-          courses = coursesResponse.data;
-        }
-        
-        // Only iterate if courses is actually an array
-        if (Array.isArray(courses)) {
-          courses.forEach(course => {
-            if (course?.id) {
-              coursesMapData[course.id] = course.name || course.code || 'Unknown Course';
-            }
-          });
-        } else {
-          console.warn('Courses response is not an array:', coursesResponse);
-        }
-      } catch (err) {
-        console.error('Error loading courses map:', err);
-        // Continue without course names if API fails
-      }
+      // Fetch all assessments for the trainee (1 API call)
+      const response = await assessmentAPI.getTraineeAssessments();
+      const allAssessments = response?.assessments || [];
 
-      // Get all courses/subjects for the trainee
-      const response = await subjectAPI.getTraineeCourseSubjects(user?.id || traineeId);
-      const courseData = response?.courses || [];
+      // Filter only SIGNATURE_PENDING assessments
+      const signatureRequiredAssessments = allAssessments.filter(
+        assessment => assessment.status === 'SIGNATURE_PENDING'
+      );
 
-      if (!Array.isArray(courseData) || courseData.length === 0) {
-        setAssessments([]);
-        setLoading(false);
-        return;
-      }
-
-      // Fetch assessments for all courses or subjects based on active tab
-      const allAssessments = [];
-      // Filter for SIGNATURE_PENDING and READY_TO_SUBMIT statuses
-      const allowedStatuses = ['SIGNATURE_PENDING', 'READY_TO_SUBMIT'];
-
-      if (activeTab === 'course') {
-        // Fetch assessments for all courses
-        for (const item of courseData) {
-          const course = item.course;
-          if (course?.id) {
-            try {
-              const assessmentResponse = await assessmentAPI.getCourseAssessments(course.id);
-              const courseAssessments = assessmentResponse?.assessments || [];
-              
-              // Filter SIGNATURE_PENDING and READY_TO_SUBMIT assessments and add course info
-              courseAssessments
-                .filter(assessment => allowedStatuses.includes(assessment.status))
-                .forEach(assessment => {
-                  allAssessments.push({
-                    ...assessment,
-                    courseId: course.id,
-                    courseName: coursesMapData[course.id] || course.name || course.code || 'Unknown Course'
-                  });
-                });
-            } catch (err) {
-              console.error(`Error loading assessments for course ${course.id}:`, err);
-              // Continue with other courses
-            }
-          }
-        }
-      } else {
-        // Fetch assessments for all subjects
-        for (const item of courseData) {
-          const subjects = item.subjects || [];
-          for (const subject of subjects) {
-            if (subject?.id) {
-              try {
-                const assessmentResponse = await assessmentAPI.getSubjectAssessments(subject.id);
-                const subjectAssessments = assessmentResponse?.assessments || [];
-                
-                // Filter SIGNATURE_PENDING and READY_TO_SUBMIT assessments and add course info
-                subjectAssessments
-                  .filter(assessment => allowedStatuses.includes(assessment.status))
-                  .forEach(assessment => {
-                    const courseId = assessment.courseId || item.course?.id;
-                    allAssessments.push({
-                      ...assessment,
-                      courseId: courseId,
-                      courseName: coursesMapData[courseId] || item.course?.name || item.course?.code || 'Unknown Course'
-                    });
-                  });
-              } catch (err) {
-                console.error(`Error loading assessments for subject ${subject.id}:`, err);
-                // Continue with other subjects
-              }
-            }
-          }
-        }
-      }
-
-      setAssessments(allAssessments);
+      setAssessments(signatureRequiredAssessments);
     } catch (err) {
       console.error('Error loading assessments:', err);
       setError(err.message || 'Failed to load assessments');
@@ -138,13 +65,13 @@ const TraineeSignatureRequiredList = ({ traineeId }) => {
     } finally {
       setLoading(false);
     }
-  }, [user?.id, traineeId, activeTab]);
+  }, []);
 
   useEffect(() => {
     if (user?.id || traineeId) {
       loadAssessments();
     }
-  }, [user?.id, traineeId, activeTab, loadAssessments]);
+  }, [user?.id, traineeId, loadAssessments]);
 
   const handleTabChange = (key) => {
     setActiveTab(key);
@@ -152,17 +79,18 @@ const TraineeSignatureRequiredList = ({ traineeId }) => {
 
   const getStatusBadge = (status) => {
     const statusConfig = {
-      'SIGNATURE_PENDING': { variant: 'warning', text: 'Signature Pending' },
-      'PENDING': { variant: 'warning', text: 'Pending' },
-      'COMPLETED': { variant: 'success', text: 'Completed' },
-      'OVERDUE': { variant: 'danger', text: 'Overdue' }
+      'SIGNATURE_PENDING': { variant: 'warning' },
+      'PENDING': { variant: 'warning' },
+      'COMPLETED': { variant: 'success' },
+      'OVERDUE': { variant: 'danger' }
     };
     
-    const config = statusConfig[status] || { variant: 'secondary', text: status };
+    const config = statusConfig[status] || { variant: 'secondary' };
+    const text = formatStatusText(status);
     
     return (
       <Badge bg={config.variant}>
-        {config.text}
+        {text}
       </Badge>
     );
   };
@@ -341,7 +269,7 @@ const TraineeSignatureRequiredList = ({ traineeId }) => {
           </Card.Header>
 
           <Card.Body className="p-4">
-            {assessments.length === 0 ? (
+            {filteredAssessments.length === 0 ? (
               <div className="text-center py-5">
                 <Pen size={48} className="text-muted mb-3" />
                 <p className="text-muted mb-0">No Signature Confirmation Required Assessment Forms.</p>
@@ -361,8 +289,8 @@ const TraineeSignatureRequiredList = ({ traineeId }) => {
                       </th>
                       <th className="border-neutral-200 text-primary-custom fw-semibold">
                         <SortableHeader 
-                          title="Course Name" 
-                          sortKey="courseName" 
+                          title={activeTab === 'course' ? 'Course Name' : 'Subject Name'} 
+                          sortKey={activeTab === 'course' ? 'courseName' : 'subjectName'} 
                           sortConfig={sortConfig} 
                           onSort={handleSort} 
                         />
@@ -397,7 +325,9 @@ const TraineeSignatureRequiredList = ({ traineeId }) => {
                           <div className="fw-medium text-dark">{assessment.name}</div>
                         </td>
                         <td className="border-neutral-200 align-middle">
-                          <div className="fw-medium text-dark">{assessment.courseName}</div>
+                          <div className="fw-medium text-dark">
+                            {activeTab === 'course' ? assessment.courseName : assessment.subjectName}
+                          </div>
                         </td>
                         <td className="border-neutral-200 align-middle">
                           <div className="text-dark">

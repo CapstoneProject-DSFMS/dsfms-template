@@ -545,8 +545,8 @@ const TraineeCourseList = ({ traineeId }) => {
               </Col>
             </Row>
 
-      <div className="scrollable-table-container admin-table course-list-table-no-borders" style={{ maxHeight: '70vh', overflowY: 'auto' }}>
-        <Table hover className="mb-0 table-mobile-responsive" style={{ fontSize: '0.875rem' }}>
+      <div className="course-list-container" style={{}}>
+        <Table hover className="mb-0" style={{ fontSize: '0.875rem' }}>
         <thead className="sticky-header">
           <tr>
             <SortableHeader columnKey="code" className="show-mobile">

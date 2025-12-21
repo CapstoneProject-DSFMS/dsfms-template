@@ -1218,3 +1218,91 @@ body, html {
   }
 }
 
+/* Separate CSS for Course List Table (No horizontal scroll) */
+.course-list-container {
+  max-height: 70vh;
+  overflow-y: auto;
+  overflow-x: hidden;
+  border: 1px solid #dee2e6;
+  border-radius: 0.375rem;
+  position: relative;
+  margin-bottom: 0;
+}
+
+.course-list-container::-webkit-scrollbar {
+  width: 8px;
+}
+
+.course-list-container::-webkit-scrollbar-track {
+  background: #f1f1f1;
+  border-radius: 4px;
+}
+
+.course-list-container::-webkit-scrollbar-thumb {
+  background: #c1c1c1;
+  border-radius: 4px;
+}
+
+.course-list-container::-webkit-scrollbar-thumb:hover {
+  background: #a8a8a8;
+}
+
+.course-list-container .table {
+  width: 100%;
+  table-layout: auto;
+}
+
+.course-list-container .table td,
+.course-list-container .table th {
+  padding: 0.875rem 0.75rem !important;
+  white-space: normal;
+  overflow-wrap: break-word;
+}
+
+.course-list-container .sticky-header {
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  background-color: var(--bs-primary) !important;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.course-list-container .sticky-header th {
+  color: white !important;
+  border-color: var(--bs-primary) !important;
+}
+
+.course-list-container tbody tr:hover {
+  background-color: rgba(0, 123, 255, 0.05);
+  transition: background-color 0.2s ease;
+}
+
+@media (max-width: 768px) {
+  .course-list-container {
+    max-height: 300px;
+  }
+  
+  .course-list-container .table {
+    font-size: 0.75rem;
+  }
+  
+  .course-list-container .table th,
+  .course-list-container .table td {
+    padding: 0.5rem 0.25rem;
+  }
+}
+
+@media (max-width: 576px) {
+  .course-list-container {
+    max-height: 250px;
+  }
+  
+  .course-list-container .table {
+    font-size: 0.75rem;
+  }
+  
+  .course-list-container .table th,
+  .course-list-container .table td {
+    padding: 0.375rem 0.125rem;
+  }
+}

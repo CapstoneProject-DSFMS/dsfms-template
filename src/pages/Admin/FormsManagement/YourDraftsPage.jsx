@@ -4,7 +4,8 @@ import { FileText, FileEarmark, Pencil, Clock, Building, Person, ArrowLeft, Excl
 import { useNavigate } from 'react-router-dom';
 import { ROUTES } from '../../../constants/routes';
 import { toast } from 'react-toastify';
-import { LoadingSkeleton } from '../../../components/Common';
+import { LoadingSkeleton, PermissionWrapper } from '../../../components/Common';
+import { PERMISSION_IDS } from '../../../constants/permissionIds';
 import { templateAPI } from '../../../api';
 import { useAuth } from '../../../hooks/useAuth';
 import { convertBackendToFrontendSections } from '../../../utils/templateBuilder';
@@ -332,74 +333,84 @@ const YourDraftsPage = () => {
                       {/* Footer with Continue Editing and Delete Buttons */}
                       <div className="mt-auto pt-2 border-top" style={{ flexShrink: 0 }}>
                         <div className="d-flex gap-2">
-                          <Button
-                            variant="primary"
-                            size="sm"
-                            className="flex-grow-1 d-flex align-items-center justify-content-center"
-                            onClick={() => handleOpenDraft(draft.id)}
-                            style={{
-                              backgroundColor: '#1b3c53',
-                              borderColor: '#1b3c53',
-                              color: '#fff',
-                              fontWeight: 500
-                            }}
-                            onMouseEnter={(e) => {
-                              e.currentTarget.style.backgroundColor = '#153a4a';
-                              e.currentTarget.style.borderColor = '#153a4a';
-                            }}
-                            onMouseLeave={(e) => {
-                              e.currentTarget.style.backgroundColor = '#1b3c53';
-                              e.currentTarget.style.borderColor = '#1b3c53';
-                            }}
+                          <PermissionWrapper
+                            permission={PERMISSION_IDS.EDIT_DRAFT_TEMPLATE}
+                            fallback={null}
                           >
-                            <Pencil size={14} className="me-2" />
-                            Edit
-                          </Button>
-                          <Button
-                            variant="secondary"
-                            size="sm"
-                            className="d-flex align-items-center justify-content-center"
-                            onClick={() => handleOpenDeleteModal(draft)}
-                            disabled={deletingDraftId === draft.id}
-                            style={{
-                              minWidth: '44px',
-                              padding: '0.375rem 0.75rem',
-                              backgroundColor: 'transparent',
-                              borderColor: '#6c757d',
-                              color: '#6c757d',
-                              border: '1px solid #6c757d !important',
-                              fontWeight: 500,
-                              cursor: deletingDraftId === draft.id ? 'not-allowed' : 'pointer',
-                              opacity: deletingDraftId === draft.id ? 0.6 : 1,
-                              transition: 'all 0.25s ease'
-                            }}
-                            onMouseEnter={(e) => {
-                              if (deletingDraftId !== draft.id) {
-                                e.currentTarget.style.backgroundColor = '#6c757d';
-                                e.currentTarget.style.color = '#fff';
+                            <Button
+                              variant="primary"
+                              size="sm"
+                              className="flex-grow-1 d-flex align-items-center justify-content-center"
+                              onClick={() => handleOpenDraft(draft.id)}
+                              style={{
+                                backgroundColor: '#1b3c53',
+                                borderColor: '#1b3c53',
+                                color: '#fff',
+                                fontWeight: 500
+                              }}
+                              onMouseEnter={(e) => {
+                                e.currentTarget.style.backgroundColor = '#153a4a';
+                                e.currentTarget.style.borderColor = '#153a4a';
+                              }}
+                              onMouseLeave={(e) => {
+                                e.currentTarget.style.backgroundColor = '#1b3c53';
+                                e.currentTarget.style.borderColor = '#1b3c53';
+                              }}
+                            >
+                              <Pencil size={14} className="me-2" />
+                              Edit
+                            </Button>
+                          </PermissionWrapper>
+                          <PermissionWrapper
+                            permission={PERMISSION_IDS.DELETE_DRAFT_TEMPLATE}
+                            fallback={null}
+                          >
+                            <Button
+                              variant="secondary"
+                              size="sm"
+                              className="d-flex align-items-center justify-content-center"
+                              onClick={() => handleOpenDeleteModal(draft)}
+                              disabled={deletingDraftId === draft.id}
+                              style={{
+                                minWidth: '44px',
+                                padding: '0.375rem 0.75rem',
+                                backgroundColor: 'transparent',
+                                borderColor: '#6c757d',
+                                color: '#6c757d',
+                                border: '1px solid #6c757d !important',
+                                fontWeight: 500,
+                                cursor: deletingDraftId === draft.id ? 'not-allowed' : 'pointer',
+                                opacity: deletingDraftId === draft.id ? 0.6 : 1,
+                                transition: 'all 0.25s ease'
+                              }}
+                              onMouseEnter={(e) => {
+                                if (deletingDraftId !== draft.id) {
+                                  e.currentTarget.style.backgroundColor = '#6c757d';
+                                  e.currentTarget.style.color = '#fff';
+                                  e.currentTarget.style.borderColor = '#6c757d';
+                                  e.currentTarget.style.boxShadow = '0 2px 8px rgba(108, 117, 125, 0.3)';
+                                  e.currentTarget.style.transform = 'translateY(-2px)';
+                                }
+                              }}
+                              onMouseLeave={(e) => {
+                                e.currentTarget.style.backgroundColor = 'transparent';
+                                e.currentTarget.style.color = '#6c757d';
                                 e.currentTarget.style.borderColor = '#6c757d';
-                                e.currentTarget.style.boxShadow = '0 2px 8px rgba(108, 117, 125, 0.3)';
-                                e.currentTarget.style.transform = 'translateY(-2px)';
-                              }
-                            }}
-                            onMouseLeave={(e) => {
-                              e.currentTarget.style.backgroundColor = 'transparent';
-                              e.currentTarget.style.color = '#6c757d';
-                              e.currentTarget.style.borderColor = '#6c757d';
-                              e.currentTarget.style.boxShadow = 'none';
-                              e.currentTarget.style.transform = 'translateY(0)';
-                            }}
-                            title="Delete this draft"
-                          >
-                            {deletingDraftId === draft.id ? (
-                              <>
-                                <span className="spinner-border spinner-border-sm" style={{ width: '14px', height: '14px', marginRight: '4px' }} />
-                                Deleting
-                              </>
-                            ) : (
-                              '✕ Delete'
-                            )}
-                          </Button>
+                                e.currentTarget.style.boxShadow = 'none';
+                                e.currentTarget.style.transform = 'translateY(0)';
+                              }}
+                              title="Delete this draft"
+                            >
+                              {deletingDraftId === draft.id ? (
+                                <>
+                                  <span className="spinner-border spinner-border-sm" style={{ width: '14px', height: '14px', marginRight: '4px' }} />
+                                  Deleting
+                                </>
+                              ) : (
+                                '✕ Delete'
+                              )}
+                            </Button>
+                          </PermissionWrapper>
                         </div>
                       </div>
                     </Card.Body>
