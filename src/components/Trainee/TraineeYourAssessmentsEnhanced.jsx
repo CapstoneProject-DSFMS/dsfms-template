@@ -254,14 +254,6 @@ const TraineeYourAssessmentsEnhanced = () => {
                       )}
                       <th className="border-neutral-200 text-primary-custom fw-semibold">
                         <SortableHeader 
-                          title="Trainee" 
-                          sortKey="trainee" 
-                          sortConfig={sortConfig} 
-                          onSort={handleSort} 
-                        />
-                      </th>
-                      <th className="border-neutral-200 text-primary-custom fw-semibold">
-                        <SortableHeader 
                           title="Date" 
                           sortKey="occuranceDate" 
                           sortConfig={sortConfig} 
@@ -339,16 +331,6 @@ const TraineeYourAssessmentsEnhanced = () => {
                             </td>
                           </>
                         )}
-                        <td className="border-neutral-200 align-middle">
-                          {assessment.trainee ? (
-                            <>
-                              <div className="fw-medium text-dark">{assessment.trainee.fullName}</div>
-                              <small className="text-muted">{assessment.trainee.eid}</small>
-                            </>
-                          ) : (
-                            <span className="text-muted">-</span>
-                          )}
-                        </td>
                         <td className="border-neutral-200 align-middle">
                           <span className="text-dark">
                             {assessment.occuranceDate 

@@ -18,7 +18,6 @@ import CourseDetailPage from '../pages/AcademicDepartment/CourseDetailPage';
 import InPageCourseDetail from '../pages/AcademicDepartment/InPageCourseDetail';
 import EnrollTraineesPage from '../pages/AcademicDepartment/EnrollTraineesPage';
 import AssessmentEventPage from '../pages/AcademicDepartment/AssessmentEventPage';
-import TraineeSubjectDetailPage from '../pages/Trainee/TraineeSubjectDetailPage';
 import TraineeAssessmentPage from '../pages/Trainee/TraineeAssessmentPage';
 import TraineeAssessmentDetailPage from '../pages/Trainee/TraineeAssessmentDetailPage';
 import SignaturePadPage from '../pages/Trainee/SignaturePadPage';
@@ -382,16 +381,7 @@ export const router = createBrowserRouter(
       children: [
         {
           path: '',
-          element: (
-            <PermissionRoute
-              permission={PERMISSION_IDS.VIEW_SUBJECT_DETAILS}
-              fallback={
-                <div className="p-4 text-center text-muted">You don't have permission to view subject details.</div>
-              }
-            >
-              <SubjectDetailsWrapper />
-            </PermissionRoute>
-          ),
+          element: <SubjectDetailsWrapper />,
         },
       ],
     },
@@ -872,19 +862,6 @@ export const router = createBrowserRouter(
               }
             >
               <InPageCourseDetail />
-            </PermissionRoute>
-          ),
-        },
-        {
-          path: ':traineeId/course/:courseId/subject/:subjectId',
-          element: (
-            <PermissionRoute
-              permission={PERMISSION_IDS.VIEW_ALL_ENROLLMENTS}
-              fallback={
-                <div className="p-4 text-center text-muted">You don't have permission to view trainee subjects.</div>
-              }
-            >
-              <TraineeSubjectDetailPage />
             </PermissionRoute>
           ),
         },

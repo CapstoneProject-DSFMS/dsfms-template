@@ -255,12 +255,9 @@ const InPageCourseDetail = ({ course, department } = {}) => {
     if (isDeptHead) {
       // Department Head route
       navigate(ROUTES.SUBJECTS_IN_COURSE(courseId, subjectId));
-    } else if (isTraineeView) {
-      // Trainee route
-      navigate(`/${traineeId}/course/${courseId}/subject/${subjectId}`);
     } else {
-      // Academic Department route
-      navigate(`/academic/course/${courseId}/subject/${subjectId}`);
+      // Both Trainee and Academic Department use the same route
+      navigate(`/courses/${courseId}/subjects/${subjectId}`);
     }
   };
 

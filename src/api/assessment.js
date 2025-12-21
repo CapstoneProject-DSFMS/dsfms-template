@@ -387,6 +387,20 @@ const assessmentAPI = {
       throw error;
     }
   },
+
+  /**
+   * Get all assessments for trainee (auto-fetched from auth context)
+   * @returns {Promise} All assessments response
+   */
+  getTraineeAssessments: async () => {
+    try {
+      const response = await apiClient.get('/assessments/trainee');
+      return response.data;
+    } catch (error) {
+      console.error('Error fetching trainee assessments:', error);
+      throw error;
+    }
+  },
 };
 
 export default assessmentAPI;
