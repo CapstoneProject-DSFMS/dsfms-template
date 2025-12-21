@@ -81,8 +81,7 @@ const TraineeSignatureRequiredList = ({ traineeId }) => {
     const statusConfig = {
       'SIGNATURE_PENDING': { variant: 'warning' },
       'PENDING': { variant: 'warning' },
-      'COMPLETED': { variant: 'success' },
-      'OVERDUE': { variant: 'danger' }
+      'COMPLETED': { variant: 'success' }
     };
     
     const config = statusConfig[status] || { variant: 'secondary' };

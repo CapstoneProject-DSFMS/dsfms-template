@@ -1433,34 +1433,44 @@ const AssessmentEventReviewDetailPage = () => {
         size="lg"
         centered
       >
-        <Modal.Header closeButton>
-          <Modal.Title>
+        <Modal.Header closeButton className="bg-primary-custom text-white border-0">
+          <Modal.Title className="text-white">
             Template Preview - {eventData?.templateName}
           </Modal.Title>
         </Modal.Header>
-        <Modal.Body style={{ minHeight: "500px", padding: 0 }}>
+        <Modal.Body style={{ minHeight: "350px", padding: 0 }}>
           {loadingPDF ? (
             <div
               className="d-flex justify-content-center align-items-center"
-              style={{ minHeight: "500px" }}
+              style={{ minHeight: "350px" }}
             >
               <Spinner animation="border" variant="primary" />
               <span className="ms-2">Loading PDF...</span>
             </div>
           ) : templatePdfUrl ? (
-            <iframe
-              src={templatePdfUrl}
+            <div
               style={{
-                width: "100%",
-                height: "600px",
-                border: "none",
+                height: "480px",
+                overflow: "hidden",
+                position: "relative",
               }}
-              title="Template PDF Preview"
-            />
+            >
+              <iframe
+                src={templatePdfUrl}
+                style={{
+                  width: "100%",
+                  height: "100%",
+                  border: "none",
+                  marginTop: "-50px",
+                  height: "calc(100% + 50px)",
+                }}
+                title="Template PDF Preview"
+              />
+            </div>
           ) : (
             <div
               className="d-flex justify-content-center align-items-center"
-              style={{ minHeight: "500px" }}
+              style={{ minHeight: "350px" }}
             >
               <p className="text-muted">Failed to load PDF</p>
             </div>

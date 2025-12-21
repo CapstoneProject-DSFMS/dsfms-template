@@ -13,6 +13,15 @@ const AssessmentOverview = ({ assessmentInfo, roleInSubject, formatDate }) => {
       .join(' ');
   };
 
+  // Format status text - remove underscores and capitalize
+  const formatStatusText = (status) => {
+    if (!status) return '—';
+    return status
+      .split('_')
+      .map(word => word.charAt(0) + word.slice(1).toLowerCase())
+      .join(' ');
+  };
+
   // Get trainee display info - prioritize fullName, fallback to lastName + middleName + firstName
   const traineeName = assessmentInfo.trainee?.fullName || 
                       `${assessmentInfo.trainee?.lastName || ''}${assessmentInfo.trainee?.middleName ? ' ' + assessmentInfo.trainee.middleName : ''} ${assessmentInfo.trainee?.firstName || ''}`.trim() || '—';
@@ -54,7 +63,7 @@ const AssessmentOverview = ({ assessmentInfo, roleInSubject, formatDate }) => {
     },
     {
       label: 'Status',
-      value: assessmentInfo.status || '—',
+      value: formatStatusText(assessmentInfo.status),
       subValue: ''
     },
     {

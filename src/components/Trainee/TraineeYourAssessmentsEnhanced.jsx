@@ -255,7 +255,7 @@ const TraineeYourAssessmentsEnhanced = () => {
                       <th className="border-neutral-200 text-primary-custom fw-semibold">
                         <SortableHeader 
                           title="Date" 
-                          sortKey="occuranceDate" 
+                          sortKey="entityInfo" 
                           sortConfig={sortConfig} 
                           onSort={handleSort} 
                         />
@@ -297,10 +297,9 @@ const TraineeYourAssessmentsEnhanced = () => {
                         </td>
                         {activeTab === 'course' && (
                           <td className="border-neutral-200 align-middle">
-                            {assessment.courseInfo ? (
+                            {assessment.entityInfo && assessment.entityInfo.type === 'course' ? (
                               <>
-                                <div className="fw-medium text-dark">{assessment.courseInfo.name}</div>
-                                <small className="text-muted">{assessment.courseInfo.code}</small>
+                                <div className="fw-medium text-dark">{assessment.entityInfo.name}</div>
                               </>
                             ) : (
                               <span className="text-muted">-</span>
@@ -310,20 +309,18 @@ const TraineeYourAssessmentsEnhanced = () => {
                         {activeTab === 'subject' && (
                           <>
                             <td className="border-neutral-200 align-middle">
-                              {assessment.subjectInfo ? (
+                              {assessment.entityInfo && assessment.entityInfo.type === 'subject' ? (
                                 <>
-                                  <div className="fw-medium text-dark">{assessment.subjectInfo.name}</div>
-                                  <small className="text-muted">{assessment.subjectInfo.code}</small>
+                                  <div className="fw-medium text-dark">{assessment.entityInfo.name}</div>
                                 </>
                               ) : (
                                 <span className="text-muted">-</span>
                               )}
                             </td>
                             <td className="border-neutral-200 align-middle">
-                              {assessment.courseInfo ? (
+                              {assessment.entityInfo && assessment.entityInfo.type === 'course' ? (
                                 <>
-                                  <div className="fw-medium text-dark">{assessment.courseInfo.name}</div>
-                                  <small className="text-muted">{assessment.courseInfo.code}</small>
+                                  <div className="fw-medium text-dark">{assessment.entityInfo.name}</div>
                                 </>
                               ) : (
                                 <span className="text-muted">-</span>
