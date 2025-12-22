@@ -1490,13 +1490,29 @@ const AssessmentEventReviewDetailPage = () => {
         size="lg"
         centered
       >
-        <Modal.Header closeButton>
-          <Modal.Title>Assessment PDF Preview</Modal.Title>
+        <Modal.Header
+          closeButton
+          style={{
+            flexShrink: 0,
+            backgroundColor: "var(--bs-primary)",
+            borderColor: "var(--bs-primary)",
+          }}
+        >
+          <Modal.Title style={{ color: "white" }}>
+            Assessment PDF Preview
+          </Modal.Title>
         </Modal.Header>
-        <Modal.Body style={{ minHeight: "500px", padding: 0 }}>
+        <Modal.Body
+          style={{
+            minHeight: "500px",
+            padding: 0,
+            overflowY: "auto",
+            maxHeight: "70vh",
+          }}
+        >
           {assessmentPdfUrl ? (
             <iframe
-              src={assessmentPdfUrl}
+              src={assessmentPdfUrl + "#toolbar=0"}
               style={{
                 width: "100%",
                 height: "600px",
@@ -1706,7 +1722,7 @@ const AssessmentEventReviewDetailPage = () => {
                 <Col md={6}>
                   <div className="mb-3">
                     <label className="fw-bold text-muted small">Duration</label>
-                    <p className="mb-0">{selectedSubjectDetail.duration || "N/A"}</p>
+                    <p className="mb-0">{selectedSubjectDetail.duration ? `${selectedSubjectDetail.duration} days` : ""}</p>
                   </div>
                 </Col>
                 <Col md={6}>
