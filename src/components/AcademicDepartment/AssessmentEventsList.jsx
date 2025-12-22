@@ -86,7 +86,7 @@ const AssessmentEventsList = ({ courseId, subjectId, onView }) => {
       case 'SCHEDULED':
       case 'UPCOMING':
       case 'NOT_STARTED':
-        return 'success';
+        return 'primary';
       case 'COMPLETED':
       case 'FINISHED':
         return 'info';
@@ -94,7 +94,8 @@ const AssessmentEventsList = ({ courseId, subjectId, onView }) => {
       case 'CANCELED':
         return 'danger';
       case 'ONGOING':
-        return 'warning';
+      case 'ON_GOING':
+        return 'success';
       default:
         return 'secondary';
     }

@@ -113,7 +113,7 @@ const AssessmentEventTable = ({
       case "SCHEDULED":
       case "UPCOMING":
       case "NOT_STARTED":
-        return "success";
+        return "primary";
       case "COMPLETED":
       case "FINISHED":
         return "info";
@@ -121,7 +121,8 @@ const AssessmentEventTable = ({
       case "CANCELED":
         return "danger";
       case "ONGOING":
-        return "warning";
+      case "ON_GOING":
+        return "success";
       default:
         return "secondary";
     }

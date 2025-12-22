@@ -258,7 +258,7 @@ const AssessmentEventDetailModal = ({ show, onClose, event }) => {
       const assessmentFormName =
         item.assessmentFormName || item.assessmentForm || item.name || "-";
       const status = item.status || "NOT_STARTED";
-      const resultScore = item.resultScore || item.score || 0;
+      const resultScore = item.resultScore || item.score || null;
       const resultText = item.resultText || item.result || null;
       const occuranceDate =
         item.occuranceDate ||
@@ -319,7 +319,7 @@ const AssessmentEventDetailModal = ({ show, onClose, event }) => {
       case "SCHEDULED":
       case "UPCOMING":
       case "NOT_STARTED":
-        return "success";
+        return "primary";
       case "COMPLETED":
       case "FINISHED":
       case "APPROVED":
@@ -329,7 +329,8 @@ const AssessmentEventDetailModal = ({ show, onClose, event }) => {
       case "REJECTED":
         return "danger";
       case "ONGOING":
-        return "warning";
+      case "ON_GOING":
+        return "success";
       default:
         return "secondary";
     }
@@ -388,60 +389,16 @@ const AssessmentEventDetailModal = ({ show, onClose, event }) => {
 
   // Calculate statistics - Use data from API if available
   const calculateStatistics = () => {
-    // Use statistics from event data if available (from API)
-    if (event.totalTrainees !== undefined) {
-      return {
-        total: event.totalTrainees || 0,
-        passed: event.totalPassed || 0,
-        failed: event.totalFailed || 0,
-        inProgress: 0,
-        pending: 0,
-        notStarted: 0,
-      };
-    }
-    
-    // Fallback: Calculate from assessments array
-    if (!assessments || assessments.length === 0) {
-      return {
-        total: 0,
-        passed: 0,
-        failed: 0,
-        inProgress: 0,
-        pending: 0,
-        notStarted: 0,
-      };
-    }
-
-    const stats = {
-      total: assessments.length,
-      passed: 0,
-      failed: 0,
+    // Use statistics from event data (from API)
+    return {
+      total: event.totalTrainees || 0,
+      passed: event.totalPassed || 0,
+      failed: event.totalFailed || 0,
+      cancelled: event.totalCancelled || 0,
       inProgress: 0,
       pending: 0,
       notStarted: 0,
     };
-
-    assessments.forEach((assessment) => {
-      const status = String(assessment.status || "").toUpperCase();
-      if (status === "COMPLETED" || status === "APPROVED") {
-        // Check if passed based on resultText only
-        const resultText = String(assessment.resultText || "").toUpperCase().trim();
-        
-        if (resultText === "PASSED" || resultText === "PASS") {
-          stats.passed++;
-        } else if (resultText === "FAILED" || resultText === "FAIL") {
-          stats.failed++;
-        }
-      } else if (status === "ONGOING") {
-        stats.inProgress++;
-      } else if (status === "PENDING") {
-        stats.pending++;
-      } else if (status === "NOT_STARTED") {
-        stats.notStarted++;
-      }
-    });
-
-    return stats;
   };
 
   const entityType = event.entityInfo?.type || "-";
@@ -712,6 +669,20 @@ const AssessmentEventDetailModal = ({ show, onClose, event }) => {
                               {event.totalTrainees || 0} Trainees
                             </span>
                           </div>
+                          <div className="mb-2 d-flex align-items-start assessment-info-row">
+                            <small
+                              className="text-muted assessment-label"
+                              style={{ minWidth: "200px", fontWeight: 500 }}
+                            >
+                              Venue:
+                            </small>
+                            <span
+                              className="fw-semibold ms-2 assessment-value"
+                              style={{ color: "var(--bs-dark)" }}
+                            >
+                              {event.entityInfo?.venue || "-"}
+                            </span>
+                          </div>
                         </div>
 
                         {/* Course Information - Only show if entityType is 'course' */}
@@ -944,7 +915,7 @@ const AssessmentEventDetailModal = ({ show, onClose, event }) => {
                     ) : (
                       <>
                         <Row className="g-3 mb-4">
-                          <Col md={4} className="mb-3">
+                          <Col md={3} className="mb-3">
                             <Card
                               className="h-100 border-success shadow-sm"
                               style={{
@@ -993,7 +964,7 @@ const AssessmentEventDetailModal = ({ show, onClose, event }) => {
                               </Card.Body>
                             </Card>
                           </Col>
-                          <Col md={4} className="mb-3">
+                          <Col md={3} className="mb-3">
                             <Card
                               className="h-100 border-danger shadow-sm"
                               style={{
@@ -1042,7 +1013,56 @@ const AssessmentEventDetailModal = ({ show, onClose, event }) => {
                               </Card.Body>
                             </Card>
                           </Col>
-                          <Col md={4} className="mb-3">
+                          <Col md={3} className="mb-3">
+                            <Card
+                              className="h-100 border-secondary shadow-sm"
+                              style={{
+                                transition: "all 0.3s ease",
+                                cursor: "pointer",
+                                backgroundColor: "#e2e3e5", // Solid secondary background
+                                border: "2px solid var(--bs-secondary)",
+                                position: "relative",
+                                overflow: "hidden",
+                              }}
+                              onMouseEnter={(e) => {
+                                e.currentTarget.style.transform =
+                                  "translateY(-8px) scale(1.05)";
+                                e.currentTarget.style.boxShadow =
+                                  "0 12px 30px rgba(108, 117, 125, 0.4)";
+                                e.currentTarget.style.borderColor = "#6c757d";
+                              }}
+                              onMouseLeave={(e) => {
+                                e.currentTarget.style.transform =
+                                  "translateY(0) scale(1)";
+                                e.currentTarget.style.boxShadow =
+                                  "0 4px 12px rgba(0,0,0,0.1)";
+                                e.currentTarget.style.borderColor =
+                                  "var(--bs-secondary)";
+                              }}
+                            >
+                              <Card.Body className="text-center position-relative">
+                                <div
+                                  className="mb-2"
+                                  style={{
+                                    fontSize: "3rem",
+                                    fontWeight: "bold",
+                                    color: "#383d41",
+                                    textShadow: "0 2px 4px rgba(0,0,0,0.1)",
+                                    animation: "pulse 2s infinite",
+                                  }}
+                                >
+                                  {stats.cancelled}
+                                </div>
+                                <p
+                                  className="text-muted mb-0 fw-semibold"
+                                  style={{ fontSize: "1rem" }}
+                                >
+                                  Cancelled
+                                </p>
+                              </Card.Body>
+                            </Card>
+                          </Col>
+                          <Col md={3} className="mb-3">
                             <Card
                               className="h-100 border-primary shadow-sm"
                               style={{
@@ -1092,45 +1112,6 @@ const AssessmentEventDetailModal = ({ show, onClose, event }) => {
                             </Card>
                           </Col>
                         </Row>
-
-                        {stats.total > 0 && (
-                          <div className="mt-4">
-                            <h6 className="mb-3">Pass Rate: </h6>
-                            <div
-                              className="progress"
-                            >
-                              <div
-                                className="progress-bar bg-success"
-                                role="progressbar"
-                                style={{
-                                  width: `${
-                                    stats.total > 0
-                                      ? (stats.passed / stats.total) * 100
-                                      : 0
-                                  }%`,
-                                }}
-                                aria-valuenow={stats.passed}
-                                aria-valuemin={0}
-                                aria-valuemax={stats.total}
-                              >
-                                {stats.total > 0
-                                  ? Math.round(
-                                      (stats.passed / stats.total) * 100
-                                    )
-                                  : 0}
-                                %
-                              </div>
-                            </div>
-                            <small className="text-muted mt-2 d-block">
-                              {stats.passed} out of {stats.total} trainees
-                              passed (
-                              {stats.total > 0
-                                ? Math.round((stats.passed / stats.total) * 100)
-                                : 0}
-                              %)
-                            </small>
-                          </div>
-                        )}
                       </>
                     )}
                   </Card.Body>
@@ -1305,7 +1286,7 @@ const AssessmentEventDetailModal = ({ show, onClose, event }) => {
                                 {resultScore}
                               </span>
                             ) : (
-                              <span className="text-muted">-</span>
+                              <span className="text-muted">N/A</span>
                             )}
                           </td>
                           <td className="align-middle">
