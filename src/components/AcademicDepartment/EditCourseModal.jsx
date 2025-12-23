@@ -19,6 +19,7 @@ const EditCourseModal = ({ show, onClose, onSave, course, loading = false }) => 
     status: 'ACTIVE'
   });
   const [errors, setErrors] = useState({});
+  const [isSaving, setIsSaving] = useState(false);
 
   // Helper function to format date for input type="date" (YYYY-MM-DD)
   const formatDateForInput = (dateValue) => {
@@ -119,9 +120,13 @@ const EditCourseModal = ({ show, onClose, onSave, course, loading = false }) => 
       newErrors.venue = 'Venue is required';
     }
 
-    if (!formData.passScore || isNaN(formData.passScore) || parseInt(formData.passScore) < 0 || parseInt(formData.passScore) > 100) {
-      newErrors.passScore = 'Pass score must be between 0 and 100';
+    if (formData.passScore) {
+      // If passScore is provided, validate it's between 0 and 100
+      if (isNaN(formData.passScore) || parseInt(formData.passScore) < 0 || parseInt(formData.passScore) > 100) {
+        newErrors.passScore = 'Pass score must be between 0 and 100';
+      }
     }
+    // If passScore is empty, it's optional - no error
 
     if (!formData.startDate) {
       newErrors.startDate = 'Start date is required';
@@ -155,6 +160,7 @@ const EditCourseModal = ({ show, onClose, onSave, course, loading = false }) => 
       return;
     }
 
+    setIsSaving(true);
     try {
       // Prepare data for API call
       const courseData = {
@@ -164,7 +170,7 @@ const EditCourseModal = ({ show, onClose, onSave, course, loading = false }) => 
         maxNumTrainee: parseInt(formData.maxTrainees),
         venue: formData.venue.trim(),
         note: formData.note.trim(),
-        passScore: parseInt(formData.passScore),
+        passScore: formData.passScore ? parseInt(formData.passScore) : null,
         startDate: new Date(formData.startDate).toISOString(),
         endDate: new Date(formData.endDate).toISOString(),
         level: formData.level
@@ -187,6 +193,8 @@ const EditCourseModal = ({ show, onClose, onSave, course, loading = false }) => 
       // Show error toast
       const errorMessage = error.response?.data?.message || error.message || 'Failed to update course';
       toast.error(`Error: ${errorMessage}`);
+    } finally {
+      setIsSaving(false);
     }
   };
 
@@ -261,7 +269,7 @@ const EditCourseModal = ({ show, onClose, onSave, course, loading = false }) => 
             </Col>
             <Col md={6}>
               <Form.Group>
-                <Form.Label>Pass Score *</Form.Label>
+                <Form.Label>Pass Score</Form.Label>
                 <Form.Control
                   type="number"
                   name="passScore"
@@ -273,6 +281,7 @@ const EditCourseModal = ({ show, onClose, onSave, course, loading = false }) => 
                   min="0"
                   max="100"
                   step="1"
+                  placeholder="Optional"
                 />
                 <Form.Control.Feedback type="invalid">
                   {errors.passScore}
@@ -394,7 +403,7 @@ const EditCourseModal = ({ show, onClose, onSave, course, loading = false }) => 
           <Button 
             variant="outline-secondary" 
             onClick={handleClose} 
-            disabled={loading}
+            disabled={loading || isSaving}
           >
             <X className="me-2" size={16} />
             Cancel
@@ -403,9 +412,9 @@ const EditCourseModal = ({ show, onClose, onSave, course, loading = false }) => 
           <Button
             variant="primary"
             type="submit"
-            disabled={loading}
+            disabled={loading || isSaving}
           >
-            {loading ? (
+            {isSaving ? (
               <>
                 <span className="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
                 Saving...
