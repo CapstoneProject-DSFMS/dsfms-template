@@ -49,7 +49,6 @@ export const ROUTES = {
   COURSES_INSTRUCTED: '/courses/instructed', // Trainer's instructed courses
   COURSES_ENROLLED: '/courses/enrolled', // Trainee's enrolled courses
   COURSES_DETAIL: (courseId) => `/courses/${courseId}`,
-  COURSES_ENROLL_TRAINEES: (courseId) => `/courses/${courseId}/enroll-trainees`,
   // Academic Department specific routes
   ACADEMIC_COURSE_DETAIL: (courseId) => `/academic/course-detail/${courseId}`, // Academic-specific course detail page
   

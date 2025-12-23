@@ -309,13 +309,8 @@ const InPageCourseDetail = ({ course, department } = {}) => {
   };
 
   const handleEnrollTrainees = () => {
-    if (isDeptHead || isTraineeView) {
-      // Use common route for Department Head and Trainee
-      navigate(`/courses/${courseDetails?.id}/enroll-trainees`);
-    } else {
-      // Academic Department route
-      navigate(`/academic/course/${courseDetails?.id}/enroll-trainees`);
-    }
+    // Only Academic Department staff can enroll trainees
+    navigate(`/academic/course/${courseDetails?.id}/enroll-trainees`);
   };
 
   // Modal handlers
