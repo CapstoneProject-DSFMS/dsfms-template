@@ -359,16 +359,16 @@ const InPageCourseDetail = ({ course, department } = {}) => {
       // Call API to update course
       await courseAPI.updateCourse(courseId, updatedCourseData);
       
-      // OPTIMIZED: Update course details directly from form data instead of full refetch
-      setCourseDetails(prev => ({
-        ...prev,
-        ...updatedCourseData,
-        id: prev.id,
-        subjectCount: prev.subjectCount,
-        traineeCount: prev.traineeCount,
-        trainerCount: prev.trainerCount,
-        subjects: prev.subjects
-      }));
+      // Reload full course details to ensure all fields are updated
+      const response = await courseAPI.getCourseById(courseId);
+      if (response) {
+        setCourseDetails(response);
+        // Also reload subjects and trainers
+        if (response.subjects && Array.isArray(response.subjects)) {
+          setSubjects(filterArchivedSubjects(response.subjects));
+        }
+        loadCourseTrainers(response);
+      }
       
       setShowEditCourse(false);
     } catch (error) {

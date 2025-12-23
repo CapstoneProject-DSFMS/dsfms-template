@@ -115,7 +115,6 @@ const EditAssessmentEventModal = ({ show, onClose, onSave, event, loading = fals
 
       // Build query parameters - use ORIGINAL data from event
       const params = {
-        name: event.name, // Original name
         occuranceDate: originalDateFormatted, // Original date in YYYY-MM-DD format
         templateId: event.templateInfo?.id || ''
       };

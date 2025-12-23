@@ -239,13 +239,15 @@ const AssessmentEventTable = ({
                             onView && onView(event.originalEvent || event),
                           permission: PERMISSION_IDS.VIEW_ASSESSMENT_DETAILS,
                         },
-                        {
-                          label: "Update",
-                          icon: <Pencil />,
-                          onClick: () =>
-                            onUpdate && onUpdate(event.originalEvent || event),
-                          permission: PERMISSION_IDS.UPDATE_ASSESSMENT_EVENT,
-                        },
+                        ...(event.status === 'NOT_STARTED' ? [
+                          {
+                            label: "Update",
+                            icon: <Pencil />,
+                            onClick: () =>
+                              onUpdate && onUpdate(event.originalEvent || event),
+                            permission: PERMISSION_IDS.UPDATE_ASSESSMENT_EVENT,
+                          }
+                        ] : []),
                       ]}
                     />
                   </PermissionWrapper>
