@@ -258,7 +258,7 @@ const TraineeSubjectDetailView = ({ traineeId, courseId, subjectId }) => {
                   <Clock className="text-muted me-3" size={18} />
                   <div>
                     <div className="fw-semibold">Duration</div>
-                    <div className="text-muted">{subject.duration}</div>
+                    <div className="text-muted">{subject.duration} day(s)</div>
                   </div>
                 </div>
 

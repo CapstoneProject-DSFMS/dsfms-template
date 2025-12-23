@@ -139,7 +139,7 @@ const SubjectDetailsPage = () => {
             <Card.Body className="text-center">
               <Clock size={24} className="text-primary mb-2" />
               <h6 className="mb-1">Duration</h6>
-              <h4 className="mb-0 text-primary">{subject.duration} days</h4>
+              <h4 className="mb-0 text-primary">{subject.duration} day(s)</h4>
               <small className="text-muted">Estimated Time</small>
             </Card.Body>
           </Card>
