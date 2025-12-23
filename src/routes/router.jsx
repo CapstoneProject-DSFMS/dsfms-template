@@ -356,21 +356,6 @@ export const router = createBrowserRouter(
       ],
     },
     {
-      path: '/courses/:courseId/enroll-trainees',
-      element: (
-        <ProtectedRoute>
-          <LayoutWrapper />
-        </ProtectedRoute>
-      ),
-      errorElement: <ErrorBoundary />,
-      children: [
-        {
-          path: '',
-          element: <EnrollTraineesPage />,
-        },
-      ],
-    },
-    {
       path: '/courses/:courseId/subjects/:subjectId',
       element: (
         <ProtectedRoute>

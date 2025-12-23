@@ -294,7 +294,8 @@ const EnrollTraineesPage = () => {
         // Redirect to course detail page with trainees tab active
         setTimeout(() => {
           navigate(ROUTES.ACADEMIC_COURSE_DETAIL(courseId), {
-            state: { activeTab: 'trainees' }
+            state: { activeTab: 'trainees' },
+            replace: true
           });
         }, (successMessages.length + errorMessages.length) * 100 + 1000);
       }
