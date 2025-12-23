@@ -799,7 +799,7 @@ const AssessmentAssignmentsPage = () => {
                                 Duration:
                               </span>{" "}
                               <span className="fw-medium">
-                                {eventInfo.subjectInfo.duration} days
+                                {eventInfo.subjectInfo.duration} day(s)
                               </span>
                             </div>
                           )}

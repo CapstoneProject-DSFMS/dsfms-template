@@ -262,7 +262,7 @@ const TraineeSubjectList = ({ traineeId, courseId }) => {
               </td>
               <td className="align-middle show-mobile">
                 <span className="text-dark">
-                  {subject.duration}
+                  {subject.duration} day(s)
                 </span>
               </td>
               <td className="align-middle show-mobile">

@@ -279,7 +279,7 @@ const SubjectList = ({ courseId }) => {
                   {subject.duration != null && subject.duration !== undefined ? (
                   <div className="d-flex align-items-center">
                     <Clock size={16} className="me-2 text-muted" />
-                    <span>{subject.duration} days</span>
+                    <span>{subject.duration} day(s)</span>
                   </div>
                   ) : (
                     <span className="text-muted">-</span>

@@ -1722,7 +1722,7 @@ const AssessmentEventReviewDetailPage = () => {
                 <Col md={6}>
                   <div className="mb-3">
                     <label className="fw-bold text-muted small">Duration</label>
-                    <p className="mb-0">{selectedSubjectDetail.duration ? `${selectedSubjectDetail.duration} days` : ""}</p>
+                    <p className="mb-0">{selectedSubjectDetail.duration ? `${selectedSubjectDetail.duration} day(s)` : ""}</p>
                   </div>
                 </Col>
                 <Col md={6}>

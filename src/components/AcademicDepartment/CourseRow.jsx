@@ -40,7 +40,7 @@ const CourseRow = ({ course, index, onView, onEdit, onDelete }) => {
         <Badge bg="secondary">{course.code}</Badge>
       </td>
       <td className="border-neutral-200 align-middle">
-        {course.duration || 'N/A'}
+        {course.duration ? `${course.duration} day(s)` : 'N/A'}
       </td>
       <td className="border-neutral-200 align-middle">
         <div className="d-flex align-items-center">
