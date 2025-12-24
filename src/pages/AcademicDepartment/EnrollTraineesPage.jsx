@@ -254,40 +254,44 @@ const EnrollTraineesPage = () => {
       
       console.log('Full response:', response);
       
-      // assignTraineesToMultipleSubjects returns response.data which is:
-      // { message: "...", data: { successMessages: [], errorMessages: [] } }
-      const successMessages = response?.data?.successMessages || [];
-      const errorMessages = response?.data?.errorMessages || [];
+      // Response structure: { message: "...", data: { summaryMessage: "...", totalRequested, enrolledCount, duplicateCount, invalidCount } }
+      const responseData = response?.data || {};
+      const apiSummaryMessage = responseData.summaryMessage || response?.message || 'Enrollment completed';
+      const enrolledCount = responseData.enrolledCount || 0;
+      const duplicateCount = responseData.duplicateCount || 0;
+      const invalidCount = responseData.invalidCount || 0;
+      const totalRequested = responseData.totalRequested || 0;
       
-      console.log('Success messages:', successMessages);
-      console.log('Error messages:', errorMessages);
+      console.log('Enrollment summary:', { enrolledCount, duplicateCount, invalidCount, totalRequested, summaryMessage: apiSummaryMessage });
       
-      // Show success messages
-      if (successMessages && successMessages.length > 0) {
-        successMessages.forEach((message, index) => {
-          setTimeout(() => {
-            toast.success(message, {
-              autoClose: 5000,
-              position: "top-right"
-            });
-          }, index * 100); // Stagger toasts
+      // Build appropriate message based on enrollment results
+      let displayMessage = apiSummaryMessage;
+      
+      if (enrolledCount === 0) {
+        const failedCount = duplicateCount + invalidCount;
+        displayMessage = `No trainees were enrolled. ${failedCount}/${totalRequested} trainees failed as they have already been enrolled into this course.`;
+      }
+      
+      // Show summary message
+      if (enrolledCount > 0) {
+        toast.success(displayMessage, {
+          autoClose: 5000,
+          position: "top-right"
+        });
+      } else if ((duplicateCount > 0 || invalidCount > 0) && enrolledCount === 0) {
+        toast.warning(displayMessage, {
+          autoClose: 5000,
+          position: "top-right"
+        });
+      } else {
+        toast.info(displayMessage, {
+          autoClose: 5000,
+          position: "top-right"
         });
       }
       
-      // Show error messages
-      if (errorMessages && errorMessages.length > 0) {
-        errorMessages.forEach((message, index) => {
-          setTimeout(() => {
-            toast.error(message, {
-              autoClose: 5000,
-              position: "top-right"
-            });
-          }, (successMessages.length + index) * 100); // Stagger after success toasts
-        });
-      }
-      
-      // If there are any success messages, clear selections and redirect
-      if (successMessages && successMessages.length > 0) {
+      //If there are any successful enrollments, clear selections and redirect
+      if (enrolledCount > 0) {
         setSelectedTrainees([]);
         setSelectedSubjects([]);
         
@@ -297,7 +301,7 @@ const EnrollTraineesPage = () => {
             state: { activeTab: 'trainees' },
             replace: true
           });
-        }, (successMessages.length + errorMessages.length) * 100 + 1000);
+        }, 1500);
       }
         
     } catch (error) {
