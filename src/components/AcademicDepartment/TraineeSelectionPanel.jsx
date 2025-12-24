@@ -38,9 +38,9 @@ const TraineeSelectionPanel = ({ selectedTrainees, onSelectionChange, subjects =
   const allTrainees = Array.isArray(availableTrainees) 
     ? availableTrainees.map(trainee => {
         const nameParts = [
-          trainee.firstName,
+          trainee.lastName,
           trainee.middleName,
-          trainee.lastName
+          trainee.firstName
         ].filter(Boolean);
         
         const name = nameParts.length > 0 
