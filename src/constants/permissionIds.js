@@ -1,12 +1,4 @@
-/**
- * Permission constants generated from `permissions_list.json`.
- *
- * Only permissions present in `permissions_list.json` are included here.
- * Keys are derived from the human-friendly `name` field in the JSON,
- * converted to UPPER_SNAKE_CASE and stripped of special characters.
- *
- * If you need to look up a permission by code, use the permissionGroupCode value (e.g. "PERM-003").
- */
+
 export const PERMISSION_IDS = {
   // Generated from permissions_list.json
   CREATE_SINGLE_USER: 'PERM-001',
@@ -64,7 +56,3 @@ export const PERMISSION_IDS = {
   UPDATE_GLOBAL_FIELD: 'PERM-053',
   DISABLE_ENABLE_GLOBAL_FIELD: 'PERM-054'
 };
-
-// NOTE: The previous file contained additional constants that referenced
-// permission codes not present in `permissions_list.json`. Those keys were
-// intentionally removed here so this file only reflects the canonical list.
