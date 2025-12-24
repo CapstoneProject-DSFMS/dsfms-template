@@ -225,7 +225,7 @@ const AcademicDashboard = () => {
                           interval={0}
                           height={50}
                         />
-                        <YAxis width={60} />
+                        <YAxis width={60} allowDecimals={false} />
                         <Tooltip
                           formatter={(value) => [value, "Count"]}
                           labelFormatter={(label) => `Department: ${label}`}
@@ -373,10 +373,11 @@ const AcademicDashboard = () => {
                         />
                         <YAxis width={60} />
                         <Tooltip
-                          formatter={(value, name) => [
-                            value,
-                            name === "pass" ? "Pass" : "Fail",
-                          ]}
+                          formatter={(value, name) => {
+                            if (name === "pass") return [value, "Pass"];
+                            if (name === "fail") return [value, "Fail"];
+                            return [value, name];
+                          }}
                           labelFormatter={(label) => `Department: ${label}`}
                         />
                         <Legend
