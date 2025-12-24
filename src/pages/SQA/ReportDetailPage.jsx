@@ -179,7 +179,7 @@ const ReportDetailPage = () => {
   const getStatusBadge = (status) => {
     const statusConfig = {
       SUBMITTED: { variant: 'warning', icon: Clock, label: 'Pending' },
-      ACKNOWLEDGED: { variant: 'info', icon: CheckCircle, label: 'Acknowledged' },
+      ACKNOWLEDGED: { variant: 'primary', icon: CheckCircle, label: 'Acknowledged' },
       RESOLVED: { variant: 'success', icon: CheckCircle, label: 'Resolved' },
       CANCELLED: { variant: 'secondary', icon: XCircle, label: 'Cancelled' },
       // Keep old mapping for compatibility
@@ -204,7 +204,7 @@ const ReportDetailPage = () => {
   const getSeverityBadge = (severity) => {
     const severityConfig = {
       LOW: 'info',
-      MEDIUM: 'warning',
+      MEDIUM: 'secondary',
       HIGH: 'danger',
       CRITICAL: 'dark',
     };

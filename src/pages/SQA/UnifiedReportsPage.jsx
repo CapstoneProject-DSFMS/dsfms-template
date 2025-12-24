@@ -133,7 +133,7 @@ const UnifiedReportsPage = ({ defaultTab, source = '/reports', onShowForm }) => 
   const getIncidentStatusBadge = (status) => {
     const statusConfig = {
       SUBMITTED: { variant: 'warning', icon: Clock, display: 'Pending' },
-      ACKNOWLEDGED: { variant: 'info', icon: CheckCircle, display: 'Acknowledged' },
+      ACKNOWLEDGED: { variant: 'primary', icon: CheckCircle, display: 'Acknowledged' },
       RESOLVED: { variant: 'success', icon: CheckCircle, display: 'Resolved' },
       CANCELLED: { variant: 'secondary', icon: XCircle, display: 'Cancelled' },
       // Keep old mapping for compatibility
@@ -152,6 +152,16 @@ const UnifiedReportsPage = ({ defaultTab, source = '/reports', onShowForm }) => 
         {config.display}
       </Badge>
     );
+  };
+
+  const getSeverityBadge = (severity) => {
+    const severityConfig = {
+      LOW: 'info',
+      MEDIUM: 'secondary',
+      HIGH: 'danger',
+      CRITICAL: 'dark',
+    };
+    return <Badge bg={severityConfig[severity] || 'secondary'}>{severity}</Badge>;
   };
 
   // Map subtab to status filter
@@ -429,7 +439,7 @@ const UnifiedReportsPage = ({ defaultTab, source = '/reports', onShowForm }) => 
                         {/* SEVERITY - Hide Mobile (Incidents only) */}
                         {activeTab === 'incidents' && (
                           <td className="align-middle hide-mobile">
-                            {item.severity ? <Badge bg={item.severity === 'CRITICAL' ? 'danger' : item.severity === 'HIGH' ? 'warning' : item.severity === 'MEDIUM' ? 'warning' : 'info'}>{item.severity}</Badge> : 'N/A'}
+                            {item.severity ? getSeverityBadge(item.severity) : 'N/A'}
                           </td>
                         )}
 
