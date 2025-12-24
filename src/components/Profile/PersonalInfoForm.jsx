@@ -14,7 +14,18 @@ const PersonalInfoForm = ({ profileData, user, onUpdate, loading = false }) => {
     phoneNumber: '',
     address: '',
     gender: '',
-    avatarUrl: ''
+    avatarUrl: '',
+    // Trainee fields
+    dob: '',
+    enrollmentDate: '',
+    trainingBatch: '',
+    passportNo: '',
+    nation: '',
+    // Trainer fields
+    specialization: '',
+    certificationNumber: '',
+    yearsOfExp: '',
+    bio: ''
   });
   
   const [isInitialized, setIsInitialized] = useState(false);
@@ -30,7 +41,18 @@ const PersonalInfoForm = ({ profileData, user, onUpdate, loading = false }) => {
         phoneNumber: profileData.phoneNumber || '',
         address: profileData.address || '',
         gender: profileData.gender || '',
-        avatarUrl: profileData.avatarUrl || ''
+        avatarUrl: profileData.avatarUrl || '',
+        // Trainee fields
+        dob: profileData.traineeProfile?.dob ? new Date(profileData.traineeProfile.dob).toISOString().split('T')[0] : '',
+        enrollmentDate: profileData.traineeProfile?.enrollmentDate ? new Date(profileData.traineeProfile.enrollmentDate).toISOString().split('T')[0] : '',
+        trainingBatch: profileData.traineeProfile?.trainingBatch || '',
+        passportNo: profileData.traineeProfile?.passportNo || '',
+        nation: profileData.traineeProfile?.nation || '',
+        // Trainer fields
+        specialization: profileData.trainerProfile?.specialization || '',
+        certificationNumber: profileData.trainerProfile?.certificationNumber || '',
+        yearsOfExp: profileData.trainerProfile?.yearsOfExp || '',
+        bio: profileData.trainerProfile?.bio || ''
       };
       setPersonalInfo(newPersonalInfo);
       setIsInitialized(true);
@@ -66,6 +88,9 @@ const PersonalInfoForm = ({ profileData, user, onUpdate, loading = false }) => {
     }
   };
 
+  const isTrainee = profileData?.role?.name === 'TRAINEE';
+  const isTrainer = profileData?.role?.name === 'TRAINER';
+
   return (
     <Card>
       <Card.Header className="bg-primary text-white border-0">
@@ -75,8 +100,23 @@ const PersonalInfoForm = ({ profileData, user, onUpdate, loading = false }) => {
         </div>
       </Card.Header>
       <Card.Body>
-    
         <Form onSubmit={handleSubmit}>
+          {/* Employee ID */}
+          <div className="row">
+            <div className="col-md-6 mb-3">
+              <Form.Group>
+                <Form.Label className="fw-bold">EID</Form.Label>
+                <Form.Control
+                  type="text"
+                  value={profileData?.eid || ''}
+                  disabled={true}
+                  className="bg-light"
+                />
+              </Form.Group>
+            </div>
+          </div>
+
+          {/* Basic Information */}
           <div className="row">
             <div className="col-md-4 mb-3">
               <Form.Group>
@@ -180,6 +220,150 @@ const PersonalInfoForm = ({ profileData, user, onUpdate, loading = false }) => {
               </Form.Group>
             </div>
           </div>
+
+          {/* Trainee-Specific Fields */}
+          {isTrainee && (
+            <>
+              <hr className="my-4" />
+              <h6 className="mb-3 text-primary fw-bold">Trainee Information</h6>
+              <div className="row">
+                <div className="col-md-6 mb-3">
+                  <Form.Group>
+                    <Form.Label>Date of Birth</Form.Label>
+                    <Form.Control
+                      type="date"
+                      name="dob"
+                      value={personalInfo.dob}
+                      onChange={handleInputChange}
+                      disabled={true}
+                    />
+                  </Form.Group>
+                </div>
+                <div className="col-md-6 mb-3">
+                  <Form.Group>
+                    <Form.Label>Enrollment Date</Form.Label>
+                    <Form.Control
+                      type="date"
+                      name="enrollmentDate"
+                      value={personalInfo.enrollmentDate}
+                      onChange={handleInputChange}
+                      disabled={true}
+                    />
+                  </Form.Group>
+                </div>
+              </div>
+              <div className="row">
+                <div className="col-md-6 mb-3">
+                  <Form.Group>
+                    <Form.Label>Training Batch</Form.Label>
+                    <Form.Control
+                      type="text"
+                      name="trainingBatch"
+                      value={personalInfo.trainingBatch}
+                      onChange={handleInputChange}
+                      placeholder="e.g., BATCH-001"
+                      disabled={true}
+                    />
+                  </Form.Group>
+                </div>
+                <div className="col-md-6 mb-3">
+                  <Form.Group>
+                    <Form.Label>Passport Number</Form.Label>
+                    <Form.Control
+                      type="text"
+                      name="passportNo"
+                      value={personalInfo.passportNo}
+                      onChange={handleInputChange}
+                      placeholder="e.g., P10000001"
+                      disabled={true}
+                    />
+                  </Form.Group>
+                </div>
+              </div>
+              <div className="row">
+                <div className="col-md-6 mb-3">
+                  <Form.Group>
+                    <Form.Label>Nation</Form.Label>
+                    <Form.Control
+                      type="text"
+                      name="nation"
+                      value={personalInfo.nation}
+                      onChange={handleInputChange}
+                      placeholder="e.g., Vietnam"
+                      disabled={true}
+                    />
+                  </Form.Group>
+                </div>
+              </div>
+            </>
+          )}
+
+          {/* Trainer-Specific Fields */}
+          {isTrainer && (
+            <>
+              <hr className="my-4" />
+              <h6 className="mb-3 text-primary fw-bold">Trainer Information</h6>
+              <div className="row">
+                <div className="col-md-6 mb-3">
+                  <Form.Group>
+                    <Form.Label>Specialization</Form.Label>
+                    <Form.Control
+                      type="text"
+                      name="specialization"
+                      value={personalInfo.specialization}
+                      onChange={handleInputChange}
+                      placeholder="e.g., Cabin Safety & Emergency Procedures"
+                      disabled={true}
+                    />
+                  </Form.Group>
+                </div>
+                <div className="col-md-6 mb-3">
+                  <Form.Group>
+                    <Form.Label>Certification Number</Form.Label>
+                    <Form.Control
+                      type="text"
+                      name="certificationNumber"
+                      value={personalInfo.certificationNumber}
+                      onChange={handleInputChange}
+                      placeholder="e.g., CAA-CABIN-SEP-2019-014"
+                      disabled={true}
+                    />
+                  </Form.Group>
+                </div>
+              </div>
+              <div className="row">
+                <div className="col-md-6 mb-3">
+                  <Form.Group>
+                    <Form.Label>Years of Experience</Form.Label>
+                    <Form.Control
+                      type="number"
+                      name="yearsOfExp"
+                      value={personalInfo.yearsOfExp}
+                      onChange={handleInputChange}
+                      min="0"
+                      disabled={true}
+                    />
+                  </Form.Group>
+                </div>
+              </div>
+              <div className="row">
+                <div className="col-md-12 mb-3">
+                  <Form.Group>
+                    <Form.Label>Bio</Form.Label>
+                    <Form.Control
+                      as="textarea"
+                      rows={3}
+                      name="bio"
+                      value={personalInfo.bio}
+                      onChange={handleInputChange}
+                      placeholder="Enter your professional biography"
+                      disabled={true}
+                    />
+                  </Form.Group>
+                </div>
+              </div>
+            </>
+          )}
         </Form>
       </Card.Body>
     </Card>
