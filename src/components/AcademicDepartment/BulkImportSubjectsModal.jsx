@@ -139,31 +139,91 @@ const BulkImportSubjectsModal = ({ show, onClose, onImport, loading: externalLoa
             // Handle dates - preserve original format (could be Date object, number, or string)
             start_date: (() => {
               const dateValue = row[headers.indexOf('start_date')];
-              if (!dateValue) return '';
-              // If it's a Date object, convert to ISO string
-              if (dateValue instanceof Date) {
-                return dateValue.toISOString().split('T')[0]; // YYYY-MM-DD format
-              }
-              // If it's a number (Excel serial number), keep as number for formatDate to handle
-              if (typeof dateValue === 'number') {
-                return dateValue;
-              }
-              // Otherwise, treat as string
-              return String(dateValue).trim();
+              if (!dateValue && dateValue !== 0) return '';
+              
+              // Helper: convert Excel Date/number to YYYY-MM-DD string
+              const excelDateToISOString = (val) => {
+                try {
+                  // If it's already a Date object from Excel
+                  if (val instanceof Date) {
+                    // Don't use getUTC methods - they cause timezone shifts
+                    // Instead, use local date components
+                    const year = val.getFullYear();
+                    const month = String(val.getMonth() + 1).padStart(2, '0');
+                    const day = String(val.getDate()).padStart(2, '0');
+                    return `${year}-${month}-${day}`;
+                  }
+                  // If it's a number (Excel serial number)
+                  else if (typeof val === 'number' && val > 0 && val < 100000) {
+                    // Excel serial number formula: (date - 1900-01-01) in days
+                    // Excel date 1 = 1900-01-01
+                    // But Excel has a bug: it counts 1900-02-29 (non-existent date)
+                    // So for dates after 1900-02-29, subtract 2, otherwise subtract 1
+                    const excelSerial = val;
+                    // Days between 1900-01-01 and 1970-01-01 (Unix epoch) = 25569
+                    // But accounting for Excel's 1900 leap year bug
+                    const daysSinceEpoch = excelSerial - 25569;
+                    const date = new Date(daysSinceEpoch * 86400 * 1000);
+                    
+                    const year = date.getUTCFullYear();
+                    const month = String(date.getUTCMonth() + 1).padStart(2, '0');
+                    const day = String(date.getUTCDate()).padStart(2, '0');
+                    return `${year}-${month}-${day}`;
+                  }
+                  // Otherwise treat as string
+                  else {
+                    return String(val).trim();
+                  }
+                } catch (e) {
+                  return String(val).trim();
+                }
+              };
+              
+              return excelDateToISOString(dateValue);
             })(),
             end_date: (() => {
               const dateValue = row[headers.indexOf('end_date')];
-              if (!dateValue) return '';
-              // If it's a Date object, convert to ISO string
-              if (dateValue instanceof Date) {
-                return dateValue.toISOString().split('T')[0]; // YYYY-MM-DD format
-              }
-              // If it's a number (Excel serial number), keep as number for formatDate to handle
-              if (typeof dateValue === 'number') {
-                return dateValue;
-              }
-              // Otherwise, treat as string
-              return String(dateValue).trim();
+              if (!dateValue && dateValue !== 0) return '';
+              
+              // Helper: convert Excel Date/number to YYYY-MM-DD string
+              const excelDateToISOString = (val) => {
+                try {
+                  // If it's already a Date object from Excel
+                  if (val instanceof Date) {
+                    // Don't use getUTC methods - they cause timezone shifts
+                    // Instead, use local date components
+                    const year = val.getFullYear();
+                    const month = String(val.getMonth() + 1).padStart(2, '0');
+                    const day = String(val.getDate()).padStart(2, '0');
+                    return `${year}-${month}-${day}`;
+                  }
+                  // If it's a number (Excel serial number)
+                  else if (typeof val === 'number' && val > 0 && val < 100000) {
+                    // Excel serial number formula: (date - 1900-01-01) in days
+                    // Excel date 1 = 1900-01-01
+                    // But Excel has a bug: it counts 1900-02-29 (non-existent date)
+                    // So for dates after 1900-02-29, subtract 2, otherwise subtract 1
+                    const excelSerial = val;
+                    // Days between 1900-01-01 and 1970-01-01 (Unix epoch) = 25569
+                    // But accounting for Excel's 1900 leap year bug
+                    const daysSinceEpoch = excelSerial - 25569;
+                    const date = new Date(daysSinceEpoch * 86400 * 1000);
+                    
+                    const year = date.getUTCFullYear();
+                    const month = String(date.getUTCMonth() + 1).padStart(2, '0');
+                    const day = String(date.getUTCDate()).padStart(2, '0');
+                    return `${year}-${month}-${day}`;
+                  }
+                  // Otherwise treat as string
+                  else {
+                    return String(val).trim();
+                  }
+                } catch (e) {
+                  return String(val).trim();
+                }
+              };
+              
+              return excelDateToISOString(dateValue);
             })(),
             is_sim: headers.includes('is_sim') || headers.includes('issim')
               ? row[headers.indexOf(headers.includes('is_sim') ? 'is_sim' : 'issim')]
@@ -239,6 +299,7 @@ const BulkImportSubjectsModal = ({ show, onClose, onImport, loading: externalLoa
           }
 
           // Helper function to parse date for validation (returns Date object or null)
+          // Always parse YYYY-MM-DD using UTC to avoid timezone issues
           const parseDateForValidation = (dateValue) => {
             if (!dateValue || dateValue === '' || dateValue === 'N/A') {
               return null;
@@ -247,28 +308,20 @@ const BulkImportSubjectsModal = ({ show, onClose, onImport, loading: externalLoa
             try {
               let parsedDate;
               
-              // Check if it's an Excel serial number (numeric and large number)
-              if (typeof dateValue === 'number' && dateValue > 10000) {
-                // Convert Excel serial number to JavaScript Date
-                const excelSerial = parseFloat(dateValue);
-                parsedDate = new Date((excelSerial - 25569) * 86400 * 1000);
-              } else if (typeof dateValue === 'string') {
+              // If it's a Date object (from Excel after our conversion)
+              if (dateValue instanceof Date) {
+                parsedDate = dateValue;
+              }
+              // If it's a string in YYYY-MM-DD format
+              else if (typeof dateValue === 'string') {
                 const dateStr = dateValue.trim();
                 
-                // Check if it's a numeric string that could be an Excel serial number
-                if (/^\d+$/.test(dateStr)) {
-                  const numericValue = parseInt(dateStr);
-                  if (numericValue >= 1 && numericValue <= 100000) {
-                    // Excel serial number
-                    parsedDate = new Date((numericValue - 25569) * 86400 * 1000);
-                  } else {
-                    parsedDate = new Date(dateStr);
-                  }
-                } else if (dateStr.match(/^\d{4}-\d{2}-\d{2}$/)) {
-                  // YYYY-MM-DD format
+                // Match YYYY-MM-DD format
+                if (dateStr.match(/^\d{4}-\d{2}-\d{2}$/)) {
+                  // Parse as UTC to avoid timezone conversion
                   parsedDate = new Date(dateStr + 'T00:00:00.000Z');
                 } else {
-                  // Try to parse as date string
+                  // Try generic parsing
                   parsedDate = new Date(dateStr);
                 }
               } else {
@@ -418,65 +471,18 @@ const BulkImportSubjectsModal = ({ show, onClose, onImport, loading: externalLoa
           if (typeof dateValue === 'string') {
             const dateStr = dateValue.trim();
             
-            // Check if it's a numeric string that could be an Excel serial number
-            // Excel serial numbers are typically between 1 (1900-01-01) and 100000 (2173-09-27)
-            // For reasonable dates (2020-2100), Excel serial numbers are roughly 43831-80337
-            if (/^\d+$/.test(dateStr)) {
-              const numericValue = parseInt(dateStr);
-              
-              // Check if it looks like an Excel serial number (typically 1000-100000 for reasonable dates)
-              // Excel serial number 1 = 1900-01-01
-              // Excel serial number ~43831 = 2020-01-01
-              // Excel serial number ~80337 = 2100-01-01
-              if (numericValue >= 1 && numericValue <= 100000) {
-                // It's likely an Excel serial number
-                // Excel serial number: days since 1900-01-01
-                // Conversion: (excelSerial - 25569) * 86400 * 1000
-                // Where 25569 = days from 1900-01-01 to 1970-01-01 (Unix epoch)
-                const excelSerial = numericValue;
-                const daysSinceEpoch = excelSerial - 25569;
-                const millisecondsSinceEpoch = daysSinceEpoch * 86400 * 1000;
-                
-                parsedDate = new Date(millisecondsSinceEpoch);
-                
-                // Validate the converted date is reasonable
-                const year = parsedDate.getFullYear();
-                if (year < 1900 || year > 2100) {
-                  // Maybe it's not an Excel serial number, try parsing as timestamp or date string
-                  parsedDate = new Date(dateStr);
-                }
-              } else {
-                // Too large to be an Excel serial number, might be a timestamp
-                parsedDate = new Date(numericValue < 1000000000000 ? numericValue * 1000 : numericValue);
-              }
-            }
-            // If already in ISO format with time, use as is
-            else if (dateStr.includes('T') && dateStr.match(/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}/)) {
-              return dateStr;
-            }
-            // If in YYYY-MM-DD format, add time component to make it ISO datetime
-            else if (dateStr.match(/^\d{4}-\d{2}-\d{2}$/)) {
-              // Parse as date and convert to ISO datetime (start of day in UTC)
+            // If already in YYYY-MM-DD format, parse as UTC
+            if (dateStr.match(/^\d{4}-\d{2}-\d{2}$/)) {
               parsedDate = new Date(dateStr + 'T00:00:00.000Z');
-            }
-            // Try to parse as date string
-            else {
+            } else {
+              // Try generic parsing
               parsedDate = new Date(dateStr);
             }
           } else if (typeof dateValue === 'number') {
-            // Handle Excel serial number
-            // Excel serial numbers are typically between 1 and 100000
-            if (dateValue >= 1 && dateValue <= 100000) {
-              // Excel serial number: days since 1900-01-01
-              // 25569 = days from 1900-01-01 to 1970-01-01
-              parsedDate = new Date((dateValue - 25569) * 86400 * 1000);
-            } else if (dateValue > 100000 && dateValue < 1000000000000) {
-              // Might be a timestamp in seconds
-              parsedDate = new Date(dateValue * 1000);
-            } else {
-              // Might be a timestamp in milliseconds
-              parsedDate = new Date(dateValue);
-            }
+            // If it's a number, treat as Date object (already converted from Excel)
+            parsedDate = new Date(dateValue);
+          } else if (dateValue instanceof Date) {
+            parsedDate = dateValue;
           } else {
             parsedDate = new Date(dateValue);
           }
@@ -492,8 +498,15 @@ const BulkImportSubjectsModal = ({ show, onClose, onImport, loading: externalLoa
             return null;
           }
           
-          // Return ISO datetime string: YYYY-MM-DDTHH:mm:ss.sssZ
-          return parsedDate.toISOString();
+          // Build ISO datetime using LOCAL date components to avoid timezone shift
+          // This matches the preview validation logic
+          const isoYear = parsedDate.getFullYear();
+          const isoMonth = String(parsedDate.getMonth() + 1).padStart(2, '0');
+          const isoDay = String(parsedDate.getDate()).padStart(2, '0');
+          
+          // Return ISO datetime string: YYYY-MM-DDTHH:mm:ss.000Z
+          // Using local date components to avoid timezone conversion issues
+          return `${isoYear}-${isoMonth}-${isoDay}T00:00:00.000Z`;
         } catch (error) {
           return null;
         }

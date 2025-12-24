@@ -289,9 +289,7 @@ export const AuthProvider = ({ children }) => {
   // Fetch user role and permissions using roleId from JWT
   const fetchUserRoleAndPermissions = async (roleName, roleId) => {
     try {
-      // console.log('Fetching role details for:', { roleName, roleId }); // Commented out to reduce console noise
-      
-      // Try to get role details by ID first
+
       if (roleId) {
         try {
           const fullRoleData = await roleAPI.getRoleById(roleId);
