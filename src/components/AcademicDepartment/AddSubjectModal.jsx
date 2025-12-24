@@ -73,6 +73,44 @@ const AddSubjectModal = ({ show, onClose, onSave, loading = false, courseId, cou
       newErrors.push('Pass score must be an integer between 0 and 100');
     }
 
+    // Validate Time Slot format if provided
+    if (formData.timeSlot.trim()) {
+      // Support both ; and , as separators
+      const slots = formData.timeSlot.split(/[;,]/).map(s => s.trim()).filter(s => s);
+      
+      if (slots.length === 0) {
+        newErrors.push('Time slot cannot be empty');
+      } else {
+        // Accept time with or without leading zero (9:00 or 09:00)
+        const timeRegex = /^([0-9]|0[0-9]|1[0-9]|2[0-3]):[0-5][0-9]$/;
+        
+        for (let i = 0; i < slots.length; i++) {
+          const slot = slots[i];
+          const parts = slot.split('-');
+          
+          if (parts.length !== 2) {
+            newErrors.push(`Time slot ${i + 1} must contain exactly one dash (-)`);
+            continue;
+          }
+          
+          const [start, end] = parts;
+          
+          if (!timeRegex.test(start) || !timeRegex.test(end)) {
+            newErrors.push(`Time slot ${i + 1} must be in format H:mm or HH:mm (e.g., 9:00-13:00 or 09:00-13:00)`);
+            continue;
+          }
+          
+          // Check if start time < end time
+          const [startHour, startMin] = start.split(':').map(Number);
+          const [endHour, endMin] = end.split(':').map(Number);
+          
+          if (startHour * 60 + startMin >= endHour * 60 + endMin) {
+            newErrors.push(`Time slot ${i + 1}: End time must be after start time`);
+          }
+        }
+      }
+    }
+
     // Mandatory date fields (NN in schema)
     if (!formData.startDate.trim()) {
       newErrors.push('Start date is required');
