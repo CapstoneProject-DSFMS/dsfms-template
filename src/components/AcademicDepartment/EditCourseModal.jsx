@@ -365,7 +365,7 @@ const EditCourseModal = ({ show, onClose, onSave, course, loading = false }) => 
           <Row className="mb-3">
             <Col>
               <Form.Group>
-                <Form.Label>Description *</Form.Label>
+                <Form.Label>Description</Form.Label>
                 <Form.Control
                   as="textarea"
                   rows={3}

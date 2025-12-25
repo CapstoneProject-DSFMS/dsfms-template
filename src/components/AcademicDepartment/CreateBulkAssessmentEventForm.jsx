@@ -500,9 +500,10 @@ const CreateBulkAssessmentEventForm = ({ onSuccess }) => {
     setShowConfirmation(false);
 
     try {
-      await assessmentAPI.createBulkAssessmentEvent(pendingSubmitData.requestData);
+      const response = await assessmentAPI.createBulkAssessmentEvent(pendingSubmitData.requestData);
 
-      toast.success('Bulk assessment event created successfully');
+      const successMessage = response?.message || 'Bulk assessment event created successfully';
+      toast.success(successMessage);
       
       // Reset form
       setFormData({
